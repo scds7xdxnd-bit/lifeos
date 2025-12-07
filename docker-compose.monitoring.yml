@@ -1,5 +1,3 @@
-version: "3.9"
-
 # LifeOS Monitoring Stack Compose Override
 # Use: docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 # 

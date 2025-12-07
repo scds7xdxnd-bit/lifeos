@@ -1,5 +1,3 @@
-version: "3.9"
-
 # LifeOS Production Docker Compose Stack
 # Includes: Web App, PostgreSQL, Redis, Async Worker, Monitoring
 

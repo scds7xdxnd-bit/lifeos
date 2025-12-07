@@ -186,7 +186,7 @@ jobs:
           docker compose -f docker-compose.yml config > /dev/null
           echo "✓ docker-compose.yml is valid"
       
-      - name: Validate docker-compose.monitoring.yml
+      - name: Validate docker-compose.monitoring.yml (as override)
         run: |
-          docker compose -f docker-compose.monitoring.yml config > /dev/null
-          echo "✓ docker-compose.monitoring.yml is valid"
+          docker compose -f docker-compose.yml -f docker-compose.monitoring.yml config > /dev/null
+          echo "✓ docker-compose.monitoring.yml is valid (as override)"
