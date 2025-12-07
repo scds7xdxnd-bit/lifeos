@@ -156,8 +156,7 @@ services:
     restart: unless-stopped
     <<: *monitoring-logging
     privileged: true
-    device_cgroup_rules:
-      - 'rule_type=allow major=*'
+    # device_cgroup_rules inherited from base docker-compose.yml
 
 volumes:
   lifeos-prometheus:
