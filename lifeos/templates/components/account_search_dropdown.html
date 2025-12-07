@@ -1,0 +1,390 @@
+{# Account Search Dropdown Component
+   Usage:
+   {% set account_search_id = 'journal-debit-account' %}
+   {% include "components/account_search_dropdown.html" %}
+   
+   Then in your JS:
+   const dropdown = new AccountSearchDropdown('journal-debit-account', (account) => {
+     console.log('Selected:', account);
+   });
+#}
+
+{% set search_id = search_id|default('account-search', true) %}
+{% set placeholder = placeholder|default('Search accounts...', true) %}
+{% set on_select = on_select|default('', true) %}
+
+<div class="account-search-wrapper" id="{{ search_id }}-wrapper" data-search-id="{{ search_id }}">
+  <div style="position: relative;">
+    <input
+      type="text"
+      class="account-search-input"
+      id="{{ search_id }}-input"
+      placeholder="{{ placeholder }}"
+      autocomplete="off"
+      aria-haspopup="listbox"
+      aria-controls="{{ search_id }}-dropdown"
+      style="width: 100%;"
+    >
+    <div
+      class="account-search-dropdown"
+      id="{{ search_id }}-dropdown"
+      role="listbox"
+      style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;"
+    >
+      <div id="{{ search_id }}-loading" style="display: none; padding: 0.5rem; color: #5b6470; text-align: center;">
+        <span>Searching...</span>
+      </div>
+      <div id="{{ search_id }}-results" style="max-height: 300px; overflow-y: auto;"></div>
+      <div id="{{ search_id }}-empty" style="padding: 0.5rem; color: #5b6470; text-align: center; display: none;">
+        <span>No accounts found</span>
+      </div>
+      <div id="{{ search_id }}-error" style="padding: 0.5rem; color: #b3352f; text-align: center; display: none;"></div>
+    </div>
+  </div>
+  <div
+    id="{{ search_id }}-create-form"
+    style="display: none; margin-top: 0.5rem; padding: 0.75rem; border: 1px solid #e0e5ec; border-radius: 8px; background: #fdfdfd;"
+  >
+    <div style="margin-bottom: 0.5rem; font-weight: 600; font-size: 0.95rem;">Create new account</div>
+    
+    <div class="field" style="margin-bottom: 0.5rem;">
+      <label for="{{ search_id }}-create-name">Account name *</label>
+      <input id="{{ search_id }}-create-name" type="text" placeholder="e.g., My Savings Account" maxlength="255">
+    </div>
+
+    <div class="field" style="margin-bottom: 0.5rem;">
+      <label for="{{ search_id }}-create-type">Type *</label>
+      <select id="{{ search_id }}-create-type">
+        <option value="">-- Select type --</option>
+        <option value="asset">Asset (cash, bank, investments)</option>
+        <option value="liability">Liability (loans, credit cards)</option>
+        <option value="equity">Equity (net worth)</option>
+        <option value="income">Income (salary, business)</option>
+        <option value="expense">Expense (groceries, utilities)</option>
+      </select>
+    </div>
+
+    <div class="field" style="margin-bottom: 0.5rem;">
+      <label for="{{ search_id }}-create-subtype">Subtype (optional)</label>
+      <select id="{{ search_id }}-create-subtype">
+        <option value="">-- None / Other --</option>
+      </select>
+      <small id="{{ search_id }}-subtype-hint" style="display: none;"></small>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <button type="button" class="btn" id="{{ search_id }}-create-submit" style="flex-shrink: 0;">Create</button>
+      <button type="button" class="btn btn-secondary" id="{{ search_id }}-create-cancel" style="flex-shrink: 0;">Cancel</button>
+      <span id="{{ search_id }}-create-status" class="auth-status" style="margin: 0; flex-grow: 1;"></span>
+    </div>
+  </div>
+</div>
+
+<!-- eslint-disable -->
+<script>
+  /**
+   * AccountSearchDropdown - Typeahead search + inline creation component
+   * @param {string} componentId - ID prefix for all elements (e.g., 'journal-debit-account')
+   * @param {Function} onSelect - Callback when account is selected: (account) => {}
+   */
+  class AccountSearchDropdown {
+    constructor(componentId, onSelect) {
+      this.componentId = componentId;
+      this.onSelect = onSelect || (() => {});
+      this.debouncedSearch = null;
+      this.selectedAccountId = null;
+      this.init();
+    }
+
+    el(suffix) {
+      return document.getElementById(`${this.componentId}-${suffix}`);
+    }
+
+    init() {
+      const input = this.el('input');
+      const dropdown = this.el('dropdown');
+      const createForm = this.el('create-form');
+      const createSubmit = this.el('create-submit');
+      const createCancel = this.el('create-cancel');
+      const createTypeSelect = this.el('create-type');
+      const createSubtypeSelect = this.el('create-subtype');
+
+      if (!input) {
+        console.warn(`[AccountSearch] Element not found: ${this.componentId}-input`);
+        return;
+      }
+
+      // Set up debounced search
+      this.debouncedSearch = window.lifeosAccountSearch?.createDebouncedSearch?.(
+        (results) => this.renderResults(results),
+        300
+      );
+
+      // If createDebouncedSearch is not available, create fallback
+      if (!this.debouncedSearch) {
+        console.warn('[AccountSearch] createDebouncedSearch not available, using fallback');
+        let timeoutId = null;
+        let lastQuery = '';
+        this.debouncedSearch = async (query) => {
+          lastQuery = query;
+          if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+          }
+          if (!query || query.trim().length === 0) {
+            this.renderResults([]);
+            return;
+          }
+          timeoutId = setTimeout(async () => {
+            const results = await window.lifeosAccountSearch?.searchAccounts?.(query) || [];
+            if (query === lastQuery) {
+              this.renderResults(results);
+            }
+          }, 300);
+        };
+      }
+
+      // Input event
+      input.addEventListener('input', (e) => {
+        const query = e.target.value;
+        if (query.length === 0) {
+          this.hideDropdown();
+        } else {
+          this.showDropdown();
+          this.setLoading(true);
+          this.debouncedSearch(query);
+        }
+      });
+
+      // Dropdown show/hide
+      input.addEventListener('focus', () => {
+        if (input.value.length > 0) {
+          this.showDropdown();
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!this.el('wrapper').contains(e.target)) {
+          this.hideDropdown();
+        }
+      });
+
+      // Account type change -> reload subtypes
+      createTypeSelect.addEventListener('change', (e) => {
+        this.updateSubtypesDropdown(e.target.value);
+      });
+
+      // Create form buttons
+      createSubmit.addEventListener('click', () => this.submitCreateForm());
+      createCancel.addEventListener('click', () => {
+        createForm.style.display = 'none';
+        input.focus();
+      });
+
+      // Enter key in input -> submit create form if visible
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && createForm.style.display !== 'none') {
+          e.preventDefault();
+          this.submitCreateForm();
+        }
+      });
+    }
+
+    showDropdown() {
+      this.el('dropdown').style.display = 'block';
+    }
+
+    hideDropdown() {
+      this.el('dropdown').style.display = 'none';
+    }
+
+    setLoading(isLoading) {
+      this.el('loading').style.display = isLoading ? 'block' : 'none';
+      this.el('results').style.display = isLoading ? 'none' : 'block';
+      this.el('empty').style.display = 'none';
+      this.el('error').textContent = '';
+      this.el('error').style.display = 'none';
+    }
+
+    renderResults(results) {
+      const resultsContainer = this.el('results');
+      const emptyMsg = this.el('empty');
+      const loadingMsg = this.el('loading');
+
+      loadingMsg.style.display = 'none';
+
+      if (!results || results.length === 0) {
+        resultsContainer.innerHTML = '';
+        emptyMsg.style.display = 'block';
+        return;
+      }
+
+      emptyMsg.style.display = 'none';
+      resultsContainer.innerHTML = '';
+
+      results.forEach((result, idx) => {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'account-search-result';
+        resultDiv.role = 'option';
+        resultDiv.tabIndex = 0;
+
+        const displayName = window.lifeosAccountSearch?.formatResultDisplay?.(result) || result.name;
+        const highlight = window.lifeosAccountSearch?.highlightMatch?.(displayName, this.el('input').value) || displayName;
+
+        resultDiv.innerHTML = `
+          <div style="font-weight: 500;">${highlight}</div>
+          ${result.account_type ? `<div style="font-size: 0.85rem; color: #5b6470;">${result.account_type}${result.account_subtype ? ' • ' + result.account_subtype : ''}</div>` : ''}
+        `;
+
+        resultDiv.addEventListener('click', () => this.selectResult(result));
+        resultDiv.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            this.selectResult(result);
+          }
+        });
+
+        resultsContainer.appendChild(resultDiv);
+      });
+
+      // Add "Create new" option
+      if (results.length > 0 || this.el('input').value.length > 0) {
+        const createNewDiv = document.createElement('div');
+        createNewDiv.className = 'account-search-create-new';
+        createNewDiv.style.cssText = 'padding: 0.5rem 0.75rem; border-top: 1px solid #e0e5ec; cursor: pointer; color: #0b4f9c; background: #f7f8fa;';
+        createNewDiv.textContent = '+ Create new account';
+        createNewDiv.role = 'option';
+        createNewDiv.tabIndex = 0;
+
+        createNewDiv.addEventListener('click', () => this.showCreateForm());
+        createNewDiv.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            this.showCreateForm();
+          }
+        });
+
+        resultsContainer.appendChild(createNewDiv);
+      }
+    }
+
+    selectResult(result) {
+      const input = this.el('input');
+      input.value = result.name;
+      this.selectedAccountId = result.id;
+      this.hideDropdown();
+      this.onSelect(result);
+    }
+
+    showCreateForm() {
+      const createForm = this.el('create-form');
+      const createName = this.el('create-name');
+      const input = this.el('input');
+
+      createForm.style.display = 'block';
+      createName.value = input.value; // Pre-fill with search query
+      createName.focus();
+      createName.select();
+    }
+
+    async updateSubtypesDropdown(accountType) {
+      const subtypeSelect = this.el('create-subtype');
+      const subtypeHint = this.el('subtype-hint');
+
+      if (!accountType) {
+        subtypeSelect.innerHTML = '<option value="">-- None / Other --</option>';
+        subtypeHint.style.display = 'none';
+        return;
+      }
+
+      try {
+        subtypeSelect.disabled = true;
+        subtypeHint.textContent = 'Loading...';
+        subtypeHint.style.display = 'block';
+
+        const subtypes = await window.lifeosAccountSubtypes?.getSubtypes?.(accountType) || [];
+        subtypeSelect.innerHTML = '<option value="">-- None / Other --</option>';
+        subtypes.forEach((subtype) => {
+          const option = document.createElement('option');
+          option.value = subtype;
+          option.textContent = subtype;
+          subtypeSelect.appendChild(option);
+        });
+
+        subtypeHint.textContent = `Select a category or leave blank for "other"`;
+        subtypeHint.style.display = 'block';
+      } catch (err) {
+        console.error('[AccountSearch] Subtype load error:', err);
+        subtypeHint.textContent = 'Could not load subtypes';
+        subtypeHint.style.color = '#b3352f';
+      } finally {
+        subtypeSelect.disabled = false;
+      }
+    }
+
+    async submitCreateForm() {
+      const input = this.el('input');
+      const createForm = this.el('create-form');
+      const createName = this.el('create-name');
+      const createType = this.el('create-type');
+      const createSubtype = this.el('create-subtype');
+      const createSubmit = this.el('create-submit');
+      const createStatus = this.el('create-status');
+
+      // Validate
+      if (!createName.value.trim()) {
+        createStatus.textContent = 'Account name is required';
+        createStatus.dataset.tone = 'error';
+        return;
+      }
+
+      if (!createType.value) {
+        createStatus.textContent = 'Account type is required';
+        createStatus.dataset.tone = 'error';
+        return;
+      }
+
+      try {
+        createSubmit.disabled = true;
+        createStatus.textContent = 'Creating account...';
+        createStatus.dataset.tone = '';
+
+        const newAccount = await window.lifeosAccountSearch?.createAccountInline?.(
+          createName.value.trim(),
+          createType.value,
+          createSubtype.value || null
+        );
+
+        if (newAccount) {
+          createStatus.textContent = 'Account created!';
+          createStatus.dataset.tone = 'success';
+          // Reset and select
+          createForm.style.display = 'none';
+          input.value = newAccount.name;
+          this.selectedAccountId = newAccount.id;
+          this.hideDropdown();
+          this.onSelect(newAccount);
+
+          // Clear form
+          createName.value = '';
+          createType.value = '';
+          createSubtype.value = '';
+        }
+      } catch (err) {
+        console.error('[AccountSearch] Create error:', err);
+        createStatus.textContent = err.message || 'Failed to create account';
+        createStatus.dataset.tone = 'error';
+      } finally {
+        createSubmit.disabled = false;
+      }
+    }
+  }
+
+  // Auto-initialize if this element exists
+  (function autoInit() {
+    const wrapper = document.getElementById('{{ search_id }}-wrapper');
+    if (wrapper) {
+      window.accountSearchDropdown_{{ search_id }} = new AccountSearchDropdown('{{ search_id }}', (account) => {
+        // Default callback (can be overridden)
+        console.log('[AccountSearch] Selected:', account);
+      });
+    }
+  })();
+</script>

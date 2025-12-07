@@ -1,0 +1,158 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 0 auto; padding: 1rem 0; display:grid; gap:1rem;">
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;">Import 2.0</h2>
+        <p style="margin:0; color:#5b6470;">Preview CSV rows and commit as journal entries.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="import-reload">Reset</button>
+    </div>
+    <div id="import-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with finance:write to import.</div>
+    <form id="import-form" style="display:grid; gap:0.5rem; margin-top:0.75rem;" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="field">
+        <span>CSV File</span>
+        <input type="file" name="file" accept=".csv" required>
+        <small>Columns: description, amount, debit_account_id, credit_account_id, occurred_at (optional).</small>
+      </label>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary" id="import-preview-btn">Preview</button>
+        <button type="button" class="btn" id="import-commit-btn">Commit</button>
+      </div>
+      <div id="import-status" class="auth-status"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem;">
+      <h3 style="margin:0;">Preview</h3>
+      <span style="font-size:0.9rem; color:#5b6470;" id="preview-count"></span>
+    </div>
+    <div id="preview-empty" style="color:#5b6470; margin-top:0.5rem;">No preview yet.</div>
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead><tr><th>#</th><th>Description</th><th>Amount</th><th>Debit</th><th>Credit</th><th>Status</th></tr></thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const form = document.getElementById('import-form');
+    const previewBtn = document.getElementById('import-preview-btn');
+    const commitBtn = document.getElementById('import-commit-btn');
+    const statusEl = document.getElementById('import-status');
+    const loginHint = document.getElementById('import-login-hint');
+    const previewBody = document.getElementById('preview-body');
+    const previewEmpty = document.getElementById('preview-empty');
+    const previewCount = document.getElementById('preview-count');
+    const reloadBtn = document.getElementById('import-reload');
+
+    let lastPreviewRows = [];
+
+    const setStatus = (msg, tone = '') => {
+      statusEl.textContent = msg || '';
+      if (tone) statusEl.dataset.tone = tone; else statusEl.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const tokens = lifeosAuth.getTokens();
+      const authed = !!tokens.access_token;
+      [previewBtn, commitBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderPreview = (rows = []) => {
+      lastPreviewRows = rows;
+      previewBody.innerHTML = '';
+      previewCount.textContent = rows.length ? `${rows.length} rows` : '';
+      if (!rows.length) {
+        previewEmpty.style.display = 'block';
+        return;
+      }
+      previewEmpty.style.display = 'none';
+      rows.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${row.description || ''}</td>
+          <td>${row.amount ?? ''}</td>
+          <td>${row.debit_account_id ?? ''}</td>
+          <td>${row.credit_account_id ?? ''}</td>
+          <td>${row.error ? `<span style="color:#b3352f;">${row.error}</span>` : 'OK'}</td>
+        `;
+        previewBody.appendChild(tr);
+      });
+    };
+
+    const resetUI = () => {
+      form.reset();
+      renderPreview([]);
+      setStatus('');
+    };
+
+    const doPreview = async () => {
+      if (!ensureAuth()) {
+        setStatus('Please log in.', 'error');
+        return;
+      }
+      const fd = new FormData(form);
+      setStatus('Previewing...');
+      const res = await fetch('/api/finance/import/preview', {
+        method: 'POST',
+        headers: lifeosAuth.authHeaders(),
+        body: fd,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        renderPreview(body.rows || []);
+        setStatus('Preview ready.', 'success');
+      } else {
+        const reason = body.error || res.status;
+        setStatus(reason === 401 ? 'Please log in.' : 'Preview failed.', 'error');
+      }
+    };
+
+    const doCommit = async () => {
+      if (!ensureAuth()) {
+        setStatus('Please log in.', 'error');
+        return;
+      }
+      const fd = new FormData(form);
+      setStatus('Importing...');
+      const res = await fetch('/api/finance/import/commit', {
+        method: 'POST',
+        headers: lifeosAuth.authHeaders(),
+        body: fd,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        const created = body.created || 0;
+        const errors = body.errors || [];
+        const firstErr = errors[0]?.error || '';
+        const copy = firstErr === 'not_found'
+          ? 'Imported 0. Check debit/credit account IDs match existing accounts.'
+          : `Imported ${created} journal entries${errors.length ? ' with errors' : ''}.`;
+        setStatus(copy, errors.length ? 'error' : 'success');
+        if (errors.length) {
+          renderPreview(errors);
+        }
+      } else {
+        const reason = body.error || res.status;
+        setStatus(reason === 401 ? 'Please log in.' : 'Import failed.', 'error');
+      }
+    };
+
+    previewBtn?.addEventListener('click', (e) => { e.preventDefault(); doPreview(); });
+    commitBtn?.addEventListener('click', (e) => { e.preventDefault(); doCommit(); });
+    reloadBtn?.addEventListener('click', resetUI);
+    window.addEventListener('lifeos:auth-changed', () => ensureAuth());
+    ensureAuth();
+  })();
+</script>
+{% endblock %}

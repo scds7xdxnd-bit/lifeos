@@ -1,0 +1,55 @@
+{# Pending Inferred Interpretations Badge #}
+{# Usage: set badge_domain = 'health' then include this component #}
+{# Required: badge_domain variable must be set (e.g., health, habits, skills, etc.) #}
+{% set badge_domain = badge_domain|default(domain|default('')) %}
+{% if badge_domain %}
+<a href="/calendar/review?domain={{ badge_domain }}"
+   id="inferred-badge-{{ badge_domain }}"
+   class="inferred-badge"
+   style="display:none; background:#fff3e0; color:#e65100; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.8rem; font-weight:600; text-decoration:none; border:1px solid #ffcc80; margin-left:0.5rem; white-space:nowrap;"
+   title="Pending calendar interpretations for {{ badge_domain }}">
+  <span class="inferred-badge-icon">🔮</span>
+  <span class="inferred-badge-count">0</span> inferred
+</a>
+<script>
+  (function() {
+    const domain = "{{ badge_domain }}";
+    const badgeEl = document.getElementById(`inferred-badge-${domain}`);
+    if (!badgeEl) return;
+
+    const fetchPendingCount = async () => {
+      try {
+        const tokens = typeof lifeosAuth !== 'undefined' ? lifeosAuth.getTokens() : {};
+        if (!tokens.access_token) return;
+
+        const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        const headers = { 'Content-Type': 'application/json' };
+        if (tokens.access_token) headers['Authorization'] = `Bearer ${tokens.access_token}`;
+        if (metaCsrf) headers['X-CSRF-Token'] = metaCsrf;
+
+        const res = await fetch(`/api/calendar/interpretations/pending?domain=${domain}`, { headers });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const count = data.interpretations?.length || 0;
+        const countEl = badgeEl.querySelector('.inferred-badge-count');
+        if (countEl) countEl.textContent = count;
+        badgeEl.style.display = count > 0 ? 'inline-flex' : 'none';
+        badgeEl.style.alignItems = 'center';
+        badgeEl.style.gap = '0.25rem';
+      } catch (e) {
+        console.warn(`Failed to fetch pending interpretations for ${domain}:`, e);
+      }
+    };
+
+    // Fetch on load and periodically refresh
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fetchPendingCount);
+    } else {
+      fetchPendingCount();
+    }
+    // Refresh every 60 seconds
+    setInterval(fetchPendingCount, 60000);
+  })();
+</script>
+{% endif %}

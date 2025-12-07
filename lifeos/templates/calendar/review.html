@@ -1,0 +1,494 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
+  
+  <!-- Header -->
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;">Review Interpretations</h2>
+        <p style="margin:0; color:#5b6470;">Confirm or reject automatically detected activities from your calendar events.</p>
+      </div>
+      <a href="/calendar/" class="btn btn-secondary">← Back to Calendar</a>
+    </div>
+    <div id="review-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to review interpretations.</div>
+  </div>
+
+  <!-- Domain Filter -->
+  <div class="card">
+    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items:end;">
+      <div class="field">
+        <label for="review-domain-filter">Filter by Domain</label>
+        <select id="review-domain-filter" class="input">
+          <option value="">All domains</option>
+          <option value="finance">💰 Finance</option>
+          <option value="health">❤️ Health</option>
+          <option value="habits">🎯 Habits</option>
+          <option value="skills">📚 Skills</option>
+          <option value="projects">📁 Projects</option>
+          <option value="relationships">👥 Relationships</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-secondary" id="review-reload">Refresh</button>
+    </div>
+  </div>
+
+  <!-- Stats Summary -->
+  <div style="display:grid; gap:1rem; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+    <div class="card" style="text-align:center; padding:0.75rem;">
+      <div style="font-size:1.5rem; font-weight:700; color:#0b4f9c;" id="stat-pending">0</div>
+      <div style="color:#5b6470; font-size:0.8rem;">Pending</div>
+    </div>
+    <div class="card" style="text-align:center; padding:0.75rem;">
+      <div style="font-size:1.5rem; font-weight:700; color:#1d7a36;" id="stat-confirmed">0</div>
+      <div style="color:#5b6470; font-size:0.8rem;">Confirmed</div>
+    </div>
+    <div class="card" style="text-align:center; padding:0.75rem;">
+      <div style="font-size:1.5rem; font-weight:700; color:#b3352f;" id="stat-rejected">0</div>
+      <div style="color:#5b6470; font-size:0.8rem;">Rejected</div>
+    </div>
+  </div>
+
+  <!-- Pending Interpretations List -->
+  <div class="card">
+    <h3 style="margin:0 0 0.75rem 0;">Pending Review</h3>
+    <div id="review-status" class="auth-status" style="margin-bottom:0.5rem;"></div>
+    <div id="review-list" style="display:grid; gap:0.75rem;"></div>
+    <div id="review-empty" style="display:none; padding:2rem; text-align:center; color:#5b6470;">
+      <div style="font-size:2rem; margin-bottom:0.5rem;">✨</div>
+      <div>All caught up! No pending interpretations.</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions Info -->
+  <div class="card" style="background:#f7f8fa;">
+    <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem;">How It Works</h4>
+    <div style="display:grid; gap:0.5rem; font-size:0.9rem; color:#5b6470;">
+      <div><strong>🔍 Detection:</strong> Calendar events are analyzed to detect activities like workouts, meals, meetings, and purchases.</div>
+      <div><strong>✅ Confirm:</strong> Approve an interpretation to create a record in the target domain (e.g., log a workout, add a transaction).</div>
+      <div><strong>❌ Reject:</strong> Dismiss incorrect interpretations. The system learns from your feedback.</div>
+      <div><strong>🎯 Confidence:</strong> Higher confidence means the system is more sure about the classification.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Modal - Shows what record will be created before confirming -->
+<div id="preview-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998;"></div>
+<div id="preview-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; padding:1.5rem; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); z-index:9999; max-height:90vh; overflow-y:auto;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
+    <h3 style="margin:0;" id="preview-title">Confirm Record Creation</h3>
+    <button type="button" class="text-link" id="preview-close" style="font-size:1.5rem; line-height:1;">&times;</button>
+  </div>
+  <p style="color:#5b6470; font-size:0.9rem; margin:0.5rem 0;">Review the record that will be created:</p>
+  
+  <div id="preview-content" style="margin-top:1rem; padding:1rem; background:#f7f8fa; border-radius:8px;">
+    <!-- Dynamic content -->
+  </div>
+  
+  <div id="preview-status" class="auth-status" style="margin-top:0.5rem;"></div>
+  
+  <div style="display:flex; gap:0.75rem; margin-top:1rem;">
+    <button type="button" class="btn" id="preview-confirm" style="flex:1;">✅ Create Record</button>
+    <button type="button" class="btn btn-secondary" id="preview-cancel" style="flex:1;">Cancel</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const loginHint = document.getElementById('review-login-hint');
+  const reloadBtn = document.getElementById('review-reload');
+  const domainFilter = document.getElementById('review-domain-filter');
+  const reviewList = document.getElementById('review-list');
+  const reviewEmpty = document.getElementById('review-empty');
+  const statusEl = document.getElementById('review-status');
+  
+  const statPending = document.getElementById('stat-pending');
+  const statConfirmed = document.getElementById('stat-confirmed');
+  const statRejected = document.getElementById('stat-rejected');
+  
+  // Preview modal elements
+  const previewOverlay = document.getElementById('preview-overlay');
+  const previewModal = document.getElementById('preview-modal');
+  const previewTitle = document.getElementById('preview-title');
+  const previewContent = document.getElementById('preview-content');
+  const previewStatus = document.getElementById('preview-status');
+  const previewConfirmBtn = document.getElementById('preview-confirm');
+  const previewCancelBtn = document.getElementById('preview-cancel');
+  const previewCloseBtn = document.getElementById('preview-close');
+  
+  let allInterpretations = [];
+  let currentPreviewInterp = null;
+  let currentPreviewCard = null;
+
+  // Get auth headers with CSRF token from meta tag (session-bound)
+  const getAuthHeaders = (extra = {}) => {
+    const base = lifeosAuth.authHeaders(extra);
+    // Prefer CSRF token from meta tag (matches current session) over localStorage
+    const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
+    return base;
+  };
+
+  const setStatus = (el, msg, tone = '') => {
+    if (!el) return;
+    el.textContent = msg || '';
+    if (tone) el.dataset.tone = tone; else el.removeAttribute('data-tone');
+  };
+
+  const ensureAuth = () => {
+    const authed = !!lifeosAuth.getTokens().access_token;
+    [reloadBtn].forEach(btn => { if (btn) btn.disabled = !authed; });
+    loginHint.style.display = authed ? 'none' : 'block';
+    return authed;
+  };
+
+  const domainIcons = {
+    finance: '💰',
+    health: '❤️',
+    habits: '🎯',
+    skills: '📚',
+    projects: '📁',
+    relationships: '👥',
+  };
+
+  const domainColors = {
+    finance: '#0b4f9c',
+    health: '#dc2626',
+    habits: '#7c3aed',
+    skills: '#059669',
+    projects: '#ea580c',
+    relationships: '#db2777',
+  };
+
+  const formatDate = (isoStr) => {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  };
+
+  const confidenceLabel = (score) => {
+    if (score >= 0.9) return { text: 'Very High', color: '#059669' };
+    if (score >= 0.7) return { text: 'High', color: '#1d7a36' };
+    if (score >= 0.5) return { text: 'Medium', color: '#d97706' };
+    return { text: 'Low', color: '#b3352f' };
+  };
+
+  const fetchInterpretations = async () => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading...');
+    
+    const params = new URLSearchParams();
+    if (domainFilter.value) params.set('domain', domainFilter.value);
+    params.set('limit', '100');
+    
+    try {
+      const res = await fetch(`/api/calendar/interpretations/pending?${params}`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.ok) {
+        allInterpretations = data.interpretations || [];
+        renderInterpretations(allInterpretations);
+        updateStats();
+        setStatus(statusEl, '');
+      } else {
+        setStatus(statusEl, data.error || 'Failed to load', 'error');
+      }
+    } catch (err) {
+      setStatus(statusEl, 'Network error', 'error');
+    }
+  };
+
+  const updateStats = () => {
+    statPending.textContent = allInterpretations.length;
+    // These would need separate API calls for accurate counts
+    // For now just show pending count
+  };
+
+  const renderInterpretations = (interpretations) => {
+    reviewList.innerHTML = '';
+    
+    if (!interpretations.length) {
+      reviewEmpty.style.display = 'block';
+      return;
+    }
+    
+    reviewEmpty.style.display = 'none';
+    
+    interpretations.forEach(interp => {
+      const card = document.createElement('div');
+      card.style.cssText = 'display:grid; gap:0.75rem; padding:1rem; border:1px solid #e0e5ec; border-radius:8px; background:white;';
+      card.id = `interp-${interp.id}`;
+      
+      const icon = domainIcons[interp.domain] || '📌';
+      const color = domainColors[interp.domain] || '#5b6470';
+      const conf = confidenceLabel(interp.confidence_score);
+      const recordType = (interp.record_type || '').replace(/_/g, ' ');
+      const classData = interp.classification_data || {};
+      
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:1.5rem;">${icon}</span>
+            <div>
+              <div style="font-weight:600; color:${color}; text-transform:capitalize;">${interp.domain}</div>
+              <div style="font-size:0.85rem; color:#5b6470; text-transform:capitalize;">${recordType}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.85rem; font-weight:600; color:${conf.color};">${Math.round(interp.confidence_score * 100)}% ${conf.text}</div>
+            <div style="font-size:0.75rem; color:#7a8599;">${formatDate(interp.created_at)}</div>
+          </div>
+        </div>
+        
+        ${classData.extracted_title ? `<div style="padding:0.5rem; background:#f7f8fa; border-radius:6px; font-size:0.9rem;"><strong>From:</strong> ${classData.extracted_title}</div>` : ''}
+        
+        ${classData.matched_keywords?.length ? `
+          <div style="font-size:0.85rem; color:#5b6470;">
+            <strong>Matched:</strong> ${classData.matched_keywords.join(', ')}
+          </div>
+        ` : ''}
+        
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button type="button" class="btn" data-action="confirm" data-id="${interp.id}" style="flex:1; min-width:100px;">✅ Confirm</button>
+          <button type="button" class="btn btn-secondary" data-action="reject" data-id="${interp.id}" style="flex:1; min-width:100px;">❌ Reject</button>
+          <button type="button" class="btn btn-secondary" data-action="ignore" data-id="${interp.id}" style="flex:1; min-width:100px; background:#e0e5ec; color:#5b6470;">⏭ Ignore</button>
+        </div>
+        <div class="interp-status auth-status" style="display:none;"></div>
+      `;
+      
+      // Action handlers
+      card.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const action = btn.dataset.action;
+          const id = parseInt(btn.dataset.id);
+          const interpData = allInterpretations.find(i => i.id === id);
+          
+          if (action === 'confirm' && interpData) {
+            // Show preview modal before confirming
+            showPreview(interpData, card);
+          } else {
+            // Reject/Ignore go directly
+            await handleAction(id, action, card);
+          }
+        });
+      });
+      
+      reviewList.appendChild(card);
+    });
+  };
+
+  // ==================== Preview Modal Logic ====================
+  const showPreview = (interp, cardEl) => {
+    currentPreviewInterp = interp;
+    currentPreviewCard = cardEl;
+    
+    const icon = domainIcons[interp.domain] || '📌';
+    const color = domainColors[interp.domain] || '#5b6470';
+    const recordType = (interp.record_type || '').replace(/_/g, ' ');
+    const classData = interp.classification_data || {};
+    
+    previewTitle.innerHTML = `${icon} Create ${interp.domain} Record`;
+    
+    // Build preview content based on domain
+    let contentHtml = '';
+    
+    if (interp.domain === 'finance') {
+      contentHtml = `
+        <div style="display:grid; gap:0.5rem;">
+          <div><strong>Type:</strong> <span style="text-transform:capitalize;">${recordType}</span></div>
+          ${classData.extracted_title ? `<div><strong>Description:</strong> ${classData.extracted_title}</div>` : ''}
+          ${classData.extracted_amount ? `<div><strong>Amount:</strong> $${classData.extracted_amount.toFixed(2)}</div>` : ''}
+          ${classData.suggested_account ? `<div><strong>Account:</strong> ${classData.suggested_account}</div>` : ''}
+          <div style="padding:0.5rem; background:#d4edda; border-radius:4px; color:#155724; font-size:0.85rem; margin-top:0.5rem;">
+            📝 A journal entry will be created in your Finance ledger.
+          </div>
+        </div>
+      `;
+    } else if (interp.domain === 'health') {
+      contentHtml = `
+        <div style="display:grid; gap:0.5rem;">
+          <div><strong>Type:</strong> <span style="text-transform:capitalize;">${recordType}</span></div>
+          ${classData.extracted_title ? `<div><strong>Activity:</strong> ${classData.extracted_title}</div>` : ''}
+          ${classData.duration_minutes ? `<div><strong>Duration:</strong> ${classData.duration_minutes} minutes</div>` : ''}
+          ${classData.workout_type ? `<div><strong>Workout Type:</strong> ${classData.workout_type}</div>` : ''}
+          <div style="padding:0.5rem; background:#d4edda; border-radius:4px; color:#155724; font-size:0.85rem; margin-top:0.5rem;">
+            💪 A ${recordType} record will be logged in your Health domain.
+          </div>
+        </div>
+      `;
+    } else if (interp.domain === 'relationships') {
+      contentHtml = `
+        <div style="display:grid; gap:0.5rem;">
+          <div><strong>Type:</strong> <span style="text-transform:capitalize;">${recordType}</span></div>
+          ${classData.extracted_title ? `<div><strong>Activity:</strong> ${classData.extracted_title}</div>` : ''}
+          ${classData.person_name ? `<div><strong>With:</strong> ${classData.person_name}</div>` : ''}
+          <div style="padding:0.5rem; background:#d4edda; border-radius:4px; color:#155724; font-size:0.85rem; margin-top:0.5rem;">
+            👥 An interaction will be logged in your Relationships domain.
+          </div>
+        </div>
+      `;
+    } else if (interp.domain === 'habits') {
+      contentHtml = `
+        <div style="display:grid; gap:0.5rem;">
+          <div><strong>Type:</strong> <span style="text-transform:capitalize;">${recordType}</span></div>
+          ${classData.extracted_title ? `<div><strong>Habit:</strong> ${classData.extracted_title}</div>` : ''}
+          ${classData.habit_name ? `<div><strong>Name:</strong> ${classData.habit_name}</div>` : ''}
+          <div style="padding:0.5rem; background:#d4edda; border-radius:4px; color:#155724; font-size:0.85rem; margin-top:0.5rem;">
+            🎯 A habit completion will be logged.
+          </div>
+        </div>
+      `;
+    } else if (interp.domain === 'skills') {
+      contentHtml = `
+        <div style="display:grid; gap:0.5rem;">
+          <div><strong>Type:</strong> <span style="text-transform:capitalize;">${recordType}</span></div>
+          ${classData.extracted_title ? `<div><strong>Activity:</strong> ${classData.extracted_title}</div>` : ''}
+          ${classData.skill_name ? `<div><strong>Skill:</strong> ${classData.skill_name}</div>` : ''}
+          ${classData.duration_minutes ? `<div><strong>Duration:</strong> ${classData.duration_minutes} minutes</div>` : ''}
+          <div style="padding:0.5rem; background:#d4edda; border-radius:4px; color:#155724; font-size:0.85rem; margin-top:0.5rem;">
+            📚 A learning session will be logged in your Skills domain.
+          </div>
+        </div>
+      `;
+    } else {
+      contentHtml = `
+        <div style="display:grid; gap:0.5rem;">
+          <div><strong>Domain:</strong> <span style="text-transform:capitalize;">${interp.domain}</span></div>
+          <div><strong>Type:</strong> <span style="text-transform:capitalize;">${recordType}</span></div>
+          ${classData.extracted_title ? `<div><strong>Title:</strong> ${classData.extracted_title}</div>` : ''}
+          <div style="padding:0.5rem; background:#d4edda; border-radius:4px; color:#155724; font-size:0.85rem; margin-top:0.5rem;">
+            📌 A record will be created in the ${interp.domain} domain.
+          </div>
+        </div>
+      `;
+    }
+    
+    // Add confidence info
+    const conf = confidenceLabel(interp.confidence_score);
+    contentHtml += `
+      <div style="margin-top:0.75rem; padding:0.5rem; background:#fff3cd; border-radius:4px; font-size:0.85rem;">
+        <strong>Confidence:</strong> <span style="color:${conf.color};">${Math.round(interp.confidence_score * 100)}% (${conf.text})</span>
+      </div>
+    `;
+    
+    previewContent.innerHTML = contentHtml;
+    setStatus(previewStatus, '');
+    
+    previewOverlay.style.display = 'block';
+    previewModal.style.display = 'block';
+  };
+
+  const closePreview = () => {
+    previewOverlay.style.display = 'none';
+    previewModal.style.display = 'none';
+    currentPreviewInterp = null;
+    currentPreviewCard = null;
+  };
+
+  const confirmFromPreview = async () => {
+    if (!currentPreviewInterp || !currentPreviewCard) return;
+    
+    previewConfirmBtn.disabled = true;
+    setStatus(previewStatus, 'Creating record...', '');
+    
+    await handleAction(currentPreviewInterp.id, 'confirm', currentPreviewCard);
+    closePreview();
+    previewConfirmBtn.disabled = false;
+  };
+
+  // Preview modal event listeners
+  previewCloseBtn.addEventListener('click', closePreview);
+  previewCancelBtn.addEventListener('click', closePreview);
+  previewOverlay.addEventListener('click', closePreview);
+  previewConfirmBtn.addEventListener('click', confirmFromPreview);
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePreview();
+  });
+  // ==================== End Preview Modal Logic ====================
+
+  const handleAction = async (id, action, cardEl) => {
+    const statusMap = {
+      confirm: 'confirmed',
+      reject: 'rejected',
+      ignore: 'ignored',
+    };
+    
+    const status = statusMap[action];
+    if (!status) return;
+    
+    const buttons = cardEl.querySelectorAll('button');
+    buttons.forEach(b => b.disabled = true);
+    
+    const interpStatus = cardEl.querySelector('.interp-status');
+    interpStatus.style.display = 'block';
+    interpStatus.textContent = action === 'confirm' ? 'Creating record...' : 'Updating...';
+    
+    try {
+      const res = await fetch(`/api/calendar/interpretations/${id}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.ok) {
+        // Animate removal
+        cardEl.style.transition = 'all 0.3s ease';
+        cardEl.style.opacity = '0';
+        cardEl.style.transform = 'translateX(20px)';
+        
+        setTimeout(() => {
+          cardEl.remove();
+          allInterpretations = allInterpretations.filter(i => i.id !== parseInt(id));
+          updateStats();
+          
+          if (!allInterpretations.length) {
+            reviewEmpty.style.display = 'block';
+          }
+          
+          // Update counters
+          if (action === 'confirm') {
+            statConfirmed.textContent = parseInt(statConfirmed.textContent) + 1;
+          } else if (action === 'reject') {
+            statRejected.textContent = parseInt(statRejected.textContent) + 1;
+          }
+        }, 300);
+      } else {
+        interpStatus.textContent = data.error || 'Failed';
+        interpStatus.dataset.tone = 'error';
+        buttons.forEach(b => b.disabled = false);
+      }
+    } catch (err) {
+      interpStatus.textContent = 'Network error';
+      interpStatus.dataset.tone = 'error';
+      buttons.forEach(b => b.disabled = false);
+    }
+  };
+
+  // Event listeners
+  reloadBtn.addEventListener('click', fetchInterpretations);
+  domainFilter.addEventListener('change', fetchInterpretations);
+
+  window.addEventListener('lifeos:auth-changed', (e) => {
+    ensureAuth();
+    if (e.detail?.loggedIn) {
+      fetchInterpretations();
+    } else {
+      allInterpretations = [];
+      reviewList.innerHTML = '';
+      reviewEmpty.style.display = 'block';
+      statPending.textContent = '0';
+      statConfirmed.textContent = '0';
+      statRejected.textContent = '0';
+    }
+  });
+
+  // Initialize
+  ensureAuth();
+  fetchInterpretations();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,11 @@
+---
+# LifeOS Staging Namespace
+# Applied once per cluster: kubectl apply -f namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: staging
+    app.kubernetes.io/managed-by: devops

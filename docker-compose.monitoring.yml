@@ -1,0 +1,174 @@
+version: "3.9"
+
+# LifeOS Monitoring Stack Compose Override
+# Use: docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+# 
+# This stack adds monitoring infrastructure:
+# - Prometheus (metrics collection & storage)
+# - Grafana (visualization & dashboards)
+# - AlertManager (alert routing & grouping)
+# - StatsD Exporter (application metrics)
+# - cAdvisor (container metrics)
+
+x-monitoring-logging: &monitoring-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "50m"
+      max-file: "5"
+
+services:
+  web:
+    environment:
+      STATSD_HOST: ${STATSD_HOST:-statsd-exporter}
+      STATSD_PORT: ${STATSD_PORT:-8125}
+      STATSD_PREFIX: ${STATSD_PREFIX:-lifeos}
+
+  worker:
+    environment:
+      STATSD_HOST: ${STATSD_HOST:-statsd-exporter}
+      STATSD_PORT: ${STATSD_PORT:-8125}
+      STATSD_PREFIX: ${STATSD_PREFIX:-lifeos}
+
+  # Prometheus: Time-series database for metrics
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: lifeos-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--query.max-samples=10000000"
+      - "--log.level=info"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/monitoring/prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+      - lifeos-prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - lifeos-network
+    depends_on:
+      - statsd-exporter
+      - cadvisor
+    restart: unless-stopped
+    <<: *monitoring-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Grafana: Visualization and dashboarding
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: lifeos-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_SECURITY_SECRET_KEY: ${GF_SECURITY_SECRET_KEY:-your-secret-key}
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:3000}
+      GF_DATABASE_TYPE: sqlite3
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    ports:
+      - "3000:3000"
+    volumes:
+      - lifeos-grafana:/var/lib/grafana
+      - ./deploy/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./deploy/monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - lifeos-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    <<: *monitoring-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # AlertManager: Alert routing and notification
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: lifeos-alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--log.level=info"
+    volumes:
+      - ./deploy/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - lifeos-alertmanager:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    <<: *monitoring-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # StatsD Exporter: Application metrics to Prometheus
+  statsd-exporter:
+    image: prom/statsd-exporter:v0.26.0
+    container_name: lifeos-statsd-exporter
+    command:
+      - "--statsd.listen-udp=:8125"
+      - "--web.listen-address=:9102"
+      - "--statsd.event-queue-size=10000"
+      - "--statsd.event-flush-interval=30s"
+    ports:
+      - "8125:8125/udp"  # StatsD UDP
+      - "9102:9102"      # Prometheus metrics
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    <<: *monitoring-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9102/metrics || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # cAdvisor: Container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: lifeos-cadvisor
+    command:
+      - "--enable_metrics=cpu,memory,network,process,disk,fs"
+      - "--housekeeping_interval=30s"
+      - "--disable_metrics=advtcp,tcp,udp,percpu,sched,hugetlb"
+      - "--log_level=info"
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    <<: *monitoring-logging
+    privileged: true
+    device_cgroup_rules:
+      - 'rule_type=allow major=*'
+
+volumes:
+  lifeos-prometheus:
+    driver: local
+  lifeos-grafana:
+    driver: local
+  lifeos-alertmanager:
+    driver: local
+
+networks:
+  lifeos-network:
+    external: true

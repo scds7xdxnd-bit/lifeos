@@ -1,0 +1,45 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width:900px; margin:0 auto; padding:32px;">
+  <h2>Insights</h2>
+  <p id="insights-lede" style="color:#5b6470;">Personalized intelligence from your recent activity.</p>
+  <div id="insights-list" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;"></div>
+  <div id="insights-empty" style="color:#5b6470; display:none;">No insights yet. Use the app and check back.</div>
+</div>
+<script>
+  (() => {
+    const list = document.getElementById('insights-list');
+    const empty = document.getElementById('insights-empty');
+    const render = (items) => {
+      list.innerHTML = '';
+      if (!items.length) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      items.forEach(ins => {
+        const card = document.createElement('div');
+        card.style.border = '1px solid #e0e5ec';
+        card.style.borderRadius = '10px';
+        card.style.padding = '12px 14px';
+        card.style.background = '#fff';
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
+            <strong>${ins.type}</strong>
+            <span style="font-size:0.8rem; color:${ins.severity === 'warning' ? '#b3352f' : '#5b6470'}">${ins.severity}</span>
+          </div>
+          <div style="margin-top:6px;">${ins.message}</div>
+          <div style="margin-top:4px; font-size:0.8rem; color:#5b6470;">${new Date(ins.created_at).toLocaleString()}</div>
+        `;
+        list.appendChild(card);
+      });
+    };
+    fetch('/api/insights', { headers: { 'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content || '' } })
+      .then(r => r.json())
+      .then(data => render(data.insights || []))
+      .catch(() => {
+        document.getElementById('insights-lede').textContent = 'Unable to load insights.';
+      });
+  })();
+</script>
+{% endblock %}

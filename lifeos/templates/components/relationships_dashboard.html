@@ -1,0 +1,290 @@
+{% set component_id = component_id|default('relationships', true) %}
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <h2 style="margin:0;">Relationships</h2>
+        {% set badge_domain = 'relationships' %}{% include "components/inferred_badge.html" %}
+      </div>
+      <p style="margin:0; color:#5b6470;">Track people, interactions, and reconnect signals.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage relationships.</div>
+
+  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+    <div class="field">
+      <label for="{{ component_id }}-name">Name</label>
+      <input id="{{ component_id }}-name" name="name" type="text" placeholder="e.g., Alex Chen" required>
+    </div>
+    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      <div class="field">
+        <label for="{{ component_id }}-relationship_type">Relationship type</label>
+        <input id="{{ component_id }}-relationship_type" name="relationship_type" type="text" placeholder="e.g., Friend">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-importance_level">Importance (1-5)</label>
+        <input id="{{ component_id }}-importance_level" name="importance_level" type="number" min="1" max="5">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-tags">Tags</label>
+        <input id="{{ component_id }}-tags" name="tags" type="text" placeholder="comma separated">
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-notes">Notes</label>
+      <textarea id="{{ component_id }}-notes" name="notes" rows="2" placeholder="Context or how you met (optional)"></textarea>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn" id="{{ component_id }}-create-btn">Add person</button>
+      <div id="{{ component_id }}-create-status" class="auth-status"></div>
+    </div>
+  </form>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No people yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+</div>
+
+<div class="card" id="{{ component_id }}-reconnect-card" style="margin-top:1rem;">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <h3 style="margin:0;">Reconnect suggestions</h3>
+      <p style="margin:0; color:#5b6470;">People you haven’t interacted with recently.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reconnect-reload">Refresh</button>
+  </div>
+  <div id="{{ component_id }}-reconnect-empty" style="margin-top:0.5rem; color:#5b6470; display:none;">No reconnect suggestions.</div>
+  <div id="{{ component_id }}-reconnect-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+</div>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const reloadBtn = el('reload');
+    const createForm = el('create-form');
+    const createStatus = el('create-status');
+    const loginHint = el('login-hint');
+    const listEl = el('list');
+    const emptyEl = el('empty');
+    const createBtn = el('create-btn');
+    const reconnectList = el('reconnect-list');
+    const reconnectEmpty = el('reconnect-empty');
+    const reconnectReload = el('reconnect-reload');
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const authHeaders = (extra = {}) => {
+      const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      const base = Object.assign({'Content-Type': 'application/json'}, extra);
+      if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
+      return lifeosAuth.authHeaders(base);
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      Array.from(createForm?.querySelectorAll('input, textarea, select, button') || []).forEach((node) => node.disabled = !authed);
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderPersonCard = (person) => {
+      const card = document.createElement('div');
+      card.setAttribute('data-person-card', 'true');
+      card.dataset.id = person.id;
+      card.style.border = '1px solid #e0e5ec';
+      card.style.borderRadius = '10px';
+      card.style.padding = '0.75rem';
+      card.style.background = '#fff';
+      const tags = (person.tags || []).filter(Boolean).join(', ');
+      const lastDate = person.last_interaction_date ? new Date(person.last_interaction_date).toLocaleDateString() : '—';
+      const lastMethod = person.last_interaction_method || '';
+      card.innerHTML = `
+        <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+          <div>
+            <strong>${person.name}</strong>
+            <div style="color:#5b6470; font-size:0.9rem;">${person.relationship_type || ''} ${person.importance_level ? '• importance ' + person.importance_level : ''}</div>
+            ${tags ? `<div style="color:#5b6470; font-size:0.85rem;">Tags: ${tags}</div>` : ''}
+            ${person.notes ? `<div style="color:#5b6470; font-size:0.9rem;">${person.notes}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="delete" data-id="${person.id}">Delete</button>
+          </div>
+        </div>
+        <div style="margin-top:0.35rem; display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.95rem;">
+          <span>Last interaction: ${lastDate}${lastMethod ? ' • ' + lastMethod : ''}</span>
+        </div>
+        <div style="margin-top:0.35rem;">
+          <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Log interaction</label>
+          <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));">
+            <input type="date" data-field="date">
+            <input type="text" data-field="method" placeholder="Method (call, coffee, etc.)">
+            <input type="number" min="1" max="5" data-field="sentiment" placeholder="Sentiment 1-5">
+          </div>
+          <textarea data-field="notes" rows="2" placeholder="Notes (optional)" style="margin-top:0.35rem;"></textarea>
+          <div style="display:flex; gap:0.5rem; margin-top:0.35rem; align-items:center; flex-wrap:wrap;">
+            <button class="btn" data-action="log-interaction" data-id="${person.id}">Log</button>
+            <span class="auth-status" data-role="row-status" style="min-width:140px;"></span>
+          </div>
+        </div>
+      `;
+      return card;
+    };
+
+    const renderPeople = (people = []) => {
+      listEl.innerHTML = '';
+      if (!people.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      people.forEach((p) => listEl.appendChild(renderPersonCard(p)));
+    };
+
+    const fetchPeople = async () => {
+      if (!ensureAuth()) return;
+      setStatus(createStatus, '');
+      const res = await fetch('/api/relationships/people', { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        setStatus(createStatus, res.status === 401 ? 'Please log in.' : 'Unable to load people.', 'error');
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      renderPeople(body.people || []);
+    };
+
+    const fetchReconnect = async () => {
+      if (!ensureAuth()) return;
+      const res = await fetch('/api/relationships/reconnect', { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) return;
+      const body = await res.json().catch(() => ({}));
+      const items = body.candidates || [];
+      reconnectList.innerHTML = '';
+      if (!items.length) {
+        reconnectEmpty.style.display = 'block';
+        return;
+      }
+      reconnectEmpty.style.display = 'none';
+      items.forEach((item) => {
+        const div = document.createElement('div');
+        div.style.border = '1px solid #e0e5ec';
+        div.style.borderRadius = '8px';
+        div.style.padding = '0.5rem 0.75rem';
+        div.style.background = '#fdfdfd';
+        const last = item.last_interaction_date ? new Date(item.last_interaction_date).toLocaleDateString() : '—';
+        div.innerHTML = `
+          <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+            <strong>${item.person.name}</strong>
+            <span style="color:#5b6470;">${item.days_since ?? '—'} days since</span>
+          </div>
+          <div style="color:#5b6470; font-size:0.9rem;">Last interaction: ${last}</div>
+        `;
+        reconnectList.appendChild(div);
+      });
+    };
+
+    createForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) {
+        setStatus(createStatus, 'Please log in.', 'error');
+        return;
+      }
+      const data = Object.fromEntries(new FormData(createForm).entries());
+      const payload = {
+        name: data.name || '',
+        relationship_type: data.relationship_type || null,
+        importance_level: data.importance_level ? Number(data.importance_level) : null,
+        tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : null,
+        notes: data.notes || null,
+      };
+      setStatus(createStatus, 'Saving...');
+      createBtn.disabled = true;
+      lifeosTelemetry.track('relationships.person.created', { source: 'ui', stage: 'submitted' });
+      const res = await fetch('/api/relationships/people', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      createBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus(createStatus, 'Person added.', 'success');
+        lifeosTelemetry.track('relationships.person.created', { source: 'ui', stage: 'succeeded', person_id: body.person?.id });
+        createForm.reset();
+        fetchPeople();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(createStatus, 'Unable to add person.', 'error');
+        lifeosTelemetry.track('relationships.person.created', { source: 'ui', stage: 'failed', reason });
+      }
+    });
+
+    listEl.addEventListener('click', async (e) => {
+      const action = e.target?.dataset?.action;
+      if (!action) return;
+      const personId = Number(e.target.dataset.id);
+      if (!personId) return;
+      const card = e.target.closest('[data-person-card]');
+      const statusNode = card?.querySelector('[data-role="row-status"]');
+
+      if (action === 'delete') {
+        setStatus(statusNode, 'Deleting...');
+        lifeosTelemetry.track('relationships.person.updated', { source: 'ui', stage: 'submitted', person_id: personId, variant: 'delete' });
+        const res = await fetch(`/api/relationships/people/${personId}`, { method: 'DELETE', headers: lifeosAuth.authHeaders() });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, 'Deleted.', 'success');
+          lifeosTelemetry.track('relationships.person.updated', { source: 'ui', stage: 'succeeded', person_id: personId, variant: 'delete' });
+          fetchPeople();
+        } else {
+          setStatus(statusNode, 'Unable to delete.', 'error');
+          lifeosTelemetry.track('relationships.person.updated', { source: 'ui', stage: 'failed', person_id: personId, variant: 'delete', reason });
+        }
+      }
+
+      if (action === 'log-interaction') {
+        const dateVal = card.querySelector('[data-field="date"]')?.value || null;
+        const method = card.querySelector('[data-field="method"]')?.value || null;
+        const sentimentRaw = card.querySelector('[data-field="sentiment"]')?.value;
+        const notes = card.querySelector('[data-field="notes"]')?.value || null;
+        const payload = {
+          date: dateVal || undefined,
+          method: method || null,
+          sentiment: sentimentRaw ? String(sentimentRaw) : null,
+          notes,
+        };
+        setStatus(statusNode, 'Logging...');
+        lifeosTelemetry.track('relationships.interaction.created', { source: 'ui', stage: 'submitted', person_id: personId });
+        const res = await fetch(`/api/relationships/people/${personId}/interactions`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok !== false) {
+          setStatus(statusNode, 'Logged.', 'success');
+          lifeosTelemetry.track('relationships.interaction.created', { source: 'ui', stage: 'succeeded', person_id: personId, interaction_id: body.interaction?.id });
+          fetchPeople();
+        } else {
+          const reason = body.error || res.status;
+          setStatus(statusNode, 'Log failed.', 'error');
+          lifeosTelemetry.track('relationships.interaction.created', { source: 'ui', stage: 'failed', person_id: personId, reason });
+        }
+      }
+    });
+
+    reloadBtn?.addEventListener('click', () => { fetchPeople(); fetchReconnect(); });
+    reconnectReload?.addEventListener('click', fetchReconnect);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) {
+        fetchPeople();
+        fetchReconnect();
+      } else {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+        reconnectList.innerHTML = '';
+        reconnectEmpty.style.display = 'block';
+      }
+    });
+    ensureAuth();
+    fetchPeople();
+    fetchReconnect();
+  })();
+</script>

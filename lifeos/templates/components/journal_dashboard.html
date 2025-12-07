@@ -1,0 +1,255 @@
+{% set component_id = component_id|default('journal', true) %}
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <h2 style="margin:0;">Personal Journal</h2>
+        {% set badge_domain = 'journal' %}{% include "components/inferred_badge.html" %}
+      </div>
+      <p style="margin:0; color:#5b6470;">Capture entries, moods, and tags with quick edits.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage journal entries.</div>
+
+  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+    <div class="field">
+      <label for="{{ component_id }}-title">Title</label>
+      <input id="{{ component_id }}-title" name="title" type="text" placeholder="Optional title">
+    </div>
+    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      <div class="field">
+        <label for="{{ component_id }}-date">Date</label>
+        <input id="{{ component_id }}-date" name="entry_date" type="date">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-mood">Mood (optional)</label>
+        <input id="{{ component_id }}-mood" name="mood" type="number" min="1" max="10" placeholder="1-10">
+      </div>
+      <div class="field" style="display:flex; align-items:center; gap:0.35rem; margin-top:1.6rem;">
+        <input id="{{ component_id }}-private" name="is_private" type="checkbox" checked>
+        <label for="{{ component_id }}-private" style="margin:0;">Private</label>
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-tags">Tags</label>
+      <input id="{{ component_id }}-tags" name="tags" type="text" placeholder="comma separated">
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-body">Entry</label>
+      <textarea id="{{ component_id }}-body" name="body" rows="4" placeholder="What happened today?"></textarea>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn" id="{{ component_id }}-create-btn">Add entry</button>
+      <div id="{{ component_id }}-create-status" class="auth-status"></div>
+    </div>
+  </form>
+
+  <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+    <input id="{{ component_id }}-filter-search" type="text" placeholder="Search text" style="flex:1; min-width:180px;">
+    <input id="{{ component_id }}-filter-tag" type="text" placeholder="Tag filter" style="min-width:140px;">
+    <input id="{{ component_id }}-filter-mood" type="number" min="1" max="10" placeholder="Mood" style="min-width:90px;">
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-filter-apply">Apply filters</button>
+  </div>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No entries yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+</div>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const reloadBtn = el('reload');
+    const createForm = el('create-form');
+    const createStatus = el('create-status');
+    const loginHint = el('login-hint');
+    const listEl = el('list');
+    const emptyEl = el('empty');
+    const createBtn = el('create-btn');
+    const filterSearch = el('filter-search');
+    const filterTag = el('filter-tag');
+    const filterMood = el('filter-mood');
+    const filterApply = el('filter-apply');
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const authHeaders = (extra = {}) => {
+      const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      const base = Object.assign({'Content-Type': 'application/json'}, extra);
+      if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
+      return lifeosAuth.authHeaders(base);
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      Array.from(createForm?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderEntryCard = (entry) => {
+      const card = document.createElement('div');
+      card.setAttribute('data-entry-card', 'true');
+      card.dataset.id = entry.id;
+      card.style.border = '1px solid #e0e5ec';
+      card.style.borderRadius = '10px';
+      card.style.padding = '0.75rem';
+      card.style.background = '#fff';
+      const tags = (entry.tags || []).filter(Boolean).join(', ');
+      const entryDate = entry.entry_date ? new Date(entry.entry_date).toLocaleDateString() : '—';
+      const updated = entry.updated_at ? new Date(entry.updated_at).toLocaleString() : '';
+      card.innerHTML = `
+        <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+          <div>
+            <strong>${entry.title || 'Untitled entry'}</strong>
+            <div style="color:#5b6470; font-size:0.9rem;">${entryDate} ${entry.mood ? '• mood ' + entry.mood : ''} ${entry.is_private ? '• Private' : '• Shared'}</div>
+            ${tags ? `<div style="color:#5b6470; font-size:0.85rem;">Tags: ${tags}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="save" data-id="${entry.id}">Save</button>
+            <button class="btn btn-secondary" data-action="delete" data-id="${entry.id}">Delete</button>
+          </div>
+        </div>
+        <div style="margin-top:0.35rem;">
+          <textarea data-field="body" rows="3" style="width:100%;">${entry.body || ''}</textarea>
+        </div>
+        <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); margin-top:0.35rem;">
+          <input type="text" data-field="title" placeholder="Title" value="${entry.title || ''}">
+          <input type="date" data-field="entry_date" value="${entry.entry_date || ''}">
+          <input type="number" min="1" max="10" data-field="mood" placeholder="Mood" value="${entry.mood ?? ''}">
+          <input type="text" data-field="tags" placeholder="Tags" value="${tags}">
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
+          <input type="checkbox" data-field="is_private" id="${prefix}-private-${entry.id}" ${entry.is_private ? 'checked' : ''}>
+          <label for="${prefix}-private-${entry.id}" style="margin:0;">Private</label>
+          <span class="auth-status" data-role="row-status" style="margin-left:auto; min-width:140px;"></span>
+        </div>
+        ${updated ? `<div style="margin-top:0.25rem; color:#5b6470; font-size:0.85rem;">Updated ${updated}</div>` : ''}
+      `;
+      return card;
+    };
+
+    const renderEntries = (items = []) => {
+      listEl.innerHTML = '';
+      if (!items.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      items.forEach((entry) => listEl.appendChild(renderEntryCard(entry)));
+    };
+
+    const fetchEntries = async () => {
+      if (!ensureAuth()) return;
+      setStatus(createStatus, '');
+      const params = new URLSearchParams();
+      if (filterSearch.value) params.set('search_text', filterSearch.value);
+      if (filterTag.value) params.set('tag', filterTag.value);
+      if (filterMood.value) params.set('mood', filterMood.value);
+      const res = await fetch(`/api/journal${params.toString() ? '?' + params.toString() : ''}`, { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        setStatus(createStatus, res.status === 401 ? 'Please log in.' : 'Unable to load entries.', 'error');
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      renderEntries(body.items || []);
+    };
+
+    createForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) {
+        setStatus(createStatus, 'Please log in.', 'error');
+        return;
+      }
+      const data = Object.fromEntries(new FormData(createForm).entries());
+      if (!data.body || !data.body.trim()) {
+        setStatus(createStatus, 'Entry text is required.', 'error');
+        return;
+      }
+      const payload = {
+        title: data.title || null,
+        body: data.body.trim(),
+        entry_date: data.entry_date || undefined,
+        mood: data.mood ? Number(data.mood) : null,
+        tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : null,
+        is_private: createForm.querySelector(`#${prefix}-private`)?.checked !== false,
+      };
+      setStatus(createStatus, 'Saving...');
+      createBtn.disabled = true;
+      lifeosTelemetry.track('journal.entry.created', { source: 'ui', stage: 'submitted' });
+      const res = await fetch('/api/journal', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      createBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus(createStatus, 'Entry added.', 'success');
+        lifeosTelemetry.track('journal.entry.created', { source: 'ui', stage: 'succeeded', entry_id: body.entry?.id });
+        createForm.reset();
+        fetchEntries();
+      } else {
+        const reason = body.error || res.status;
+        const detail = body.details ? JSON.stringify(body.details) : '';
+        const copy = reason === 401 ? 'Please log in.' : `Unable to save entry${detail ? ': ' + detail : ''}.`;
+        setStatus(createStatus, copy, 'error');
+        lifeosTelemetry.track('journal.entry.created', { source: 'ui', stage: 'failed', reason });
+      }
+    });
+
+    listEl.addEventListener('click', async (e) => {
+      const action = e.target?.dataset?.action;
+      if (!action) return;
+      const card = e.target.closest('[data-entry-card]');
+      const entryId = Number(e.target.dataset.id);
+      if (!entryId || !card) return;
+      const statusNode = card.querySelector('[data-role="row-status"]');
+
+      if (action === 'save') {
+        const payload = {
+          title: card.querySelector('[data-field="title"]')?.value || null,
+          body: card.querySelector('[data-field="body"]')?.value || null,
+          entry_date: card.querySelector('[data-field="entry_date"]')?.value || undefined,
+          mood: card.querySelector('[data-field="mood"]')?.value || null,
+          tags: (card.querySelector('[data-field="tags"]')?.value || '').split(',').map(t => t.trim()).filter(Boolean),
+          is_private: card.querySelector('[data-field="is_private"]')?.checked ?? true,
+        };
+        if (payload.mood === '') payload.mood = null;
+        setStatus(statusNode, 'Saving...');
+        lifeosTelemetry.track('journal.entry.updated', { source: 'ui', stage: 'submitted', entry_id: entryId });
+        const res = await fetch(`/api/journal/${entryId}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(payload) });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, 'Updated.', 'success');
+          lifeosTelemetry.track('journal.entry.updated', { source: 'ui', stage: 'succeeded', entry_id: entryId });
+          fetchEntries();
+        } else {
+          setStatus(statusNode, reason === 401 ? 'Please log in.' : 'Update failed.', 'error');
+          lifeosTelemetry.track('journal.entry.updated', { source: 'ui', stage: 'failed', entry_id: entryId, reason });
+        }
+      }
+
+      if (action === 'delete') {
+        setStatus(statusNode, 'Deleting...');
+        lifeosTelemetry.track('journal.entry.deleted', { source: 'ui', stage: 'submitted', entry_id: entryId });
+        const res = await fetch(`/api/journal/${entryId}`, { method: 'DELETE', headers: authHeaders() });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, 'Deleted.', 'success');
+          lifeosTelemetry.track('journal.entry.deleted', { source: 'ui', stage: 'succeeded', entry_id: entryId });
+          fetchEntries();
+        } else {
+          setStatus(statusNode, reason === 401 ? 'Please log in.' : 'Unable to delete.', 'error');
+          lifeosTelemetry.track('journal.entry.deleted', { source: 'ui', stage: 'failed', entry_id: entryId, reason });
+        }
+      }
+    });
+
+    filterApply?.addEventListener('click', fetchEntries);
+    reloadBtn?.addEventListener('click', fetchEntries);
+    ensureAuth();
+    fetchEntries();
+  })();
+</script>

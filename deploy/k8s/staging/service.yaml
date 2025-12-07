@@ -1,0 +1,109 @@
+---
+# LifeOS Staging Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: lifeos-web
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/component: web
+    app.kubernetes.io/env: staging
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/component: web
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lifeos-ingress
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: staging
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+    - hosts:
+        - staging.lifeos.example.com
+      secretName: lifeos-staging-tls
+  rules:
+    - host: staging.lifeos.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lifeos-web
+                port:
+                  name: http
+---
+# PersistentVolumeClaim for uploads
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lifeos-uploads-pvc
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: staging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lifeos-sa
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: staging
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lifeos-web-hpa
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lifeos-web
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

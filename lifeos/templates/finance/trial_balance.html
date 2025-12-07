@@ -1,0 +1,315 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 1100px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;">Trial Balance</h2>
+        <p style="margin:0; color:#5b6470;">As-of balances, period totals, and monthly rollups.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="tb-reload">Reload</button>
+    </div>
+    <div id="tb-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with finance:write to view trial balance.</div>
+
+    <div style="margin-top:0.75rem; display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-items:end;">
+      <div class="field">
+        <label for="tb-as-of">As of date</label>
+        <input id="tb-as-of" type="date">
+      </div>
+      <button type="button" class="btn btn-secondary" id="tb-apply">Apply</button>
+    </div>
+    <div id="tb-status" class="auth-status" style="margin-top:0.25rem;"></div>
+
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead>
+          <tr><th>Account</th><th>Code</th><th>Category</th><th>Normal</th><th>Debit</th><th>Credit</th><th>Net</th></tr>
+        </thead>
+        <tbody id="tb-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0;">Category Rollups</h3>
+        <p style="margin:0; color:#5b6470;">Balances grouped by account category.</p>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <select id="tb-cat-filter" class="input" style="min-width:140px;">
+          <option value="">All types</option>
+          <option value="asset">Asset</option>
+          <option value="liability">Liability</option>
+          <option value="equity">Equity</option>
+          <option value="revenue">Revenue</option>
+          <option value="expense">Expense</option>
+        </select>
+      </div>
+    </div>
+    <div id="tb-cat-status" class="auth-status" style="margin-top:0.25rem;"></div>
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead><tr><th>Category</th><th>Type</th><th>Normal</th><th>Debit</th><th>Credit</th><th>Net</th></tr></thead>
+        <tbody id="tb-cat-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0;">Period totals</h3>
+        <p style="margin:0; color:#5b6470;">Net by normal balance for a date range.</p>
+      </div>
+    </div>
+    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items:end; margin-top:0.5rem;">
+      <div class="field">
+        <label for="tb-start">Start date</label>
+        <input id="tb-start" type="date">
+      </div>
+      <div class="field">
+        <label for="tb-end">End date</label>
+        <input id="tb-end" type="date">
+      </div>
+      <button type="button" class="btn btn-secondary" id="tb-period-apply">Run period</button>
+    </div>
+    <div id="tb-period-status" class="auth-status" style="margin-top:0.25rem;"></div>
+    <div id="tb-period-results" style="margin-top:0.5rem; display:grid; gap:0.35rem;"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0;">Monthly rollup</h3>
+        <p style="margin:0; color:#5b6470;">Net per month by normal balance.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="tb-monthly-reload">Refresh</button>
+    </div>
+    <div id="tb-monthly-status" class="auth-status" style="margin-top:0.25rem;"></div>
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead><tr><th>Month</th><th>Debit normal</th><th>Credit normal</th><th>Net</th></tr></thead>
+        <tbody id="tb-monthly-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const bodyEl = document.getElementById('tb-body');
+    const statusEl = document.getElementById('tb-status');
+    const asOfInput = document.getElementById('tb-as-of');
+    const applyBtn = document.getElementById('tb-apply');
+    const reloadBtn = document.getElementById('tb-reload');
+    const loginHint = document.getElementById('tb-login-hint');
+
+    const periodStatus = document.getElementById('tb-period-status');
+    const periodResults = document.getElementById('tb-period-results');
+    const startInput = document.getElementById('tb-start');
+    const endInput = document.getElementById('tb-end');
+    const periodBtn = document.getElementById('tb-period-apply');
+
+    const monthlyStatus = document.getElementById('tb-monthly-status');
+    const monthlyBody = document.getElementById('tb-monthly-body');
+    const monthlyBtn = document.getElementById('tb-monthly-reload');
+
+    const catStatus = document.getElementById('tb-cat-status');
+    const catBody = document.getElementById('tb-cat-body');
+    const catFilter = document.getElementById('tb-cat-filter');
+
+    let lastCategories = [];
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      [applyBtn, reloadBtn, periodBtn, monthlyBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderRows = (rows = []) => {
+      bodyEl.innerHTML = '';
+      if (!rows.length) {
+        bodyEl.innerHTML = '<tr><td colspan="7">No accounts</td></tr>';
+        return;
+      }
+      rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.account_name || ''}</td>
+          <td>${row.account_code || '—'}</td>
+          <td>${row.category_name || '—'}</td>
+          <td>${row.normal_balance || '—'}</td>
+          <td>${Number(row.debit ?? 0).toFixed(2)}</td>
+          <td>${Number(row.credit ?? 0).toFixed(2)}</td>
+          <td>${Number(row.net ?? 0).toFixed(2)}</td>
+        `;
+        bodyEl.appendChild(tr);
+      });
+    };
+
+    const renderCategoryRows = (categories = [], filterType = '') => {
+      catBody.innerHTML = '';
+      const filtered = filterType
+        ? categories.filter((c) => c.base_type === filterType)
+        : categories;
+      if (!filtered.length) {
+        catBody.innerHTML = '<tr><td colspan="6">No category data</td></tr>';
+        return;
+      }
+      // Sort by base_type, then category_name
+      const sorted = [...filtered].sort((a, b) => {
+        const typeOrder = ['asset', 'liability', 'equity', 'revenue', 'expense'];
+        const ai = typeOrder.indexOf(a.base_type);
+        const bi = typeOrder.indexOf(b.base_type);
+        if (ai !== bi) return ai - bi;
+        return (a.category_name || '').localeCompare(b.category_name || '');
+      });
+      sorted.forEach((cat) => {
+        const tr = document.createElement('tr');
+        const isUncategorized = !cat.category_id;
+        tr.innerHTML = `
+          <td style="${isUncategorized ? 'font-style:italic; color:#7a8599;' : ''}">${cat.category_name || 'Uncategorized'}</td>
+          <td style="text-transform:capitalize;">${cat.base_type || '—'}</td>
+          <td>${cat.normal_balance || '—'}</td>
+          <td>${Number(cat.debit ?? 0).toFixed(2)}</td>
+          <td>${Number(cat.credit ?? 0).toFixed(2)}</td>
+          <td>${Number(cat.net ?? 0).toFixed(2)}</td>
+        `;
+        catBody.appendChild(tr);
+      });
+    };
+
+    const fetchTrialBalance = async () => {
+      if (!ensureAuth()) return;
+      setStatus(statusEl, 'Loading...');
+      setStatus(catStatus, 'Loading...');
+      const params = new URLSearchParams();
+      if (asOfInput.value) params.set('as_of', asOfInput.value);
+      const res = await fetch(`/api/finance/trial_balance${params.toString() ? '?' + params.toString() : ''}`, { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        renderRows(body.accounts || []);
+        lastCategories = body.categories || [];
+        renderCategoryRows(lastCategories, catFilter.value);
+        setStatus(statusEl, '');
+        setStatus(catStatus, '');
+      } else {
+        const reason = body.error || res.status;
+        const msg = reason === 401 ? 'Please log in.' : 'Unable to load trial balance.';
+        setStatus(statusEl, msg, 'error');
+        setStatus(catStatus, msg, 'error');
+      }
+    };
+
+    catFilter?.addEventListener('change', () => {
+      renderCategoryRows(lastCategories, catFilter.value);
+    });
+
+    const fetchPeriod = async () => {
+      if (!ensureAuth()) return;
+      if (!startInput.value || !endInput.value) {
+        setStatus(periodStatus, 'Start and end dates required.', 'error');
+        return;
+      }
+      setStatus(periodStatus, 'Loading...');
+      const params = new URLSearchParams({ start: startInput.value, end: endInput.value });
+      const res = await fetch(`/api/finance/trial_balance/period?${params.toString()}`, { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        const totals = body.totals || {};
+        // If API returns per-account map, collapse to simple sums.
+        const sums = Object.values(totals).reduce(
+          (acc, t) => {
+            acc.debit += Number(t.debit || 0);
+            acc.credit += Number(t.credit || 0);
+            return acc;
+          },
+          { debit: 0, credit: 0 }
+        );
+        const net = sums.debit - sums.credit;
+        periodResults.innerHTML = `
+          <div style="font-size:0.95rem; color:#1f2430;">Total debit: ${sums.debit.toFixed(2)}</div>
+          <div style="font-size:0.95rem; color:#1f2430;">Total credit: ${sums.credit.toFixed(2)}</div>
+          <div style="font-size:0.95rem; color:#1f2430;">Net (debit-credit): ${net.toFixed(2)}</div>
+        `;
+        setStatus(periodStatus, '');
+      } else {
+        const reason = body.error || res.status;
+        setStatus(periodStatus, reason === 401 ? 'Please log in.' : 'Unable to load period totals.', 'error');
+      }
+    };
+
+    const renderMonthly = (monthsMap) => {
+      monthlyBody.innerHTML = '';
+      const entries = Array.isArray(monthsMap) ? monthsMap : Object.entries(monthsMap || {}).map(([month, vals]) => ({ month, ...(vals || {}) }));
+      if (!entries.length) {
+        monthlyBody.innerHTML = '<tr><td colspan="4">No data</td></tr>';
+        return;
+      }
+      entries.forEach((m) => {
+        const debit = Number(m.debit || m.debit_normal || 0);
+        const credit = Number(m.credit || m.credit_normal || 0);
+        const net = debit - credit;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${m.month || ''}</td>
+          <td>${debit.toFixed(2)}</td>
+          <td>${credit.toFixed(2)}</td>
+          <td>${net.toFixed(2)}</td>
+        `;
+        monthlyBody.appendChild(tr);
+      });
+    };
+
+    const fetchMonthly = async () => {
+      if (!ensureAuth()) return;
+      setStatus(monthlyStatus, 'Loading...');
+      const res = await fetch('/api/finance/trial_balance/monthly', { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        renderMonthly(body.months || {});
+        setStatus(monthlyStatus, '');
+      } else {
+        const reason = body.error || res.status;
+        setStatus(monthlyStatus, reason === 401 ? 'Please log in.' : 'Unable to load monthly rollup.', 'error');
+      }
+    };
+
+    applyBtn?.addEventListener('click', fetchTrialBalance);
+    reloadBtn?.addEventListener('click', () => { fetchTrialBalance(); fetchPeriod(); fetchMonthly(); });
+    periodBtn?.addEventListener('click', fetchPeriod);
+    monthlyBtn?.addEventListener('click', fetchMonthly);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) {
+        fetchTrialBalance();
+        fetchPeriod();
+        fetchMonthly();
+      } else {
+        bodyEl.innerHTML = '';
+        catBody.innerHTML = '';
+        lastCategories = [];
+        monthlyBody.innerHTML = '';
+        periodResults.innerHTML = '';
+        setStatus(statusEl, '');
+        setStatus(catStatus, '');
+        setStatus(periodStatus, '');
+        setStatus(monthlyStatus, '');
+      }
+    });
+
+    ensureAuth();
+    fetchTrialBalance();
+    fetchPeriod();
+    fetchMonthly();
+  })();
+</script>
+{% endblock %}

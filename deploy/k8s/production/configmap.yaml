@@ -1,0 +1,43 @@
+---
+# LifeOS Production ConfigMap
+# Non-sensitive configuration. Secrets are managed separately.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lifeos-config
+  namespace: lifeos-production
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: production
+data:
+  # Flask settings
+  FLASK_APP: "lifeos:create_app"
+  FLASK_ENV: "production"
+  APP_ENV: "production"
+  
+  # Gunicorn settings (production-optimized)
+  GUNICORN_WORKERS: "4"
+  GUNICORN_THREADS: "4"
+  GUNICORN_TIMEOUT: "60"
+  GUNICORN_BIND: "0.0.0.0:8000"
+  GUNICORN_KEEPALIVE: "5"
+  GUNICORN_MAX_REQUESTS: "1000"
+  GUNICORN_MAX_REQUESTS_JITTER: "100"
+  
+  # Logging
+  LOG_LEVEL: "WARNING"
+  LOG_FORMAT: "json"
+  
+  # Feature flags
+  ENABLE_ML: "true"
+  ENABLE_INVOICE: "true"
+  TESTING: "false"
+  
+  # Rate limiting (stricter for production)
+  RATELIMIT_ENABLED: "true"
+  RATELIMIT_DEFAULT: "100/minute"
+  
+  # Security
+  SESSION_COOKIE_SECURE: "true"
+  SESSION_COOKIE_HTTPONLY: "true"
+  SESSION_COOKIE_SAMESITE: "Strict"

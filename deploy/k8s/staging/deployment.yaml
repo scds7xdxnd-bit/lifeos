@@ -1,0 +1,148 @@
+---
+# LifeOS Staging Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lifeos-web
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/component: web
+    app.kubernetes.io/env: staging
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lifeos
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lifeos
+        app.kubernetes.io/component: web
+        app.kubernetes.io/env: staging
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: lifeos-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      containers:
+        - name: lifeos
+          image: ghcr.io/your-org/lifeos:staging
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          
+          envFrom:
+            - configMapRef:
+                name: lifeos-config
+            - secretRef:
+                name: lifeos-secrets
+          
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: uploads
+              mountPath: /app/instance/uploads
+      
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: lifeos-uploads-pvc
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: lifeos
+                topologyKey: kubernetes.io/hostname
+---
+# Migration Job (run before deployment)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: lifeos-migrate
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/component: migration
+    app.kubernetes.io/env: staging
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: migrate
+          image: ghcr.io/your-org/lifeos:staging
+          command: ["flask", "db", "upgrade"]
+          envFrom:
+            - configMapRef:
+                name: lifeos-config
+            - secretRef:
+                name: lifeos-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true

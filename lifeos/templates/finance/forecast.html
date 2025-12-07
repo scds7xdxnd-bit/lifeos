@@ -1,0 +1,300 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: 0 auto; padding: 1rem 0; display:grid; gap:1rem;">
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;">Schedule & Forecast</h2>
+        <p style="margin:0; color:#5b6470;">Add scheduled events, update/delete, and view forecast rollups.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="sched-reload">Reload</button>
+    </div>
+    <div id="sched-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with finance:write to manage schedule.</div>
+    <form id="sched-form" style="display:grid; gap:0.5rem; margin-top:0.75rem;">
+      <div class="field">
+        <label for="sched-account">Account</label>
+        <select id="sched-account" name="account_id" required>
+          {% for acct in accounts %}<option value="{{ acct.id }}">{{ acct.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+        <div class="field">
+          <label for="sched-date">Event date</label>
+          <input id="sched-date" name="event_date" type="date" required>
+        </div>
+        <div class="field">
+          <label for="sched-amount">Amount</label>
+          <input id="sched-amount" name="amount" type="number" step="0.01" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="sched-memo">Memo</label>
+        <input id="sched-memo" name="memo" type="text" placeholder="Optional">
+      </div>
+      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button type="submit" class="btn" id="sched-create">Add schedule row</button>
+        <div id="sched-status" class="auth-status"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem;">
+      <h3 style="margin:0;">Scheduled events</h3>
+      <span style="font-size:0.9rem; color:#5b6470;" id="sched-count"></span>
+    </div>
+    <div id="sched-empty" style="color:#5b6470; margin-top:0.5rem;">No scheduled events.</div>
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead><tr><th>Date</th><th>Account</th><th>Amount</th><th>Memo</th><th>Actions</th></tr></thead>
+        <tbody id="sched-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem;">
+      <div>
+        <h3 style="margin:0;">Forecast</h3>
+        <p style="margin:0; color:#5b6470;">Projected daily balances.</p>
+      </div>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <input type="number" id="forecast-days" min="1" max="365" value="30" style="width:80px;">
+        <button type="button" class="btn btn-secondary" id="forecast-refresh">Refresh</button>
+        <button type="button" class="btn btn-secondary" id="schedule-recompute">Recompute schedule</button>
+      </div>
+    </div>
+    <div id="forecast-status" class="auth-status" style="margin-top:0.25rem;"></div>
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead><tr><th>Date</th><th>Projected balance</th></tr></thead>
+        <tbody id="forecast-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const form = document.getElementById('sched-form');
+    const createBtn = document.getElementById('sched-create');
+    const statusEl = document.getElementById('sched-status');
+    const loginHint = document.getElementById('sched-login-hint');
+    const reloadBtn = document.getElementById('sched-reload');
+    const listEl = document.getElementById('sched-body');
+    const emptyEl = document.getElementById('sched-empty');
+    const countEl = document.getElementById('sched-count');
+    const forecastBody = document.getElementById('forecast-body');
+    const forecastStatus = document.getElementById('forecast-status');
+    const daysInput = document.getElementById('forecast-days');
+    const forecastBtn = document.getElementById('forecast-refresh');
+    const recomputeBtn = document.getElementById('schedule-recompute');
+    let scheduleRows = [];
+
+    const authHeaders = (extra = {}) => {
+      const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      const base = Object.assign({'Content-Type': 'application/json'}, extra);
+      if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
+      return lifeosAuth.authHeaders(base);
+    };
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      Array.from(form?.querySelectorAll('input, button, select') || []).forEach((node) => node.disabled = !authed);
+      [forecastBtn, recomputeBtn, reloadBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const accountLabel = (accountId) => {
+      const opt = document.querySelector(`#sched-account option[value="${accountId}"]`);
+      return opt?.textContent || accountId || '';
+    };
+
+    const renderRows = () => {
+      const items = scheduleRows || [];
+      listEl.innerHTML = '';
+      countEl.textContent = items.length ? `${items.length} rows` : '';
+      if (!items.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      items.forEach((row) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="date" value="${row.event_date || ''}" data-field="event_date" data-id="${row.id}" style="width:130px;"></td>
+          <td>${row.account_name || accountLabel(row.account_id) || row.account_id}</td>
+          <td><input type="number" step="0.01" value="${row.amount ?? ''}" data-field="amount" data-id="${row.id}" style="width:120px;"></td>
+          <td><input type="text" value="${row.memo || ''}" data-field="memo" data-id="${row.id}" style="width:180px;"></td>
+          <td style="display:flex; gap:0.35rem;">
+            <button class="btn btn-secondary" data-action="update" data-id="${row.id}">Update</button>
+            <button class="btn btn-secondary" data-action="delete" data-id="${row.id}">Delete</button>
+          </td>
+        `;
+        listEl.appendChild(tr);
+      });
+    };
+
+    const fetchSchedule = async () => {
+      if (!ensureAuth()) return;
+      setStatus(statusEl, 'Loading schedule...');
+      const res = await fetch('/api/finance/dashboard', { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        scheduleRows = (body.upcoming_schedule || []).map((r) => ({
+          id: r.id,
+          account_id: r.account_id,
+          account_name: r.account_name,
+          event_date: r.event_date,
+          amount: r.amount,
+          memo: r.memo,
+        }));
+        renderRows();
+        setStatus(statusEl, '');
+      } else {
+        const reason = body.error || res.status;
+        setStatus(statusEl, reason === 401 ? 'Please log in.' : 'Unable to load schedule.', 'error');
+      }
+    };
+
+    const fetchForecast = async () => {
+      if (!ensureAuth()) return;
+      forecastBody.innerHTML = '';
+      setStatus(forecastStatus, 'Loading...');
+      const days = parseInt(daysInput.value, 10) || 30;
+      const params = new URLSearchParams({ days: days.toString() });
+      const res = await fetch(`/api/finance/forecast?${params.toString()}`, { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        (body.forecast || []).forEach((row) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${row.date}</td><td>${Number(row.projected_balance ?? 0).toFixed(2)}</td>`;
+          forecastBody.appendChild(tr);
+        });
+        setStatus(forecastStatus, '');
+      } else {
+        const reason = body.error || res.status;
+        setStatus(forecastStatus, reason === 401 ? 'Please log in.' : 'Unable to load forecast.', 'error');
+      }
+    };
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) return setStatus(statusEl, 'Please log in.', 'error');
+      const data = Object.fromEntries(new FormData(form).entries());
+      const payload = {
+        account_id: data.account_id ? Number(data.account_id) : null,
+        event_date: data.event_date || null,
+        amount: data.amount ? Number(data.amount) : 0,
+        memo: data.memo || null,
+      };
+      if (!payload.account_id || !payload.event_date) {
+        setStatus(statusEl, 'Account and date required.', 'error');
+        return;
+      }
+      setStatus(statusEl, 'Saving...');
+      createBtn.disabled = true;
+      const res = await fetch('/api/finance/schedule', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      createBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus(statusEl, 'Added.', 'success');
+        form.reset();
+        scheduleRows.push({
+          id: body.row_id,
+          account_id: payload.account_id,
+          event_date: payload.event_date,
+          amount: payload.amount,
+          memo: payload.memo || '',
+        });
+        renderRows();
+        fetchForecast();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(statusEl, reason === 401 ? 'Please log in.' : 'Unable to add.', 'error');
+      }
+    });
+
+    listEl.addEventListener('click', async (e) => {
+      const action = e.target?.dataset?.action;
+      if (!action) return;
+      const rowId = Number(e.target.dataset.id);
+      if (!rowId) return;
+      if (action === 'delete') {
+        setStatus(statusEl, 'Deleting...');
+        const res = await fetch(`/api/finance/schedule/${rowId}`, { method: 'DELETE', headers: lifeosAuth.authHeaders() });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusEl, 'Deleted.', 'success');
+          scheduleRows = scheduleRows.filter((r) => r.id !== rowId);
+          renderRows();
+          fetchForecast();
+        } else {
+          setStatus(statusEl, reason === 401 ? 'Please log in.' : 'Unable to delete.', 'error');
+        }
+      }
+      if (action === 'update') {
+        const row = e.target.closest('tr');
+        const event_date = row.querySelector('[data-field="event_date"]')?.value || null;
+        const amount = row.querySelector('[data-field="amount"]')?.value || null;
+        const memo = row.querySelector('[data-field="memo"]')?.value || null;
+        setStatus(statusEl, 'Updating...');
+        const res = await fetch(`/api/finance/schedule/${rowId}`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            event_date: event_date || undefined,
+            amount: amount ? Number(amount) : null,
+            memo: memo || null,
+          }),
+        });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusEl, 'Updated.', 'success');
+          scheduleRows = scheduleRows.map((r) => r.id === rowId ? {
+            ...r,
+            event_date: event_date || r.event_date,
+            amount: amount ? Number(amount) : r.amount,
+            memo: memo ?? r.memo,
+          } : r);
+          renderRows();
+          fetchForecast();
+        } else {
+          setStatus(statusEl, reason === 401 ? 'Please log in.' : 'Unable to update.', 'error');
+        }
+      }
+    });
+
+    forecastBtn?.addEventListener('click', fetchForecast);
+    recomputeBtn?.addEventListener('click', async () => {
+      setStatus(forecastStatus, 'Recomputing...');
+      const res = await fetch('/api/finance/schedule/recompute', { method: 'POST', headers: lifeosAuth.authHeaders() });
+      setStatus(forecastStatus, res.ok ? 'Recomputed.' : 'Failed.', res.ok ? 'success' : 'error');
+      if (res.ok) fetchForecast();
+    });
+
+    reloadBtn?.addEventListener('click', () => { fetchSchedule(); fetchForecast(); });
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) {
+        fetchSchedule();
+        fetchForecast();
+      } else {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+        forecastBody.innerHTML = '';
+      }
+    });
+    ensureAuth();
+    fetchSchedule();
+    fetchForecast();
+  })();
+</script>
+{% endblock %}

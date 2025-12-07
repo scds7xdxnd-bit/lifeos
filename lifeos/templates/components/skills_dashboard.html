@@ -1,0 +1,293 @@
+{% set component_id = component_id|default('skills', true) %}
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <h2 style="margin:0;">Skills</h2>
+        {% set badge_domain = 'skills' %}{% include "components/inferred_badge.html" %}
+      </div>
+      <p style="margin:0; color:#5b6470;">Track skills, practice time, and streaks.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage skills.</div>
+
+  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+    <div class="field">
+      <label for="{{ component_id }}-name">Skill name</label>
+      <input id="{{ component_id }}-name" name="name" type="text" placeholder="e.g., Public speaking" required>
+    </div>
+    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      <div class="field">
+        <label for="{{ component_id }}-category">Category</label>
+        <input id="{{ component_id }}-category" name="category" type="text" placeholder="e.g., Communication">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-difficulty">Difficulty</label>
+        <input id="{{ component_id }}-difficulty" name="difficulty" type="text" placeholder="e.g., Medium">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-target">Target level</label>
+        <input id="{{ component_id }}-target" name="target_level" type="number" min="0" placeholder="e.g., 5">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-current">Current level</label>
+        <input id="{{ component_id }}-current" name="current_level" type="number" min="0" placeholder="e.g., 2">
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-tags">Tags (comma separated)</label>
+      <input id="{{ component_id }}-tags" name="tags" type="text" placeholder="presentation, storytelling">
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-description">Description</label>
+      <textarea id="{{ component_id }}-description" name="description" rows="2" placeholder="Context or goals (optional)"></textarea>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn" id="{{ component_id }}-create-btn">Add skill</button>
+      <div id="{{ component_id }}-create-status" class="auth-status"></div>
+    </div>
+  </form>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No skills yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+</div>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const reloadBtn = el('reload');
+    const createForm = el('create-form');
+    const createStatus = el('create-status');
+    const loginHint = el('login-hint');
+    const listEl = el('list');
+    const emptyEl = el('empty');
+    const createBtn = el('create-btn');
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const authHeaders = (extra = {}) => lifeosAuth.authHeaders(Object.assign({'Content-Type': 'application/json'}, extra));
+
+    const ensureAuth = () => {
+      const tokens = lifeosAuth.getTokens();
+      const authed = !!tokens.access_token;
+      [createBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      Array.from(createForm?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderSkillCard = (skill) => {
+      const card = document.createElement('div');
+      card.setAttribute('data-skill-card', 'true');
+      card.style.border = '1px solid #e0e5ec';
+      card.style.borderRadius = '10px';
+      card.style.padding = '0.75rem';
+      card.style.background = '#fff';
+      const tags = (skill.tags || []).filter(Boolean).join(', ');
+      const lastPracticed = skill.last_practiced_at ? new Date(skill.last_practiced_at).toLocaleString() : '—';
+      card.innerHTML = `
+        <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+          <div>
+            <strong>${skill.name}</strong>
+            <div style="color:#5b6470; font-size:0.9rem;">${skill.category || ''} ${skill.difficulty ? '• ' + skill.difficulty : ''}</div>
+            ${tags ? `<div style="color:#5b6470; font-size:0.85rem;">Tags: ${tags}</div>` : ''}
+          </div>
+          <button class="btn btn-secondary" data-action="delete" data-id="${skill.id}">Delete</button>
+        </div>
+        <div style="margin-top:0.35rem; display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.95rem;">
+          <span>Level: ${skill.current_level ?? '—'} / ${skill.target_level ?? '—'}</span>
+          <span>Sessions: ${skill.session_count}</span>
+          <span>Total minutes: ${skill.total_minutes}</span>
+          <span>Streak: ${skill.streak_days}d</span>
+          <span>Last: ${lastPracticed}</span>
+        </div>
+        <div style="margin-top:0.35rem;">
+          <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Quick update</label>
+          <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+            <input type="number" min="0" data-field="current_level" placeholder="Current level" value="${skill.current_level ?? ''}">
+            <input type="number" min="0" data-field="target_level" placeholder="Target level" value="${skill.target_level ?? ''}">
+            <input type="text" data-field="difficulty" placeholder="Difficulty" value="${skill.difficulty || ''}">
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-top:0.35rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="save" data-id="${skill.id}">Save updates</button>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Log practice</label>
+          <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));">
+            <input type="number" min="1" data-field="duration" placeholder="Minutes">
+            <input type="number" min="1" max="10" data-field="intensity" placeholder="Intensity 1-10">
+            <input type="datetime-local" data-field="practiced_at">
+          </div>
+          <textarea data-field="notes" rows="2" placeholder="Notes (optional)" style="margin-top:0.35rem;"></textarea>
+          <div style="display:flex; gap:0.5rem; margin-top:0.35rem; align-items:center; flex-wrap:wrap;">
+            <button class="btn" data-action="log" data-id="${skill.id}">Log practice</button>
+            <span class="auth-status" data-role="row-status" style="min-width:140px;"></span>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <div style="font-weight:600; margin-bottom:0.25rem;">Recent sessions</div>
+          <div style="display:grid; gap:0.25rem;">
+            ${(skill.recent_sessions || []).slice(0,3).map((s) => {
+              const when = s.practiced_at ? new Date(s.practiced_at).toLocaleString() : '—';
+              return `<div style="font-size:0.9rem; color:#1f2430;">${s.duration_minutes} min${s.intensity ? ' • Intensity ' + s.intensity : ''} — ${when}</div>`;
+            }).join('') || '<div style="color:#5b6470; font-size:0.9rem;">No sessions yet.</div>'}
+          </div>
+        </div>
+      `;
+      return card;
+    };
+
+    const renderSkills = (skills = []) => {
+      listEl.innerHTML = '';
+      if (!skills.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      skills.forEach((skill) => {
+        const card = renderSkillCard(skill);
+        listEl.appendChild(card);
+      });
+    };
+
+    const fetchSkills = async () => {
+      if (!ensureAuth()) return;
+      setStatus(createStatus, '');
+      const res = await fetch('/api/skills', { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        setStatus(createStatus, res.status === 401 ? 'Please log in.' : 'Unable to load skills.', 'error');
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      renderSkills(body.skills || []);
+    };
+
+    createForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) {
+        setStatus(createStatus, 'Please log in.', 'error');
+        return;
+      }
+      const data = Object.fromEntries(new FormData(createForm).entries());
+      const payload = {
+        name: data.name || '',
+        category: data.category || null,
+        difficulty: data.difficulty || null,
+        target_level: data.target_level ? Number(data.target_level) : null,
+        current_level: data.current_level ? Number(data.current_level) : null,
+        description: data.description || null,
+        tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : null,
+      };
+      setStatus(createStatus, 'Saving...');
+      createBtn.disabled = true;
+      lifeosTelemetry.track('skills.skill.created', { source: 'ui', stage: 'submitted' });
+      const res = await fetch('/api/skills', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      createBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus(createStatus, 'Skill created.', 'success');
+        lifeosTelemetry.track('skills.skill.created', { source: 'ui', stage: 'succeeded', skill_id: body.skill_id });
+        createForm.reset();
+        fetchSkills();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(createStatus, 'Unable to create skill.', 'error');
+        lifeosTelemetry.track('skills.skill.created', { source: 'ui', stage: 'failed', reason });
+      }
+    });
+
+    listEl.addEventListener('click', async (e) => {
+      const action = e.target?.dataset?.action;
+      if (!action) return;
+      const skillId = Number(e.target.dataset.id);
+      if (!skillId) return;
+      const card = e.target.closest('[data-skill-card]');
+      const statusNode = card?.querySelector('[data-role="row-status"]');
+
+      if (action === 'delete') {
+        if (!ensureAuth()) return;
+        setStatus(statusNode, 'Deleting...');
+        lifeosTelemetry.track('skills.skill.deleted', { source: 'ui', stage: 'submitted', skill_id: skillId });
+        const res = await fetch(`/api/skills/${skillId}`, { method: 'DELETE', headers: lifeosAuth.authHeaders() });
+        if (res.ok) {
+          setStatus(statusNode, 'Deleted.', 'success');
+          lifeosTelemetry.track('skills.skill.deleted', { source: 'ui', stage: 'succeeded', skill_id: skillId });
+          fetchSkills();
+        } else {
+          const reason = (await res.json().catch(() => ({}))).error || res.status;
+          setStatus(statusNode, 'Unable to delete.', 'error');
+          lifeosTelemetry.track('skills.skill.deleted', { source: 'ui', stage: 'failed', skill_id: skillId, reason });
+        }
+      }
+
+      if (action === 'save') {
+        if (!ensureAuth()) return;
+        const fields = {};
+        ['current_level', 'target_level', 'difficulty'].forEach((f) => {
+          const input = card.querySelector(`[data-field="${f}"]`);
+          const val = input?.value;
+          if (val !== undefined && val !== '') fields[f] = f.includes('level') ? Number(val) : val;
+        });
+        if (!Object.keys(fields).length) return;
+        setStatus(statusNode, 'Saving...');
+        lifeosTelemetry.track('skills.skill.updated', { source: 'ui', stage: 'submitted', skill_id: skillId });
+        const res = await fetch(`/api/skills/${skillId}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(fields) });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, 'Updated.', 'success');
+          lifeosTelemetry.track('skills.skill.updated', { source: 'ui', stage: 'succeeded', skill_id: skillId });
+          fetchSkills();
+        } else {
+          setStatus(statusNode, 'Update failed.', 'error');
+          lifeosTelemetry.track('skills.skill.updated', { source: 'ui', stage: 'failed', skill_id: skillId, reason });
+        }
+      }
+
+      if (action === 'log') {
+        if (!ensureAuth()) return;
+        const duration = parseFloat(card.querySelector('[data-field="duration"]')?.value || '0');
+        const intensityRaw = card.querySelector('[data-field="intensity"]')?.value;
+        const practicedAtRaw = card.querySelector('[data-field="practiced_at"]')?.value;
+        const notes = card.querySelector('[data-field="notes"]')?.value || null;
+        if (!duration || duration <= 0) {
+          setStatus(statusNode, 'Minutes required.', 'error');
+          return;
+        }
+        const payload = {
+          duration_minutes: duration,
+          intensity: intensityRaw ? Number(intensityRaw) : null,
+          notes,
+          practiced_at: practicedAtRaw ? new Date(practicedAtRaw).toISOString() : undefined,
+        };
+        setStatus(statusNode, 'Logging...');
+        lifeosTelemetry.track('skills.practice.logged', { source: 'ui', stage: 'submitted', skill_id: skillId });
+        const res = await fetch(`/api/skills/${skillId}/practice`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok !== false) {
+          setStatus(statusNode, 'Logged.', 'success');
+          lifeosTelemetry.track('skills.practice.logged', { source: 'ui', stage: 'succeeded', skill_id: skillId, session_id: body.session?.id });
+          fetchSkills();
+        } else {
+          const reason = body.error || res.status;
+          setStatus(statusNode, 'Log failed.', 'error');
+          lifeosTelemetry.track('skills.practice.logged', { source: 'ui', stage: 'failed', skill_id: skillId, reason });
+        }
+      }
+    });
+
+    reloadBtn?.addEventListener('click', fetchSkills);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) fetchSkills();
+    });
+    ensureAuth();
+    fetchSkills();
+  })();
+</script>

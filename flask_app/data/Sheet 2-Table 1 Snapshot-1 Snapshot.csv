@@ -1,0 +1,1330 @@
+date,description,debit_account,debit_amount,credit_account,debit_amount
+2024/5/1,Interest Received,KR10101-Toss Checking Account,328,KR70002-Interest Income,328
+2024/5/2,Myothurin,KR60005-Personal Expenses,17500,KR10101-Toss Checking Account,17500
+2024/5/2,Foreign Mart,KR60002-Food Expenses,9400,KR10101-Toss Checking Account,9400
+2024/5/3,iCloud+,KR60005-Personal Expenses,8900,KR10101-Toss Checking Account,8900
+2024/5/3,양꼬치 w 서진,KR60002-Food Expenses,30000,KR10101-Toss Checking Account,30000
+2024/5/3,교통카드 충전,KR60004-Transportation Expenses,57275,KR10101-Toss Checking Account,57275
+2024/5/4,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/5/4,CU,KR60005-Personal Expenses,5900,KR10101-Toss Checking Account,5900
+2024/5/5,Pasta w Alua,KR60002-Food Expenses,22400,KR10101-Toss Checking Account,22400
+2024/5/6,Coupang,KR60005-Personal Expenses,4990,KR10101-Toss Checking Account,4990
+2024/5/6,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/5/7,Pasta w 재원,KR60002-Food Expenses,29750,KR10101-Toss Checking Account,29750
+2024/5/7,Deposit,KR10101-Toss Checking Account,40000,KR10000-Cash,40000
+2024/5/9,CU for 고건&식구,KR60002-Food Expenses,8500,KR10101-Toss Checking Account,8500
+2024/5/9,총 4월 교통비,KR60004-Transportation Expenses,5800,KR10101-Toss Checking Account,5800
+2024/5/9,Didimdol w Myothurin,KR10101-Toss Checking Account,50000,KR70004-Didimdol Income,50000
+2024/5/9,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/5/10,Printing for 황희,KR60005-Personal Expenses,9840,KR10101-Toss Checking Account,9840
+2024/5/11,Coupang,KR60002-Food Expenses,10710,KR10101-Toss Checking Account,10710
+2024/5/11,Subway w Davy,KR60002-Food Expenses,15000,KR10101-Toss Checking Account,15000
+2024/5/12,Funeral,KR60005-Personal Expenses,30000,KR10101-Toss Checking Account,30000
+2024/5/12,Ivan,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/12,Haiqal,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/12,Haiqal,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/12,Shunn Lae,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/13,Shunn Lae,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/13,Wise 1 1MYR@288.217KRW,KR10101-Toss Checking Account,84024,KR70005-Allowance Income,84024
+2024/5/13,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/5/13,CU,KR60005-Personal Expenses,5600,KR10101-Toss Checking Account,5600
+2024/5/14,Shunn Lae,KR30201-Friends Debt,15000,KR10101-Toss Checking Account,15000
+2024/5/15,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/5/15,Bakso Rindu Kampung w Myothurin,KR60005-Personal Expenses,34000,KR10101-Toss Checking Account,34000
+2024/5/15,Daiso w Myothurin,KR60005-Personal Expenses,16200,KR10101-Toss Checking Account,16200
+2024/5/15,Holly’s w Myothurin,KR60005-Personal Expenses,11600,KR10101-Toss Checking Account,11600
+2024/5/18,Coins,KR10000-Cash,1800,KR70001-Cashback Income,1800
+2024/5/19,GS25,KR60002-Food Expenses,13550,KR10101-Toss Checking Account,13550
+2024/5/20,Apple Music,KR60005-Personal Expenses,3300,KR10101-Toss Checking Account,3300
+2024/5/23,재학증명서,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/5/25,Haiqal,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/25,Ivan,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/25,Ivan,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/25,서동욱,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/25,서동욱,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/25,문서진,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/25,문서진,KR10101-Toss Checking Account,15000,KR30201-Friends Debt,15000
+2024/5/25,6월 Savings,KR10204-Emergency Savings,50000,KR10101-Toss Checking Account,50000
+2024/5/27,Wise 2 1MYR@289.943KRW,KR10101-Toss Checking Account,440934,KR70005-Allowance Income,440934
+2024/5/27,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/5/27,서동욱,KR30201-Friends Debt,15000,KR10101-Toss Checking Account,15000
+2024/5/27,문서진,KR30201-Friends Debt,15000,KR10101-Toss Checking Account,15000
+2024/5/27,문서진,KR30201-Friends Debt,15000,KR10101-Toss Checking Account,15000
+2024/5/27,Haiqal,KR30201-Friends Debt,30000,KR10101-Toss Checking Account,30000
+2024/5/27,Wise 3 1MYR@290.202KRW,KR10101-Toss Checking Account,285521,KR70005-Allowance Income,285521
+2024/5/29,Tisya,KR30201-Friends Debt,45000,KR10101-Toss Checking Account,45000
+2024/5/29,Tisya ,KR10104-Shinhan Investment Account,50000,KR10101-Toss Checking Account,50000
+2024/5/29,Transfer to Shinhan Invest,KR10104-Shinhan Investment Account,51500,KR10101-Toss Checking Account,51500
+2024/5/29,"Buy 삼성전자 0.643298@₩77,600",KR10404-Pending Investments,49919,KR10404-Pending Investments,49919
+2024/5/29,"Buy 삼성전자 0.643298@₩77,600",KR20002-Stocks,49919,KR10404-Pending Investments,49919
+2024/5/29,"Buy 현대차 0.192369@₩259,500",KR20002-Stocks,49919,KR10404-Pending Investments,49919
+2024/5/29,"Buy 현대차 0.192369@₩259,500",KR20002-Stocks,49919,KR10404-Pending Investments,49919
+2024/5/29,Ivan,KR30201-Friends Debt,30000,KR10101-Toss Checking Account,30000
+2024/5/29,6월 건강보혐료,KR60003-Healthcare Expenses,75580,KR10101-Toss Checking Account,75580
+2024/5/29,삼겹살 w Seojin,KR60002-Food Expenses,31000,KR10101-Toss Checking Account,31000
+2024/5/30,Interpreting Job,KR10403-Friends Receivable,120000,KR70006-Other Income,120000
+2024/5/31,Wise 4 1MYR@294.432KRW,KR10101-Toss Checking Account,147608,KR70005-Allowance Income,147608
+2024/5/31,Paying using KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/5/31,GS25 w Myothurin,KR60005-Personal Expenses,3770,KR10105-Kakao Checking Account,3770
+2024/5/31,Transfer to Toss,KR10101-Toss Checking Account,6230,KR10105-Kakao Checking Account,6230
+2024/5/31,5월 Samsung,KR10401-Samsung Receivable,557143,KR70003-Samsung Income,557143
+2024/5/31,5월 Didimdol,KR10402-Didimdol Receivable,150000,KR70004-Didimdol Income,150000
+2024/5/31,Paying using KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/5/31,GS25,KR60002-Food Expenses,4878,KR10105-Kakao Checking Account,4878
+2024/5/31,Transfer to Toss,KR10101-Toss Checking Account,5122,KR10105-Kakao Checking Account,5122
+2024/5/31,따릉이,KR60005-Personal Expenses,1000,KR10101-Toss Checking Account,1000
+2024/5/31,GS25 w Myothurin,KR60005-Personal Expenses,7900,KR10101-Toss Checking Account,7900
+2024/5/31,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/5/31,NaverPay Registration,KR10101-Toss Checking Account,1,KR70006-Other Income,1
+2024/5/31,Phone Bill,KR60005-Personal Expenses,20000,KR10501-Phone Plan,20000
+2024/6/1,Hana Registration on NaverPay,KR10102-Hana Checking Account,1,KR70006-Other Income,1
+2024/6/1,5월 Interest,KR10101-Toss Checking Account,64,KR70002-Interest Income,64
+2024/6/1,Transfer to KakaoPay ,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/6/1,BBQ Chicken transfer to Rin,KR60002-Food Expenses,9000,KR10105-Kakao Checking Account,9000
+2024/6/1,Transfer to Toss ,KR10101-Toss Checking Account,1000,KR10105-Kakao Checking Account,1000
+2024/6/1,Ace Bag & Scarf,KR60005-Personal Expenses,33000,KR10101-Toss Checking Account,33000
+2024/6/1,Pride Shirt,KR60005-Personal Expenses,35000,KR10101-Toss Checking Account,35000
+2024/6/1,따릉이 Refund,KR10101-Toss Checking Account,1000,KR60005-Personal Expenses,1000
+2024/6/1,Transfer to KakaoPay ,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/6/1,Transfer to Toss ,KR10101-Toss Checking Account,3603,KR10105-Kakao Checking Account,3603
+2024/6/1,Transfer to Toss ,KR10101-Toss Checking Account,1,KR10102-Hana Checking Account,1
+2024/6/2,Groceries (Ayam Sweet Sour),KR60002-Food Expenses,15650,KR10101-Toss Checking Account,15650
+2024/6/2,Transfer to Shinhan ,KR10103-Shinhan Checking Account,30000,KR10101-Toss Checking Account,30000
+2024/6/2,Transfer to Hana ,KR10102-Hana Checking Account,30000,KR10103-Shinhan Checking Account,30000
+2024/6/2,Transfer to Hana ,KR10102-Hana Checking Account,2000,KR10101-Toss Checking Account,2000
+2024/6/2,Groceries (Itaewon),KR60002-Food Expenses,31300,KR10102-Hana Checking Account,31300
+2024/6/2,Transfer to Toss ,KR10101-Toss Checking Account,700,KR10102-Hana Checking Account,700
+2024/6/2,Transfer to Hana ,KR10102-Hana Checking Account,50000,KR10101-Toss Checking Account,50000
+2024/6/2,"Malatang w Tisya, Aery, Teena",KR60002-Food Expenses,23400,KR10102-Hana Checking Account,23400
+2024/6/2,"Sulbing w Tisya, Aery, Teena (Aery transfer)",KR60002-Food Expenses,11900,KR10403-Friends Receivable,11900
+2024/6/2,"Sulbing w Tisya, Aery, Teena (Aery transfer)",KR10102-Hana Checking Account,11900,KR10403-Friends Receivable,11900
+2024/6/2,Air Tisya,KR10403-Friends Receivable,5400,KR10102-Hana Checking Account,5400
+2024/6/2,"Milkys w Tisya, Aery, Teena",KR10403-Friends Receivable,3200,KR10102-Hana Checking Account,3200
+2024/6/2,Transfer to Hana ,KR10102-Hana Checking Account,17000,KR10101-Toss Checking Account,17000
+2024/6/3,Aery,KR10105-Kakao Checking Account,8492,KR10403-Friends Receivable,8492
+2024/6/3,Transfer to Toss ,KR10105-Kakao Checking Account,8492,KR10105-Kakao Checking Account,8492
+2024/6/3,Transfer to Toss ,KR10101-Toss Checking Account,8492,KR10105-Kakao Checking Account,8492
+2024/6/3,Tisya,KR10105-Kakao Checking Account,8992,KR10403-Friends Receivable,8992
+2024/6/3,Transfer to Toss ,KR10101-Toss Checking Account,8992,KR10105-Kakao Checking Account,8992
+2024/6/3,Teena,KR10105-Kakao Checking Account,5592,KR10403-Friends Receivable,5592
+2024/6/3,Transfer to Toss ,KR10101-Toss Checking Account,5592,KR10105-Kakao Checking Account,5592
+2024/6/3,Transfer to KakaoPay ,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/6/3,오늘이 라면 w Seojin,KR60002-Food Expenses,3889,KR10105-Kakao Checking Account,3889
+2024/6/4,Transfer to Toss ,KR10101-Toss Checking Account,6111,KR10105-Kakao Checking Account,6111
+2024/6/4,Wise 1 1MYR@293.152KRW,KR10101-Toss Checking Account,28503,KR70005-Allowance Income,28503
+2024/6/4,Transfer to Toss ,KR10101-Toss Checking Account,1200,KR10102-Hana Checking Account,1200
+2024/6/4,Transfer to Savings,KR10204-Emergency Savings,30000,KR10101-Toss Checking Account,30000
+2024/6/4,Transfer to KakaoPay ,KR10105-Kakao Checking Account,15000,KR10101-Toss Checking Account,15000
+2024/6/4,Transfer to Toss ,KR10101-Toss Checking Account,1412,KR10105-Kakao Checking Account,1412
+2024/6/6,Coupang,KR60005-Personal Expenses,4990,KR10101-Toss Checking Account,4990
+2024/6/6,Registered for somethting,KR10102-Hana Checking Account,1,KR70006-Other Income,1
+2024/6/6,예탁금이용료,KR10104-Shinhan Investment Account,18,KR70002-Interest Income,18
+2024/6/7,Didimdol w Myothurin,KR10101-Toss Checking Account,50000,KR70004-Didimdol Income,50000
+2024/6/7,Transfer to Savings,KR10204-Emergency Savings,30000,KR10101-Toss Checking Account,30000
+2024/6/7,Cash from 서동욱,KR10000-Cash,50000,KR30201-Friends Debt,50000
+2024/6/7,Transfer from Savings,KR10101-Toss Checking Account,50000,KR10204-Emergency Savings,50000
+2024/6/7,Transfer to 서동욱,KR10101-Toss Checking Account,50000,KR10101-Toss Checking Account,50000
+2024/6/7,Transfer to 서동욱,KR30201-Friends Debt,50000,KR10101-Toss Checking Account,50000
+2024/6/7,Transfer to KakaoPay ,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/6/7,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2024/6/7,Transfer to Toss ,KR10101-Toss Checking Account,1100,KR10105-Kakao Checking Account,1100
+2024/6/7,Coins,KR10000-Cash,100,KR70001-Cashback Income,100
+2024/6/8,Deposit to Toss,KR10101-Toss Checking Account,50000,KR10000-Cash,50000
+2024/6/8,GS25,KR60002-Food Expenses,2300,KR10000-Cash,2300
+2024/6/9,Transfer to KakaoPay ,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/6/9,Tteokbokki with Hani,KR60002-Food Expenses,5000,KR10105-Kakao Checking Account,5000
+2024/6/9,Transfer to Toss ,KR60002-Food Expenses,5000,KR10105-Kakao Checking Account,5000
+2024/6/9,Transfer to Toss ,KR10101-Toss Checking Account,5000,KR10105-Kakao Checking Account,5000
+2024/6/9,배민 w Seojin,KR60002-Food Expenses,27000,KR10101-Toss Checking Account,27000
+2024/6/10,Pho w Seojin 정산,KR60002-Food Expenses,23000,KR10403-Friends Receivable,23000
+2024/6/10,Pho w Seojin 정산,KR10105-Kakao Checking Account,23000,KR10403-Friends Receivable,23000
+2024/6/10,Transfer to Toss ,KR10101-Toss Checking Account,23000,KR10105-Kakao Checking Account,23000
+2024/6/11,Daiso Pen,KR60005-Personal Expenses,1500,KR10101-Toss Checking Account,1500
+2024/6/13,6월 Didimdol,KR10402-Didimdol Receivable,150000,KR70004-Didimdol Income,150000
+2024/6/13,Didimdol Scholarship,KR10101-Toss Checking Account,600000,KR10402-Didimdol Receivable,600000
+2024/6/13,6월 Samsung,KR10401-Samsung Receivable,557143,KR70003-Samsung Income,557143
+2024/6/13,Toss Event,KR10101-Toss Checking Account,19,KR70001-Cashback Income,19
+2024/6/13,Transfer to Savings,KR10204-Emergency Savings,203000,KR10101-Toss Checking Account,203000
+2024/6/15,Paris Baguette Zion,KR60005-Personal Expenses,39300,KR10101-Toss Checking Account,39300
+2024/6/18,Paris Baguette ,KR60002-Food Expenses,1200,KR10101-Toss Checking Account,1200
+2024/6/18,매머드커피,KR60002-Food Expenses,3200,KR10101-Toss Checking Account,3200
+2024/6/19,7Eleven,KR60002-Food Expenses,5800,KR10101-Toss Checking Account,5800
+2024/6/19,Toss Event,KR10101-Toss Checking Account,3,KR70001-Cashback Income,3
+2024/6/19,Transfer from Savings,KR10101-Toss Checking Account,50000,KR10204-Emergency Savings,50000
+2024/6/20,"GS25 w Teena, Tisya Ary (Teena’s Birthday)",KR60005-Personal Expenses,7000,KR10101-Toss Checking Account,7000
+2024/6/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/6/20,Transfer to KakaoPay ,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/6/20,Apple Music,KR60005-Personal Expenses,3300,KR10105-Kakao Checking Account,3300
+2024/6/20,Transfer to Toss ,KR10101-Toss Checking Account,6700,KR10105-Kakao Checking Account,6700
+2024/6/21,Transfer to KakaoPay ,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/6/21,GS25 1만원 권 for 황희,KR10105-Kakao Checking Account,9907,KR60005-Personal Expenses,9907
+2024/6/21,GS25 1만원 권 for 황희 취소,KR60005-Personal Expenses,9907,KR10105-Kakao Checking Account,9907
+2024/6/21,GS25,KR60002-Food Expenses,3200,KR10101-Toss Checking Account,3200
+2024/6/21,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/6/21,Cafe w Jing,KR60002-Food Expenses,7300,KR10101-Toss Checking Account,7300
+2024/6/22,7Eleven,KR60002-Food Expenses,5000,KR10101-Toss Checking Account,5000
+2024/6/22,GS25,KR60002-Food Expenses,6384,KR10105-Kakao Checking Account,6384
+2024/6/22,CU (Mask),KR60005-Personal Expenses,2800,KR10105-Kakao Checking Account,2800
+2024/6/22,Paris Baguette ,KR60002-Food Expenses,3400,KR10101-Toss Checking Account,3400
+2024/6/22,Coupang,KR60002-Food Expenses,31630,KR10101-Toss Checking Account,31630
+2024/6/23,Malatang w Alua,KR60002-Food Expenses,17804,KR10101-Toss Checking Account,17804
+2024/6/23,Mammoth w Alua,KR60002-Food Expenses,10400,KR10101-Toss Checking Account,10400
+2024/6/25,Wise 2 1MYR@295.044KRW,KR10101-Toss Checking Account,741584,KR70005-Allowance Income,741584
+2024/6/25,Transfer to KakaoPay ,KR10105-Kakao Checking Account,74674,KR10101-Toss Checking Account,74674
+2024/6/25,7월 건강보혐료,KR60003-Healthcare Expenses,75490,KR10105-Kakao Checking Account,75490
+2024/6/25,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/6/25,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/6/26,Transfer to Shinhan Invest,KR10104-Shinhan Investment Account,25000,KR10101-Toss Checking Account,25000
+2024/6/26,Haircut,KR60005-Personal Expenses,20000,KR10101-Toss Checking Account,20000
+2024/6/26,Phone Bill,KR60005-Personal Expenses,20000,KR10501-Phone Plan,20000
+2024/6/26,"Buy NAVER 0.148306@₩168,300",KR10404-Pending Investments,24959,KR10404-Pending Investments,24959
+2024/6/26,"Buy NAVER 0.148306@₩168,300",KR20002-Stocks,24959,KR10404-Pending Investments,24959
+2024/6/26,Hana Bank,KR60004-Transportation Expenses,2000,KR30201-Friends Debt,2000
+2024/6/26,Toss Bank,KR60004-Transportation Expenses,3800,KR30201-Friends Debt,3800
+2024/6/27,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/6/27,훠궈 w Jia Wei,KR60002-Food Expenses,25900,KR10101-Toss Checking Account,25900
+2024/6/28,교통비 reimbursement,KR10101-Toss Checking Account,8400,KR70003-Samsung Income,8400
+2024/6/28,Interpreting Job,KR10403-Friends Receivable,25050,KR70006-Other Income,25050
+2024/6/28,Interpreting Job (30 May),KR10102-Hana Checking Account,145050,KR10403-Friends Receivable,145050
+2024/6/28,Transfer to Toss ,KR10101-Toss Checking Account,145051,KR10102-Hana Checking Account,145051
+2024/6/28,7Eleven w Myothurin,KR60005-Personal Expenses,10561,KR10101-Toss Checking Account,10561
+2024/6/28,e-mart w Myothurin,KR60005-Personal Expenses,9200,KR10101-Toss Checking Account,9200
+2024/6/28,Withdraw from Toss,KR10000-Cash,50000,KR10101-Toss Checking Account,50000
+2024/6/29,GS25 ,KR60005-Personal Expenses,7500,KR10101-Toss Checking Account,7500
+2024/6/29,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/6/29,십일조,KR60005-Personal Expenses,30000,KR10000-Cash,30000
+2024/6/29,Paris Baguette Zion,KR60005-Personal Expenses,64400,KR10101-Toss Checking Account,64400
+2024/6/30,순두부찌개 at 판교,KR60002-Food Expenses,10000,KR10000-Cash,10000
+2024/7/1,6월 Interest,KR10101-Toss Checking Account,127,KR70002-Interest Income,127
+2024/7/2,Tisya (Punishment),KR60006-Punishment Expenses,100000,KR30201-Friends Debt,100000
+2024/7/3,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/7/3,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2024/7/3,Transfer to Toss,KR10101-Toss Checking Account,1100,KR10105-Kakao Checking Account,1100
+2024/7/3,Punishment for missing book paid by Myothurin,KR60005-Personal Expenses,18000,KR10101-Toss Checking Account,18000
+2024/7/6,Coupang Membership Fee,KR60005-Personal Expenses,4990,KR10101-Toss Checking Account,4990
+2024/7/9,Daiso (pen + notebook),KR60005-Personal Expenses,4000,KR10101-Toss Checking Account,4000
+2024/7/10,교통비 (6/26),KR30201-Friends Debt,3800,KR10101-Toss Checking Account,3800
+2024/7/14,Transfer to Hana,KR10102-Hana Checking Account,2000,KR10101-Toss Checking Account,2000
+2024/7/15,문서진 ,KR10105-Kakao Checking Account,30000,KR30201-Friends Debt,30000
+2024/7/15,Transfer to Toss,KR10101-Toss Checking Account,30000,KR10105-Kakao Checking Account,30000
+2024/7/15,교통비 (6/26),KR30201-Friends Debt,2000,KR10102-Hana Checking Account,2000
+2024/7/16,Ivan,KR10102-Hana Checking Account,20000,KR30201-Friends Debt,20000
+2024/7/16,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/7/17,7 Eleven,KR60002-Food Expenses,4591,KR10105-Kakao Checking Account,4591
+2024/7/17,Transfer to Toss,KR10101-Toss Checking Account,5409,KR10105-Kakao Checking Account,5409
+2024/7/17,Transfer to Toss,KR10101-Toss Checking Account,20000,KR10102-Hana Checking Account,20000
+2024/7/17,Shake Shake w Davy,KR60002-Food Expenses,13900,KR10101-Toss Checking Account,13900
+2024/7/18,Il Mazzio Cafe ,KR60002-Food Expenses,6100,KR10101-Toss Checking Account,6100
+2024/7/18,Ediya Coffee w SSP and PPMK,KR60002-Food Expenses,3200,KR10101-Toss Checking Account,3200
+2024/7/18,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/7/18,싸다김밥,KR60002-Food Expenses,10000,KR10101-Toss Checking Account,10000
+2024/7/19,Il Mazzio Cafe ,KR60002-Food Expenses,6100,KR10101-Toss Checking Account,6100
+2024/7/20,헌물,KR60005-Personal Expenses,5000,KR10000-Cash,5000
+2024/7/20,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/7/21,Ivan,KR10102-Hana Checking Account,20000,KR30201-Friends Debt,20000
+2024/7/21,Transfer to 김민식 (시온 회식),KR60002-Food Expenses,11100,KR10102-Hana Checking Account,11100
+2024/7/21,Transfer to Toss,KR10101-Toss Checking Account,8900,KR10102-Hana Checking Account,8900
+2024/7/21,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/7/21,7 Eleven,KR60002-Food Expenses,5300,KR10101-Toss Checking Account,5300
+2024/7/22,Wise 1 1MYR@296.285KRW,KR10101-Toss Checking Account,85923,KR70005-Allowance Income,85923
+2024/7/22,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/7/22,Transfer to Tisya,KR10403-Friends Receivable,5000,KR10105-Kakao Checking Account,5000
+2024/7/22,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/7/22,Apple Music,KR60005-Personal Expenses,3300,KR10105-Kakao Checking Account,3300
+2024/7/22,Bingsu w Tisya,KR60002-Food Expenses,9850,KR30201-Friends Debt,9850
+2024/7/22,Transfer to Alua,KR10403-Friends Receivable,500,KR10101-Toss Checking Account,500
+2024/7/22,Transfer to Toss,KR10101-Toss Checking Account,6700,KR10105-Kakao Checking Account,6700
+2024/7/23,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/7/23,Transfer from Tisya,KR10101-Toss Checking Account,5000,KR10403-Friends Receivable,5000
+2024/7/23,Transfer to Toss,KR10101-Toss Checking Account,20350,KR10105-Kakao Checking Account,20350
+2024/7/23,Frank Burger,KR60002-Food Expenses,9900,KR10101-Toss Checking Account,9900
+2024/7/24,Printing ,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/7/24,Printing ,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/7/24,Printing ,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/7/25,Printing ,KR60005-Personal Expenses,1000,KR10101-Toss Checking Account,1000
+2024/7/25,Printing ,KR60005-Personal Expenses,1000,KR10101-Toss Checking Account,1000
+2024/7/25,Printing ,KR60005-Personal Expenses,1000,KR10101-Toss Checking Account,1000
+2024/7/25,Printing ,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/7/25,Printing ,KR60005-Personal Expenses,1000,KR10101-Toss Checking Account,1000
+2024/7/25,Printing ,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/7/25,Printing ,KR60005-Personal Expenses,1000,KR10101-Toss Checking Account,1000
+2024/7/25,Printing ,KR60005-Personal Expenses,1750,KR10101-Toss Checking Account,1750
+2024/7/25,Wise 2 1MYR@296.281KRW,KR10101-Toss Checking Account,438597,KR70005-Allowance Income,438597
+2024/7/25,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/7/26,Printing ,KR60005-Personal Expenses,4000,KR10101-Toss Checking Account,4000
+2024/7/26,Printing ,KR60005-Personal Expenses,2000,KR10101-Toss Checking Account,2000
+2024/7/26,Printing ,KR60005-Personal Expenses,2000,KR10101-Toss Checking Account,2000
+2024/7/26,Printing ,KR60005-Personal Expenses,2000,KR10101-Toss Checking Account,2000
+2024/7/26,Mama,KR10101-Toss Checking Account,334602,KR70005-Allowance Income,334602
+2024/7/26,Yonsei Mart,KR60002-Food Expenses,1600,KR10101-Toss Checking Account,1600
+2024/7/26,Ice cream w 고건,KR60002-Food Expenses,3000,KR10101-Toss Checking Account,3000
+2024/7/26,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/7/26,8월 건강보혐료,KR60003-Healthcare Expenses,75530,KR10101-Toss Checking Account,75530
+2024/7/26,7월 Didimdol,KR10402-Didimdol Receivable,150000,KR70004-Didimdol Income,150000
+2024/7/26,7월 Samsung,KR10401-Samsung Receivable,557143,KR70003-Samsung Income,557143
+2024/7/27,Withdrawal 1 십일조,KR10000-Cash,50000,KR10101-Toss Checking Account,50000
+2024/7/27,십일조,KR10000-Cash,50000,KR10000-Cash,50000
+2024/7/27,십일조,KR60005-Personal Expenses,50000,KR10000-Cash,50000
+2024/7/27,지하철 to and from 삼계탕 만들기 체험관,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/7/28,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/7/28,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/7/28,GS25,KR60002-Food Expenses,1264,KR10105-Kakao Checking Account,1264
+2024/7/28,Transfer to Toss,KR10101-Toss Checking Account,8736,KR10105-Kakao Checking Account,8736
+2024/7/29,Transfer to Shinhan Invest,KR10104-Shinhan Investment Account,24000,KR10101-Toss Checking Account,24000
+2024/7/29,"Buy 삼양식품 0.038939@₩	641,000",KR10404-Pending Investments,24959,KR10404-Pending Investments,24959
+2024/7/29,"Buy 삼양식품 0.038939@₩	641,000",KR20002-Stocks,24959,KR10404-Pending Investments,24959
+2024/7/29,GS25,KR60002-Food Expenses,3800,KR10101-Toss Checking Account,3800
+2024/7/29,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/7/30,PALS 회원비,KR60005-Personal Expenses,35000,KR10101-Toss Checking Account,35000
+2024/7/30,Printing ,KR60005-Personal Expenses,6700,KR10101-Toss Checking Account,6700
+2024/7/30,Cat food,KR60005-Personal Expenses,1500,KR10101-Toss Checking Account,1500
+2024/7/31,지하철 to and from 삼계탕 만들기 체험관,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/7/31,Ivan,KR30201-Friends Debt,40000,KR10101-Toss Checking Account,40000
+2024/7/31,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/7/31,GS25,KR60002-Food Expenses,6994,KR10105-Kakao Checking Account,6994
+2024/8/1,Transfer to Toss,KR10101-Toss Checking Account,3006,KR10105-Kakao Checking Account,3006
+2024/8/1,7월 Interest,KR10101-Toss Checking Account,75,KR70002-Interest Income,75
+2024/8/1,8월 Didimdol,KR10402-Didimdol Receivable,150000,KR70004-Didimdol Income,150000
+2024/8/1,8월 Samsung,KR10401-Samsung Receivable,557143,KR70003-Samsung Income,557143
+2024/8/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/1,Come and Back from Myothurin,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/8/2,Printing (나비 실종 전단지),KR60005-Personal Expenses,900,KR10101-Toss Checking Account,900
+2024/8/2,Withdrawal for 헌물,KR10000-Cash,20000,KR10101-Toss Checking Account,20000
+2024/8/3,헌물,KR60005-Personal Expenses,5000,KR10000-Cash,5000
+2024/8/3,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/8/3,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2024/8/3,Transfer to Toss,KR10101-Toss Checking Account,1100,KR10105-Kakao Checking Account,1100
+2024/8/5,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/8/5,GS25,KR60002-Food Expenses,7936,KR10105-Kakao Checking Account,7936
+2024/8/5,Transfer to KakaoPay,KR10105-Kakao Checking Account,27936,KR10101-Toss Checking Account,27936
+2024/8/5,문서진,KR30201-Friends Debt,30000,KR10105-Kakao Checking Account,30000
+2024/8/6,쿠팡 회원비,KR60005-Personal Expenses,4990,KR10101-Toss Checking Account,4990
+2024/8/6,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/6,Double A Budget 삼성,KR10101-Toss Checking Account,176000,KR70003-Samsung Income,176000
+2024/8/7,Come and Back from Myothurin,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/8/8,GS25,KR60002-Food Expenses,11061,KR10101-Toss Checking Account,11061
+2024/8/8,Transfer to 김민식,KR60002-Food Expenses,14500,KR10101-Toss Checking Account,14500
+2024/8/8,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/9,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/8/9,헌물,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/8/10,헌물,KR60005-Personal Expenses,5000,KR10000-Cash,5000
+2024/8/11,교통 (양정빈),KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/8/11,GS25,KR60002-Food Expenses,5200,KR10101-Toss Checking Account,5200
+2024/8/11,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/11,"투썸 w 황휘, 찬희, 현재, 민식",KR60002-Food Expenses,6000,KR10101-Toss Checking Account,6000
+2024/8/11,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/11,삼겹살 with Annie,KR60002-Food Expenses,16700,KR30201-Friends Debt,16700
+2024/8/12,교통 (27/7),KR30201-Friends Debt,1400,KR10101-Toss Checking Account,1400
+2024/8/12,Printing ,KR60005-Personal Expenses,240,KR10101-Toss Checking Account,240
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Printing ,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/12,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/13,교통 (디딤돌 단체문화활동) + Myothurin,KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/8/13,현대차 배당금,KR10104-Shinhan Investment Account,385,KR70006-Other Income,385
+2024/8/14,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/8/14,Transfer to Rachel,KR10403-Friends Receivable,100000,KR10101-Toss Checking Account,100000
+2024/8/14,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/15,CU,KR60002-Food Expenses,9600,KR10101-Toss Checking Account,9600
+2024/8/15,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/17,헌금,KR60005-Personal Expenses,5000,KR10000-Cash,5000
+2024/8/18,Hani,KR10101-Toss Checking Account,6000,KR30201-Friends Debt,6000
+2024/8/18,문서진,KR10101-Toss Checking Account,20000,KR30201-Friends Debt,20000
+2024/8/18,Ivan,KR10102-Hana Checking Account,6000,KR30201-Friends Debt,6000
+2024/8/18,Ivan,KR10101-Toss Checking Account,6000,KR10102-Hana Checking Account,6000
+2024/8/19,교통 (Mubarack),KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/8/19,정장 세탁,KR60005-Personal Expenses,19000,KR10101-Toss Checking Account,19000
+2024/8/19,토픽 성적표,KR60005-Personal Expenses,120,KR10101-Toss Checking Account,120
+2024/8/19,성적증명서,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/8/19,스타벅스,KR60002-Food Expenses,7500,KR10101-Toss Checking Account,7500
+2024/8/19,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/20,Mama,KR10101-Toss Checking Account,80989,KR70005-Allowance Income,80989
+2024/8/20,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/8/20,Apple Music,KR60005-Personal Expenses,3300,KR10105-Kakao Checking Account,3300
+2024/8/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/20,삼성전자 배당금,KR10104-Shinhan Investment Account,232,KR70006-Other Income,232
+2024/8/21,Transfer to Toss,KR10101-Toss Checking Account,6700,KR10105-Kakao Checking Account,6700
+2024/8/21,노브랜드 과자,KR60002-Food Expenses,4780,KR10101-Toss Checking Account,4780
+2024/8/21,신촌연합동아리 행사 물품_노브랜드,KR10403-Friends Receivable,31730,KR10101-Toss Checking Account,31730
+2024/8/21,신촌연합동아리 행사 물품_다이소,KR10403-Friends Receivable,5000,KR10101-Toss Checking Account,5000
+2024/8/21,신촌연합동아리 행사 물품_알파,KR10403-Friends Receivable,22200,KR10101-Toss Checking Account,22200
+2024/8/21,Double A Budget 삼성,KR10101-Toss Checking Account,22000,KR70003-Samsung Income,22000
+2024/8/21,"카카오 택시 w 재현, 황희, 현재",KR60004-Transportation Expenses,7700,KR10101-Toss Checking Account,7700
+2024/8/21,교통 (VIP전도),KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/8/21,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/21,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/22,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/22,교통 (Myothurin) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/8/22,교통 (ISN200) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/8/22,교통 (ISN200) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/8/23,문서진,KR30201-Friends Debt,20000,KR10101-Toss Checking Account,20000
+2024/8/23,Rachel,KR10101-Toss Checking Account,100000,KR10403-Friends Receivable,100000
+2024/8/23,이디야 w 현재,KR60005-Personal Expenses,3900,KR10101-Toss Checking Account,3900
+2024/8/23,이디야,KR60005-Personal Expenses,3900,KR10101-Toss Checking Account,3900
+2024/8/23,이디야,KR60002-Food Expenses,3900,KR10101-Toss Checking Account,3900
+2024/8/23,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/23,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/23,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/23,Withdrawal for 헌물,KR10000-Cash,10000,KR10101-Toss Checking Account,10000
+2024/8/23,Transfer to KakaoPay,KR10000-Cash,10000,KR10101-Toss Checking Account,10000
+2024/8/24,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/8/24,헌금,KR60005-Personal Expenses,2000,KR10000-Cash,2000
+2024/8/24,GS25,KR60002-Food Expenses,5445,KR10105-Kakao Checking Account,5445
+2024/8/25,Mama,KR10101-Toss Checking Account,760707,KR70005-Allowance Income,760707
+2024/8/25,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/8/25,Transfer to KakaoPay,KR10105-Kakao Checking Account,70935,KR10101-Toss Checking Account,70935
+2024/8/25,9월 건강보혐료,KR60003-Healthcare Expenses,75490,KR10105-Kakao Checking Account,75490
+2024/8/25,Withdrawal for 십일조 + 헌금,KR10000-Cash,60000,KR10101-Toss Checking Account,60000
+2024/8/25,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/8/25,"종이봉투, 구디백, 케이크 for Double A 삼성",KR60005-Personal Expenses,42200,KR10101-Toss Checking Account,42200
+2024/8/25,Prepaid Phone Plan,KR60005-Personal Expenses,20000,KR10501-Phone Plan,20000
+2024/8/25,"자라산수, 보리차 for Double A 삼성",KR60005-Personal Expenses,26080,KR10101-Toss Checking Account,26080
+2024/8/25,"편지지, 상장용지, 인쇄 for Double A 삼성",KR60005-Personal Expenses,17000,KR10101-Toss Checking Account,17000
+2024/8/26,GS25,KR60002-Food Expenses,1200,KR10101-Toss Checking Account,1200
+2024/8/26,편의점 오이도역,KR60002-Food Expenses,3000,KR10101-Toss Checking Account,3000
+2024/8/26,교통 (Plogging) ,KR60004-Transportation Expenses,2100,KR30201-Friends Debt,2100
+2024/8/26,교통 (Plogging) ,KR60004-Transportation Expenses,1450,KR30201-Friends Debt,1450
+2024/8/26,교통 (Plogging) ,KR60004-Transportation Expenses,2250,KR30201-Friends Debt,2250
+2024/8/27,교통 (중간역량교육) ,KR60004-Transportation Expenses,3100,KR30201-Friends Debt,3100
+2024/8/27,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/28,교통 (Myothurin) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/8/28,교통 (홍대 전도) ,KR60004-Transportation Expenses,1200,KR30201-Friends Debt,1200
+2024/8/28,"SGBA 대본, PPT printing",KR60005-Personal Expenses,8850,KR10101-Toss Checking Account,8850
+2024/8/28,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/28,GS25,KR60002-Food Expenses,14300,KR10101-Toss Checking Account,14300
+2024/8/28,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/8/29,Transfer to KakaoPay,KR10105-Kakao Checking Account,40000,KR10101-Toss Checking Account,40000
+2024/8/29,택배비 PPMK programme,KR10105-Kakao Checking Account,40000,KR10105-Kakao Checking Account,40000
+2024/8/29,택배비 PPMK programme,KR10403-Friends Receivable,40000,KR10105-Kakao Checking Account,40000
+2024/8/29,택배비 PPMK programme,KR10105-Kakao Checking Account,5000,KR10403-Friends Receivable,5000
+2024/8/29,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/8/29,교통 (Myothurin) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/8/30,"페레로로쉐, 구슬 for Double A 삼성",KR60005-Personal Expenses,33480,KR10101-Toss Checking Account,33480
+2024/8/30,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/8/30,Hani,KR30201-Friends Debt,6000,KR10105-Kakao Checking Account,6000
+2024/8/30,Ivan,KR30201-Friends Debt,6000,KR10101-Toss Checking Account,6000
+2024/8/30,Ivan,KR30201-Friends Debt,6000,KR10101-Toss Checking Account,6000
+2024/8/30,Transfer to Toss,KR10101-Toss Checking Account,9000,KR10105-Kakao Checking Account,9000
+2024/8/30,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/8/30,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/1,9월 Didimdol,KR10402-Didimdol Receivable,150000,KR70004-Didimdol Income,150000
+2024/9/1,9월 Samsung,KR10401-Samsung Receivable,557142,KR70003-Samsung Income,557142
+2024/9/1,Prepaid Phone Plan,KR60005-Personal Expenses,20000,KR10501-Phone Plan,20000
+2024/9/1,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/9/1,PPMK,KR10102-Hana Checking Account,35000,KR10403-Friends Receivable,35000
+2024/9/1,8월 Interest,KR10101-Toss Checking Account,83,KR70002-Interest Income,83
+2024/9/1,Transfer to Toss,KR10101-Toss Checking Account,35000,KR10102-Hana Checking Account,35000
+2024/9/1,삼겹살 with Annie,KR30201-Friends Debt,16700,KR10101-Toss Checking Account,16700
+2024/9/1,교통 (PALS Hiking) ,KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/9/2,Deposit,KR10101-Toss Checking Account,40000,KR10000-Cash,40000
+2024/9/2,GS25,KR60002-Food Expenses,7490,KR10101-Toss Checking Account,7490
+2024/9/2,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/2,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/2,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/3,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/3,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/9/3,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2024/9/3,PPMK Allowance,KR10105-Kakao Checking Account,10000,KR70006-Other Income,10000
+2024/9/3,Transfer to Toss,KR10101-Toss Checking Account,11100,KR10105-Kakao Checking Account,11100
+2024/9/4,君熙在学证明书,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/4,振华在学证明书,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/4,振华在学证明书,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/4,问涛在学证明书,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/4,问涛在学证明书,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/5,신촌연합동아리 还钱,KR10102-Hana Checking Account,58930,KR10403-Friends Receivable,58930
+2024/9/5,Transfer to Toss,KR10101-Toss Checking Account,58930,KR10403-Friends Receivable,58930
+2024/9/5,Transfer to Toss,KR10101-Toss Checking Account,58930,KR10102-Hana Checking Account,58930
+2024/9/5,8월 교통비,KR30201-Friends Debt,38700,KR10101-Toss Checking Account,38700
+2024/9/5,교통 (Myothurin) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/5,GS25,KR60002-Food Expenses,8000,KR10101-Toss Checking Account,8000
+2024/9/5,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/6,쿠팡 회원비,KR60005-Personal Expenses,7890,KR10101-Toss Checking Account,7890
+2024/9/6,Return Aakansha’s Money to Lynne,KR60005-Personal Expenses,18000,KR10101-Toss Checking Account,18000
+2024/9/6,Taxi for 삼성,KR60005-Personal Expenses,11800,KR10101-Toss Checking Account,11800
+2024/9/6,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/6,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/9/6,교통 (学勤) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/6,교통 (서울노인복지센터) ,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/9/6,교통 (Leadership Academy) ,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/9/6,교통 (Leadership Academy) ,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/9/6,"라면 w Tisya, Aakansha and Zaim",KR60002-Food Expenses,7500,KR30201-Friends Debt,7500
+2024/9/7,"교통 (광장시장, 동대문) ",KR60004-Transportation Expenses,4400,KR30201-Friends Debt,4400
+2024/9/7,"콩국수, 망원시장 w Alua, Shun Lae",KR60002-Food Expenses,8000,KR10000-Cash,8000
+2024/9/7,"호떡, 망원시장 w Alua, Shun Lae",KR60002-Food Expenses,2500,KR10000-Cash,2500
+2024/9/7,Alua,KR10000-Cash,500,KR10403-Friends Receivable,500
+2024/9/7,"빈대떡, 망원시장 w Alua, Shun Lae",KR60002-Food Expenses,3333,KR10101-Toss Checking Account,3333
+2024/9/7,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/8,Mama,KR10101-Toss Checking Account,74329,KR70005-Allowance Income,74329
+2024/9/8,Return Extra Money to Lynne,KR60005-Personal Expenses,33440,KR10101-Toss Checking Account,33440
+2024/9/8,문서진,KR10105-Kakao Checking Account,20000,KR30201-Friends Debt,20000
+2024/9/8,Transfer to Toss,KR10101-Toss Checking Account,20000,KR10105-Kakao Checking Account,20000
+2024/9/8,Shun Lae,KR30201-Friends Debt,2333,KR10101-Toss Checking Account,2333
+2024/9/8,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/9/8,Tisya,KR30201-Friends Debt,7500,KR10105-Kakao Checking Account,7500
+2024/9/8,Transfer to Toss,KR10101-Toss Checking Account,2500,KR10105-Kakao Checking Account,2500
+2024/9/8,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/8,교통 (振华和君熙家) ,KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/9/8,Refund from Lyne,KR10101-Toss Checking Account,3500,KR60005-Personal Expenses,3500
+2024/9/9,Jing,KR10102-Hana Checking Account,3333,KR10403-Friends Receivable,3333
+2024/9/9,Waralee,KR10102-Hana Checking Account,3333,KR10403-Friends Receivable,3333
+2024/9/9,Waralee,KR10102-Hana Checking Account,3333,KR10403-Friends Receivable,3333
+2024/9/9,Transfer to Toss,KR10101-Toss Checking Account,6666,KR10102-Hana Checking Account,6666
+2024/9/9,Haircut,KR60005-Personal Expenses,20000,KR10101-Toss Checking Account,20000
+2024/9/9,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/9,교통 (Malatang w Tisya) ,KR60004-Transportation Expenses,3300,KR30201-Friends Debt,3300
+2024/9/10,Tisya,KR10105-Kakao Checking Account,14265,KR10403-Friends Receivable,14265
+2024/9/10,삼양식품 배당금,KR10104-Shinhan Investment Account,58,KR70006-Other Income,58
+2024/9/10,Transfer to Toss,KR10101-Toss Checking Account,14265,KR10105-Kakao Checking Account,14265
+2024/9/10,Tisya,KR10105-Kakao Checking Account,50000,KR30201-Friends Debt,50000
+2024/9/10,Transfer to Toss,KR10105-Kakao Checking Account,50000,KR10105-Kakao Checking Account,50000
+2024/9/10,Transfer to Toss,KR10101-Toss Checking Account,50000,KR10105-Kakao Checking Account,50000
+2024/9/10,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/10,星巴克跟振华,KR60005-Personal Expenses,6600,KR10101-Toss Checking Account,6600
+2024/9/10,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/11,Printing Daily Planner,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/11,Printing Daily Planner,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/11,Printing Daily Planner,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/9/12,GS25,KR60002-Food Expenses,1600,KR10101-Toss Checking Account,1600
+2024/9/12,烤鱼跟문서진,KR60002-Food Expenses,25000,KR30201-Friends Debt,25000
+2024/9/12,Didimdol w Myothurin,KR10101-Toss Checking Account,50000,KR70004-Didimdol Income,50000
+2024/9/12,쿠팡 for 君熙,KR10403-Friends Receivable,20617,KR10101-Toss Checking Account,20617
+2024/9/13,연어초밥 w Annie,KR10403-Friends Receivable,11900,KR10101-Toss Checking Account,11900
+2024/9/13,연어초밥 w Annie,KR60002-Food Expenses,11900,KR10101-Toss Checking Account,11900
+2024/9/13,Annie,KR10105-Kakao Checking Account,17800,KR10403-Friends Receivable,17800
+2024/9/13,Transfer to Toss,KR10105-Kakao Checking Account,17800,KR10105-Kakao Checking Account,17800
+2024/9/13,Transfer to Toss,KR10101-Toss Checking Account,17800,KR10105-Kakao Checking Account,17800
+2024/9/13,교통 (Leadership Academy) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/13,Wei Tian ,KR10102-Hana Checking Account,100000,KR30201-Friends Debt,100000
+2024/9/13,Transfer to Toss,KR10102-Hana Checking Account,100000,KR10102-Hana Checking Account,100000
+2024/9/13,Transfer to Toss,KR10101-Toss Checking Account,100000,KR10102-Hana Checking Account,100000
+2024/9/13,문서진,KR30201-Friends Debt,45000,KR10101-Toss Checking Account,45000
+2024/9/14,Forgiving Tisya’s Debt,KR30201-Friends Debt,149930,KR70006-Other Income,149930
+2024/9/14,GS25,KR60002-Food Expenses,5500,KR10101-Toss Checking Account,5500
+2024/9/14,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/14,떡 ,KR60002-Food Expenses,31000,KR10101-Toss Checking Account,31000
+2024/9/14,교통 (송편 만들기) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/14,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/14,쿠팡이츠 for 君熙,KR10403-Friends Receivable,16000,KR10101-Toss Checking Account,16000
+2024/9/14,헌금,KR60005-Personal Expenses,3000,KR10000-Cash,3000
+2024/9/15,GS25,KR60002-Food Expenses,1500,KR10101-Toss Checking Account,1500
+2024/9/15,Coffee Bean,KR60002-Food Expenses,3450,KR10101-Toss Checking Account,3450
+2024/9/15,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/15,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/15,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/15,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/9/15,청화원,KR60002-Food Expenses,6950,KR10105-Kakao Checking Account,6950
+2024/9/15,Transfer to Toss,KR10101-Toss Checking Account,3050,KR10105-Kakao Checking Account,3050
+2024/9/15,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/9/15,노래방,KR60005-Personal Expenses,3250,KR10105-Kakao Checking Account,3250
+2024/9/15,Transfer to Toss,KR10101-Toss Checking Account,6750,KR10105-Kakao Checking Account,6750
+2024/9/15,교통 (跟学勤吃) ,KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/9/16,Coffee Bean,KR60002-Food Expenses,3000,KR10101-Toss Checking Account,3000
+2024/9/16,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/16,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/16,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/16,김삼보 w 문서진,KR60002-Food Expenses,11000,KR30201-Friends Debt,11000
+2024/9/16,술 w 문서진,KR60002-Food Expenses,7100,KR30201-Friends Debt,7100
+2024/9/16,Transfer to KakaoPay,KR10105-Kakao Checking Account,11000,KR10101-Toss Checking Account,11000
+2024/9/16,김삼보 w 문서진,KR10105-Kakao Checking Account,11000,KR10105-Kakao Checking Account,11000
+2024/9/16,김삼보 w 문서진,KR30201-Friends Debt,11000,KR10105-Kakao Checking Account,11000
+2024/9/17,Davy,KR10102-Hana Checking Account,100000,KR30201-Friends Debt,100000
+2024/9/17,Transfer to Toss,KR10101-Toss Checking Account,100000,KR10102-Hana Checking Account,100000
+2024/9/17,7Eleven,KR60002-Food Expenses,2100,KR10101-Toss Checking Account,2100
+2024/9/17,Transfer to Toss,KR10101-Toss Checking Account,16200,KR10105-Kakao Checking Account,16200
+2024/9/17,Transfer to Toss,KR10101-Toss Checking Account,26400,KR10102-Hana Checking Account,26400
+2024/9/17,Transfer to Toss,KR10101-Toss Checking Account,2300,KR10105-Kakao Checking Account,2300
+2024/9/17,Transfer to Toss,KR10101-Toss Checking Account,2300,KR10102-Hana Checking Account,2300
+2024/9/17,Deposit,KR10101-Toss Checking Account,20000,KR10000-Cash,20000
+2024/9/17,교통 (PALS 경복궁) ,KR60004-Transportation Expenses,7100,KR30201-Friends Debt,7100
+2024/9/18,월미짱랜드,KR60005-Personal Expenses,6500,KR10101-Toss Checking Account,6500
+2024/9/18,알루아,KR60005-Personal Expenses,12000,KR30201-Friends Debt,12000
+2024/9/18,알루아,KR30201-Friends Debt,12000,KR10101-Toss Checking Account,12000
+2024/9/18,월미도레미,KR60002-Food Expenses,12500,KR10101-Toss Checking Account,12500
+2024/9/18,月饼给振华,KR60005-Personal Expenses,5000,KR10101-Toss Checking Account,5000
+2024/9/18,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/18,Gantigma 인쌩맥주,KR60002-Food Expenses,12450,KR30201-Friends Debt,12450
+2024/9/18,교통 (당일치기 w 알루아 & 간팅마) ,KR60004-Transportation Expenses,10650,KR30201-Friends Debt,10650
+2024/9/19,Gantigma 인쌩맥주,KR30201-Friends Debt,12450,KR10101-Toss Checking Account,12450
+2024/9/19,Gantigma 인생네컷,KR60005-Personal Expenses,2670,KR30201-Friends Debt,2670
+2024/9/19,Gantigma 인생네컷,KR30201-Friends Debt,2670,KR10101-Toss Checking Account,2670
+2024/9/19,Transfer to Toss,KR10101-Toss Checking Account,15500,KR10102-Hana Checking Account,15500
+2024/9/19,잘빠진메밀 & 인생네컷 w PALS (Chan),KR10000-Cash,15500,KR10102-Hana Checking Account,15500
+2024/9/19,문서진 (입금 부탁),KR10403-Friends Receivable,15000,KR10000-Cash,15000
+2024/9/19,문서진 (입금 부탁),KR10105-Kakao Checking Account,15000,KR10403-Friends Receivable,15000
+2024/9/19,술 w 문서진,KR30201-Friends Debt,7100,KR10105-Kakao Checking Account,7100
+2024/9/19,Transfer to Toss,KR10101-Toss Checking Account,7900,KR10105-Kakao Checking Account,7900
+2024/9/19,교통 (Myothurin) ,KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/9/19,교통 (学勤) ,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/9/19,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/19,Davy,KR10102-Hana Checking Account,50000,KR30201-Friends Debt,50000
+2024/9/19,Transfer to Toss,KR10101-Toss Checking Account,50000,KR10102-Hana Checking Account,50000
+2024/9/20,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/9/20,Apple Music,KR60005-Personal Expenses,3300,KR10105-Kakao Checking Account,3300
+2024/9/20,Transfer to Toss,KR10101-Toss Checking Account,6700,KR10105-Kakao Checking Account,6700
+2024/9/20,GS25,KR60002-Food Expenses,5500,KR10101-Toss Checking Account,5500
+2024/9/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/20,쿠팡,KR60002-Food Expenses,15360,KR10101-Toss Checking Account,15360
+2024/9/20,GS25,KR60002-Food Expenses,7800,KR10101-Toss Checking Account,7800
+2024/9/20,교통 (Leadership Academy) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/21,8월 Interest,KR10102-Hana Checking Account,2,KR70002-Interest Income,2
+2024/9/21,Coffee Bean,KR60002-Food Expenses,2950,KR10101-Toss Checking Account,2950
+2024/9/21,Hani,KR60002-Food Expenses,2950,KR30201-Friends Debt,2950
+2024/9/21,Hani,KR30201-Friends Debt,2950,KR10101-Toss Checking Account,2950
+2024/9/21,Transfer to Toss,KR10101-Toss Checking Account,1237,KR10104-Shinhan Investment Account,1237
+2024/9/21,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/21,"Boxquare w Hani, Jing",KR60002-Food Expenses,5000,KR10101-Toss Checking Account,5000
+2024/9/22,Annie,KR10105-Kakao Checking Account,25000,KR30201-Friends Debt,25000
+2024/9/22,Transfer to Toss,KR10101-Toss Checking Account,25000,KR10105-Kakao Checking Account,25000
+2024/9/22,쿠팡이츠 for 君熙,KR10403-Friends Receivable,24500,KR10101-Toss Checking Account,24500
+2024/9/22,교통 (去明洞看见振华) ,KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/9/23,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/23,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/9/23,Coins gone missing,KR60005-Personal Expenses,1000,KR10000-Cash,1000
+2024/9/23,Forgiving 김어진’s Debt,KR60008-Other Expenses,2284,KR10403-Friends Receivable,2284
+2024/9/24,2024_2 Samsung Scholarship,KR10101-Toss Checking Account,3900000,KR10401-Samsung Receivable,3900000
+2024/9/24,문서진 ,KR10403-Friends Receivable,8600,KR10101-Toss Checking Account,8600
+2024/9/24,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/24,Annie,KR30201-Friends Debt,25000,KR10101-Toss Checking Account,25000
+2024/9/24,PPMK,KR30201-Friends Debt,400000,KR10101-Toss Checking Account,400000
+2024/9/24,Tisya,KR30201-Friends Debt,50000,KR10101-Toss Checking Account,50000
+2024/9/24,Wei Tian ,KR30201-Friends Debt,100000,KR10101-Toss Checking Account,100000
+2024/9/24,Davy,KR30201-Friends Debt,150000,KR10101-Toss Checking Account,150000
+2024/9/24,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/9/24,문서진 ,KR30201-Friends Debt,1400,KR10105-Kakao Checking Account,1400
+2024/9/24,Transfer to KakaoPay,KR10105-Kakao Checking Account,66890,KR10101-Toss Checking Account,66890
+2024/9/24,10월 건강보혐료,KR60003-Healthcare Expenses,75490,KR10105-Kakao Checking Account,75490
+2024/9/24,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/9/24,"NIKE shoes, socks",KR60005-Personal Expenses,267000,KR10101-Toss Checking Account,267000
+2024/9/24,교통 (去弘大跟君熙和振华) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/25,Davy,KR10403-Friends Receivable,500000,KR10101-Toss Checking Account,500000
+2024/9/25,西装,KR10403-Friends Receivable,500000,KR10101-Toss Checking Account,500000
+2024/9/25,西装,KR60005-Personal Expenses,500000,KR10101-Toss Checking Account,500000
+2024/9/25,쿠팡이츠 for 君熙,KR10403-Friends Receivable,35900,KR10101-Toss Checking Account,35900
+2024/9/25,Mama,KR10101-Toss Checking Account,650181,KR70005-Allowance Income,650181
+2024/9/25,Transfer to Shinhan Invest,KR10104-Shinhan Investment Account,50000,KR10101-Toss Checking Account,50000
+2024/9/25,Transfer to Shinhan Invest,KR10104-Shinhan Investment Account,5000,KR10101-Toss Checking Account,5000
+2024/9/25,무신사,KR60005-Personal Expenses,143892,KR10101-Toss Checking Account,143892
+2024/9/25,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/25,쿠팡,KR60005-Personal Expenses,104600,KR10101-Toss Checking Account,104600
+2024/9/25,"Buy 삼성바이오로직스 0.046523@₩	1,073,000",KR20002-Stocks,49919,KR10404-Pending Investments,49919
+2024/9/25,Transfer to Shinhan Invest,KR10104-Shinhan Investment Account,50000,KR10101-Toss Checking Account,50000
+2024/9/25,교통 (Steak w Davy) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/26,"Buy 삼성전자 0.775155@₩	64,400",KR10404-Pending Investments,49919,KR10404-Pending Investments,49919
+2024/9/26,"Buy 삼성전자 0.775155@₩	64,400",KR20002-Stocks,49919,KR10404-Pending Investments,49919
+2024/9/26,Concert Tattoos,KR60005-Personal Expenses,1600,KR10101-Toss Checking Account,1600
+2024/9/26,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/27,振华 ear piercing,KR10403-Friends Receivable,33000,KR10101-Toss Checking Account,33000
+2024/9/27,7Eleven,KR60002-Food Expenses,1900,KR10101-Toss Checking Account,1900
+2024/9/27,춘리마라탕,KR60002-Food Expenses,10830,KR10101-Toss Checking Account,10830
+2024/9/27,교통 (海底捞跟振华) ,KR60004-Transportation Expenses,4500,KR30201-Friends Debt,4500
+2024/9/28,미용실 예약금 (君熙),KR10403-Friends Receivable,19970,KR10101-Toss Checking Account,19970
+2024/9/28,"쿠팡이츠 for 君熙, 振华",KR10403-Friends Receivable,39000,KR10101-Toss Checking Account,39000
+2024/9/28,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/28,미용실 예약금 (振华),KR10403-Friends Receivable,20000,KR10101-Toss Checking Account,20000
+2024/9/28,교통 (在明洞购物跟振华) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/9/29,"쿠팡이츠 for 君熙, 振华",KR10403-Friends Receivable,25400,KR10101-Toss Checking Account,25400
+2024/9/29,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/9/29,연남어부跟君熙振华,KR60002-Food Expenses,66000,KR10101-Toss Checking Account,66000
+2024/9/29,연남어부跟君熙振华,KR60002-Food Expenses,33500,KR10101-Toss Checking Account,33500
+2024/9/29,교통 (吃生鱼片跟振华君熙) ,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/9/29,한술식당 w 勇太,KR60002-Food Expenses,9900,KR10101-Toss Checking Account,9900
+2024/9/29,교통 (한술식당 w 勇太) ,KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/9/30,Davy,KR10105-Kakao Checking Account,500000,KR10403-Friends Receivable,500000
+2024/9/30,Transfer to Toss,KR10101-Toss Checking Account,500000,KR10105-Kakao Checking Account,500000
+2024/9/30,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/9/30,메머드커피,KR60002-Food Expenses,3807,KR10105-Kakao Checking Account,3807
+2024/9/30,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/1,10월 Didimdol,KR10402-Didimdol Receivable,150000,KR70004-Didimdol Income,150000
+2024/10/1,10월 Samsung,KR10401-Samsung Receivable,650000,KR70003-Samsung Income,650000
+2024/10/1,Prepaid Phone Plan,KR60005-Personal Expenses,20000,KR10501-Phone Plan,20000
+2024/10/1,9월 Interest,KR10101-Toss Checking Account,302,KR70002-Interest Income,302
+2024/10/1,9월 교통비,KR30201-Friends Debt,74150,KR10101-Toss Checking Account,74150
+2024/10/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/1,Naver Points,KR10106-Naver Checking Account,2626,KR70006-Other Income,2626
+2024/10/1,Transfer to Naver,KR10106-Naver Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/10/1,교통 (went home from 君熙和振华’s) ,KR60004-Transportation Expenses,1400,KR30201-Friends Debt,1400
+2024/10/1,Transfer to Toss,KR10101-Toss Checking Account,8626,KR10106-Naver Checking Account,8626
+2024/10/2,Transfer to Shinhan,KR10103-Shinhan Checking Account,50000,KR10101-Toss Checking Account,50000
+2024/10/2,"Buy 신한 골드 0.44@₩	113,241.67",KR20003-Gold,49826,KR10103-Shinhan Checking Account,49826
+2024/10/2,계좌 인증,KR10101-Toss Checking Account,1,KR70006-Other Income,1
+2024/10/2,Haircut,KR60005-Personal Expenses,20000,KR10101-Toss Checking Account,20000
+2024/10/2,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/2,교통 (to and from 君熙和振华’s) ,KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/10/3,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/3,Transfer to KakaoPay,KR60005-Personal Expenses,10000,KR10101-Toss Checking Account,10000
+2024/10/3,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/10/3,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2024/10/3,Bakso Rindu Kampung w Myothurin,KR60005-Personal Expenses,41000,KR10101-Toss Checking Account,41000
+2024/10/3,"감기약, 기침약",KR60003-Healthcare Expenses,7000,KR10101-Toss Checking Account,7000
+2024/10/3,다이소 w Myothurin,KR60005-Personal Expenses,9000,KR10101-Toss Checking Account,9000
+2024/10/3,Hollys w Myothurin,KR60005-Personal Expenses,17700,KR10101-Toss Checking Account,17700
+2024/10/3,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/10/3,Hollys w Myothurin,KR60005-Personal Expenses,8400,KR10101-Toss Checking Account,8400
+2024/10/3,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/3,Withdraw for 振华,KR10000-Cash,60000,KR10101-Toss Checking Account,60000
+2024/10/3,기후동행카드 for 振华,KR10403-Friends Receivable,3000,KR10000-Cash,3000
+2024/10/3,기후동행카드 충전 for 振华,KR10403-Friends Receivable,55000,KR10000-Cash,55000
+2024/10/3,교통 (Myothurin) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/10/4,Transfer to KakaoPay,KR10105-Kakao Checking Account,12707,KR10101-Toss Checking Account,12707
+2024/10/4,Tisya,KR10403-Friends Receivable,20000,KR10105-Kakao Checking Account,20000
+2024/10/4,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/4,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/4,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/4,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/10/4,교통 (跟李振华跑步) ,KR60004-Transportation Expenses,5500,KR30201-Friends Debt,5500
+2024/10/5,Thai Tea,KR60002-Food Expenses,5000,KR10101-Toss Checking Account,5000
+2024/10/5,Steak at Thai Festival,KR60002-Food Expenses,18000,KR10101-Toss Checking Account,18000
+2024/10/5,쿠팡이츠 for 振华君熙,KR10403-Friends Receivable,25000,KR10101-Toss Checking Account,25000
+2024/10/5,Waralee paid for Thai Food,KR60002-Food Expenses,9600,KR30201-Friends Debt,9600
+2024/10/5,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/5,Aakansha,KR10102-Hana Checking Account,1800,KR10403-Friends Receivable,1800
+2024/10/5,교통 (Thai Fest) ,KR60004-Transportation Expenses,4500,KR30201-Friends Debt,4500
+2024/10/5,Aakansha,KR10102-Hana Checking Account,17700,KR30201-Friends Debt,17700
+2024/10/5,Transfer to Hana,KR10102-Hana Checking Account,9598,KR10101-Toss Checking Account,9598
+2024/10/6,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/6,Fatemeh’s money,KR30201-Friends Debt,7700,KR10102-Hana Checking Account,7700
+2024/10/6,Waralee’s money,KR30201-Friends Debt,43400,KR10102-Hana Checking Account,43400
+2024/10/6,Transfer to Toss,KR10101-Toss Checking Account,80000,KR10000-Cash,80000
+2024/10/6,7Eleven,KR60002-Food Expenses,1200,KR10101-Toss Checking Account,1200
+2024/10/6,Coffee Break,KR60002-Food Expenses,5300,KR10101-Toss Checking Account,5300
+2024/10/6,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/6,쿠팡 회원비,KR60005-Personal Expenses,7890,KR10101-Toss Checking Account,7890
+2024/10/6,Tisya,KR10105-Kakao Checking Account,20000,KR10403-Friends Receivable,20000
+2024/10/6,교통 (Lotte World) ,KR60004-Transportation Expenses,3300,KR30201-Friends Debt,3300
+2024/10/7,王学勤,KR10000-Cash,23000,KR10403-Friends Receivable,23000
+2024/10/7,王学勤,KR10105-Kakao Checking Account,5000,KR10403-Friends Receivable,5000
+2024/10/7,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/7,Transfer to Toss,KR10101-Toss Checking Account,25000,KR10105-Kakao Checking Account,25000
+2024/10/7,钱嘉男 hospital,KR10403-Friends Receivable,14200,KR10101-Toss Checking Account,14200
+2024/10/7,Transfer to Toss,KR10101-Toss Checking Account,7200,KR10102-Hana Checking Account,7200
+2024/10/7,钱嘉男 hospital,KR10403-Friends Receivable,5000,KR10101-Toss Checking Account,5000
+2024/10/7,교통 (아침기도모임) ,KR60004-Transportation Expenses,1200,KR30201-Friends Debt,1200
+2024/10/7,교통 (钱嘉男) ,KR60004-Transportation Expenses,1600,KR30201-Friends Debt,1600
+2024/10/7,Correcting Toss Mismatch,KR60008-Other Expenses,30,KR10101-Toss Checking Account,30
+2024/10/8,서정민,KR10102-Hana Checking Account,15000,KR10403-Friends Receivable,15000
+2024/10/8,Transfer to Toss,KR10101-Toss Checking Account,15000,KR10102-Hana Checking Account,15000
+2024/10/8,Transfer to Toss,KR10102-Hana Checking Account,6500,KR10403-Friends Receivable,6500
+2024/10/8,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/8,Transfer to Toss,KR10101-Toss Checking Account,100000,KR10000-Cash,100000
+2024/10/8,Transfer to Naver,KR10106-Naver Checking Account,90000,KR10101-Toss Checking Account,90000
+2024/10/8,君熙振华水电费,KR10403-Friends Receivable,79280,KR30201-Friends Debt,79280
+2024/10/8,농구장 물,KR10403-Friends Receivable,2000,KR30201-Friends Debt,2000
+2024/10/8,Transfer to Toss,KR10000-Cash,200000,KR10000-Cash,200000
+2024/10/8,Transfer to Toss,KR10101-Toss Checking Account,200000,KR10000-Cash,200000
+2024/10/8,교통 (클럽) ,KR60004-Transportation Expenses,4200,KR30201-Friends Debt,4200
+2024/10/9,君熙振华水电费,KR30201-Friends Debt,73040,KR10101-Toss Checking Account,73040
+2024/10/9,CU (ice cream),KR60002-Food Expenses,3000,KR10101-Toss Checking Account,3000
+2024/10/9,교통 (클럽) ,KR60004-Transportation Expenses,1200,KR30201-Friends Debt,1200
+2024/10/9,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/9,君熙振华水电费,KR30201-Friends Debt,6240,KR10101-Toss Checking Account,6240
+2024/10/9,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/10,Transfer to Toss,KR10101-Toss Checking Account,10000,KR10000-Cash,10000
+2024/10/10,洗衣服,KR60005-Personal Expenses,20000,KR10000-Cash,20000
+2024/10/10,GS25,KR60002-Food Expenses,4400,KR10101-Toss Checking Account,4400
+2024/10/10,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/10,Didimdol w Myothurin,KR10101-Toss Checking Account,50000,KR70004-Didimdol Income,50000
+2024/10/10,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/10,李振华交通费,KR60005-Personal Expenses,174,KR10103-Shinhan Checking Account,174
+2024/10/10,교통 (Myothurin) ,KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/10/10,교통 (기록 없음) ,KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/10/10,Paris Baguette,KR60002-Food Expenses,8000,KR10101-Toss Checking Account,8000
+2024/10/10,Mammoth Coffee,KR60002-Food Expenses,5600,KR10101-Toss Checking Account,5600
+2024/10/11,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/11,교통 (귀가) ,KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/10/11,짐닭 w 알루아,KR60002-Food Expenses,11500,KR10101-Toss Checking Account,11500
+2024/10/11,Paris Baguette,KR60002-Food Expenses,5400,KR10101-Toss Checking Account,5400
+2024/10/12,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/12,给李振华买个水,KR60005-Personal Expenses,800,KR10101-Toss Checking Account,800
+2024/10/12,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/12,헌금,KR60005-Personal Expenses,5000,KR10000-Cash,5000
+2024/10/12,교통 (振华) ,KR60004-Transportation Expenses,6000,KR30201-Friends Debt,6000
+2024/10/13,Transfer to Toss,KR10101-Toss Checking Account,6500,KR10102-Hana Checking Account,6500
+2024/10/13,11월 건강보혐료,KR60003-Healthcare Expenses,75490,KR10101-Toss Checking Account,75490
+2024/10/13,Savings 해제,KR10101-Toss Checking Account,10000,KR10205-Transportation Savings,10000
+2024/10/13,커피브레이크,KR60002-Food Expenses,5300,KR10101-Toss Checking Account,5300
+2024/10/13,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/13,Forgive 其多’s debt,KR30201-Friends Debt,82667,KR70006-Other Income,82667
+2024/10/13,10월 Interest,KR10101-Toss Checking Account,67,KR70002-Interest Income,67
+2024/10/13,Transfer to Toss,KR10101-Toss Checking Account,9026,KR10106-Naver Checking Account,9026
+2024/10/13,CU,KR60002-Food Expenses,8700,KR10101-Toss Checking Account,8700
+2024/10/13,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/14,Paris Baguette,KR60002-Food Expenses,5400,KR10101-Toss Checking Account,5400
+2024/10/15,7Eleven,KR60002-Food Expenses,3000,KR10101-Toss Checking Account,3000
+2024/10/16,孙雅婷 기숙사 환불,KR10102-Hana Checking Account,2008440,KR30201-Friends Debt,2008440
+2024/10/16,Transfer to Toss,KR10101-Toss Checking Account,10000,KR10102-Hana Checking Account,10000
+2024/10/16,7Eleven,KR60002-Food Expenses,5000,KR10101-Toss Checking Account,5000
+2024/10/17,Transfer to Toss,KR10101-Toss Checking Account,30000,KR10102-Hana Checking Account,30000
+2024/10/17,티머니,KR60004-Transportation Expenses,6000,KR10101-Toss Checking Account,6000
+2024/10/17,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/17,Transfer to Hana,KR10101-Toss Checking Account,25000,KR10102-Hana Checking Account,25000
+2024/10/18,Transfer to Toss,KR10101-Toss Checking Account,30000,KR10102-Hana Checking Account,30000
+2024/10/18,교통,KR60004-Transportation Expenses,7500,KR30201-Friends Debt,7500
+2024/10/18,Paris Baguette,KR60002-Food Expenses,8100,KR10101-Toss Checking Account,8100
+2024/10/18,Transfer to Toss,KR10101-Toss Checking Account,10000,KR10102-Hana Checking Account,10000
+2024/10/18,7Eleven,KR60002-Food Expenses,5200,KR10101-Toss Checking Account,5200
+2024/10/19,Transfer to Toss,KR10101-Toss Checking Account,200000,KR10102-Hana Checking Account,200000
+2024/10/19,Transfer to Toss,KR10101-Toss Checking Account,100000,KR10102-Hana Checking Account,100000
+2024/10/19,Taxi back to Sogang,KR60005-Personal Expenses,2000,KR10101-Toss Checking Account,2000
+2024/10/19,교통,KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/10/19,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/19,Taxi to 阿岘站,KR60004-Transportation Expenses,5300,KR10101-Toss Checking Account,5300
+2024/10/19,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/20,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/10/20,Apple Music,KR60005-Personal Expenses,3300,KR10105-Kakao Checking Account,3300
+2024/10/20,Transfer to KakaoPay,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/10/20,Paris Baguette,KR60002-Food Expenses,8100,KR10101-Toss Checking Account,8100
+2024/10/20,공차,KR60002-Food Expenses,4900,KR10101-Toss Checking Account,4900
+2024/10/20,교통,KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/10/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/21,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/22,미진축산 w 문서진,KR10105-Kakao Checking Account,19200,KR10403-Friends Receivable,19200
+2024/10/22,메머드커피,KR60002-Food Expenses,6600,KR10101-Toss Checking Account,6600
+2024/10/22,교통,KR60004-Transportation Expenses,2500,KR30201-Friends Debt,2500
+2024/10/22,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/23,GS25,KR60002-Food Expenses,4900,KR10101-Toss Checking Account,4900
+2024/10/23,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/24,Transfer to Toss,KR10101-Toss Checking Account,80000,KR10102-Hana Checking Account,80000
+2024/10/24,Withdrawal,KR10000-Cash,50000,KR10101-Toss Checking Account,50000
+2024/10/24,OIA Field Trip Deposit,KR10000-Cash,50000,KR10000-Cash,50000
+2024/10/24,OIA Field Trip Deposit,KR10403-Friends Receivable,50000,KR10000-Cash,50000
+2024/10/24,Transfer to Toss,KR10101-Toss Checking Account,20000,KR10102-Hana Checking Account,20000
+2024/10/25,Budget for SEA Studies Samsung,KR10102-Hana Checking Account,700000,KR70003-Samsung Income,700000
+2024/10/25,Mama,KR10101-Toss Checking Account,642776,KR70005-Allowance Income,642776
+2024/10/25,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/10/25,Transfer to Toss,KR10101-Toss Checking Account,1931440,KR10102-Hana Checking Account,1931440
+2024/10/25,Transfer to Shinhan,KR10103-Shinhan Checking Account,300000,KR10101-Toss Checking Account,300000
+2024/10/25,"Buy 신한 골드 2.44@₩	122,573.45",KR20003-Gold,299079,KR10103-Shinhan Checking Account,299079
+2024/10/25,Transfer to Shinhan Investment,KR10104-Shinhan Investment Account,200000,KR10101-Toss Checking Account,200000
+2024/10/25,Paris Baguette,KR60002-Food Expenses,5800,KR10101-Toss Checking Account,5800
+2024/10/25,교통,KR60004-Transportation Expenses,921,KR10103-Shinhan Checking Account,921
+2024/10/25,춘리마라탕跟钱嘉男,KR60002-Food Expenses,21960,KR10101-Toss Checking Account,21960
+2024/10/25,춘리마라탕跟钱嘉男,KR60002-Food Expenses,9310,KR10101-Toss Checking Account,9310
+2024/10/26,서강동회장학회,KR10000-Cash,15000,KR70006-Other Income,15000
+2024/10/26,판교행 택시,KR60004-Transportation Expenses,8100,KR10101-Toss Checking Account,8100
+2024/10/26,교통,KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/10/26,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/26,순두부찌개_휴게소,KR60002-Food Expenses,10000,KR10101-Toss Checking Account,10000
+2024/10/26,소세지_휴게소,KR60002-Food Expenses,5000,KR10101-Toss Checking Account,5000
+2024/10/27,GS25,KR60002-Food Expenses,5721,KR10105-Kakao Checking Account,5721
+2024/10/27,중국간식,KR60002-Food Expenses,10700,KR10101-Toss Checking Account,10700
+2024/10/27,사과빵,KR60002-Food Expenses,28000,KR10101-Toss Checking Account,28000
+2024/10/27,사과식혜,KR60002-Food Expenses,12000,KR10101-Toss Checking Account,12000
+2024/10/27,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/28,교통,KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/10/28,Haircut,KR60005-Personal Expenses,20000,KR10101-Toss Checking Account,20000
+2024/10/29,GS25,KR60002-Food Expenses,5400,KR10101-Toss Checking Account,5400
+2024/10/29,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/29,Transfer to Batrisyia to Exhange Money,KR70005-Allowance Income,158446,KR10101-Toss Checking Account,158446
+2024/10/29,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/29,Zaim,KR10403-Friends Receivable,180000,KR10101-Toss Checking Account,180000
+2024/10/29,육쌈냉면 w 문서진,KR10105-Kakao Checking Account,10000,KR10403-Friends Receivable,10000
+2024/10/29,쿠팡 groceries,KR60002-Food Expenses,12260,KR10101-Toss Checking Account,12260
+2024/10/30,孙雅婷 관세 세금 납부,KR30201-Friends Debt,30690,KR10101-Toss Checking Account,30690
+2024/10/30,교통,KR60004-Transportation Expenses,2400,KR30201-Friends Debt,2400
+2024/10/31,7Eleven,KR60002-Food Expenses,4900,KR10101-Toss Checking Account,4900
+2024/10/31,쿠츠 w 문서진,KR10105-Kakao Checking Account,13000,KR10403-Friends Receivable,13000
+2024/10/31,孙雅婷 관세 세금 납부,KR30201-Friends Debt,82400,KR10101-Toss Checking Account,82400
+2024/10/31,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/10/31,케이포 w Myothurin,KR60005-Personal Expenses,36500,KR10101-Toss Checking Account,36500
+2024/10/31,교통 (Myothurin to 경복궁),KR60004-Transportation Expenses,4200,KR30201-Friends Debt,4200
+2024/11/1,11월 Didimdol (Fixed monthly income calculation),KR10402-Didimdol Receivable,566667,KR70004-Didimdol Income,566667
+2024/11/1,11월 Samsung,KR10401-Samsung Receivable,650000,KR70003-Samsung Income,650000
+2024/11/1,7Eleven,KR60002-Food Expenses,18300,KR10101-Toss Checking Account,18300
+2024/11/1,11월 Prepaid Phone Plan,KR60005-Personal Expenses,17500,KR10501-Phone Plan,17500
+2024/11/1,10월 Interest,KR10101-Toss Checking Account,420,KR70002-Interest Income,420
+2024/11/1,휴게소,KR60002-Food Expenses,4000,KR10101-Toss Checking Account,4000
+2024/11/1,강정,KR60002-Food Expenses,20000,KR10101-Toss Checking Account,20000
+2024/11/1,전주 초코파이,KR60002-Food Expenses,27000,KR10101-Toss Checking Account,27000
+2024/11/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/1,100원빵,KR60002-Food Expenses,4000,KR10101-Toss Checking Account,4000
+2024/11/1,E마트24,KR60002-Food Expenses,6700,KR10101-Toss Checking Account,6700
+2024/11/2,모찌,KR60005-Personal Expenses,42000,KR10101-Toss Checking Account,42000
+2024/11/2,Deposit Refund,KR10000-Cash,50000,KR10403-Friends Receivable,50000
+2024/11/2,춘리마라탕跟钱嘉男,KR60002-Food Expenses,17860,KR10101-Toss Checking Account,17860
+2024/11/3,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2024/11/3,GS25,KR60002-Food Expenses,2100,KR10101-Toss Checking Account,2100
+2024/11/3,Hollys,KR60002-Food Expenses,5500,KR10101-Toss Checking Account,5500
+2024/11/3,교통,KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/11/3,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/3,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/11/4,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/4,10월 교통비,KR30201-Friends Debt,67700,KR10101-Toss Checking Account,67700
+2024/11/4,孙雅婷电费,KR10403-Friends Receivable,99460,KR10101-Toss Checking Account,99460
+2024/11/5,把钱嘉男朋友的手机寄到大邱,KR60005-Personal Expenses,4000,KR10101-Toss Checking Account,4000
+2024/11/5,把钱嘉男朋友的手机寄到大邱_상자,KR60005-Personal Expenses,800,KR10101-Toss Checking Account,800
+2024/11/5,李振华的在学证明书,KR60005-Personal Expenses,500,KR10101-Toss Checking Account,500
+2024/11/5,孙雅婷 은행 deposit,KR10403-Friends Receivable,20000,KR10000-Cash,20000
+2024/11/5,李振华 은행 deposit,KR10403-Friends Receivable,20000,KR10000-Cash,20000
+2024/11/5,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2024/11/5,교통(Waralee),KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/11/5,전 w Waralee,KR60002-Food Expenses,11000,KR10101-Toss Checking Account,11000
+2024/11/5,마라탕 w Waralee,KR10102-Hana Checking Account,6555,KR10403-Friends Receivable,6555
+2024/11/5,给孙雅婷转钱,KR30201-Friends Debt,400000,KR10101-Toss Checking Account,400000
+2024/11/6,쿠팡 회원비,KR60005-Personal Expenses,7890,KR10101-Toss Checking Account,7890
+2024/11/6,Compose Coffee,KR60002-Food Expenses,2900,KR10101-Toss Checking Account,2900
+2024/11/6,물,KR60002-Food Expenses,800,KR10101-Toss Checking Account,800
+2024/11/6,물 4 문서진,KR60005-Personal Expenses,800,KR10101-Toss Checking Account,800
+2024/11/6,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/6,교통(李振华),KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/11/6,쿠팡이츠 for 李振华,KR60005-Personal Expenses,21500,KR10101-Toss Checking Account,21500
+2024/11/7,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/7,교통(李振华),KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/11/7,GS25 w 钱嘉男,KR60002-Food Expenses,14500,KR10101-Toss Checking Account,14500
+2024/11/7,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/11/8,Transfer to Toss,KR10101-Toss Checking Account,34279,KR10105-Kakao Checking Account,34279
+2024/11/8,매머드커피,KR60002-Food Expenses,5200,KR10101-Toss Checking Account,5200
+2024/11/8,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/9,간식 at PALS MT,KR60002-Food Expenses,3650,KR10101-Toss Checking Account,3650
+2024/11/9,Transfer to Toss,KR10101-Toss Checking Account,6555,KR10102-Hana Checking Account,6555
+2024/11/9,용우동,KR60002-Food Expenses,9500,KR10101-Toss Checking Account,9500
+2024/11/9,Davy’s Trip Budget,KR10102-Hana Checking Account,1000000,KR70006-Other Income,1000000
+2024/11/10,Transfer to Toss,KR10101-Toss Checking Account,5000,KR10102-Hana Checking Account,5000
+2024/11/10,뼈해장국 w 尤其多，王君熙，刘旭,KR60002-Food Expenses,10000,KR10101-Toss Checking Account,10000
+2024/11/10,给孙雅婷转钱,KR30201-Friends Debt,900000,KR10102-Hana Checking Account,900000
+2024/11/10,麻辣烫跟钱嘉男,KR60002-Food Expenses,25790,KR10102-Hana Checking Account,25790
+2024/11/10,투썸플레이스,KR60002-Food Expenses,5000,KR10102-Hana Checking Account,5000
+2024/11/10,교통(홍대),KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/11/10,Transfer to Shinhan,KR10103-Shinhan Checking Account,2000,KR10102-Hana Checking Account,2000
+2024/11/10,Reduce 李振华’s debt by contra,KR30201-Friends Debt,8250,KR10403-Friends Receivable,8250
+2024/11/11,Transfer to Shinhan,KR10103-Shinhan Checking Account,60000,KR10102-Hana Checking Account,60000
+2024/11/11,给孙雅婷转钱,KR30201-Friends Debt,400000,KR10103-Shinhan Checking Account,400000
+2024/11/11,Transfer to Toss,KR10101-Toss Checking Account,2210,KR10102-Hana Checking Account,2210
+2024/11/11,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/11,Deposit Cash,KR10101-Toss Checking Account,30000,KR10000-Cash,30000
+2024/11/11,李振华交通费,KR60005-Personal Expenses,847,KR10103-Shinhan Checking Account,847
+2024/11/11,Pepero,KR60005-Personal Expenses,18000,KR10101-Toss Checking Account,18000
+2024/11/11,Transfer to Shinhan,KR10103-Shinhan Checking Account,2000,KR10101-Toss Checking Account,2000
+2024/11/11,Mama,KR10101-Toss Checking Account,177921,KR70005-Allowance Income,177921
+2024/11/11,Transfer to Kakao,KR10105-Kakao Checking Account,20000,KR10101-Toss Checking Account,20000
+2024/11/11,Tisya,KR10105-Kakao Checking Account,20000,KR10105-Kakao Checking Account,20000
+2024/11/11,Tisya,KR10403-Friends Receivable,20000,KR10105-Kakao Checking Account,20000
+2024/11/11,교통(기록 없음),KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/11/12,GS25,KR60002-Food Expenses,6500,KR10101-Toss Checking Account,6500
+2024/11/12,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/12,삼성전자 배당금,KR10104-Shinhan Investment Account,385,KR70006-Other Income,385
+2024/11/12,마포광안리,KR60002-Food Expenses,9500,KR10101-Toss Checking Account,9500
+2024/11/12,콜로라도 프로젝트,KR60002-Food Expenses,4500,KR10101-Toss Checking Account,4500
+2024/11/12,7Eleven,KR60002-Food Expenses,8950,KR10101-Toss Checking Account,8950
+2024/11/12,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/12,李振华交通费,KR60005-Personal Expenses,858,KR10103-Shinhan Checking Account,858
+2024/11/13,서강대학교 멘토,KR10102-Hana Checking Account,25000,KR70006-Other Income,25000
+2024/11/13,물 4 문서진,KR60005-Personal Expenses,800,KR10101-Toss Checking Account,800
+2024/11/13,물,KR60005-Personal Expenses,800,KR10101-Toss Checking Account,800
+2024/11/13,물,KR60002-Food Expenses,800,KR10101-Toss Checking Account,800
+2024/11/14,Didimdol w Myothurin,KR10101-Toss Checking Account,50000,KR70004-Didimdol Income,50000
+2024/11/14,메머드커피,KR60002-Food Expenses,5200,KR10101-Toss Checking Account,5200
+2024/11/14,Mama,KR10101-Toss Checking Account,97979,KR70005-Allowance Income,97979
+2024/11/14,Transfer to Toss,KR10101-Toss Checking Account,25000,KR10102-Hana Checking Account,25000
+2024/11/14,给孙雅婷转钱,KR30201-Friends Debt,195350,KR10101-Toss Checking Account,195350
+2024/11/14,문서진,KR10105-Kakao Checking Account,20000,KR30201-Friends Debt,20000
+2024/11/14,Transfer to Toss,KR10101-Toss Checking Account,5000,KR10104-Shinhan Investment Account,5000
+2024/11/14,Davy,KR10102-Hana Checking Account,10000,KR30201-Friends Debt,10000
+2024/11/14,Transfer to Toss,KR10101-Toss Checking Account,20000,KR10105-Kakao Checking Account,20000
+2024/11/14,Transfer to Toss,KR10101-Toss Checking Account,10000,KR10102-Hana Checking Account,10000
+2024/11/14,GS25,KR60002-Food Expenses,1800,KR10101-Toss Checking Account,1800
+2024/11/14,교통(Myothurin),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/11/15,"Sell 삼성전자 3@₩	52,000.00",KR10104-Shinhan Investment Account,155430,KR10404-Pending Investments,155430
+2024/11/15,"Sell 삼성바이오로직스 0.093046@₩	967,263.00",KR10104-Shinhan Investment Account,89870,KR10404-Pending Investments,89870
+2024/11/15,"Sell NAVER 0.148306@₩	181,078.00",KR10104-Shinhan Investment Account,26815,KR10404-Pending Investments,26815
+2024/11/15,"Sell 삼양식품 0.132597@₩	544,031.00",KR10104-Shinhan Investment Account,72037,KR10404-Pending Investments,72037
+2024/11/15,Transfer to Toss,KR10101-Toss Checking Account,344592,KR10104-Shinhan Investment Account,344592
+2024/11/15,Meeting 1 태양 삼성,KR60005-Personal Expenses,4000,KR10101-Toss Checking Account,4000
+2024/11/15,Meeting 1 징 삼성,KR60005-Personal Expenses,9100,KR10101-Toss Checking Account,9100
+2024/11/15,Meeting 1 엔지 삼성,KR60005-Personal Expenses,14300,KR10101-Toss Checking Account,14300
+2024/11/15,멘츠루 신촌점 삼성,KR60005-Personal Expenses,34500,KR10101-Toss Checking Account,34500
+2024/11/15,멘츠루 신촌점 삼성,KR60005-Personal Expenses,10000,KR10101-Toss Checking Account,10000
+2024/11/15,신룽푸 마라탕 이대점 삼성,KR60005-Personal Expenses,17900,KR10101-Toss Checking Account,17900
+2024/11/15,Meeting 2 삼성,KR60005-Personal Expenses,21500,KR10101-Toss Checking Account,21500
+2024/11/15,프랭크버거 연남점 삼성,KR60005-Personal Expenses,10400,KR30201-Friends Debt,10400
+2024/11/15,마포아트센터 - 이대5번출구역 - 성동세무서앞 삼성,KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/11/15,교통(Didimdol Sunbae meeting),KR60004-Transportation Expenses,1700,KR30201-Friends Debt,1700
+2024/11/15,이대역 - 이화여대기숙사 삼성,KR60005-Personal Expenses,1400,KR30201-Friends Debt,1400
+2024/11/15,회기역 - 이대역 - 명동역 삼성,KR60005-Personal Expenses,2900,KR30201-Friends Debt,2900
+2024/11/15,안암역 - 이대역 - 안암역 삼성,KR60005-Personal Expenses,2800,KR30201-Friends Debt,2800
+2024/11/15,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/16,Transfer to Kakao,KR10105-Kakao Checking Account,75490,KR10101-Toss Checking Account,75490
+2024/11/16,12월 건강보혐료,KR10105-Kakao Checking Account,75490,KR10105-Kakao Checking Account,75490
+2024/11/16,12월 건강보혐료,KR60003-Healthcare Expenses,75490,KR10105-Kakao Checking Account,75490
+2024/11/16,Transfer to Kakao,KR10105-Kakao Checking Account,20000,KR10101-Toss Checking Account,20000
+2024/11/16,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/11/16,문서진,KR30201-Friends Debt,20000,KR10105-Kakao Checking Account,20000
+2024/11/16,Davy,KR30201-Friends Debt,10000,KR10105-Kakao Checking Account,10000
+2024/11/16,청화원 w 钱嘉男,KR60002-Food Expenses,21800,KR10101-Toss Checking Account,21800
+2024/11/16,Baskin Robins w 钱嘉男,KR60002-Food Expenses,14200,KR10101-Toss Checking Account,14200
+2024/11/16,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/11/16,교통(go home),KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/11/16,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/17,"프랭크버거 연남점 식비, 이대역 - 이화여대기숙사 교통비 삼성",KR30201-Friends Debt,11800,KR10101-Toss Checking Account,11800
+2024/11/17,회기역 - 이대역 - 명동역 삼성,KR30201-Friends Debt,2800,KR10101-Toss Checking Account,2800
+2024/11/17,안암역 - 이대역 - 안암역 삼성,KR30201-Friends Debt,2800,KR10101-Toss Checking Account,2800
+2024/11/17,안암역 - 이대역 - 안암역 삼성,KR30201-Friends Debt,2800,KR10101-Toss Checking Account,2800
+2024/11/17,회기역 - 이대역 - 명동역 삼성,KR30201-Friends Debt,100,KR10101-Toss Checking Account,100
+2024/11/17,Transfer to Toss,KR10101-Toss Checking Account,35000,KR10102-Hana Checking Account,35000
+2024/11/17,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/17,투썸플레이스 w Tisya,KR60002-Food Expenses,4500,KR10101-Toss Checking Account,4500
+2024/11/17,Temu,KR60005-Personal Expenses,52456,KR10101-Toss Checking Account,52456
+2024/11/17,교통(met qjn and Tisya),KR60004-Transportation Expenses,6000,KR30201-Friends Debt,6000
+2024/11/17,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/18,7Eleven,KR60002-Food Expenses,10300,KR10101-Toss Checking Account,10300
+2024/11/18,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/18,카페나무,KR60002-Food Expenses,5700,KR10101-Toss Checking Account,5700
+2024/11/19,보승회관 w 문서진,KR60002-Food Expenses,16000,KR30201-Friends Debt,16000
+2024/11/19,Transfer to Kakao,KR60002-Food Expenses,16000,KR10101-Toss Checking Account,16000
+2024/11/19,Transfer to Kakao,KR10105-Kakao Checking Account,16000,KR10101-Toss Checking Account,16000
+2024/11/19,보승회관 w 문서진,KR10105-Kakao Checking Account,16000,KR10105-Kakao Checking Account,16000
+2024/11/19,보승회관 w 문서진,KR30201-Friends Debt,16000,KR10105-Kakao Checking Account,16000
+2024/11/19,동문회장학금,KR10101-Toss Checking Account,1500000,KR70006-Other Income,1500000
+2024/11/19,Zaim,KR10403-Friends Receivable,100000,KR10101-Toss Checking Account,100000
+2024/11/19,서강기프트샵 (돕바),KR60005-Personal Expenses,92000,KR10101-Toss Checking Account,92000
+2024/11/19,교통(홍대),KR60004-Transportation Expenses,2900,KR30201-Friends Debt,2900
+2024/11/20,Apple Music,KR60005-Personal Expenses,3300,KR10105-Kakao Checking Account,3300
+2024/11/20,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/11/20,삼성전자 배당금,KR10104-Shinhan Investment Account,361,KR70006-Other Income,361
+2024/11/20,삼성전자 배당금,KR10104-Shinhan Investment Account,151,KR70006-Other Income,151
+2024/11/20,물 4 문서진,KR60005-Personal Expenses,800,KR10101-Toss Checking Account,800
+2024/11/20,물,KR60002-Food Expenses,800,KR10101-Toss Checking Account,800
+2024/11/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/20,마카롱 4 식구,KR60005-Personal Expenses,44500,KR10101-Toss Checking Account,44500
+2024/11/21,예능 출연비,KR10102-Hana Checking Account,80000,KR70006-Other Income,80000
+2024/11/21,7Eleven,KR60002-Food Expenses,15600,KR10101-Toss Checking Account,15600
+2024/11/21,교통(Myothurin),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/11/22,청년밥상문간 w Waralee 재전송,KR30201-Friends Debt,5000,KR10105-Kakao Checking Account,5000
+2024/11/22,마라탕 w Belle,KR60002-Food Expenses,31980,KR10101-Toss Checking Account,31980
+2024/11/22,마라탕 w Belle,KR60005-Personal Expenses,12500,KR10101-Toss Checking Account,12500
+2024/11/22,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/22,무인플러스마트,KR60002-Food Expenses,1200,KR10101-Toss Checking Account,1200
+2024/11/23,Paris Baguette 4 식구,KR60005-Personal Expenses,39400,KR10101-Toss Checking Account,39400
+2024/11/23,녹색식당 w 식구 (이황희),KR60002-Food Expenses,9000,KR10403-Friends Receivable,9000
+2024/11/23,녹색식당 w 식구 (이황희),KR10102-Hana Checking Account,9000,KR10403-Friends Receivable,9000
+2024/11/23,녹색식당 w 식구 (기윤민),KR10102-Hana Checking Account,9000,KR10403-Friends Receivable,9000
+2024/11/23,녹색식당 w 식구 (기윤민),KR10101-Toss Checking Account,9000,KR10403-Friends Receivable,9000
+2024/11/23,녹색식당 w 식구 (윤여준),KR10101-Toss Checking Account,9000,KR10403-Friends Receivable,9000
+2024/11/23,녹색식당 w 식구 (윤여준),KR10105-Kakao Checking Account,9000,KR10403-Friends Receivable,9000
+2024/11/23,소신이쏘 w 王学勤,KR60002-Food Expenses,26750,KR10403-Friends Receivable,26750
+2024/11/24,청화원,KR60002-Food Expenses,9000,KR10101-Toss Checking Account,9000
+2024/11/24,할리스 w Tisya,KR60002-Food Expenses,4700,KR10101-Toss Checking Account,4700
+2024/11/24,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/24,교통(Met Tisya),KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/11/25,钱嘉男保险费,KR10403-Friends Receivable,22690,KR10105-Kakao Checking Account,22690
+2024/11/25,타코로코,KR60002-Food Expenses,11000,KR10101-Toss Checking Account,11000
+2024/11/25,마카롱 4 식구,KR60005-Personal Expenses,46500,KR10101-Toss Checking Account,46500
+2024/11/25,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/11/25,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/25,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/25,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/25,Transfer to Kakao,KR10105-Kakao Checking Account,84990,KR10101-Toss Checking Account,84990
+2024/11/25,Davy,KR10403-Friends Receivable,100000,KR10105-Kakao Checking Account,100000
+2024/11/25,교통(go home),KR60004-Transportation Expenses,2500,KR30201-Friends Debt,2500
+2024/11/26,Mama,KR10101-Toss Checking Account,603890,KR70005-Allowance Income,603890
+2024/11/26,Transfer to Shinhan,KR10103-Shinhan Checking Account,190000,KR10101-Toss Checking Account,190000
+2024/11/26,"Buy 신한 골드 1.59@₩	119,477.41",KR20003-Gold,189969,KR10103-Shinhan Checking Account,189969
+2024/11/26,Transfer to Shinhan Investment,KR10104-Shinhan Investment Account,99000,KR10102-Hana Checking Account,99000
+2024/11/26,"Buy 삼성전자 1.638285@₩	58,000.00",KR20002-Stocks,95160,KR10104-Shinhan Investment Account,95160
+2024/11/26,"Buy 삼성전자 0.065866@₩	58,300.00",KR20002-Stocks,3839,KR10104-Shinhan Investment Account,3839
+2024/11/26,Paris Baguette ,KR60002-Food Expenses,7500,KR10101-Toss Checking Account,7500
+2024/11/26,SGBA ,KR60005-Personal Expenses,20000,KR10101-Toss Checking Account,20000
+2024/11/26,Withdraw ,KR10000-Cash,50000,KR10101-Toss Checking Account,50000
+2024/11/26,Secret Santa’s Gift,KR60005-Personal Expenses,35000,KR10101-Toss Checking Account,35000
+2024/11/27,Haircut,KR60005-Personal Expenses,16000,KR10101-Toss Checking Account,16000
+2024/11/27,휘낭시에,KR60002-Food Expenses,16400,KR10101-Toss Checking Account,16400
+2024/11/27,물,KR60002-Food Expenses,800,KR10101-Toss Checking Account,800
+2024/11/28,Myothurin Cursive Writing Exercise,KR60005-Personal Expenses,1300,KR10101-Toss Checking Account,1300
+2024/11/28,Books,KR60005-Personal Expenses,25300,KR10101-Toss Checking Account,25300
+2024/11/28,교통(Myothurin),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/11/29,Transfer to Toss,KR10101-Toss Checking Account,100961,KR10103-Shinhan Checking Account,100961
+2024/11/29,Dry cleaning clothes,KR60005-Personal Expenses,46000,KR10101-Toss Checking Account,46000
+2024/11/29,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/29,Olive Young,KR60005-Personal Expenses,5500,KR10101-Toss Checking Account,5500
+2024/11/29,王学勤,KR10105-Kakao Checking Account,163000,KR70006-Other Income,163000
+2024/11/29,海底捞 w Shunn Lae,KR10403-Friends Receivable,34900,KR10403-Friends Receivable,34900
+2024/11/29,海底捞 w Shunn Lae,KR10102-Hana Checking Account,34900,KR10403-Friends Receivable,34900
+2024/11/29,교통(met Shunn Lae),KR60004-Transportation Expenses,4500,KR30201-Friends Debt,4500
+2024/11/30,Davy,KR10105-Kakao Checking Account,100000,KR10403-Friends Receivable,100000
+2024/11/30,Davy (5000 * 10 times),KR10105-Kakao Checking Account,50000,KR70006-Other Income,50000
+2024/11/30,Returned to Davy,KR70006-Other Income,50000,KR10105-Kakao Checking Account,50000
+2024/11/30,Davy (2000 * 25 times),KR10105-Kakao Checking Account,50000,KR70006-Other Income,50000
+2024/11/30,황희 브라덜 선물,KR60005-Personal Expenses,208000,KR10101-Toss Checking Account,208000
+2024/11/30,투썸플레이스 w Tisya,KR60005-Personal Expenses,5000,KR10101-Toss Checking Account,5000
+2024/11/30,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/30,GS25 4 MSDC,KR60005-Personal Expenses,14000,KR10101-Toss Checking Account,14000
+2024/11/30,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/11/30,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/11/30,Harufilm w 王君熙，尤其多，王其昌，李问涛，李振华,KR10403-Friends Receivable,15000,KR10101-Toss Checking Account,15000
+2024/11/30,游戏区 w 王君熙，尤其多，王其昌，李问涛，李振华,KR10403-Friends Receivable,14000,KR10000-Cash,14000
+2024/11/30,교통(MSDC program),KR60004-Transportation Expenses,4600,KR30201-Friends Debt,4600
+2024/12/1,12월 Samsung,KR10401-Samsung Receivable,650000,KR70003-Samsung Income,650000
+2024/12/1,12월 Prepaid Phone Plan,KR60005-Personal Expenses,17500,KR10501-Phone Plan,17500
+2024/12/1,11월 Interest,KR10101-Toss Checking Account,493,KR70002-Interest Income,493
+2024/12/1,12월 Didimdol,KR10402-Didimdol Receivable,233333,KR70004-Didimdol Income,233333
+2024/12/1,교통,KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/12/1,Annie,KR10105-Kakao Checking Account,15000,KR10403-Friends Receivable,15000
+2024/12/1,Transfer to Toss,KR10101-Toss Checking Account,328000,KR10105-Kakao Checking Account,328000
+2024/12/1,Transfer to Toss,KR10101-Toss Checking Account,34900,KR10102-Hana Checking Account,34900
+2024/12/1,Transfer to Toss,KR10101-Toss Checking Account,60000,KR10000-Cash,60000
+2024/12/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/1,Taxi,KR60004-Transportation Expenses,9900,KR10101-Toss Checking Account,9900
+2024/12/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/1,尤其多,KR10102-Hana Checking Account,29000,KR10403-Friends Receivable,29000
+2024/12/1,Transfer to Toss,KR10101-Toss Checking Account,29000,KR10102-Hana Checking Account,29000
+2024/12/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/1,예탁금이용료,KR10104-Shinhan Investment Account,4,KR70006-Other Income,4
+2024/12/1,Paris Baguette,KR60002-Food Expenses,12400,KR10101-Toss Checking Account,12400
+2024/12/3,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/12/3,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2024/12/3,Transfer to Toss,KR10101-Toss Checking Account,91098,KR10103-Shinhan Checking Account,91098
+2024/12/3,清华园跟钱嘉男,KR60002-Food Expenses,18500,KR30201-Friends Debt,18500
+2024/12/3,清华园跟钱嘉男,KR30201-Friends Debt,18500,KR10101-Toss Checking Account,18500
+2024/12/4,11월 교통비,KR30201-Friends Debt,51500,KR10101-Toss Checking Account,51500
+2024/12/4,Correction for Toss,KR10101-Toss Checking Account,400,KR70006-Other Income,400
+2024/12/4,교통(跟王学勤吃饭),KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/12/4,跟王学勤（喜茶，炸猪排）,KR60002-Food Expenses,22800,KR30201-Friends Debt,22800
+2024/12/4,Transfer to Kakao,KR10105-Kakao Checking Account,21700,KR10101-Toss Checking Account,21700
+2024/12/4,跟王学勤（喜茶，炸猪排）,KR30201-Friends Debt,22800,KR10105-Kakao Checking Account,22800
+2024/12/4,뿌링클 치즈볼 콜라 BHC,KR60002-Food Expenses,3000,KR10105-Kakao Checking Account,3000
+2024/12/4,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/12/5,麻辣烫（钱嘉男）,KR60002-Food Expenses,14110,KR10101-Toss Checking Account,14110
+2024/12/5,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/5,Tisya,KR10105-Kakao Checking Account,20000,KR10403-Friends Receivable,20000
+2024/12/5,교통(跟钱嘉男吃饭),KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/12/5,교통(묘투린),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/12/6,Transfer to Toss,KR10101-Toss Checking Account,27000,KR10105-Kakao Checking Account,27000
+2024/12/6,MSDC Party ,KR60005-Personal Expenses,14666,KR10101-Toss Checking Account,14666
+2024/12/6,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/6,쿠팡 회원비,KR60005-Personal Expenses,7890,KR10101-Toss Checking Account,7890
+2024/12/6,고추바사삭 콜라 굽네,KR60002-Food Expenses,3000,KR10105-Kakao Checking Account,3000
+2024/12/6,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/12/7,Transfer to Toss,KR10101-Toss Checking Account,7000,KR10105-Kakao Checking Account,7000
+2024/12/7,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/7,GS25,KR60002-Food Expenses,5200,KR10101-Toss Checking Account,5200
+2024/12/8,Transfer to Kakao,KR10105-Kakao Checking Account,517,KR10104-Shinhan Investment Account,517
+2024/12/8,0,KR10105-Kakao Checking Account,517,KR10105-Kakao Checking Account,517
+2024/12/8,Transfer to Toss,KR10101-Toss Checking Account,517,KR10105-Kakao Checking Account,517
+2024/12/8,매머드커피,KR60002-Food Expenses,3100,KR10101-Toss Checking Account,3100
+2024/12/9,"Sell 현대차 0.192369@₩	205,137.00",KR10104-Shinhan Investment Account,39412,KR10404-Pending Investments,39412
+2024/12/9,"Sell 삼성전자 1@₩	53,900.00",KR10104-Shinhan Investment Account,53704,KR10404-Pending Investments,53704
+2024/12/9,"Sell 삼성전자 0.902461@₩	53,705.00",KR10104-Shinhan Investment Account,48397,KR10404-Pending Investments,48397
+2024/12/9,Transfer to Toss,KR10101-Toss Checking Account,141513,KR10104-Shinhan Investment Account,141513
+2024/12/9,Pay to 钱嘉男 (debt unrecorded),KR60002-Food Expenses,21965,KR10101-Toss Checking Account,21965
+2024/12/9,치과 스케일링,KR60003-Healthcare Expenses,25900,KR10101-Toss Checking Account,25900
+2024/12/9,약국,KR60003-Healthcare Expenses,6500,KR10101-Toss Checking Account,6500
+2024/12/9,봉쥬르 마카롱,KR60002-Food Expenses,23600,KR10101-Toss Checking Account,23600
+2024/12/9,7Eleven,KR60002-Food Expenses,4000,KR10101-Toss Checking Account,4000
+2024/12/9,PPMK ,KR10102-Hana Checking Account,350000,KR30201-Friends Debt,350000
+2024/12/11,Transfer to Toss,KR10101-Toss Checking Account,25000,KR10102-Hana Checking Account,25000
+2024/12/11,Transfer to Toss,KR10101-Toss Checking Account,5000,KR10102-Hana Checking Account,5000
+2024/12/11,봉쥬르 마카롱,KR60002-Food Expenses,26800,KR10101-Toss Checking Account,26800
+2024/12/12,Transfer to Toss,KR10101-Toss Checking Account,11000,KR10102-Hana Checking Account,11000
+2024/12/12,쿠팡 Myothurin,KR60005-Personal Expenses,14280,KR10101-Toss Checking Account,14280
+2024/12/12,Transfer to Toss,KR10101-Toss Checking Account,25000,KR10102-Hana Checking Account,25000
+2024/12/12,Transfer to Toss,KR10101-Toss Checking Account,5000,KR10102-Hana Checking Account,5000
+2024/12/12,다이소 Myothurin,KR60005-Personal Expenses,27700,KR10101-Toss Checking Account,27700
+2024/12/12,Transfer to Toss,KR10101-Toss Checking Account,20000,KR10102-Hana Checking Account,20000
+2024/12/12,7Eleven,KR60002-Food Expenses,13200,KR10101-Toss Checking Account,13200
+2024/12/12,교통(묘투린),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/12/13,본인확인,KR10102-Hana Checking Account,1,KR70006-Other Income,1
+2024/12/13,쿠팡이츠,KR60002-Food Expenses,24400,KR10102-Hana Checking Account,24400
+2024/12/13,Transfer to Toss,KR10101-Toss Checking Account,10000,KR10102-Hana Checking Account,10000
+2024/12/13,스타벅스,KR60002-Food Expenses,4500,KR10101-Toss Checking Account,4500
+2024/12/13,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/13,팔공티,KR60002-Food Expenses,3500,KR10101-Toss Checking Account,3500
+2024/12/13,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/13,7Eleven,KR60002-Food Expenses,4600,KR10101-Toss Checking Account,4600
+2024/12/14,Transfer to Toss,KR10101-Toss Checking Account,20000,KR10102-Hana Checking Account,20000
+2024/12/14,Paris Baguette,KR60002-Food Expenses,17900,KR10101-Toss Checking Account,17900
+2024/12/14,교통(리앤원 수료식),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/12/15,Transfer to Toss,KR10101-Toss Checking Account,15000,KR10102-Hana Checking Account,15000
+2024/12/15,경양카츠 w 钱嘉男,KR60002-Food Expenses,20900,KR10101-Toss Checking Account,20900
+2024/12/15,Transfer to Toss,KR10101-Toss Checking Account,25000,KR10102-Hana Checking Account,25000
+2024/12/15,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/15,매머드커피,KR60002-Food Expenses,6200,KR10101-Toss Checking Account,6200
+2024/12/15,쿠팡이츠,KR60002-Food Expenses,37000,KR10102-Hana Checking Account,37000
+2024/12/15,교통(跟钱嘉男吃饭),KR60004-Transportation Expenses,3000,KR30201-Friends Debt,3000
+2024/12/16,Transfer to Toss,KR10101-Toss Checking Account,20000,KR10102-Hana Checking Account,20000
+2024/12/16,치과 스케일링,KR60003-Healthcare Expenses,21500,KR10101-Toss Checking Account,21500
+2024/12/16,Transfer to Kakao,KR10105-Kakao Checking Account,15000,KR10101-Toss Checking Account,15000
+2024/12/16,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/16,Transfer to Toss,KR10101-Toss Checking Account,37000,KR10102-Hana Checking Account,37000
+2024/12/16,봉쥬르 마카롱,KR60002-Food Expenses,37000,KR10101-Toss Checking Account,37000
+2024/12/17,Transfer to Toss,KR10101-Toss Checking Account,10000,KR10102-Hana Checking Account,10000
+2024/12/17,Paris Baguette,KR60002-Food Expenses,6800,KR10101-Toss Checking Account,6800
+2024/12/17,Printing 열역학 cheatsheet,KR60005-Personal Expenses,300,KR10101-Toss Checking Account,300
+2024/12/17,7Eleven,KR60002-Food Expenses,5600,KR10101-Toss Checking Account,5600
+2024/12/17,최민희 네일 ,KR60005-Personal Expenses,20000,KR10102-Hana Checking Account,20000
+2024/12/18,Transfer to Toss,KR10101-Toss Checking Account,27000,KR10102-Hana Checking Account,27000
+2024/12/18,문서진,KR10105-Kakao Checking Account,50000,KR30201-Friends Debt,50000
+2024/12/18,Transfer to Toss,KR10101-Toss Checking Account,50000,KR10105-Kakao Checking Account,50000
+2024/12/18,Transfer to Toss,KR10101-Toss Checking Account,13601,KR10102-Hana Checking Account,13601
+2024/12/18,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/18,7Eleven,KR60002-Food Expenses,9900,KR10101-Toss Checking Account,9900
+2024/12/18,교통(dinner w Tisya),KR60004-Transportation Expenses,3700,KR30201-Friends Debt,3700
+2024/12/19,Ivan,KR10102-Hana Checking Account,50000,KR30201-Friends Debt,50000
+2024/12/19,Transfer to Toss,KR10101-Toss Checking Account,5000,KR10102-Hana Checking Account,5000
+2024/12/19,최민희 네일 ,KR60005-Personal Expenses,5000,KR10101-Toss Checking Account,5000
+2024/12/19,GS25,KR60002-Food Expenses,5197,KR10105-Kakao Checking Account,5197
+2024/12/19,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/12/19,Mama,KR10101-Toss Checking Account,253058,KR70005-Allowance Income,253058
+2024/12/19,교통(묘투린),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/12/20,Printing 화공수학 cheatsheet,KR60005-Personal Expenses,180,KR10101-Toss Checking Account,180
+2024/12/20,GS25,KR60002-Food Expenses,4000,KR10101-Toss Checking Account,4000
+2024/12/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/20,Apple Music,KR60005-Personal Expenses,3300,KR10105-Kakao Checking Account,3300
+2024/12/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/20,"롯데리아 w Hani, Waralee",KR60002-Food Expenses,5500,KR10101-Toss Checking Account,5500
+2024/12/20,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/20,교통(삼성송년모임),KR60004-Transportation Expenses,4500,KR30201-Friends Debt,4500
+2024/12/21,예금이자,KR10102-Hana Checking Account,47,KR70002-Interest Income,47
+2024/12/21,GS25,KR60002-Food Expenses,12400,KR10101-Toss Checking Account,12400
+2024/12/21,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/12/21,Withdraw,KR10000-Cash,30000,KR10101-Toss Checking Account,30000
+2024/12/21,십일조,KR60005-Personal Expenses,30000,KR10000-Cash,30000
+2024/12/21,Transfer to Kakao,KR10105-Kakao Checking Account,22497,KR10101-Toss Checking Account,22497
+2024/12/21,Zaim’s Birthday Gift,KR60005-Personal Expenses,24000,KR10105-Kakao Checking Account,24000
+2024/12/21,봉쥬르 마카롱,KR60002-Food Expenses,44500,KR10101-Toss Checking Account,44500
+2024/12/21,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/22,춘리마라탕 w Alua,KR60005-Personal Expenses,7790,KR10101-Toss Checking Account,7790
+2024/12/22,춘리마라탕 w Alua,KR60002-Food Expenses,12160,KR10101-Toss Checking Account,12160
+2024/12/22,Transfer to Toss,KR10101-Toss Checking Account,45047,KR10102-Hana Checking Account,45047
+2024/12/22,Withdraw,KR10000-Cash,10000,KR10101-Toss Checking Account,10000
+2024/12/22,재모식당,KR60002-Food Expenses,10000,KR10000-Cash,10000
+2024/12/22,준,KR10403-Friends Receivable,100000,KR10101-Toss Checking Account,100000
+2024/12/22,앨리스,KR60002-Food Expenses,5700,KR10101-Toss Checking Account,5700
+2024/12/22,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/12/22,麻辣烫（Jing）,KR60002-Food Expenses,5350,KR30201-Friends Debt,5350
+2024/12/22,麻辣烫（Jing）,KR30201-Friends Debt,5350,KR10105-Kakao Checking Account,5350
+2024/12/22,다이소,KR60005-Personal Expenses,2000,KR10101-Toss Checking Account,2000
+2024/12/22,Oo Wei Tian,KR10102-Hana Checking Account,50000,KR30201-Friends Debt,50000
+2024/12/22,교통(Jing),KR60004-Transportation Expenses,1200,KR30201-Friends Debt,1200
+2024/12/23,매가박스 Myothurin,KR60005-Personal Expenses,30000,KR10101-Toss Checking Account,30000
+2024/12/23,Transfer to Toss,KR10101-Toss Checking Account,50000,KR10102-Hana Checking Account,50000
+2024/12/23,치과 스케일링,KR60003-Healthcare Expenses,22000,KR10101-Toss Checking Account,22000
+2024/12/23,구름빵제과점,KR60002-Food Expenses,12850,KR10101-Toss Checking Account,12850
+2024/12/23,매가박스 Myothurin,KR60005-Personal Expenses,16900,KR10101-Toss Checking Account,16900
+2024/12/23,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2024/12/23,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/23,교통(영화 w 묘투린),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/12/24,Study Group,KR10101-Toss Checking Account,50000,KR70006-Other Income,50000
+2024/12/24,팔공티,KR60002-Food Expenses,1800,KR10101-Toss Checking Account,1800
+2024/12/24,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/24,Pizza Mall,KR60002-Food Expenses,12900,KR30201-Friends Debt,12900
+2024/12/24,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2024/12/24,Pizza Mall: Tisya,KR30201-Friends Debt,12900,KR10105-Kakao Checking Account,12900
+2024/12/24,교통(삼성 MT),KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2024/12/25,Gorde Cafe,KR60002-Food Expenses,7800,KR10101-Toss Checking Account,7800
+2024/12/25,Gorde Cafe,KR60002-Food Expenses,100,KR10101-Toss Checking Account,100
+2024/12/25,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/25,GS25,KR60002-Food Expenses,3600,KR10101-Toss Checking Account,3600
+2024/12/25,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/25,Mama,KR10101-Toss Checking Account,655898,KR70005-Allowance Income,655898
+2024/12/25,Rent,KR60001-Home Expenses,410000,KR10101-Toss Checking Account,410000
+2024/12/25,준,KR10403-Friends Receivable,100000,KR10101-Toss Checking Account,100000
+2024/12/25,Ivan,KR30201-Friends Debt,50000,KR10101-Toss Checking Account,50000
+2024/12/26,Didimdol Scholarship,KR10101-Toss Checking Account,1400000,KR10402-Didimdol Receivable,1400000
+2024/12/26,1월 건강보험료,KR60003-Healthcare Expenses,76390,KR10101-Toss Checking Account,76390
+2024/12/26,Oo Wei Tian,KR30201-Friends Debt,50000,KR10101-Toss Checking Account,50000
+2024/12/26,Transfer to Kakao,KR10105-Kakao Checking Account,48250,KR10101-Toss Checking Account,48250
+2024/12/26,문서진,KR30201-Friends Debt,50000,KR10105-Kakao Checking Account,50000
+2024/12/26,교통(묘투린),KR60004-Transportation Expenses,2800,KR30201-Friends Debt,2800
+2024/12/27,Poke 하니,KR60005-Personal Expenses,12800,KR10101-Toss Checking Account,12800
+2024/12/27,Poke 태양,KR60005-Personal Expenses,13800,KR10101-Toss Checking Account,13800
+2024/12/27,Meeting 3,KR60005-Personal Expenses,16500,KR10101-Toss Checking Account,16500
+2024/12/27,Meeting 3,KR60005-Personal Expenses,5500,KR10101-Toss Checking Account,5500
+2024/12/27,컵밥,KR60005-Personal Expenses,16000,KR10101-Toss Checking Account,16000
+2024/12/27,닭강정,KR60005-Personal Expenses,4000,KR10101-Toss Checking Account,4000
+2024/12/27,팔공차,KR60005-Personal Expenses,9600,KR10101-Toss Checking Account,9600
+2024/12/27,안암역 - 이대역 - 안암역,KR60005-Personal Expenses,2800,KR10101-Toss Checking Account,2800
+2024/12/27,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2024/12/27,장진규 Birthday Gift,KR60005-Personal Expenses,18500,KR10101-Toss Checking Account,18500
+2024/12/27,Poke 징,KR60005-Personal Expenses,12800,KR10101-Toss Checking Account,12800
+2024/12/27,미진축산 w 문서진,KR60002-Food Expenses,21900,KR10101-Toss Checking Account,21900
+2024/12/27,교통(SEA Studies),KR60004-Transportation Expenses,1200,KR30201-Friends Debt,1200
+2025/1/1,1월 Samsung,KR10401-Samsung Receivable,950000,KR70003-Samsung Income,950000
+2025/1/1,1월 Prepaid Phone Plan,KR60005-Personal Expenses,17500,KR10501-Phone Plan,17500
+2025/1/1,12월 Interest,KR10101-Toss Checking Account,171,KR70002-Interest Income,171
+2025/1/1,노래방 w 문서진,KR60005-Personal Expenses,6000,KR10101-Toss Checking Account,6000
+2025/1/1,노래방 w 문서진,KR60005-Personal Expenses,6000,KR10101-Toss Checking Account,6000
+2025/1/1,노래방 w 문서진,KR60005-Personal Expenses,6000,KR10101-Toss Checking Account,6000
+2025/1/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2025/1/1,Dunkin Donuts,KR60002-Food Expenses,7000,KR10101-Toss Checking Account,7000
+2025/1/1,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2025/1/1,12월 교통비,KR30201-Friends Debt,47000,KR10101-Toss Checking Account,47000
+2025/1/1,교통(Tisya),KR60004-Transportation Expenses,3100,KR30201-Friends Debt,3100
+2025/1/2,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2025/1/2,구름빵제과점,KR60002-Food Expenses,14400,KR10101-Toss Checking Account,14400
+2025/1/3,양정빈 생일 선물,KR60005-Personal Expenses,59000,KR10101-Toss Checking Account,59000
+2025/1/3,Transfer to Kakao,KR10105-Kakao Checking Account,10000,KR10101-Toss Checking Account,10000
+2025/1/3,iCloud+,KR60005-Personal Expenses,8900,KR10105-Kakao Checking Account,8900
+2025/1/3,Transfer to Kakao,KR10105-Kakao Checking Account,37000,KR10101-Toss Checking Account,37000
+2025/1/3,Quizlet,KR10105-Kakao Checking Account,37000,KR10105-Kakao Checking Account,37000
+2025/1/3,Quizlet,KR60005-Personal Expenses,37000,KR10105-Kakao Checking Account,37000
+2025/1/3,Savings January,KR10201-Savings January,10000,KR10101-Toss Checking Account,10000
+2025/1/3,Savings February,KR10201-Savings January,10000,KR10101-Toss Checking Account,10000
+2025/1/3,Savings February,KR10202-Savings February,10000,KR10101-Toss Checking Account,10000
+2025/1/3,Transfer to Shinhan,KR10202-Savings February,10000,KR10101-Toss Checking Account,10000
+2025/1/3,Transfer to Shinhan,KR10103-Shinhan Checking Account,10000,KR10101-Toss Checking Account,10000
+2025/1/3,계좌확인,KR10101-Toss Checking Account,1,KR70006-Other Income,1
+2025/1/3,Transfer to Toss,KR10101-Toss Checking Account,10000,KR10202-Savings February,10000
+2025/1/3,Transfer to Shinhan,KR10101-Toss Checking Account,10000,KR10101-Toss Checking Account,10000
+2025/1/3,Transfer to Shinhan,KR10103-Shinhan Checking Account,10000,KR10101-Toss Checking Account,10000
+2025/1/3,Savings March,KR10103-Shinhan Checking Account,10000,KR10103-Shinhan Checking Account,10000
+2025/1/3,Savings March,KR10203-Savings March,10000,KR10103-Shinhan Checking Account,10000
+2025/1/3,Transfer to Shinhan (buying Funds),KR10103-Shinhan Checking Account,100000,KR10101-Toss Checking Account,100000
+2025/1/3,Transfer to Shinhan (buying Gold),KR10103-Shinhan Checking Account,20000,KR10101-Toss Checking Account,20000
+2025/1/3,"Buy 신한 골드 0.15@₩	126,423.49",KR20003-Gold,18963,KR10103-Shinhan Checking Account,18963
+2025/1/3,교통(문서진),KR60004-Transportation Expenses,1500,KR30201-Friends Debt,1500
+2025/1/4,Jan 3) Quizlet (cancelled),KR10105-Kakao Checking Account,37000,KR60005-Personal Expenses,37000
+2025/1/4,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2025/1/4,GS25,KR60002-Food Expenses,4900,KR10101-Toss Checking Account,4900
+2025/1/4,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2025/1/4,반찬,KR60002-Food Expenses,5000,KR10101-Toss Checking Account,5000
+2025/1/4,Debt correction,KR30201-Friends Debt,12809,KR60005-Personal Expenses,12809
+2025/1/4,채크카드 복권 당첨,KR10101-Toss Checking Account,4,KR70006-Other Income,4
+2025/1/4,채크카드 복권 당첨,KR10101-Toss Checking Account,4,KR70006-Other Income,4
+2025/1/4,채크카드 복권 당첨,KR10101-Toss Checking Account,4,KR70006-Other Income,4
+2025/1/4,모임통장 개설 ,KR10101-Toss Checking Account,1,KR70006-Other Income,1
+2025/1/4,"Tisya (paid for 고기집, debt unrecorded)",KR10105-Kakao Checking Account,25500,KR70006-Other Income,25500
+2025/1/6,쿠팡 회원비,KR60005-Personal Expenses,7890,KR10101-Toss Checking Account,7890
+2025/1/6,US S&P 500 Index Fund,KR10404-Pending Investments,100000,KR10103-Shinhan Checking Account,100000
+2025/1/6,중도해지 (Subscribed earlier than required),KR10101-Toss Checking Account,10000,KR10203-Savings March,10000
+2025/1/6,Money from Tisya for 고기,KR10213-Toss Emergency Fund Account,25521,KR10101-Toss Checking Account,25521
+2025/1/6,Money from Interest and Cashbacks,KR10213-Toss Emergency Fund Account,671,KR10101-Toss Checking Account,671
+2025/1/7,Interest,KR10213-Toss Emergency Fund Account,1,KR70006-Other Income,1
+2025/1/7,편드예탁금 이자,KR10103-Shinhan Checking Account,7,KR70006-Other Income,7
+2025/1/7,편드예탁금 이자,KR10103-Shinhan Checking Account,7,KR10101-Toss Checking Account,7
+2025/1/7,편드예탁금 이자,KR10213-Toss Emergency Fund Account,7,KR10101-Toss Checking Account,7
+2025/1/7,PC방,KR60005-Personal Expenses,5000,KR10101-Toss Checking Account,5000
+2025/1/7,방어 w 문서진,KR10105-Kakao Checking Account,25000,KR10403-Friends Receivable,25000
+2025/1/7,채크카드 복권 당첨,KR10101-Toss Checking Account,3,KR70006-Other Income,3
+2025/1/8,채크카드 복권 당첨,KR10213-Toss Emergency Fund Account,3,KR10101-Toss Checking Account,3
+2025/1/8,NAVER 계좌확인,KR10101-Toss Checking Account,1,KR70006-Other Income,1
+2025/1/8,NAVER 계좌확인,KR10213-Toss Emergency Fund Account,1,KR10101-Toss Checking Account,1
+2025/1/8,이자,KR10213-Toss Emergency Fund Account,1,KR70006-Other Income,1
+2025/1/8,Buy 신한미국S&P500인덱스 70542@₩	1.42,KR20001-Funds,100000,KR10404-Pending Investments,100000
+2025/1/8,편드예탁금 이자,KR10103-Shinhan Checking Account,7,KR70006-Other Income,7
+2025/1/8,편드예탁금 이자,KR10103-Shinhan Checking Account,7,KR10101-Toss Checking Account,7
+2025/1/8,편드예탁금 이자,KR10213-Toss Emergency Fund Account,7,KR10101-Toss Checking Account,7
+2025/1/8,Transfer to Toss,KR10213-Toss Emergency Fund Account,7,KR10103-Shinhan Checking Account,7
+2025/1/8,Transfer to Toss,KR10101-Toss Checking Account,7,KR10103-Shinhan Checking Account,7
+2025/1/9,Cashback,KR10101-Toss Checking Account,100,KR70001-Cashback Income,100
+2025/1/9,Withdraw,KR10000-Cash,10000,KR10101-Toss Checking Account,10000
+2025/1/9,재모식당,KR60002-Food Expenses,5000,KR10000-Cash,5000
+2025/1/9,이자,KR10213-Toss Emergency Fund Account,1,KR70006-Other Income,1
+2025/1/9,토스 계좌확인,KR10101-Toss Checking Account,1,KR70006-Other Income,1
+2025/1/10,토스 계좌확인,KR10101-Toss Checking Account,1,KR70006-Other Income,1
+2025/1/10,토스 계좌확인,KR10213-Toss Emergency Fund Account,1,KR10101-Toss Checking Account,1
+2025/1/10,이자,KR10213-Toss Emergency Fund Account,1,KR70006-Other Income,1
+2025/1/10,GS25,KR60002-Food Expenses,15560,KR10101-Toss Checking Account,15560
+2025/1/10,Cashback,KR10101-Toss Checking Account,500,KR70001-Cashback Income,500
+2025/1/10,Cashback,KR10213-Toss Emergency Fund Account,500,KR10101-Toss Checking Account,500
+2025/1/10,Cashback,KR10213-Toss Emergency Fund Account,100,KR10101-Toss Checking Account,100

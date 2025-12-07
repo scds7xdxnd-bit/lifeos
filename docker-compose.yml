@@ -1,0 +1,301 @@
+version: "3.9"
+
+# LifeOS Production Docker Compose Stack
+# Includes: Web App, PostgreSQL, Redis, Async Worker, Monitoring
+
+x-common-env: &common-env
+  APP_ENV: ${APP_ENV:-production}
+  FLASK_APP: lifeos.wsgi
+  SECRET_KEY: ${SECRET_KEY:-change-me}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-too}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://lifeos:lifeos@db:5432/lifeos}
+  TEST_DATABASE_URL: ${TEST_DATABASE_URL:-}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  ENABLE_ML: ${ENABLE_ML:-true}
+  RATELIMIT_ENABLED: ${RATELIMIT_ENABLED:-true}
+  SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: lifeos-web:${APP_VERSION:-latest}
+    container_name: lifeos-web
+    environment:
+      <<: *common-env
+      MLSUGGESTER_MODEL_DIR: ${MLSUGGESTER_MODEL_DIR:-/app/flask_app}
+      STATIC_CACHE_MAX_AGE: ${STATIC_CACHE_MAX_AGE:-3600}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+      GUNICORN_LOGLEVEL: ${GUNICORN_LOGLEVEL:-info}
+      GUNICORN_LOGCONFIG: ${GUNICORN_LOGCONFIG:-/app/deploy/logging.conf}
+      STATSD_HOST: ${STATSD_HOST:-statsd-exporter}
+      STATSD_PORT: ${STATSD_PORT:-8125}
+      STATSD_PREFIX: ${STATSD_PREFIX:-lifeos}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    volumes:
+      - lifeos-instance:/app/instance
+      - lifeos-logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+        labels: "service=lifeos-web"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  db:
+    image: postgres:16-alpine
+    container_name: lifeos-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lifeos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifeos}
+      POSTGRES_DB: ${POSTGRES_DB:-lifeos}
+    volumes:
+      - lifeos-postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-db"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lifeos} -d ${POSTGRES_DB:-lifeos} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+      - "-c"
+      - "work_mem=16MB"
+
+  redis:
+    image: redis:7-alpine
+    container_name: lifeos-redis
+    command:
+      - "redis-server"
+      - "--save"
+      - "60"
+      - "1"
+      - "--loglevel"
+      - "warning"
+      - "--maxmemory"
+      - "512mb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"
+    volumes:
+      - lifeos-redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-redis"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: lifeos-web:${APP_VERSION:-latest}
+    container_name: lifeos-worker
+    command: ["python", "-m", "lifeos.platform.worker.run"]
+    environment:
+      <<: *common-env
+      OUTBOX_BATCH_SIZE: ${OUTBOX_BATCH_SIZE:-50}
+      OUTBOX_POLL_INTERVAL: ${OUTBOX_POLL_INTERVAL:-5}
+      OUTBOX_MAX_ATTEMPTS: ${OUTBOX_MAX_ATTEMPTS:-5}
+      OUTBOX_BACKOFF_SECONDS: ${OUTBOX_BACKOFF_SECONDS:-5}
+      OUTBOX_BACKOFF_MULTIPLIER: ${OUTBOX_BACKOFF_MULTIPLIER:-2}
+      WORKER_LOGLEVEL: ${WORKER_LOGLEVEL:-INFO}
+    volumes:
+      - lifeos-instance:/app/instance
+      - lifeos-logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+        labels: "service=lifeos-worker"
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: lifeos-prometheus
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/monitoring/prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+      - lifeos-prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--query.max-samples=10000000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-prometheus"
+
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: lifeos-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - lifeos-grafana:/var/lib/grafana
+      - ./deploy/monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deploy/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - lifeos-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-grafana"
+
+  # StatsD Exporter for Prometheus
+  statsd-exporter:
+    image: prom/statsd-exporter:v0.26.0
+    container_name: lifeos-statsd
+    ports:
+      - "8125:8125/udp"
+      - "9102:9102"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    command:
+      - "--statsd.listen-udp=:8125"
+      - "--web.listen-address=:9102"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-statsd"
+
+  # Container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: lifeos-cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-cadvisor"
+    privileged: true
+    device_cgroup_rules:
+      - 'rule_type=allow major=*'
+
+  # AlertManager for Prometheus alerts
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: lifeos-alertmanager
+    volumes:
+      - ./deploy/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - lifeos-alertmanager:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-alertmanager"
+
+volumes:
+  lifeos-instance:
+    driver: local
+  lifeos-logs:
+    driver: local
+  lifeos-postgres:
+    driver: local
+  lifeos-redis:
+    driver: local
+  lifeos-prometheus:
+    driver: local
+  lifeos-grafana:
+    driver: local
+  lifeos-alertmanager:
+    driver: local
+
+networks:
+  lifeos-network:
+    driver: bridge

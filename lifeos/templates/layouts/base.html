@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>LifeOS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script>
+      const LIFEOS_TOKEN_KEY = "lifeos_tokens";
+      function getTokens() {
+        try { return JSON.parse(localStorage.getItem(LIFEOS_TOKEN_KEY) || "{}"); } catch (_) { return {}; }
+      }
+      function setTokens(tokens) {
+        localStorage.setItem(LIFEOS_TOKEN_KEY, JSON.stringify(tokens || {}));
+      }
+      function clearTokens() { localStorage.removeItem(LIFEOS_TOKEN_KEY); }
+      function authHeaders(extra = {}) {
+        const t = getTokens();
+        const headers = Object.assign({}, extra);
+        if (t.access_token) headers["Authorization"] = "Bearer " + t.access_token;
+        if (t.csrf_token) headers["X-CSRF-Token"] = t.csrf_token;
+        return headers;
+      }
+      const lifeosTelemetry = (() => {
+        const track = (eventType, payload = {}) => {
+          const detail = { event_type: eventType, payload, emitted_at: new Date().toISOString() };
+          window.dispatchEvent(new CustomEvent("lifeos:telemetry", { detail }));
+          const endpoint = window.LIFEOS_TELEMETRY_ENDPOINT;
+          if (endpoint && typeof navigator?.sendBeacon === "function") {
+            try {
+              navigator.sendBeacon(endpoint, JSON.stringify(detail));
+            } catch (_) {
+              /* ignore client telemetry failures */
+            }
+          }
+        };
+        return { track };
+      })();
+      window.lifeosAuth = { getTokens, setTokens, clearTokens, authHeaders };
+      window.lifeosTelemetry = lifeosTelemetry;
+    </script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-nav">
+        <h1>LifeOS</h1>
+        <nav>
+          <a href="/calendar/" style="font-weight:600;">📅 Calendar</a>
+          <a href="/finance/">Finance</a>
+          <a href="/finance/journal">Journal</a>
+          <a href="/finance/trial-balance">Trial Balance</a>
+          <a href="/finance/receivables">Receivables</a>
+          <a href="/finance/forecast">Forecast</a>
+          <a href="/finance/import">Import</a>
+          <a href="/habits/">Habits</a>
+          <a href="/skills/">Skills</a>
+          <a href="/health/">Health</a>
+          <a href="/journal/">Journal</a>
+          <a href="/relationships/">Relationships</a>
+          <a href="/projects/">Projects</a>
+        </nav>
+        <div style="margin-top:0.25rem;font-size:0.9rem;color:#5b6470;">Demo: admin@example.com / admin12345 or demo@lifeos.test / demo12345</div>
+      </div>
+      <div id="auth-widget" class="auth-widget">
+        <div id="auth-logged-in" class="auth-logged auth-hidden" aria-live="polite">
+          <span id="auth-user-label"></span>
+          <button type="button" id="auth-logout-btn" class="btn btn-secondary">Logout</button>
+        </div>
+        <div id="auth-card" class="auth-card">
+          <div class="auth-tabs" role="tablist">
+            <button type="button" class="auth-tab active" data-view="login">Login</button>
+            <button type="button" class="auth-tab" data-view="register">Register</button>
+            <button type="button" class="auth-tab" data-view="forgot-username">Forgot username</button>
+            <button type="button" class="auth-tab" data-view="forgot-password">Forgot password</button>
+            <button type="button" class="auth-tab" data-view="reset-password">Reset password</button>
+          </div>
+          <form id="auth-login-form" class="auth-view" data-view="login" autocomplete="on">
+            <div class="field">
+              <label for="auth-email">Email</label>
+              <input id="auth-email" name="email" type="email" placeholder="you@example.com" required>
+            </div>
+            <div class="field">
+              <label for="auth-password">Password</label>
+              <input id="auth-password" name="password" type="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+          </form>
+          <form id="auth-register-form" class="auth-view auth-hidden" data-view="register" autocomplete="on">
+            <div class="field">
+              <label for="auth-register-email">Email</label>
+              <input id="auth-register-email" name="email" type="email" placeholder="you@example.com" required>
+            </div>
+            <div class="field">
+              <label for="auth-register-password">Password</label>
+              <input id="auth-register-password" name="password" type="password" placeholder="At least 8 chars, letters & numbers" required>
+              <small>Min 8 characters, include letters and numbers.</small>
+            </div>
+            <div class="field">
+              <label for="auth-register-name">Full name (optional)</label>
+              <input id="auth-register-name" name="full_name" type="text" placeholder="Your name">
+            </div>
+            <div class="field">
+              <label for="auth-register-timezone">Timezone (optional)</label>
+              <input id="auth-register-timezone" name="timezone" type="text" placeholder="e.g., America/New_York">
+            </div>
+            <button type="submit" class="btn">Create account</button>
+          </form>
+          <form id="auth-forgot-username-form" class="auth-view auth-hidden" data-view="forgot-username">
+            <div class="field">
+              <label for="auth-forgot-username-email">Email</label>
+              <input id="auth-forgot-username-email" name="email" type="email" placeholder="you@example.com" required>
+            </div>
+            <small>We will send your username to the email if an account exists.</small>
+            <button type="submit" class="btn">Send reminder</button>
+          </form>
+          <form id="auth-forgot-password-form" class="auth-view auth-hidden" data-view="forgot-password">
+            <div class="field">
+              <label for="auth-forgot-password-email">Email</label>
+              <input id="auth-forgot-password-email" name="email" type="email" placeholder="you@example.com" required>
+            </div>
+            <small>We will email a password reset link if we find your account.</small>
+            <button type="submit" class="btn">Email reset link</button>
+          </form>
+          <form id="auth-reset-password-form" class="auth-view auth-hidden" data-view="reset-password">
+            <div class="field">
+              <label for="auth-reset-token">Reset token</label>
+              <input id="auth-reset-token" name="token" type="text" placeholder="Paste token from email" required>
+            </div>
+            <div class="field">
+              <label for="auth-reset-password">New password</label>
+              <input id="auth-reset-password" name="new_password" type="password" placeholder="New password" required>
+              <small>Use at least 8 characters with letters and numbers.</small>
+            </div>
+            <button type="submit" class="btn">Reset password</button>
+          </form>
+          <div id="auth-status" class="auth-status" aria-live="polite"></div>
+        </div>
+      </div>
+    </header>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+    <script>
+      const authTabs = Array.from(document.querySelectorAll('.auth-tab'));
+      const authViews = Array.from(document.querySelectorAll('.auth-view'));
+      const authStatus = document.getElementById('auth-status');
+      const loggedInRow = document.getElementById('auth-logged-in');
+      const authUserLabel = document.getElementById('auth-user-label');
+      const authCard = document.getElementById('auth-card');
+      const logoutBtn = document.getElementById('auth-logout-btn');
+      const loginForm = document.getElementById('auth-login-form');
+      const registerForm = document.getElementById('auth-register-form');
+      const forgotUsernameForm = document.getElementById('auth-forgot-username-form');
+      const forgotPasswordForm = document.getElementById('auth-forgot-password-form');
+      const resetPasswordForm = document.getElementById('auth-reset-password-form');
+
+      const setStatus = (message, tone = '') => {
+        if (!authStatus) return;
+        authStatus.textContent = message || '';
+        if (tone) {
+          authStatus.dataset.tone = tone;
+        } else {
+          authStatus.removeAttribute('data-tone');
+        }
+      };
+
+      const selectView = (viewName) => {
+        authViews.forEach((view) => {
+          view.classList.toggle('auth-hidden', view.dataset.view !== viewName);
+        });
+        authTabs.forEach((tab) => {
+          tab.classList.toggle('active', tab.dataset.view === viewName);
+        });
+        setStatus('');
+      };
+
+      const emitAuthChange = () => {
+        const tokens = getTokens();
+        const loggedIn = !!(tokens && tokens.user && tokens.access_token);
+        window.dispatchEvent(new CustomEvent('lifeos:auth-changed', { detail: { loggedIn, user: tokens?.user || null } }));
+      };
+
+      const updateAuthUI = () => {
+        const tokens = getTokens();
+        const loggedIn = tokens && tokens.user && tokens.access_token;
+        if (loggedIn) {
+          loggedInRow?.classList.remove('auth-hidden');
+          authCard?.classList.add('auth-hidden');
+          if (authUserLabel) authUserLabel.textContent = `Logged in as ${tokens.user.email || ''}`;
+        } else {
+          loggedInRow?.classList.add('auth-hidden');
+          authCard?.classList.remove('auth-hidden');
+          selectView('login');
+        }
+        emitAuthChange();
+      };
+
+      const ensureServerSession = async () => {
+        const tokens = getTokens();
+        if (!tokens?.access_token) {
+          updateAuthUI();
+          return;
+        }
+        try {
+          const res = await fetch('/auth/me', { headers: lifeosAuth.authHeaders() });
+          if (!res.ok) throw new Error('unauthorized');
+          const body = await res.json().catch(() => ({}));
+          if (body?.ok && body.user) {
+            setTokens({ ...tokens, user: body.user });
+            updateAuthUI();
+            return;
+          }
+        } catch (_) {
+          /* noop */
+        }
+        clearTokens();
+        updateAuthUI();
+      };
+
+      // Global 401 handler to keep UI in sync with server
+      // Note: 403 is NOT handled here as it may indicate permission issues, not invalid auth
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = async (...args) => {
+        const res = await originalFetch(...args);
+        if (res && res.status === 401) {
+          // Only clear tokens on 401 (unauthorized) - token is invalid/expired
+          clearTokens();
+          updateAuthUI();
+        }
+        return res;
+      };
+
+      authTabs.forEach((tab) => {
+        tab.addEventListener('click', () => selectView(tab.dataset.view));
+      });
+
+      const postJson = (url, body) =>
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body || {}),
+        });
+
+      registerForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('Creating account...');
+        const data = Object.fromEntries(new FormData(registerForm).entries());
+        lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'submitted' });
+        const payload = {
+          email: data.email,
+          password: data.password,
+          full_name: data.full_name || null,
+          timezone: data.timezone || null,
+        };
+        const res = await postJson('/auth/register', payload);
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body && body.ok !== false) {
+          if (body.access_token) {
+            setTokens({
+              access_token: body.access_token,
+              refresh_token: body.refresh_token,
+              csrf_token: body.csrf_token,
+              user: body.user,
+            });
+            setStatus('Account created and logged in.', 'success');
+            lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'succeeded', variant: 'auto_login' });
+            updateAuthUI();
+          } else {
+            setStatus('Account created. You can log in now.', 'success');
+            lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'succeeded', variant: 'no_tokens' });
+            selectView('login');
+          }
+        } else {
+          const reason = body.error || res.status;
+          const copy = {
+            email_already_exists: 'Email already registered.',
+            bad_request: 'Check your inputs (password must include letters and numbers).',
+          }[reason] || 'Registration failed.';
+          setStatus(copy, 'error');
+          lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'failed', reason });
+        }
+      });
+
+      loginForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('Signing in...');
+        const data = Object.fromEntries(new FormData(loginForm).entries());
+        lifeosTelemetry.track('auth.user.login_submitted', { source: 'ui', email_present: !!data.email });
+        const res = await postJson('/auth/login', data);
+        const payload = await res.json().catch(() => ({}));
+        if (res.ok && payload && payload.access_token) {
+          setTokens({
+            access_token: payload.access_token,
+            refresh_token: payload.refresh_token,
+            csrf_token: payload.csrf_token,
+            user: payload.user,
+          });
+          setStatus('Logged in', 'success');
+          lifeosTelemetry.track('auth.user.login_succeeded', { source: 'ui' });
+          updateAuthUI();
+        } else {
+          const reason = payload.error || res.status;
+          setStatus('Login failed', 'error');
+          lifeosTelemetry.track('auth.user.login_failed', { source: 'ui', reason });
+        }
+      });
+
+      logoutBtn?.addEventListener('click', () => {
+        clearTokens();
+        setStatus('Logged out', 'info');
+        lifeosTelemetry.track('auth.user.logout', { source: 'ui' });
+        updateAuthUI();
+      });
+
+      forgotUsernameForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('Sending username reminder...');
+        const data = Object.fromEntries(new FormData(forgotUsernameForm).entries());
+        lifeosTelemetry.track('auth.user.username_reminder_requested', { source: 'ui', stage: 'submitted' });
+        const res = await postJson('/auth/forgot-username', data);
+        if (res.ok) {
+          setStatus('If an account exists, you will receive an email shortly.', 'success');
+          lifeosTelemetry.track('auth.user.username_reminder_requested', { source: 'ui', stage: 'succeeded' });
+        } else {
+          setStatus('Unable to process that request right now.', 'error');
+          lifeosTelemetry.track('auth.user.username_reminder_requested', { source: 'ui', stage: 'failed', reason: res.status });
+        }
+      });
+
+      forgotPasswordForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('Emailing reset link...');
+        const data = Object.fromEntries(new FormData(forgotPasswordForm).entries());
+        lifeosTelemetry.track('auth.user.password_reset_requested', { source: 'ui', stage: 'submitted' });
+        const res = await postJson('/auth/forgot-password', data);
+        if (res.ok) {
+          setStatus('If an account exists, we sent a reset link.', 'success');
+          lifeosTelemetry.track('auth.user.password_reset_requested', { source: 'ui', stage: 'succeeded' });
+        } else {
+          setStatus('Unable to send reset link.', 'error');
+          lifeosTelemetry.track('auth.user.password_reset_requested', { source: 'ui', stage: 'failed', reason: res.status });
+        }
+      });
+
+      resetPasswordForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(resetPasswordForm).entries());
+        if (!data.token || !data.new_password) {
+          setStatus('Token and new password are required.', 'error');
+          return;
+        }
+        setStatus('Updating password...');
+        lifeosTelemetry.track('auth.user.password_reset_completed', { source: 'ui', stage: 'submitted' });
+        const res = await postJson('/auth/reset-password', data);
+        const payload = await res.json().catch(() => ({}));
+        if (res.ok && (payload.ok === undefined || payload.ok === true)) {
+          setStatus('Password reset. You can log in with your new password.', 'success');
+          lifeosTelemetry.track('auth.user.password_reset_completed', { source: 'ui', stage: 'succeeded' });
+          selectView('login');
+        } else {
+          const reason = payload.error || res.status;
+          setStatus('Reset failed. Double-check your token and try again.', 'error');
+          lifeosTelemetry.track('auth.user.password_reset_completed', { source: 'ui', stage: 'failed', reason });
+        }
+      });
+
+      selectView('login');
+      ensureServerSession();
+    </script>
+    <!-- Finance domain scripts -->
+    <script src="{{ url_for('static', filename='js/finance-account-subtypes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/finance-account-search.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/finance-account-categories.js') }}"></script>
+    <!-- Calendar domain scripts -->
+    <script src="{{ url_for('static', filename='js/calendar-api.js') }}"></script>
+    <script>
+      // Ensure modules are available globally with timeout protection
+      (function ensureModules(attempts = 0) {
+        const maxAttempts = 100; // ~5 seconds with 50ms intervals
+        const allLoaded = window.lifeosAccountSearch && window.lifeosAccountSubtypes && window.lifeosAccountCategories && window.lifeosCalendar;
+        if (!allLoaded) {
+          if (attempts < maxAttempts) {
+            setTimeout(() => ensureModules(attempts + 1), 50);
+          } else {
+            console.error('[LifeOS] Modules failed to load after timeout', {
+              hasAccountSearch: !!window.lifeosAccountSearch,
+              hasAccountSubtypes: !!window.lifeosAccountSubtypes,
+              hasAccountCategories: !!window.lifeosAccountCategories,
+              hasCalendar: !!window.lifeosCalendar,
+            });
+          }
+        } else if (attempts > 0) {
+          // Log successful load on retry (helps debug load timing issues)
+          console.debug('[LifeOS] Modules loaded after retry', { attempts });
+        }
+      })();
+    </script>
+  </body>
+</html>

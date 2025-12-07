@@ -1,0 +1,35 @@
+---
+# LifeOS Staging ConfigMap
+# Non-sensitive configuration. Secrets are managed separately.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lifeos-config
+  namespace: lifeos-staging
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: staging
+data:
+  # Flask settings
+  FLASK_APP: "lifeos:create_app"
+  FLASK_ENV: "staging"
+  APP_ENV: "staging"
+  
+  # Gunicorn settings
+  GUNICORN_WORKERS: "2"
+  GUNICORN_THREADS: "4"
+  GUNICORN_TIMEOUT: "120"
+  GUNICORN_BIND: "0.0.0.0:8000"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # Feature flags
+  ENABLE_ML: "true"
+  ENABLE_INVOICE: "true"
+  TESTING: "false"
+  
+  # Rate limiting
+  RATELIMIT_ENABLED: "true"
+  RATELIMIT_DEFAULT: "200/minute"

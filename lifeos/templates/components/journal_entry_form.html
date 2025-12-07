@@ -1,0 +1,308 @@
+{# Shared manual journal entry form component #}
+{% set component_id = component_id|default('journal', true) %}
+{% set account_options = account_options|default(accounts|default([], true), true) %}
+
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <h2 style="margin:0;">Manual journal entry</h2>
+      <p style="margin:0; color:#5b6470;">Balanced multi-line entry with D/C per line.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-refresh-btn">Reload accounts</button>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with finance:write to post journal entries.</div>
+  <form id="{{ component_id }}-form" autocomplete="off" style="margin-top:0.75rem; display:grid; gap:0.75rem;">
+    <div class="field">
+      <label for="{{ component_id }}-description">Description</label>
+      <input id="{{ component_id }}-description" name="description" type="text" placeholder="e.g., Accrual adjustment">
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-posted-at">Posted at</label>
+      <input id="{{ component_id }}-posted-at" name="posted_at" type="datetime-local">
+      <small>Optional; defaults to now if blank.</small>
+    </div>
+    <div>
+      <div style="display:flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom:0.35rem;">
+        <strong>Lines</strong>
+        <span style="font-size:0.9rem; color:#5b6470;">Min 2 lines, specify D/C.</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:240px;">Account</th>
+              <th style="width:90px;">D/C</th>
+              <th style="width:140px;">Amount</th>
+              <th>Memo</th>
+              <th style="width:70px;">Remove</th>
+            </tr>
+          </thead>
+          <tbody id="{{ component_id }}-lines"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;">
+      <div><strong>Total debit:</strong> <span id="{{ component_id }}-total-debit">0.00</span></div>
+      <div><strong>Total credit:</strong> <span id="{{ component_id }}-total-credit">0.00</span></div>
+      <div><strong>Diff:</strong> <span id="{{ component_id }}-diff">0.00</span></div>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; justify-content: space-between;">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-add-line">Add line</button>
+      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button type="submit" class="btn" id="{{ component_id }}-submit">Post entry</button>
+        <button type="button" class="btn btn-secondary" id="{{ component_id }}-reset">Reset</button>
+      </div>
+    </div>
+    <div id="{{ component_id }}-status" class="auth-status" aria-live="polite"></div>
+  </form>
+</div>
+
+<script type="application/json" id="{{ component_id }}-accounts-json">{{ account_options|tojson }}</script>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const form = el('form');
+    const linesTable = el('lines');
+    const addBtn = el('add-line');
+    const statusEl = el('status');
+    const loginHint = el('login-hint');
+    const descriptionInput = el('description');
+    const postedAtInput = el('posted-at');
+    const submitBtn = el('submit');
+    const resetBtn = el('reset');
+    const totalDebitEl = el('total-debit');
+    const totalCreditEl = el('total-credit');
+    const diffEl = el('diff');
+    const refreshBtn = el('refresh-btn');
+    const lines = [];
+    const accountsJsonEl = document.getElementById(`${prefix}-accounts-json`);
+    let accountCache = [];
+    const normalizeAccounts = (items = []) =>
+      (Array.isArray(items) ? items : []).map((a) => ({
+        id: a.account_id || a.id,
+        name: a.account_name || a.name,
+        code: a.account_code || a.code,
+      })).filter((a) => a.id);
+    try {
+      accountCache = JSON.parse(accountsJsonEl?.textContent || '[]');
+      accountCache = normalizeAccounts(accountCache);
+    } catch (_) {
+      accountCache = [];
+    }
+
+    const financeAuthState = () => {
+      const tokens = lifeosAuth.getTokens();
+      const authed = !!tokens.access_token;
+      const hasRole = Array.isArray(tokens?.user?.role_codes) && tokens.user.role_codes.includes('finance:write');
+      return { allowed: authed && hasRole, authed };
+    };
+
+    const ensureAuth = () => {
+      const { allowed, authed } = financeAuthState();
+      [submitBtn, resetBtn, addBtn, descriptionInput, postedAtInput].forEach((node) => { if (node) node.disabled = !allowed; });
+      if (linesTable) {
+        linesTable.querySelectorAll('input, select, textarea, button').forEach((node) => { node.disabled = !allowed; });
+      }
+      if (!allowed) {
+        loginHint.textContent = authed ? 'Requires finance:write to post journal entries.' : 'Please log in with finance:write to post journal entries.';
+        loginHint.style.display = 'block';
+      } else {
+        loginHint.style.display = 'none';
+      }
+      return allowed;
+    };
+
+    const setStatus = (msg, tone = '') => {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      if (tone) {
+        statusEl.dataset.tone = tone;
+      } else {
+        statusEl.removeAttribute('data-tone');
+      }
+    };
+
+    const formatMoney = (value) => Number(value || 0).toFixed(2);
+
+    const renderTotals = () => {
+      let debit = 0;
+      let credit = 0;
+      lines.forEach((line) => {
+        const amt = Number(line.amount) || 0;
+        if (line.dc === 'D') debit += amt;
+        if (line.dc === 'C') credit += amt;
+      });
+      const diff = debit - credit;
+      totalDebitEl.textContent = formatMoney(debit);
+      totalCreditEl.textContent = formatMoney(credit);
+      diffEl.textContent = formatMoney(diff);
+      diffEl.style.color = Math.abs(diff) < 0.005 ? '#1d7a36' : '#b3352f';
+    };
+
+    const renderLines = () => {
+      if (!linesTable) return;
+      if (!lines.length) {
+        lines.push({ account_id: '', dc: 'D', amount: '', memo: '' }, { account_id: '', dc: 'C', amount: '', memo: '' });
+      }
+      linesTable.innerHTML = '';
+      lines.forEach((line, idx) => {
+        const tr = document.createElement('tr');
+        const options = accountCache.map((acct) => {
+          const id = acct.id;
+          const label = `${acct.name || 'Account'}${acct.code ? ' (' + acct.code + ')' : ''}`;
+          return `<option value="${id}">${label}</option>`;
+        }).join('');
+        tr.innerHTML = `
+          <td>
+            <select data-field="account_id" data-idx="${idx}" required>
+              <option value="">Select account</option>
+              ${options}
+            </select>
+          </td>
+          <td>
+            <select data-field="dc" data-idx="${idx}">
+              <option value="D"${line.dc === 'D' ? ' selected' : ''}>D</option>
+              <option value="C"${line.dc === 'C' ? ' selected' : ''}>C</option>
+            </select>
+          </td>
+          <td><input type="number" step="0.01" min="0" data-field="amount" data-idx="${idx}" value="${line.amount || ''}" placeholder="0.00" /></td>
+          <td><input type="text" data-field="memo" data-idx="${idx}" value="${line.memo || ''}" placeholder="Memo (optional)" /></td>
+          <td><button type="button" class="text-link" data-remove="${idx}">Remove</button></td>
+        `;
+        tr.querySelector('select[data-field="account_id"]').value = line.account_id || '';
+        linesTable.appendChild(tr);
+      });
+      linesTable.querySelectorAll('select[data-field], input[data-field]').forEach((el) => {
+        el.addEventListener('input', (e) => {
+          const idx = Number(e.target.dataset.idx);
+          const field = e.target.dataset.field;
+          if (field === 'dc') {
+            lines[idx][field] = e.target.value === 'C' ? 'C' : 'D';
+          } else if (field === 'amount') {
+            lines[idx][field] = e.target.value;
+          } else if (field === 'account_id') {
+            lines[idx][field] = e.target.value;
+          } else if (field === 'memo') {
+            lines[idx][field] = e.target.value;
+          }
+          renderTotals();
+        });
+      });
+      linesTable.querySelectorAll('button[data-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.remove);
+          lines.splice(idx, 1);
+          renderLines();
+        });
+      });
+      renderTotals();
+    };
+
+    const fetchAccounts = async () => {
+      const res = await fetch('/api/finance/trial_balance', { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        setStatus(res.status === 401 || res.status === 403 ? 'Log in to load accounts.' : 'Unable to load accounts.', 'error');
+        return;
+      }
+      const payload = await res.json().catch(() => ({}));
+      if (Array.isArray(payload.accounts)) {
+        accountCache = normalizeAccounts(payload.accounts);
+      }
+      renderLines();
+    };
+
+    addBtn?.addEventListener('click', () => {
+      lines.push({ account_id: '', dc: 'D', amount: '', memo: '' });
+      renderLines();
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      lines.splice(0, lines.length);
+      renderLines();
+      form?.reset();
+      setStatus('');
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) {
+        setStatus('Please log in.', 'error');
+        return;
+      }
+      const prepared = lines
+        .map((line) => ({
+          account_id: parseInt(line.account_id, 10),
+          dc: line.dc || 'D',
+          amount: Number(line.amount),
+          memo: line.memo || null,
+        }))
+        .filter((line) => line.account_id && line.amount > 0);
+      if (prepared.length < 2) {
+        setStatus('Add at least two lines with amounts.', 'error');
+        return;
+      }
+      const debit = prepared.filter((l) => l.dc === 'D').reduce((s, l) => s + (Number(l.amount) || 0), 0);
+      const credit = prepared.filter((l) => l.dc === 'C').reduce((s, l) => s + (Number(l.amount) || 0), 0);
+      if (Math.abs(debit - credit) > 0.005) {
+        setStatus('Entry must balance (debits = credits).', 'error');
+        return;
+      }
+
+      const desc = descriptionInput?.value || '';
+      const postedRaw = postedAtInput?.value;
+      const payload = {
+        description: desc,
+        posted_at: postedRaw ? new Date(postedRaw).toISOString() : undefined,
+        lines: prepared,
+      };
+
+      setStatus('Posting...');
+      submitBtn.disabled = true;
+      lifeosTelemetry.track('finance.journal.posted', { source: 'ui', stage: 'submitted', line_count: prepared.length });
+      const res = await fetch('/api/finance/journal/entries', {
+        method: 'POST',
+        headers: lifeosAuth.authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      submitBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus('Entry posted.', 'success');
+        lifeosTelemetry.track('finance.journal.posted', {
+          source: 'ui',
+          stage: 'succeeded',
+          entry_id: body.entry_id,
+          total_debit: body.total_debit,
+          total_credit: body.total_credit,
+        });
+        lines.splice(0, lines.length);
+        renderLines();
+        form.reset();
+        window.dispatchEvent(new CustomEvent('journal:entry-posted', { detail: { entry_id: body.entry_id, component_id: prefix } }));
+      } else {
+        const reason = body.error || res.status;
+        const copy = {
+          unbalanced_entry: 'Entry must balance (debits = credits).',
+          validation_error: 'Check amounts, D/C selections, and account picks.',
+          inactive_account: 'One or more accounts are inactive.',
+          not_found: 'Account not found for this user.',
+        }[reason] || 'Unable to post entry.';
+        setStatus(copy, 'error');
+        lifeosTelemetry.track('finance.journal.posted', { source: 'ui', stage: 'failed', reason });
+      }
+    });
+
+    refreshBtn?.addEventListener('click', () => fetchAccounts());
+
+    renderLines();
+    ensureAuth();
+    fetchAccounts();
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      if (ensureAuth() && e.detail?.loggedIn) {
+        fetchAccounts();
+      }
+    });
+  })();
+</script>

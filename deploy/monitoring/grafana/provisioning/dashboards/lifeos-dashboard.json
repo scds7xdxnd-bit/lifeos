@@ -1,0 +1,169 @@
+{
+  "dashboard": {
+    "title": "LifeOS Application Monitoring",
+    "description": "Core LifeOS application metrics and health",
+    "tags": ["lifeos", "production"],
+    "timezone": "utc",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate (5m)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{ handler }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Requests/sec",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Response Time (p95)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p99"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Duration (s)",
+            "format": "s"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~'5..'}[5m])",
+            "legendFormat": "5xx Errors"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~'4..'}[5m])",
+            "legendFormat": "4xx Errors"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Requests/sec",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Database Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "pg_stat_activity_count",
+            "legendFormat": "Active"
+          }
+        ],
+        "colorMode": "value"
+      },
+      {
+        "id": 5,
+        "title": "Cache Hit Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)",
+            "legendFormat": "Hit Rate"
+          }
+        ],
+        "fieldConfig": {
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.6, "color": "yellow" },
+              { "value": 0.8, "color": "green" }
+            ]
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Outbox Messages Pending",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "platform_outbox_pending_messages",
+            "legendFormat": "Pending"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Container CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{container=~'lifeos-.*'}[5m]) * 100",
+            "legendFormat": "{{ container }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "CPU %",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Container Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "(container_memory_usage_bytes{container=~'lifeos-.*'} / container_spec_memory_limit_bytes) * 100",
+            "legendFormat": "{{ container }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Memory %",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Worker Processing Lag",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "increase(platform_outbox_dispatch_errors_total[5m])",
+            "legendFormat": "Errors"
+          },
+          {
+            "expr": "rate(platform_outbox_messages_sent_total[5m])",
+            "legendFormat": "Sent/sec"
+          }
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

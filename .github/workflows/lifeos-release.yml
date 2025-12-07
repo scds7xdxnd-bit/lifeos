@@ -1,0 +1,285 @@
+# LifeOS Release Pipeline
+# Purpose: Production deployment with approvals
+# Trigger: Push of tag v*.*.* (semver)
+
+name: Release - Production Deploy
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  PYTHON_VERSION: "3.11"
+  APP_ENV: production
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/lifeos
+
+jobs:
+  validate-tag:
+    name: Validate Release Tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+      
+      - name: Validate semver format
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "❌ Invalid semver format: $VERSION"
+            exit 1
+          fi
+          echo "✓ Valid semver: $VERSION"
+      
+      - name: Check changelog
+        run: |
+          if [ ! -f CHANGELOG.md ]; then
+            echo "⚠️ Warning: CHANGELOG.md not found"
+          else
+            echo "✓ CHANGELOG.md exists"
+          fi
+
+  full-test-suite:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: validate-tag
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lifeos
+          POSTGRES_PASSWORD: lifeos
+          POSTGRES_DB: lifeos_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: lifeos/requirements.txt
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r lifeos/requirements.txt
+          pip install pytest pytest-cov pytest-timeout
+      
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://lifeos:lifeos@localhost/lifeos_test
+          FLASK_APP: lifeos.wsgi
+          PYTHONPATH: ${{ github.workspace }}
+        run: cd lifeos && flask db upgrade head
+      
+      - name: Run full test suite
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          DATABASE_URL: postgresql://lifeos:lifeos@localhost/lifeos_test
+          REDIS_URL: redis://localhost:6379/0
+          APP_ENV: ci
+        run: |
+          pytest lifeos/tests/ \
+            --tb=short \
+            --cov=lifeos \
+            --cov-report=xml:coverage-full.xml \
+            --junitxml=test-results-full.xml \
+            -v
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-release
+          path: coverage-full.xml
+
+  build-prod:
+    name: Build Production Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate-tag, full-test-suite]
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=
+            type=raw,value=latest
+      
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./deploy/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+            VERSION=${{ needs.validate-tag.outputs.version }}
+
+  security-scan:
+    name: Security Scan Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-prod
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
+  deploy-staging-verify:
+    name: Deploy to Staging (Verification)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build-prod, security-scan]
+    environment:
+      name: staging
+      url: https://staging.lifeos.example.com
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to staging for verification
+        run: |
+          echo "🚀 Deploying release to staging for final verification..."
+          echo "Version: ${{ needs.validate-tag.outputs.version }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          # Add deployment commands here
+      
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests on staging..."
+          # make smoketest TARGET_URL=https://staging.lifeos.example.com
+
+  approval-gate:
+    name: Production Approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 1440  # 24 hours
+    needs: deploy-staging-verify
+    environment:
+      name: production-approval
+    steps:
+      - name: Approval checkpoint
+        run: |
+          echo "✅ Production deployment approved"
+          echo "Proceeding with production deployment..."
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate-tag, approval-gate]
+    environment:
+      name: production
+      url: https://lifeos.example.com
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Pre-deploy backup
+        run: |
+          echo "📦 Creating pre-deploy backup..."
+          # Add backup commands (database, config, etc.)
+      
+      - name: Run production migrations
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          echo "🔄 Running database migrations..."
+          # make run-migrations
+      
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production..."
+          echo "Version: ${{ needs.validate-tag.outputs.version }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          # Add production deployment commands
+      
+      - name: Verify deployment
+        run: |
+          echo "✓ Verifying production deployment..."
+          # make smoketest TARGET_URL=https://lifeos.example.com
+
+  post-deploy:
+    name: Post-Deploy Tasks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy-production
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create GitHub Release
+        if: needs.deploy-production.result == 'success'
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Notify success
+        if: needs.deploy-production.result == 'success'
+        run: |
+          echo "✅ Production deployment successful!"
+          echo "Version: ${{ github.ref_name }}"
+          # Add Slack/email notification here
+      
+      - name: Notify failure
+        if: needs.deploy-production.result == 'failure'
+        run: |
+          echo "❌ Production deployment failed!"
+          echo "Rollback may be required."
+          # Add alert notification here

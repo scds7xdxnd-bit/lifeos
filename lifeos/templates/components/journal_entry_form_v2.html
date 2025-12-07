@@ -1,0 +1,671 @@
+{# Updated Manual Journal Entry Form Component
+   Reuses account_search_dropdown component for per-line typeahead + inline account creation
+   
+   Usage:
+   {% set component_id = 'journal' %}
+   {% include "components/journal_entry_form_v2.html" %}
+#}
+
+{% set component_id = component_id|default('journal', true) %}
+
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <h2 style="margin:0;">Journal entry</h2>
+      <p style="margin:0; color:#5b6470;">Record a balanced double-entry journal entry.</p>
+    </div>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with finance:write to post journal entries.</div>
+  <form id="{{ component_id }}-form" autocomplete="off" style="margin-top:0.75rem; display:grid; gap:0.75rem;">
+    <div class="field">
+      <label for="{{ component_id }}-description">Description</label>
+      <input id="{{ component_id }}-description" name="description" type="text" placeholder="e.g., Monthly rent payment" maxlength="255">
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-posted-at">Posted at</label>
+      <input id="{{ component_id }}-posted-at" name="posted_at" type="datetime-local">
+      <small>Optional; defaults to now if blank.</small>
+    </div>
+    <div>
+      <div style="display:flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom:0.35rem;">
+        <strong>Lines</strong>
+        <span style="font-size:0.9rem; color:#5b6470;">Minimum 2 lines; must balance.</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:280px;">Account</th>
+              <th style="width:70px;">D/C</th>
+              <th style="width:120px;">Amount</th>
+              <th style="flex-grow:1;">Memo</th>
+              <th style="width:60px;"></th>
+            </tr>
+          </thead>
+          <tbody id="{{ component_id }}-lines"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;">
+      <div><strong>Debit:</strong> <span id="{{ component_id }}-total-debit" style="font-family: monospace; font-weight: 500;">0.00</span></div>
+      <div><strong>Credit:</strong> <span id="{{ component_id }}-total-credit" style="font-family: monospace; font-weight: 500;">0.00</span></div>
+      <div><strong>Diff:</strong> <span id="{{ component_id }}-diff" style="font-family: monospace; font-weight: 500;">0.00</span></div>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; justify-content: space-between;">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-add-line">+ Add line</button>
+      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button type="submit" class="btn" id="{{ component_id }}-submit">Post entry</button>
+        <button type="button" class="btn btn-secondary" id="{{ component_id }}-reset">Reset</button>
+      </div>
+    </div>
+    <div id="{{ component_id }}-status" class="auth-status" aria-live="polite"></div>
+  </form>
+</div>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const form = el('form');
+    const linesTable = el('lines');
+    const addBtn = el('add-line');
+    const statusEl = el('status');
+    const loginHint = el('login-hint');
+    const descriptionInput = el('description');
+    const postedAtInput = el('posted-at');
+    const submitBtn = el('submit');
+    const resetBtn = el('reset');
+    const totalDebitEl = el('total-debit');
+    const totalCreditEl = el('total-credit');
+    const diffEl = el('diff');
+    const lines = [];
+
+    const financeAuthState = () => {
+      const tokens = lifeosAuth.getTokens();
+      const authed = !!tokens.access_token;
+      const hasRole = Array.isArray(tokens?.user?.role_codes) && tokens.user.role_codes.includes('finance:write');
+      return { allowed: authed && hasRole, authed };
+    };
+
+    const ensureAuth = () => {
+      const { allowed, authed } = financeAuthState();
+      [submitBtn, resetBtn, addBtn, descriptionInput, postedAtInput].forEach((node) => { if (node) node.disabled = !allowed; });
+      if (linesTable) {
+        linesTable.querySelectorAll('input, select, textarea, button').forEach((node) => { node.disabled = !allowed; });
+      }
+      if (!allowed) {
+        loginHint.textContent = authed ? 'Requires finance:write to post journal entries.' : 'Please log in with finance:write to post journal entries.';
+        loginHint.style.display = 'block';
+      } else {
+        loginHint.style.display = 'none';
+      }
+      return allowed;
+    };
+
+    const setStatus = (msg, tone = '') => {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      if (tone) {
+        statusEl.dataset.tone = tone;
+      } else {
+        statusEl.removeAttribute('data-tone');
+      }
+    };
+
+    const formatMoney = (value) => Number(value || 0).toFixed(2);
+
+    const renderTotals = () => {
+      let debit = 0;
+      let credit = 0;
+      lines.forEach((line) => {
+        const amt = Number(line.amount) || 0;
+        if (line.dc === 'D') debit += amt;
+        if (line.dc === 'C') credit += amt;
+      });
+      const diff = debit - credit;
+      totalDebitEl.textContent = formatMoney(debit);
+      totalCreditEl.textContent = formatMoney(credit);
+      diffEl.textContent = formatMoney(diff);
+      diffEl.style.color = Math.abs(diff) < 0.005 ? '#1d7a36' : '#b3352f';
+    };
+
+    const renderLines = () => {
+      if (!linesTable) return;
+      if (!lines.length) {
+        lines.push(
+          { account_id: '', account_name: '', dc: 'D', amount: '', memo: '' },
+          { account_id: '', account_name: '', dc: 'C', amount: '', memo: '' }
+        );
+      }
+      linesTable.innerHTML = '';
+
+      lines.forEach((line, idx) => {
+        const tr = document.createElement('tr');
+        const searchId = `${prefix}-line-${idx}-account`;
+
+        tr.innerHTML = `
+          <td id="${searchId}-wrapper-cell"></td>
+          <td>
+            <select data-field="dc" data-idx="${idx}" style="width: 100%;">
+              <option value="D"${line.dc === 'D' ? ' selected' : ''}>Debit</option>
+              <option value="C"${line.dc === 'C' ? ' selected' : ''}>Credit</option>
+            </select>
+          </td>
+          <td><input type="number" step="0.01" min="0" data-field="amount" data-idx="${idx}" value="${line.amount || ''}" placeholder="0.00" style="width: 100%;" /></td>
+          <td><input type="text" data-field="memo" data-idx="${idx}" value="${line.memo || ''}" placeholder="Memo (optional)" style="width: 100%;" /></td>
+          <td><button type="button" class="text-link" data-remove="${idx}">Remove</button></td>
+        `;
+
+        // Inject account search component into first cell
+        const wrapperCell = tr.querySelector(`#${searchId}-wrapper-cell`);
+        const searchComponentHTML = `
+          <div class="account-search-wrapper" id="${searchId}-wrapper" data-search-id="${searchId}" style="position: relative;">
+            <input
+              type="text"
+              class="account-search-input"
+              id="${searchId}-input"
+              placeholder="Search account..."
+              autocomplete="off"
+              style="width: 100%;"
+            >
+            <div
+              class="account-search-dropdown"
+              id="${searchId}-dropdown"
+              role="listbox"
+              style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;"
+            >
+              <div id="${searchId}-loading" style="display: none; padding: 0.5rem; color: #5b6470; text-align: center;">
+                <span>Searching...</span>
+              </div>
+              <div id="${searchId}-results" style="max-height: 250px; overflow-y: auto;"></div>
+              <div id="${searchId}-empty" style="padding: 0.5rem; color: #5b6470; text-align: center; display: none;">
+                No accounts found
+              </div>
+            </div>
+          </div>
+        `;
+        wrapperCell.innerHTML = searchComponentHTML;
+
+        // Setup form field listeners (D/C, amount, memo, remove)
+        const dcSelect = tr.querySelector('select[data-field="dc"]');
+        const amountInput = tr.querySelector('input[data-field="amount"]');
+        const memoInput = tr.querySelector('input[data-field="memo"]');
+        const removeBtn = tr.querySelector('button[data-remove]');
+
+        dcSelect.addEventListener('change', (e) => {
+          lines[idx].dc = e.target.value === 'C' ? 'C' : 'D';
+          renderTotals();
+        });
+
+        amountInput.addEventListener('input', (e) => {
+          lines[idx].amount = e.target.value;
+          renderTotals();
+        });
+
+        memoInput.addEventListener('input', (e) => {
+          lines[idx].memo = e.target.value;
+        });
+
+        removeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          lines.splice(idx, 1);
+          renderLines();
+        });
+
+        linesTable.appendChild(tr);
+
+        // Initialize account search dropdown for this line with custom callback
+        const searchInput = tr.querySelector(`#${searchId}-input`);
+        
+        // Create debounced search with module availability check
+        let debouncedSearch;
+        const initDebouncedSearch = () => {
+          if (!window.lifeosAccountSearch?.createDebouncedSearch) {
+            // Module not available yet, retry after small delay
+            setTimeout(initDebouncedSearch, 50);
+            return;
+          }
+          
+          // Module is now available - create debounced search
+          debouncedSearch = window.lifeosAccountSearch.createDebouncedSearch(
+            (results) => renderAccountSearchResults(searchId, idx, results),
+            300
+          );
+        };
+        
+        // Also provide fallback for actual missing modules
+        const createFallbackDebouncedSearch = () => {
+          let timeoutId = null;
+          return async (query) => {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (!query || query.trim().length === 0) {
+              renderAccountSearchResults(searchId, idx, []);
+              return;
+            }
+            timeoutId = setTimeout(async () => {
+              const results = await window.lifeosAccountSearch?.searchAccounts?.(query) || [];
+              renderAccountSearchResults(searchId, idx, results);
+            }, 300);
+          };
+        };
+        
+        // Initialize debounced search or fallback
+        if (window.lifeosAccountSearch?.createDebouncedSearch) {
+          initDebouncedSearch();
+        } else {
+          // Set timeout to check after modules should be loaded
+          setTimeout(() => {
+            if (!debouncedSearch && window.lifeosAccountSearch?.createDebouncedSearch) {
+              initDebouncedSearch();
+            } else if (!debouncedSearch) {
+              // Module truly unavailable, use fallback
+              debouncedSearch = createFallbackDebouncedSearch();
+            }
+          }, 500);
+          // For immediate use before timeout, provide fallback
+          debouncedSearch = createFallbackDebouncedSearch();
+        }
+
+        // Input event
+        searchInput.addEventListener('input', (e) => {
+          const query = e.target.value;
+          if (query.length === 0) {
+            document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+          } else {
+            document.getElementById(`${searchId}-dropdown`).style.display = 'block';
+            document.getElementById(`${searchId}-loading`).style.display = 'block';
+            document.getElementById(`${searchId}-results`).style.display = 'block';
+            document.getElementById(`${searchId}-empty`).style.display = 'none';
+            debouncedSearch(query);
+          }
+        });
+
+        // Focus event
+        searchInput.addEventListener('focus', () => {
+          if (searchInput.value.length > 0) {
+            document.getElementById(`${searchId}-dropdown`).style.display = 'block';
+          }
+        });
+
+        // Click outside to close dropdown
+        document.addEventListener('click', (e) => {
+          if (!tr.contains(e.target)) {
+            document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+          }
+        });
+
+        // Pre-fill if account already selected
+        if (line.account_name) {
+          searchInput.value = line.account_name;
+        }
+      });
+
+      renderTotals();
+    };
+
+    const renderAccountSearchResults = (searchId, lineIdx, results) => {
+      const resultsContainer = document.getElementById(`${searchId}-results`);
+      const emptyMsg = document.getElementById(`${searchId}-empty`);
+      const loadingMsg = document.getElementById(`${searchId}-loading`);
+      const searchInput = document.getElementById(`${searchId}-input`);
+
+      if (!resultsContainer) {
+        console.warn(`[JournalForm] Results container not found: ${searchId}-results`);
+        return;
+      }
+
+      loadingMsg.style.display = 'none';
+      resultsContainer.innerHTML = '';
+
+      if (!results || results.length === 0) {
+        emptyMsg.style.display = 'block';
+        resultsContainer.style.display = 'block';
+      } else {
+        emptyMsg.style.display = 'none';
+        resultsContainer.style.display = 'block';
+      }
+
+      // Render each result
+      results.forEach((result) => {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'account-search-result';
+        resultDiv.role = 'option';
+        resultDiv.tabIndex = 0;
+        resultDiv.style.cursor = 'pointer';
+
+        const displayName = window.lifeosAccountSearch?.formatResultDisplay?.(result) || result.name;
+        const highlight = window.lifeosAccountSearch?.highlightMatch?.(displayName, searchInput.value) || displayName;
+
+        resultDiv.innerHTML = `
+          <div style="font-weight: 500;">${highlight}</div>
+          ${result.account_type ? `<div style="font-size: 0.85rem; color: #5b6470;">${result.account_type}${result.account_subtype ? ' • ' + result.account_subtype : ''}</div>` : ''}
+        `;
+
+        resultDiv.addEventListener('click', () => {
+          lines[lineIdx].account_id = result.id;
+          lines[lineIdx].account_name = result.name;
+          searchInput.value = result.name;
+          document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+          renderTotals();
+        });
+
+        resultDiv.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            resultDiv.click();
+          }
+        });
+
+        resultsContainer.appendChild(resultDiv);
+      });
+
+      // Add "Create new" option even when no results; gate only on user input
+      if (searchInput.value.length > 0) {
+        const createNewDiv = document.createElement('div');
+        createNewDiv.className = 'account-search-create-new';
+        createNewDiv.style.cssText = 'padding: 0.5rem 0.75rem; border-top: 1px solid #e0e5ec; cursor: pointer; color: #0b4f9c; background: #f7f8fa;';
+        createNewDiv.textContent = '+ Create new account';
+        createNewDiv.role = 'option';
+        createNewDiv.tabIndex = 0;
+
+        createNewDiv.addEventListener('click', async () => {
+          const name = searchInput.value;
+          if (!name.trim()) {
+            alert('Enter an account name first');
+            return;
+          }
+
+          // Create overlay
+          const overlay = document.createElement('div');
+          overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9998;
+          `;
+
+          // Create modal dialog
+          const modal = document.createElement('div');
+          modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 9999;
+          `;
+
+          modal.innerHTML = `
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+              <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #1f2430;">Create New Account</h3>
+              <p style="margin: 0; color: #5b6470; font-size: 0.9rem;">Choose type and category for "<strong>${name}</strong>"</p>
+            </div>
+            
+            <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s;">
+                <input type="radio" name="account-type" value="asset" checked style="margin-top: 0.25rem; cursor: pointer;">
+                <span>
+                  <div style="font-weight: 600; color: #1f2430;">Asset</div>
+                  <div style="font-size: 0.85rem; color: #5b6470;">Cash, bank accounts, investments</div>
+                </span>
+              </label>
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s;">
+                <input type="radio" name="account-type" value="liability" style="margin-top: 0.25rem; cursor: pointer;">
+                <span>
+                  <div style="font-weight: 600; color: #1f2430;">Liability</div>
+                  <div style="font-size: 0.85rem; color: #5b6470;">Loans, credit cards, payables</div>
+                </span>
+              </label>
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s;">
+                <input type="radio" name="account-type" value="equity" style="margin-top: 0.25rem; cursor: pointer;">
+                <span>
+                  <div style="font-weight: 600; color: #1f2430;">Equity</div>
+                  <div style="font-size: 0.85rem; color: #5b6470;">Net worth, capital contributions</div>
+                </span>
+              </label>
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s;">
+                <input type="radio" name="account-type" value="income" style="margin-top: 0.25rem; cursor: pointer;">
+                <span>
+                  <div style="font-weight: 600; color: #1f2430;">Income</div>
+                  <div style="font-size: 0.85rem; color: #5b6470;">Salary, revenue, earnings</div>
+                </span>
+              </label>
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s;">
+                <input type="radio" name="account-type" value="expense" style="margin-top: 0.25rem; cursor: pointer;">
+                <span>
+                  <div style="font-weight: 600; color: #1f2430;">Expense</div>
+                  <div style="font-size: 0.85rem; color: #5b6470;">Groceries, utilities, supplies</div>
+                </span>
+              </label>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+              <label style="display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.9rem; color: #1f2430;">Category (optional)</label>
+              <select id="inline-category-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
+                <option value="">Use default category</option>
+              </select>
+              <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
+                <input type="text" id="inline-category-new" placeholder="Or create new category..." style="flex: 1; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
+              </div>
+              <small style="color: #5b6470; font-size: 0.8rem;">Leave blank to use the default category for the selected type.</small>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem;">
+              <button type="button" class="create-account-submit" class="btn" style="flex: 1; padding: 0.75rem; background: #0b4f9c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Account</button>
+              <button type="button" class="create-account-cancel" class="btn btn-secondary" style="flex: 1; padding: 0.75rem; background: #e0e5ec; color: #1f2430; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+            </div>
+            <div id="inline-create-error" style="margin-top: 0.5rem; color: #b3352f; font-size: 0.85rem;"></div>
+          `;
+
+          // Append to body
+          document.body.appendChild(overlay);
+          document.body.appendChild(modal);
+
+          const categorySelect = modal.querySelector('#inline-category-select');
+          const categoryNewInput = modal.querySelector('#inline-category-new');
+          const errorEl = modal.querySelector('#inline-create-error');
+          const typeRadios = modal.querySelectorAll('input[name="account-type"]');
+
+          // Populate categories based on selected type
+          const populateCategories = async (baseType) => {
+            categorySelect.innerHTML = '<option value="">Use default category</option>';
+            if (!window.lifeosAccountCategories) return;
+            try {
+              const categories = await window.lifeosAccountCategories.listCategoriesCached();
+              const filtered = categories.filter(c => c.base_type === baseType);
+              filtered.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name + (cat.is_default ? ' (default)' : '') + (cat.is_system ? ' [system]' : '');
+                categorySelect.appendChild(opt);
+              });
+            } catch (err) {
+              console.warn('Failed to load categories:', err);
+            }
+          };
+
+          // Initialize with default selection
+          populateCategories('asset');
+
+          // Update categories when type changes
+          typeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+              if (radio.checked) {
+                populateCategories(radio.value);
+              }
+            });
+          });
+
+          const getSelectedType = () => {
+            const radio = modal.querySelector('input[name="account-type"]:checked');
+            return radio?.value || 'asset';
+          };
+
+          const cleanup = () => {
+            overlay.remove();
+            modal.remove();
+          };
+
+          const handleSubmit = async () => {
+            const accountType = getSelectedType();
+            const categoryId = categorySelect.value ? parseInt(categorySelect.value) : null;
+            const categoryNameNew = categoryNewInput.value.trim() || null;
+            
+            errorEl.textContent = '';
+
+            try {
+              // Use the updated createAccountInline that supports category
+              const account = await window.lifeosAccountSearch?.createAccountInline?.(
+                name,
+                accountType,
+                null, // subtype
+                categoryId,
+                categoryNameNew
+              );
+              if (account) {
+                lines[lineIdx].account_id = account.id;
+                lines[lineIdx].account_name = account.name;
+                searchInput.value = account.name;
+                searchInput.focus();
+                renderTotals();
+                document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+                cleanup();
+              }
+            } catch (err) {
+              errorEl.textContent = err.message || 'Failed to create account';
+            }
+          };
+
+          const handleCancel = () => {
+            cleanup();
+          };
+
+          modal.querySelector('.create-account-submit').addEventListener('click', handleSubmit);
+          modal.querySelector('.create-account-cancel').addEventListener('click', handleCancel);
+          overlay.addEventListener('click', handleCancel);
+
+          // Close on Escape
+          const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+              handleCancel();
+              document.removeEventListener('keydown', escapeHandler);
+            }
+          };
+          document.addEventListener('keydown', escapeHandler);
+        });
+
+        resultsContainer.appendChild(createNewDiv);
+      }
+    };
+
+    addBtn?.addEventListener('click', () => {
+      lines.push({ account_id: '', account_name: '', dc: 'D', amount: '', memo: '' });
+      renderLines();
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      lines.splice(0, lines.length);
+      renderLines();
+      form?.reset();
+      setStatus('');
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) {
+        setStatus('Please log in.', 'error');
+        return;
+      }
+
+      // Validate minimum 2 lines before filtering
+      if (lines.length < 2) {
+        setStatus('Add at least two lines.', 'error');
+        return;
+      }
+
+      // Check all lines have account selected and amount > 0
+      for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].account_id) {
+          setStatus(`Line ${i + 1}: Select an account.`, 'error');
+          return;
+        }
+        if (!lines[i].amount || Number(lines[i].amount) <= 0) {
+          setStatus(`Line ${i + 1}: Enter an amount greater than 0.`, 'error');
+          return;
+        }
+      }
+
+      const prepared = lines
+        .map((line) => ({
+          account_id: parseInt(line.account_id, 10),
+          dc: line.dc || 'D',
+          amount: Number(line.amount),
+          memo: line.memo || null,
+        }));
+
+      const debit = prepared.filter((l) => l.dc === 'D').reduce((s, l) => s + (Number(l.amount) || 0), 0);
+      const credit = prepared.filter((l) => l.dc === 'C').reduce((s, l) => s + (Number(l.amount) || 0), 0);
+      if (Math.abs(debit - credit) > 0.005) {
+        setStatus('Entry must balance (debits = credits).', 'error');
+        return;
+      }
+
+      const desc = descriptionInput?.value || '';
+      const postedRaw = postedAtInput?.value;
+      const payload = {
+        description: desc,
+        posted_at: postedRaw ? new Date(postedRaw).toISOString() : undefined,
+        lines: prepared,
+      };
+
+      setStatus('Posting...');
+      submitBtn.disabled = true;
+      lifeosTelemetry.track('finance.journal.posted', { source: 'ui', stage: 'submitted', line_count: prepared.length });
+
+      const res = await fetch('/api/finance/journal/entries', {
+        method: 'POST',
+        headers: lifeosAuth.authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      submitBtn.disabled = false;
+
+      if (res.ok && body.ok !== false) {
+        setStatus('Entry posted.', 'success');
+        lifeosTelemetry.track('finance.journal.posted', {
+          source: 'ui',
+          stage: 'succeeded',
+          entry_id: body.entry_id,
+          total_debit: body.total_debit,
+          total_credit: body.total_credit,
+        });
+        lines.splice(0, lines.length);
+        renderLines();
+        form.reset();
+        window.dispatchEvent(new CustomEvent('journal:entry-posted', { detail: { entry_id: body.entry_id, component_id: prefix } }));
+      } else {
+        const reason = body.error || res.status;
+        const copy = {
+          unbalanced_entry: 'Entry must balance (debits = credits).',
+          validation_error: 'Check amounts, D/C selections, and account picks.',
+          inactive_account: 'One or more accounts are inactive.',
+          not_found: 'Account not found for this user.',
+        }[reason] || 'Unable to post entry.';
+        setStatus(copy, 'error');
+        lifeosTelemetry.track('finance.journal.posted', { source: 'ui', stage: 'failed', reason });
+      }
+    });
+
+    renderLines();
+    ensureAuth();
+    window.addEventListener('lifeos:auth-changed', () => ensureAuth());
+  })();
+</script>

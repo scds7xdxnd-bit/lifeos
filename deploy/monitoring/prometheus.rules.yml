@@ -1,0 +1,177 @@
+groups:
+  - name: lifeos_rules
+    interval: 30s
+    rules:
+      # Application availability
+      - alert: LifeOSWebDown
+        expr: up{job="lifeos-web"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: lifeos-web
+        annotations:
+          summary: "LifeOS Web Application is Down"
+          description: "LifeOS web service at {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          service: lifeos-web
+        annotations:
+          summary: "High HTTP Response Time"
+          description: "95th percentile response time is {{ $value }}s (threshold: 1s)"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: lifeos-web
+        annotations:
+          summary: "High Error Rate"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # Database health
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgres
+        annotations:
+          summary: "PostgreSQL Database is Down"
+          description: "PostgreSQL instance at {{ $labels.instance }} is not responding"
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_statements_mean_exec_time[5m]) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "PostgreSQL Slow Queries Detected"
+          description: "Average query execution time is {{ $value }}ms"
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_activity_count > 150
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "PostgreSQL High Connection Count"
+          description: "PostgreSQL has {{ $value }} active connections (threshold: 150)"
+
+      # Redis health
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis Cache is Down"
+          description: "Redis instance at {{ $labels.instance }} is not responding"
+
+      - alert: RedisHighMemoryUsage
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis High Memory Usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} (threshold: 85%)"
+
+      - alert: RedisHighEvictions
+        expr: rate(redis_evicted_keys_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis Keys Being Evicted"
+          description: "Redis is evicting keys at rate {{ $value }}/sec"
+
+      # Worker health
+      - alert: OutboxBacklogHigh
+        expr: platform_outbox_pending_messages > 1000
+        for: 10m
+        labels:
+          severity: warning
+          service: lifeos-worker
+        annotations:
+          summary: "Outbox Message Backlog High"
+          description: "{{ $value }} messages pending in outbox (threshold: 1000)"
+
+      - alert: WorkerProcessingErrors
+        expr: rate(platform_outbox_dispatch_errors_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: lifeos-worker
+        annotations:
+          summary: "Worker Processing Errors"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+
+      # Container resources
+      - alert: ContainerHighCPUUsage
+        expr: (rate(container_cpu_usage_seconds_total{container=~"lifeos-.*"}[5m]) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: '{{ $labels.container }}'
+        annotations:
+          summary: "Container High CPU Usage"
+          description: "Container {{ $labels.container }} CPU usage is {{ $value }}% (threshold: 80%)"
+
+      - alert: ContainerHighMemoryUsage
+        expr: (container_memory_usage_bytes{container=~"lifeos-.*"} / container_spec_memory_limit_bytes) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: '{{ $labels.container }}'
+        annotations:
+          summary: "Container High Memory Usage"
+          description: "Container {{ $labels.container }} memory usage is {{ $value | humanizePercentage }} (threshold: 80%)"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{device=~"/dev/.*"} / node_filesystem_size_bytes) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+          service: filesystem
+        annotations:
+          summary: "Low Disk Space"
+          description: "{{ $labels.device }} has {{ $value | humanizePercentage }} free (threshold: 15%)"
+
+  # Recording rules for performance optimization
+  - name: lifeos_recording_rules
+    interval: 30s
+    rules:
+      # Request rate by status code
+      - record: lifeos:http_requests:rate5m
+        expr: rate(http_requests_total[5m])
+
+      # Request latency percentiles
+      - record: lifeos:http_request_latency:p95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: lifeos:http_request_latency:p99
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+
+      # Database metrics aggregation
+      - record: lifeos:db_connections:total
+        expr: pg_stat_activity_count
+
+      - record: lifeos:cache_hit_rate:ratio
+        expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)
+
+      # Container resource usage
+      - record: lifeos:container_cpu:percent
+        expr: rate(container_cpu_usage_seconds_total{container=~"lifeos-.*"}[5m]) * 100
+
+      - record: lifeos:container_memory:percent
+        expr: (container_memory_usage_bytes{container=~"lifeos-.*"} / container_spec_memory_limit_bytes) * 100

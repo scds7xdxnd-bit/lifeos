@@ -1,0 +1,161 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 1100px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
+  {% include "components/journal_entry_form_v2.html" %}
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem;">
+      <h3 style="margin:0;">Recent entries</h3>
+      <button type="button" class="btn btn-secondary" id="journal-entries-refresh-btn">Refresh entries</button>
+    </div>
+    <div id="journal-empty" style="margin-top:0.5rem; color:#5b6470; display:none;">No journal entries yet.</div>
+    <div id="journal-list" style="display:grid; gap:0.75rem; margin-top:0.5rem;"></div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const journalList = document.getElementById('journal-list');
+    const journalEmpty = document.getElementById('journal-empty');
+    const entriesRefresh = document.getElementById('journal-entries-refresh-btn');
+    const detailsCache = new Map();
+
+    const fmtMoney = (v) => Number(v || 0).toFixed(2);
+
+    const ensureAuth = () => {
+      const tokens = lifeosAuth.getTokens();
+      const authed = !!tokens?.access_token;
+      if (!authed) {
+        entriesRefresh.disabled = true;
+        journalList.innerHTML = '';
+        journalEmpty.textContent = 'Log in to view recent entries.';
+        journalEmpty.style.display = 'block';
+      } else {
+        entriesRefresh.disabled = false;
+      }
+      return authed;
+    };
+
+    const renderEntry = (entry, idx, totalCount) => {
+      const div = document.createElement('div');
+      div.style.border = '1px solid #e0e5ec';
+      div.style.borderRadius = '8px';
+      div.style.background = '#fdfdfd';
+
+      const posted = entry.posted_at ? new Date(entry.posted_at).toLocaleString() : '—';
+      const number = entry.entry_number || (totalCount - idx);
+      const debit = Number(entry.debit_total || 0);
+      const credit = Number(entry.credit_total || 0);
+      const value = Math.max(debit, credit);
+
+      const summary = document.createElement('div');
+      summary.style.cssText = 'padding:0.65rem 0.75rem; display:flex; justify-content: space-between; gap:0.75rem; flex-wrap:wrap; cursor:pointer;';
+      summary.innerHTML = `
+        <div>
+          <div style="font-weight:600;">#${number} ${entry.description || ''}</div>
+          <div style="color:#5b6470; font-size:0.9rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <span>${posted}</span>
+            <span>Lines: ${entry.lines || entry.line_count || '—'}</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:#1f2430; font-weight:600; font-family:monospace;">${fmtMoney(value)}</div>
+        </div>
+      `;
+
+      const details = document.createElement('div');
+      details.style.cssText = 'display:none; padding:0.5rem 0.75rem 0.75rem; border-top:1px solid #e0e5ec;';
+      details.innerHTML = '<div style="color:#5b6470; font-size:0.9rem;">Loading...</div>';
+
+      summary.addEventListener('click', async () => {
+        const isOpen = details.style.display === 'block';
+        details.style.display = isOpen ? 'none' : 'block';
+        if (isOpen) return;
+
+        if (!detailsCache.has(entry.id)) {
+          try {
+            const res = await fetch(`/api/finance/journal/entries/${entry.id}`, { headers: lifeosAuth.authHeaders() });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const payload = await res.json().catch(() => ({}));
+            detailsCache.set(entry.id, payload.entry || payload);
+          } catch (err) {
+            details.innerHTML = `<div style="color:#b3352f;">Failed to load details: ${err.message}</div>`;
+            return;
+          }
+        }
+
+        const data = detailsCache.get(entry.id);
+        const lines = data.lines || [];
+        const postedAt = data.posted_at ? new Date(data.posted_at).toLocaleString() : posted;
+        const rows = lines.map((l) => {
+          const amtDebit = Number(l.debit || 0);
+          const amtCredit = Number(l.credit || 0);
+          const dc = amtDebit > 0 ? 'D' : (amtCredit > 0 ? 'C' : '');
+          const amt = amtDebit > 0 ? amtDebit : amtCredit;
+          return `
+            <tr>
+              <td>${l.account_name || l.account_id || '—'}</td>
+              <td>${dc}</td>
+              <td style="text-align:right;">${fmtMoney(amt)}</td>
+              <td>${l.memo || ''}</td>
+            </tr>
+          `;
+        }).join('');
+
+        details.innerHTML = `
+          <div style="color:#5b6470; font-size:0.9rem; display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.35rem;">
+            <span><strong>Posted:</strong> ${postedAt}</span>
+            <span><strong>Ref:</strong> #${number}</span>
+          </div>
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr><th style="text-align:left; padding:0.25rem 0.35rem;">Account</th><th style="text-align:left; padding:0.25rem 0.35rem;">D/C</th><th style="text-align:right; padding:0.25rem 0.35rem;">Amount</th><th style="text-align:left; padding:0.25rem 0.35rem;">Memo</th></tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="4" style="color:#5b6470; padding:0.35rem;">No lines</td></tr>'}
+            </tbody>
+          </table>
+        `;
+      });
+
+      summary.addEventListener('mouseenter', () => { summary.style.background = '#f7f8fa'; });
+      summary.addEventListener('mouseleave', () => { summary.style.background = 'transparent'; });
+
+      div.appendChild(summary);
+      div.appendChild(details);
+      return div;
+    };
+
+    const fetchEntries = async () => {
+      if (!ensureAuth()) return;
+      const res = await fetch('/api/finance/journal', { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          journalEmpty.textContent = 'Log in to view recent entries.';
+          journalEmpty.style.display = 'block';
+        }
+        return;
+      }
+      const payload = await res.json().catch(() => ({}));
+      const items = payload.entries || [];
+      journalList.innerHTML = '';
+      if (!items.length) {
+        journalEmpty.textContent = 'No journal entries yet.';
+        journalEmpty.style.display = 'block';
+        return;
+      }
+      journalEmpty.style.display = 'none';
+      items.forEach((entry, idx) => {
+        journalList.appendChild(renderEntry(entry, idx, items.length));
+      });
+    };
+
+    entriesRefresh?.addEventListener('click', fetchEntries);
+    window.addEventListener('journal:entry-posted', fetchEntries);
+    window.addEventListener('lifeos:auth-changed', () => { ensureAuth(); fetchEntries(); });
+
+    ensureAuth();
+    fetchEntries();
+  })();
+</script>
+{% endblock %}

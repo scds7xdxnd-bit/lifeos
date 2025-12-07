@@ -1,0 +1,276 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: 0 auto; padding: 1rem 0; display:grid; gap:1rem;">
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;">Receivables</h2>
+        <p style="margin:0; color:#5b6470;">Track principals and manual entries.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="recv-reload">Reload</button>
+    </div>
+    <div id="recv-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with finance:write to manage receivables.</div>
+    <form id="recv-form" style="display:grid; gap:0.5rem; margin-top:0.75rem;">
+      <div class="field">
+        <label for="recv-counterparty">Counterparty</label>
+        <input id="recv-counterparty" name="counterparty" type="text" required>
+      </div>
+      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="field">
+          <label for="recv-principal">Principal</label>
+          <input id="recv-principal" name="principal" type="number" step="0.01" min="0" required>
+        </div>
+        <div class="field">
+          <label for="recv-rate">Interest rate (%)</label>
+          <input id="recv-rate" name="interest_rate" type="number" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label for="recv-start">Start date</label>
+          <input id="recv-start" name="start_date" type="date" required>
+        </div>
+        <div class="field">
+          <label for="recv-due">Due date</label>
+          <input id="recv-due" name="due_date" type="date">
+        </div>
+      </div>
+      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button type="submit" class="btn" id="recv-create">Create</button>
+        <div id="recv-status" class="auth-status"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem;">
+      <h3 style="margin:0;">Trackers</h3>
+      <span style="font-size:0.9rem; color:#5b6470;" id="recv-count"></span>
+    </div>
+    <div id="recv-empty" style="color:#5b6470; margin-top:0.5rem;">No receivables yet.</div>
+    <div id="recv-list" style="display:grid; gap:0.5rem; margin-top:0.5rem;"></div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const form = document.getElementById('recv-form');
+    const createBtn = document.getElementById('recv-create');
+    const statusEl = document.getElementById('recv-status');
+    const loginHint = document.getElementById('recv-login-hint');
+    const reloadBtn = document.getElementById('recv-reload');
+    const listEl = document.getElementById('recv-list');
+    const emptyEl = document.getElementById('recv-empty');
+    const countEl = document.getElementById('recv-count');
+
+    const authHeaders = (extra = {}) => {
+      const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      const base = Object.assign({'Content-Type': 'application/json'}, extra);
+      if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
+      return lifeosAuth.authHeaders(base);
+    };
+
+    const setStatus = (msg, tone = '') => {
+      statusEl.textContent = msg || '';
+      if (tone) statusEl.dataset.tone = tone; else statusEl.removeAttribute('data-tone');
+    };
+
+    const setRowStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      Array.from(form?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderEntries = (entries = []) => {
+      if (!entries.length) return '<div style="color:#5b6470; font-size:0.9rem;">No entries.</div>';
+      return entries.map((e) => {
+        const dt = e.entry_date || '';
+        return `<div style="font-size:0.9rem; color:#1f2430;">${dt}: ${e.amount} ${e.memo ? '• ' + e.memo : ''}</div>`;
+      }).join('');
+    };
+
+    const renderTrackerCard = (tracker) => {
+      const card = document.createElement('div');
+      card.setAttribute('data-tracker-card', 'true');
+      card.dataset.id = tracker.id;
+      card.style.border = '1px solid #e0e5ec';
+      card.style.borderRadius = '10px';
+      card.style.padding = '0.75rem';
+      card.style.background = '#fff';
+      card.innerHTML = `
+        <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+          <div>
+            <strong>${tracker.counterparty}</strong>
+            <div style="color:#5b6470; font-size:0.9rem;">Principal: ${tracker.principal} ${tracker.interest_rate ? '• Rate ' + tracker.interest_rate + '%' : ''}</div>
+            <div style="color:#5b6470; font-size:0.85rem;">Start: ${tracker.start_date || '—'} ${tracker.due_date ? '• Due ' + tracker.due_date : ''}</div>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="delete" data-id="${tracker.id}">Delete</button>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Add entry</label>
+          <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(170px,1fr));">
+            <input type="number" step="0.01" min="0" data-field="amount" placeholder="Amount">
+            <input type="date" data-field="entry_date">
+            <input type="text" data-field="memo" placeholder="Memo (optional)">
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-top:0.35rem; align-items:center; flex-wrap:wrap;">
+            <button class="btn" data-action="entry-add" data-id="${tracker.id}">Add entry</button>
+            <span class="auth-status" data-role="row-status" style="min-width:140px;"></span>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <div style="font-weight:600; margin-bottom:0.25rem;">Entries</div>
+          <div data-role="entries" style="display:grid; gap:0.25rem; color:#1f2430; font-size:0.95rem;">Loading…</div>
+        </div>
+      `;
+      return card;
+    };
+
+    const loadEntries = async (trackerId, entriesEl) => {
+      if (!entriesEl) return;
+      const res = await fetch(`/api/finance/receivables/${trackerId}/entries`, { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        entriesEl.innerHTML = renderEntries(body.items || []);
+      } else {
+        entriesEl.innerHTML = '<div style="color:#b3352f; font-size:0.9rem;">Unable to load entries.</div>';
+      }
+    };
+
+    const renderTrackers = (items = []) => {
+      listEl.innerHTML = '';
+      countEl.textContent = items.length ? `${items.length} trackers` : '';
+      if (!items.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      items.forEach((t) => {
+        const card = renderTrackerCard(t);
+        const entriesEl = card.querySelector('[data-role="entries"]');
+        loadEntries(t.id, entriesEl);
+        listEl.appendChild(card);
+      });
+    };
+
+    const fetchReceivables = async () => {
+      if (!ensureAuth()) return;
+      setStatus('');
+      const res = await fetch('/api/finance/receivables', { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        renderTrackers(body.items || []);
+      } else {
+        const reason = body.error || res.status;
+        setStatus(reason === 401 ? 'Please log in.' : 'Unable to load receivables.', 'error');
+      }
+    };
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) return setStatus('Please log in.', 'error');
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (!data.counterparty || !data.counterparty.trim()) {
+        setStatus('Counterparty required.', 'error');
+        return;
+      }
+      const payload = {
+        counterparty: data.counterparty.trim(),
+        principal: data.principal ? Number(data.principal) : 0,
+        start_date: data.start_date || undefined,
+        due_date: data.due_date || undefined,
+        interest_rate: data.interest_rate ? Number(data.interest_rate) : null,
+      };
+      setStatus('Creating...');
+      createBtn.disabled = true;
+      const res = await fetch('/api/finance/receivables', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      createBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus('Created.', 'success');
+        form.reset();
+        fetchReceivables();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(reason === 401 ? 'Please log in.' : 'Unable to create.', 'error');
+      }
+    });
+
+    listEl.addEventListener('click', async (e) => {
+      const action = e.target?.dataset?.action;
+      if (!action) return;
+      const trackerId = Number(e.target.dataset.id);
+      if (!trackerId) return;
+      const card = e.target.closest('[data-tracker-card]');
+      const statusNode = card?.querySelector('[data-role="row-status"]');
+
+      if (action === 'delete') {
+        setRowStatus(statusNode, 'Deleting...');
+        const res = await fetch(`/api/finance/receivables/${trackerId}`, { method: 'DELETE', headers: lifeosAuth.authHeaders() });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setRowStatus(statusNode, 'Deleted.', 'success');
+          fetchReceivables();
+        } else {
+          setRowStatus(statusNode, reason === 401 ? 'Please log in.' : 'Delete failed.', 'error');
+        }
+      }
+
+      if (action === 'entry-add') {
+        const amount = parseFloat(card.querySelector('[data-field="amount"]')?.value || '0');
+        const entryDate = card.querySelector('[data-field="entry_date"]')?.value || null;
+        const memo = card.querySelector('[data-field="memo"]')?.value || null;
+        if (!amount || amount <= 0) {
+          setRowStatus(statusNode, 'Amount required.', 'error');
+          return;
+        }
+        setRowStatus(statusNode, 'Saving entry...');
+        const res = await fetch(`/api/finance/receivables/${trackerId}/entries`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            amount,
+            entry_date: entryDate || undefined,
+            memo,
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok !== false) {
+          setRowStatus(statusNode, 'Entry added.', 'success');
+          const entriesEl = card.querySelector('[data-role="entries"]');
+          loadEntries(trackerId, entriesEl);
+          card.querySelector('[data-field="amount"]').value = '';
+          card.querySelector('[data-field="entry_date"]').value = '';
+          card.querySelector('[data-field="memo"]').value = '';
+        } else {
+          const reason = body.error || res.status;
+          setRowStatus(statusNode, reason === 401 ? 'Please log in.' : 'Entry failed.', 'error');
+        }
+      }
+    });
+
+    reloadBtn?.addEventListener('click', fetchReceivables);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) fetchReceivables();
+      else {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+      }
+    });
+    ensureAuth();
+    fetchReceivables();
+  })();
+</script>
+{% endblock %}

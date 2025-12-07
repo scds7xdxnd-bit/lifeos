@@ -1,0 +1,311 @@
+{% set component_id = component_id|default('health', true) %}
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <h2 style="margin:0;">Health</h2>
+        {% set badge_domain = 'health' %}{% include "components/inferred_badge.html" %}
+      </div>
+      <p style="margin:0; color:#5b6470;">Log biometrics, workouts, and meals; view daily/weekly summaries.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage health data.</div>
+
+  <div style="display:grid; gap:0.75rem; margin-top:0.75rem;">
+    <form id="{{ component_id }}-bio-form" style="display:grid; gap:0.5rem;">
+      <strong>Biometric</strong>
+      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));">
+        <input type="date" name="date">
+        <input type="number" step="0.1" name="weight" placeholder="Weight">
+        <input type="number" step="0.1" name="body_fat_pct" placeholder="Body fat %">
+        <input type="number" step="1" name="resting_hr" placeholder="Resting HR">
+        <input type="number" step="1" min="1" max="5" name="energy_level" placeholder="Energy 1-5">
+        <input type="number" step="1" min="1" max="5" name="stress_level" placeholder="Stress 1-5">
+      </div>
+      <textarea name="notes" rows="2" placeholder="Notes (optional)"></textarea>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button type="submit" class="btn">Save biometric</button>
+        <span class="auth-status" id="{{ component_id }}-bio-status"></span>
+      </div>
+    </form>
+
+    <form id="{{ component_id }}-workout-form" style="display:grid; gap:0.5rem;">
+      <strong>Workout</strong>
+      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));">
+        <input type="date" name="date">
+        <input type="text" name="workout_type" placeholder="Type (e.g., run)">
+        <input type="number" step="1" name="duration_minutes" placeholder="Duration (min)">
+        <select name="intensity">
+          <option value="medium">Intensity: medium</option>
+          <option value="low">Intensity: low</option>
+          <option value="high">Intensity: high</option>
+        </select>
+        <input type="number" step="1" name="calories_est" placeholder="Calories">
+      </div>
+      <textarea name="notes" rows="2" placeholder="Notes (optional)"></textarea>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button type="submit" class="btn">Log workout</button>
+        <span class="auth-status" id="{{ component_id }}-workout-status"></span>
+      </div>
+    </form>
+
+    <form id="{{ component_id }}-nutrition-form" style="display:grid; gap:0.5rem;">
+      <strong>Nutrition</strong>
+      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));">
+        <input type="date" name="date">
+        <select name="meal_type">
+          <option value="breakfast">Breakfast</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+          <option value="snack">Snack</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="text" name="items" placeholder="Items (comma separated)">
+        <input type="number" step="1" name="calories_est" placeholder="Calories">
+        <input type="number" step="1" min="1" max="5" name="quality_score" placeholder="Quality 1-5">
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button type="submit" class="btn">Log meal</button>
+        <span class="auth-status" id="{{ component_id }}-nutrition-status"></span>
+      </div>
+    </form>
+  </div>
+
+  <div style="margin-top:0.75rem;">
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <input type="date" id="{{ component_id }}-daily-date">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-daily-btn">Daily summary</button>
+      <input type="date" id="{{ component_id }}-weekly-start">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-weekly-btn">Weekly summary</button>
+    </div>
+    <div id="{{ component_id }}-summary" style="margin-top:0.5rem; color:#1f2430;"></div>
+  </div>
+
+  <div id="{{ component_id }}-recent" style="margin-top:0.75rem; display:grid; gap:0.5rem;"></div>
+</div>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const loginHint = el('login-hint');
+    const bioForm = el('bio-form');
+    const workoutForm = el('workout-form');
+    const nutritionForm = el('nutrition-form');
+    const bioStatus = el('bio-status');
+    const workoutStatus = el('workout-status');
+    const nutritionStatus = el('nutrition-status');
+    const reloadBtn = el('reload');
+    const dailyBtn = el('daily-btn');
+    const weeklyBtn = el('weekly-btn');
+    const summaryEl = el('summary');
+    const recentEl = el('recent');
+
+    const authHeaders = (extra = {}) => {
+      const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      const base = Object.assign({'Content-Type': 'application/json'}, extra);
+      if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
+      return lifeosAuth.authHeaders(base);
+    };
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      [bioForm, workoutForm, nutritionForm].forEach((form) => {
+        Array.from(form?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
+      });
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderRecent = (biometrics = [], workouts = [], meals = []) => {
+      recentEl.innerHTML = '';
+      if (biometrics.length) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.padding = '0.5rem 0.75rem';
+        card.innerHTML = `<strong>Recent biometrics</strong>` + biometrics.map(b => {
+          const dt = b.recorded_at ? new Date(b.recorded_at).toLocaleString() : (b.date || '—');
+          return `<div style="font-size:0.9rem; color:#1f2430;">${dt}: wt ${b.weight ?? '—'} bf% ${b.body_fat_pct ?? '—'} energy ${b.energy_level ?? '—'} stress ${b.stress_level ?? '—'}</div>`;
+        }).join('');
+        recentEl.appendChild(card);
+      }
+      if (workouts.length) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.padding = '0.5rem 0.75rem';
+        card.innerHTML = `<strong>Recent workouts</strong>` + workouts.map(w => {
+          const dt = w.date || '—';
+          return `<div style="font-size:0.9rem; color:#1f2430;">${dt}: ${w.workout_type || ''} ${w.duration_minutes ? w.duration_minutes + ' min' : ''} ${w.intensity ? '• Intensity ' + w.intensity : ''}</div>`;
+        }).join('');
+        recentEl.appendChild(card);
+      }
+      if (meals.length) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.padding = '0.5rem 0.75rem';
+        card.innerHTML = `<strong>Recent meals</strong>` + meals.map(n => {
+          const dt = n.date || '—';
+          return `<div style="font-size:0.9rem; color:#1f2430;">${dt}: ${n.meal_type || ''} ${n.items?.join(', ') || ''} ${n.calories_est ? '• ' + n.calories_est + ' kcal' : ''}</div>`;
+        }).join('');
+        recentEl.appendChild(card);
+      }
+    };
+
+    const fetchRecent = async () => {
+      // simple fetch first pages of each list
+      const headers = lifeosAuth.authHeaders();
+      const [bioRes, woRes, nuRes] = await Promise.allSettled([
+        fetch('/api/health/biometrics', { headers }),
+        fetch('/api/health/workouts', { headers }),
+        fetch('/api/health/nutrition', { headers }),
+      ]);
+      const bios = bioRes.status === 'fulfilled' && bioRes.value.ok ? (await bioRes.value.json().catch(() => ({}))).items || [] : [];
+      const wos = woRes.status === 'fulfilled' && woRes.value.ok ? (await woRes.value.json().catch(() => ({}))).items || [] : [];
+      const meals = nuRes.status === 'fulfilled' && nuRes.value.ok ? (await nuRes.value.json().catch(() => ({}))).items || [] : [];
+      renderRecent(bios, wos, meals);
+    };
+
+    const fetchDaily = async () => {
+      const dateVal = el('daily-date')?.value;
+      const res = await fetch(`/api/health/summary/daily${dateVal ? '?date=' + dateVal : ''}`, { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) return;
+      const body = await res.json().catch(() => ({}));
+      const s = body.summary || {};
+      summaryEl.innerHTML = `
+        <div><strong>Daily summary ${s.date || ''}</strong></div>
+        <div style="color:#1f2430; font-size:0.95rem;">Energy: ${s.energy_level ?? '—'} • Stress: ${s.stress_level ?? '—'}</div>
+        ${s.biometric ? `<div style="color:#5b6470; font-size:0.9rem;">Biometric: wt ${s.biometric.weight ?? '—'}, bf% ${s.biometric.body_fat_pct ?? '—'}</div>` : ''}
+        ${Array.isArray(s.workouts) ? `<div style="color:#5b6470; font-size:0.9rem;">Workouts: ${s.workouts.length}</div>` : ''}
+        ${Array.isArray(s.nutrition) ? `<div style="color:#5b6470; font-size:0.9rem;">Meals: ${s.nutrition.length}</div>` : ''}
+      `;
+    };
+
+    const fetchWeekly = async () => {
+      const startVal = el('weekly-start')?.value;
+      const res = await fetch(`/api/health/summary/weekly${startVal ? '?start=' + startVal : ''}`, { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) return;
+      const body = await res.json().catch(() => ({}));
+      const s = body.summary || {};
+      summaryEl.innerHTML = `
+        <div><strong>Weekly summary ${s.week_start || ''} - ${s.week_end || ''}</strong></div>
+        ${s.biometric ? `<div style="color:#5b6470; font-size:0.9rem;">Avg weight: ${s.biometric.avg_weight ?? '—'} • Avg energy: ${s.biometric.avg_energy_level ?? '—'}</div>` : ''}
+        ${Array.isArray(s.workouts) ? `<div style="color:#5b6470; font-size:0.9rem;">Workouts: ${s.workouts.length}</div>` : ''}
+        ${Array.isArray(s.nutrition) ? `<div style="color:#5b6470; font-size:0.9rem;">Meals: ${s.nutrition.length}</div>` : ''}
+      `;
+    };
+
+    bioForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) return setStatus(bioStatus, 'Please log in.', 'error');
+      const data = Object.fromEntries(new FormData(bioForm).entries());
+      const payload = {
+        date: data.date || undefined,
+        weight: data.weight ? Number(data.weight) : null,
+        body_fat_pct: data.body_fat_pct ? Number(data.body_fat_pct) : null,
+        resting_hr: data.resting_hr ? Number(data.resting_hr) : null,
+        energy_level: data.energy_level ? Number(data.energy_level) : null,
+        stress_level: data.stress_level ? Number(data.stress_level) : null,
+        notes: data.notes || null,
+      };
+      setStatus(bioStatus, 'Saving...');
+      const res = await fetch('/api/health/biometrics', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        setStatus(bioStatus, 'Saved.', 'success');
+        bioForm.reset();
+        fetchRecent();
+        fetchDaily();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(bioStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+      }
+    });
+
+    workoutForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) return setStatus(workoutStatus, 'Please log in.', 'error');
+      const data = Object.fromEntries(new FormData(workoutForm).entries());
+      if (!data.workout_type || !data.workout_type.trim()) {
+        setStatus(workoutStatus, 'Workout type required.', 'error');
+        return;
+      }
+      const payload = {
+        date: data.date || undefined,
+        workout_type: data.workout_type || '',
+        duration_minutes: data.duration_minutes ? Number(data.duration_minutes) : 0,
+        intensity: (data.intensity || 'medium').toString().toLowerCase(),
+        calories_est: data.calories_est ? Number(data.calories_est) : null,
+        notes: data.notes || null,
+      };
+      setStatus(workoutStatus, 'Saving...');
+      const res = await fetch('/api/health/workouts', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        setStatus(workoutStatus, 'Saved.', 'success');
+        workoutForm.reset();
+        fetchRecent();
+        fetchDaily();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(workoutStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+      }
+    });
+
+    nutritionForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) return setStatus(nutritionStatus, 'Please log in.', 'error');
+      const data = Object.fromEntries(new FormData(nutritionForm).entries());
+      const itemsStr = (data.items || '').split(',').map(t => t.trim()).filter(Boolean).join(', ');
+      if (!itemsStr) {
+        setStatus(nutritionStatus, 'Items required.', 'error');
+        return;
+      }
+      const payload = {
+        date: data.date || undefined,
+        meal_type: (data.meal_type || 'other').toString().toLowerCase(),
+        items: itemsStr,
+        calories_est: data.calories_est ? Number(data.calories_est) : null,
+        quality_score: data.quality_score ? Number(data.quality_score) : null,
+      };
+      setStatus(nutritionStatus, 'Saving...');
+      const res = await fetch('/api/health/nutrition', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        setStatus(nutritionStatus, 'Saved.', 'success');
+        nutritionForm.reset();
+        fetchRecent();
+        fetchDaily();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(nutritionStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+      }
+    });
+
+    reloadBtn?.addEventListener('click', () => { fetchRecent(); fetchDaily(); fetchWeekly(); });
+    dailyBtn?.addEventListener('click', fetchDaily);
+    weeklyBtn?.addEventListener('click', fetchWeekly);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) {
+        fetchRecent();
+        fetchDaily();
+        fetchWeekly();
+      } else {
+        recentEl.innerHTML = '';
+        summaryEl.textContent = '';
+      }
+    });
+
+    ensureAuth();
+    fetchRecent();
+    fetchDaily();
+    fetchWeekly();
+  })();
+</script>

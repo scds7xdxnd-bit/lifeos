@@ -1,0 +1,255 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 1100px; margin: 0 auto; padding: 1rem 0; display:grid; gap:1rem;">
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <h2 style="margin:0;">Finance Dashboard</h2>
+          {% set badge_domain = 'finance' %}{% include "components/inferred_badge.html" %}
+        </div>
+        <p style="margin:0; color:#5b6470;">Balances, recent transactions, schedule, receivables, and 7-day forecast.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="dash-reload">Reload</button>
+    </div>
+    <div id="dash-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to view your finance dashboard.</div>
+    <div id="dash-status" class="auth-status" style="margin-top:0.5rem;"></div>
+
+    <div style="display:grid; gap:0.75rem; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); margin-top:0.75rem;">
+      <div class="summary-tile" id="dash-accounts-summary">
+        <div class="summary-label">Accounts</div>
+        <div class="summary-value" id="dash-accounts-count">—</div>
+        <div class="summary-sub" id="dash-accounts-total">Total balance: —</div>
+      </div>
+      <div class="summary-tile">
+        <div class="summary-label">Receivables total</div>
+        <div class="summary-value" id="dash-receivables">—</div>
+        <div class="summary-sub">Principal + manual entries</div>
+      </div>
+      <div class="summary-tile">
+        <div class="summary-label">Forecast (7d)</div>
+        <div class="summary-value" id="dash-forecast-end">—</div>
+        <div class="summary-sub" id="dash-forecast-start">Starting at —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <h3 style="margin:0;">Account balances</h3>
+      <span style="font-size:0.9rem; color:#5b6470;" id="dash-accounts-meta"></span>
+    </div>
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead><tr><th>Account</th><th>Code</th><th>Balance</th></tr></thead>
+        <tbody id="dash-accounts-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0; margin-bottom:0.35rem;">Recent transactions</h3>
+    <div id="dash-transactions-empty" style="color:#5b6470;">No transactions yet.</div>
+    <div id="dash-transactions" style="display:grid; gap:0.5rem;"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0; margin-bottom:0.35rem;">Upcoming schedule</h3>
+    <div id="dash-schedule-empty" style="color:#5b6470;">No upcoming scheduled items.</div>
+    <div id="dash-schedule" style="display:grid; gap:0.5rem;"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0; margin-bottom:0.35rem;">Forecast (next 7 days)</h3>
+    <div id="dash-forecast-empty" style="color:#5b6470;">No forecast yet.</div>
+    <div style="overflow-x:auto; margin-top:0.25rem;">
+      <table>
+        <thead><tr><th>Date</th><th>Projected balance</th></tr></thead>
+        <tbody id="dash-forecast-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const statusEl = document.getElementById('dash-status');
+    const reloadBtn = document.getElementById('dash-reload');
+    const loginHint = document.getElementById('dash-login-hint');
+
+    const accountsBody = document.getElementById('dash-accounts-body');
+    const accountsMeta = document.getElementById('dash-accounts-meta');
+    const accountsCount = document.getElementById('dash-accounts-count');
+    const accountsTotal = document.getElementById('dash-accounts-total');
+
+    const receivablesEl = document.getElementById('dash-receivables');
+    const forecastEnd = document.getElementById('dash-forecast-end');
+    const forecastStart = document.getElementById('dash-forecast-start');
+
+    const txList = document.getElementById('dash-transactions');
+    const txEmpty = document.getElementById('dash-transactions-empty');
+
+    const schedList = document.getElementById('dash-schedule');
+    const schedEmpty = document.getElementById('dash-schedule-empty');
+
+    const forecastBody = document.getElementById('dash-forecast-body');
+    const forecastEmpty = document.getElementById('dash-forecast-empty');
+
+    const setStatus = (msg, tone = '') => {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      if (tone) statusEl.dataset.tone = tone; else statusEl.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      reloadBtn.disabled = !authed;
+      loginHint.style.display = authed ? 'none' : 'block';
+      if (!authed) setStatus('');
+      return authed;
+    };
+
+    const fmtMoney = (num) => Number(num || 0).toFixed(2);
+    const fmtDate = (val) => {
+      if (!val) return '—';
+      const dt = new Date(val);
+      return isNaN(dt.getTime()) ? val : dt.toLocaleDateString();
+    };
+
+    const renderAccounts = (accounts = []) => {
+      accountsBody.innerHTML = '';
+      if (!accounts.length) {
+        accountsBody.innerHTML = '<tr><td colspan="3">No accounts.</td></tr>';
+        accountsMeta.textContent = '';
+        accountsCount.textContent = '0';
+        accountsTotal.textContent = 'Total balance: 0.00';
+        return;
+      }
+      let total = 0;
+      accounts.forEach((acct) => {
+        total += Number(acct.balance || 0);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${acct.name}</td>
+          <td>${acct.code || '—'}</td>
+          <td>${fmtMoney(acct.balance)}</td>
+        `;
+        accountsBody.appendChild(tr);
+      });
+      accountsMeta.textContent = `${accounts.length} accounts`;
+      accountsCount.textContent = accounts.length;
+      accountsTotal.textContent = `Total balance: ${fmtMoney(total)}`;
+    };
+
+    const renderTransactions = (items = []) => {
+      txList.innerHTML = '';
+      if (!items.length) {
+        txEmpty.style.display = 'block';
+        return;
+      }
+      txEmpty.style.display = 'none';
+      items.forEach((txn) => {
+        const div = document.createElement('div');
+        div.style.border = '1px solid #e0e5ec';
+        div.style.borderRadius = '8px';
+        div.style.padding = '0.5rem 0.75rem';
+        div.style.background = '#fff';
+        div.innerHTML = `
+          <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+            <strong>${txn.description || 'Transaction'}</strong>
+            <span>${fmtMoney(txn.amount)}</span>
+          </div>
+          <div style="color:#5b6470; font-size:0.9rem;">${fmtDate(txn.occurred_at)}</div>
+        `;
+        txList.appendChild(div);
+      });
+    };
+
+    const renderSchedule = (items = [], accountMap = {}) => {
+      schedList.innerHTML = '';
+      if (!items.length) {
+        schedEmpty.style.display = 'block';
+        return;
+      }
+      schedEmpty.style.display = 'none';
+      items.forEach((row) => {
+        const name = accountMap[row.account_id]?.name || `Account ${row.account_id}`;
+        const div = document.createElement('div');
+        div.style.border = '1px solid #e0e5ec';
+        div.style.borderRadius = '8px';
+        div.style.padding = '0.5rem 0.75rem';
+        div.style.background = '#fff';
+        div.innerHTML = `
+          <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+            <strong>${fmtDate(row.event_date)}</strong>
+            <span>${fmtMoney(row.amount)}</span>
+          </div>
+          <div style="color:#5b6470; font-size:0.9rem;">${name}${row.memo ? ' • ' + row.memo : ''}</div>
+        `;
+        schedList.appendChild(div);
+      });
+    };
+
+    const renderForecast = (items = []) => {
+      forecastBody.innerHTML = '';
+      if (!items.length) {
+        forecastEmpty.style.display = 'block';
+        forecastStart.textContent = 'Starting at —';
+        forecastEnd.textContent = '—';
+        return;
+      }
+      forecastEmpty.style.display = 'none';
+      forecastStart.textContent = `Starting at ${fmtMoney(items[0].projected_balance ?? 0)}`;
+      forecastEnd.textContent = fmtMoney(items[items.length - 1].projected_balance ?? 0);
+      items.forEach((row) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${fmtDate(row.date)}</td><td>${fmtMoney(row.projected_balance)}</td>`;
+        forecastBody.appendChild(tr);
+      });
+    };
+
+    const hydrate = async () => {
+      if (!ensureAuth()) return;
+      setStatus('Loading...');
+      const res = await fetch('/api/finance/dashboard', { headers: lifeosAuth.authHeaders() });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok !== false) {
+        setStatus('');
+        const accounts = body.accounts || [];
+        const accountMap = accounts.reduce((acc, a) => { acc[a.account_id] = a; return acc; }, {});
+        renderAccounts(accounts);
+        receivablesEl.textContent = fmtMoney(body.receivables_total);
+        renderTransactions(body.recent_transactions || []);
+        renderSchedule(body.upcoming_schedule || [], accountMap);
+        renderForecast(body.forecast || []);
+      } else {
+        const reason = body.error || res.status;
+        setStatus(reason === 401 ? 'Please log in.' : 'Unable to load dashboard.', 'error');
+      }
+    };
+
+    reloadBtn?.addEventListener('click', hydrate);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) hydrate();
+      else {
+        accountsBody.innerHTML = '';
+        txList.innerHTML = '';
+        schedList.innerHTML = '';
+        forecastBody.innerHTML = '';
+        txEmpty.style.display = 'block';
+        schedEmpty.style.display = 'block';
+        forecastEmpty.style.display = 'block';
+        accountsMeta.textContent = '';
+        accountsCount.textContent = '—';
+        accountsTotal.textContent = 'Total balance: —';
+        receivablesEl.textContent = '—';
+        forecastStart.textContent = 'Starting at —';
+        forecastEnd.textContent = '—';
+      }
+    });
+    ensureAuth();
+    hydrate();
+  })();
+</script>
+{% endblock %}

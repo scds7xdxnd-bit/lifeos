@@ -1,0 +1,250 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 1100px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
+  <!-- Accounts List Card -->
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;">Accounts</h2>
+        <p style="margin:0; color:#5b6470;">Chart of accounts with balances and categories.</p>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <select id="acct-type-filter" class="input" style="min-width:140px;">
+          <option value="">All types</option>
+          <option value="asset">Asset</option>
+          <option value="liability">Liability</option>
+          <option value="equity">Equity</option>
+          <option value="revenue">Revenue</option>
+          <option value="expense">Expense</option>
+        </select>
+        <button type="button" class="btn btn-secondary" id="acct-reload">Reload</button>
+      </div>
+    </div>
+    <div id="acct-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to view accounts.</div>
+    <div id="acct-status" class="auth-status" style="margin-top:0.25rem;"></div>
+
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Type</th>
+            <th>Subtype</th>
+            <th>Category</th>
+            <th style="text-align:right;">Balance</th>
+          </tr>
+        </thead>
+        <tbody id="acct-body">
+          {% for account in accounts %}
+          <tr data-type="{{ account.account_type or '' }}">
+            <td>{{ account.name }}</td>
+            <td>{{ account.code or '—' }}</td>
+            <td style="text-transform:capitalize;">{{ account.account_type or '—' }}</td>
+            <td style="text-transform:capitalize;">{{ (account.account_subtype or '').replace('_', ' ') or '—' }}</td>
+            <td>{{ account.category.name if account.category else '—' }}</td>
+            <td style="text-align:right;">{{ "%.2f"|format(balances.get(account.id, 0)) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6">No accounts</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Categories Management Card -->
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0;">Account Categories</h3>
+        <p style="margin:0; color:#5b6470;">Manage custom categories for organizing accounts.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="cat-reload">Refresh</button>
+    </div>
+    <div id="cat-status" class="auth-status" style="margin-top:0.25rem;"></div>
+
+    <div style="overflow-x:auto; margin-top:0.5rem;">
+      <table>
+        <thead>
+          <tr>
+            <th>Category Name</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>System</th>
+          </tr>
+        </thead>
+        <tbody id="cat-body"></tbody>
+      </table>
+    </div>
+
+    <!-- New Category Form -->
+    <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #e0e5ec;">
+      <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem;">Create Custom Category</h4>
+      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items:end;">
+        <div class="field">
+          <label for="cat-new-type">Account Type</label>
+          <select id="cat-new-type" class="input">
+            <option value="">Select type...</option>
+            <option value="asset">Asset</option>
+            <option value="liability">Liability</option>
+            <option value="equity">Equity</option>
+            <option value="revenue">Revenue</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cat-new-name">Category Name</label>
+          <input type="text" id="cat-new-name" class="input" placeholder="e.g. Operating Expenses">
+        </div>
+        <div class="field" style="display:flex; align-items:center; gap:0.5rem; padding-top:1.25rem;">
+          <input type="checkbox" id="cat-new-default" style="width:auto;">
+          <label for="cat-new-default" style="margin:0; font-weight:normal;">Set as default</label>
+        </div>
+        <button type="button" class="btn btn-primary" id="cat-create">Create</button>
+      </div>
+      <div id="cat-create-status" class="auth-status" style="margin-top:0.25rem;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const acctBody = document.getElementById('acct-body');
+    const acctStatus = document.getElementById('acct-status');
+    const acctTypeFilter = document.getElementById('acct-type-filter');
+    const acctReload = document.getElementById('acct-reload');
+    const loginHint = document.getElementById('acct-login-hint');
+
+    const catBody = document.getElementById('cat-body');
+    const catStatus = document.getElementById('cat-status');
+    const catReload = document.getElementById('cat-reload');
+    const catNewType = document.getElementById('cat-new-type');
+    const catNewName = document.getElementById('cat-new-name');
+    const catNewDefault = document.getElementById('cat-new-default');
+    const catCreateBtn = document.getElementById('cat-create');
+    const catCreateStatus = document.getElementById('cat-create-status');
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth?.getTokens().access_token;
+      [acctReload, catReload, catCreateBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    // Client-side filtering of server-rendered accounts
+    const filterAccounts = () => {
+      const typeVal = acctTypeFilter.value;
+      const rows = acctBody.querySelectorAll('tr[data-type]');
+      rows.forEach((row) => {
+        const rowType = row.dataset.type;
+        row.style.display = !typeVal || rowType === typeVal ? '' : 'none';
+      });
+    };
+
+    acctTypeFilter?.addEventListener('change', filterAccounts);
+
+    // Categories rendering
+    const renderCategories = (categories = []) => {
+      catBody.innerHTML = '';
+      if (!categories.length) {
+        catBody.innerHTML = '<tr><td colspan="4">No categories found</td></tr>';
+        return;
+      }
+      // Sort by type, then name
+      const typeOrder = ['asset', 'liability', 'equity', 'revenue', 'expense'];
+      const sorted = [...categories].sort((a, b) => {
+        const ai = typeOrder.indexOf(a.base_type);
+        const bi = typeOrder.indexOf(b.base_type);
+        if (ai !== bi) return ai - bi;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
+      sorted.forEach((cat) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${cat.name || '—'}${cat.is_system ? ' <span style="color:#7a8599; font-size:0.8rem;">(system)</span>' : ''}</td>
+          <td style="text-transform:capitalize;">${cat.base_type || '—'}</td>
+          <td>${cat.is_default ? '✓' : ''}</td>
+          <td>${cat.is_system ? '✓' : ''}</td>
+        `;
+        catBody.appendChild(tr);
+      });
+    };
+
+    const fetchCategories = async () => {
+      if (!ensureAuth()) return;
+      setStatus(catStatus, 'Loading...');
+      try {
+        const categories = await window.lifeosAccountCategories.listCategories();
+        renderCategories(categories);
+        setStatus(catStatus, '');
+      } catch (err) {
+        setStatus(catStatus, err.message || 'Failed to load categories', 'error');
+      }
+    };
+
+    const createCategory = async () => {
+      if (!ensureAuth()) return;
+      const baseType = catNewType.value;
+      const name = catNewName.value.trim();
+      const isDefault = catNewDefault.checked;
+
+      if (!baseType) {
+        setStatus(catCreateStatus, 'Please select an account type.', 'error');
+        return;
+      }
+      if (!name) {
+        setStatus(catCreateStatus, 'Please enter a category name.', 'error');
+        return;
+      }
+
+      setStatus(catCreateStatus, 'Creating...');
+      catCreateBtn.disabled = true;
+
+      try {
+        const category = await window.lifeosAccountCategories.createCategoryAndClearCache(baseType, name, isDefault);
+        setStatus(catCreateStatus, `Category "${category.name}" created!`, 'success');
+        catNewType.value = '';
+        catNewName.value = '';
+        catNewDefault.checked = false;
+        await fetchCategories();
+      } catch (err) {
+        setStatus(catCreateStatus, err.message || 'Failed to create category', 'error');
+      } finally {
+        catCreateBtn.disabled = false;
+      }
+    };
+
+    catReload?.addEventListener('click', fetchCategories);
+    catCreateBtn?.addEventListener('click', createCategory);
+    catNewName?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') createCategory();
+    });
+
+    acctReload?.addEventListener('click', () => {
+      window.location.reload();
+    });
+
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) {
+        fetchCategories();
+      } else {
+        catBody.innerHTML = '';
+        setStatus(catStatus, '');
+        setStatus(catCreateStatus, '');
+      }
+    });
+
+    ensureAuth();
+    fetchCategories();
+  })();
+</script>
+{% endblock %}

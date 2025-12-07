@@ -1,0 +1,300 @@
+{% set component_id = component_id|default('habits', true) %}
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <h2 style="margin:0;">Habits</h2>
+        {% set badge_domain = 'habits' %}{% include "components/inferred_badge.html" %}
+      </div>
+      <p style="margin:0; color:#5b6470;">Track habit targets, log completions, and manage streaks.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage habits.</div>
+
+  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+    <div class="field">
+      <label for="{{ component_id }}-name">Habit name</label>
+      <input id="{{ component_id }}-name" name="name" type="text" placeholder="e.g., Morning run" required>
+    </div>
+    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      <div class="field">
+        <label for="{{ component_id }}-schedule">Schedule</label>
+        <select id="{{ component_id }}-schedule" name="schedule_type">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-target">Target count</label>
+        <input id="{{ component_id }}-target" name="target_count" type="number" min="0" placeholder="e.g., 1">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-time">Time of day</label>
+        <input id="{{ component_id }}-time" name="time_of_day" type="text" placeholder="e.g., Morning">
+      </div>
+      <div class="field">
+        <label for="{{ component_id }}-difficulty">Difficulty</label>
+        <input id="{{ component_id }}-difficulty" name="difficulty" type="text" placeholder="e.g., Medium">
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-domain">Domain link</label>
+      <input id="{{ component_id }}-domain" name="domain_link" type="text" placeholder="Optional tag (e.g., health)">
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-description">Description</label>
+      <textarea id="{{ component_id }}-description" name="description" rows="2" placeholder="Context or goal (optional)"></textarea>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn" id="{{ component_id }}-create-btn">Add habit</button>
+      <div id="{{ component_id }}-create-status" class="auth-status"></div>
+    </div>
+  </form>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No habits yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+</div>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const reloadBtn = el('reload');
+    const createForm = el('create-form');
+    const createStatus = el('create-status');
+    const loginHint = el('login-hint');
+    const listEl = el('list');
+    const emptyEl = el('empty');
+    const createBtn = el('create-btn');
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const authHeaders = (extra = {}) => lifeosAuth.authHeaders(Object.assign({'Content-Type': 'application/json'}, extra));
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      Array.from(createForm?.querySelectorAll('input, textarea, select, button') || []).forEach((node) => node.disabled = !authed);
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderHabitCard = (habit) => {
+      const card = document.createElement('div');
+      card.setAttribute('data-habit-card', 'true');
+      card.dataset.active = habit.is_active ? 'true' : 'false';
+      card.style.border = '1px solid #e0e5ec';
+      card.style.borderRadius = '10px';
+      card.style.padding = '0.75rem';
+      card.style.background = '#fff';
+      const lastLogged = habit.last_logged_date ? new Date(habit.last_logged_date).toLocaleDateString() : '—';
+      card.innerHTML = `
+        <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+          <div>
+            <strong>${habit.name}</strong>
+            <div style="color:#5b6470; font-size:0.9rem;">${habit.schedule_type} ${habit.target_count ? '• target ' + habit.target_count : ''} ${habit.time_of_day ? '• ' + habit.time_of_day : ''} ${habit.difficulty ? '• ' + habit.difficulty : ''}</div>
+            ${habit.description ? `<div style="color:#5b6470; font-size:0.9rem;">${habit.description}</div>` : ''}
+            ${habit.domain_link ? `<div style="color:#5b6470; font-size:0.85rem;">Domain: ${habit.domain_link}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="toggle-active" data-id="${habit.id}">${habit.is_active ? 'Deactivate' : 'Activate'}</button>
+            <button class="btn btn-secondary" data-action="delete" data-id="${habit.id}">Delete</button>
+          </div>
+        </div>
+        <div style="margin-top:0.35rem; display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.95rem;">
+          <span>Logged: ${habit.count}</span>
+          <span>Completed today: ${habit.completed_today ? 'Yes' : 'No'}</span>
+          <span>Last: ${lastLogged}</span>
+          <span>Status: ${habit.is_active ? 'Active' : 'Inactive'}</span>
+        </div>
+        <div style="margin-top:0.35rem;">
+          <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Quick update</label>
+          <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+            <input type="text" data-field="schedule_type" placeholder="Schedule (daily/weekly/monthly)" value="${habit.schedule_type || ''}">
+            <input type="number" min="0" data-field="target_count" placeholder="Target count" value="${habit.target_count ?? ''}">
+            <input type="text" data-field="time_of_day" placeholder="Time of day" value="${habit.time_of_day || ''}">
+            <input type="text" data-field="difficulty" placeholder="Difficulty" value="${habit.difficulty || ''}">
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-top:0.35rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="save" data-id="${habit.id}">Save updates</button>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Log completion</label>
+          <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));">
+            <input type="date" data-field="logged_date">
+            <input type="number" step="0.01" data-field="value" placeholder="Value (optional)">
+          </div>
+          <textarea data-field="note" rows="2" placeholder="Note (optional)" style="margin-top:0.35rem;"></textarea>
+          <div style="display:flex; gap:0.5rem; margin-top:0.35rem; align-items:center; flex-wrap:wrap;">
+            <button class="btn" data-action="log" data-id="${habit.id}">Log</button>
+            <span class="auth-status" data-role="row-status" style="min-width:140px;"></span>
+          </div>
+        </div>
+      `;
+      return card;
+    };
+
+    const renderHabits = (habits = []) => {
+      listEl.innerHTML = '';
+      if (!habits.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      habits.forEach((habit) => listEl.appendChild(renderHabitCard(habit)));
+    };
+
+    const fetchHabits = async () => {
+      if (!ensureAuth()) return;
+      setStatus(createStatus, '');
+      const res = await fetch('/api/habits', { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        setStatus(createStatus, res.status === 401 ? 'Please log in.' : 'Unable to load habits.', 'error');
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      renderHabits(body.habits || []);
+    };
+
+    createForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) {
+        setStatus(createStatus, 'Please log in.', 'error');
+        return;
+      }
+      const data = Object.fromEntries(new FormData(createForm).entries());
+      const payload = {
+        name: data.name || '',
+        description: data.description || null,
+        domain_link: data.domain_link || null,
+        schedule_type: data.schedule_type || 'daily',
+        target_count: data.target_count ? Number(data.target_count) : null,
+        time_of_day: data.time_of_day || null,
+        difficulty: data.difficulty || null,
+      };
+      setStatus(createStatus, 'Saving...');
+      createBtn.disabled = true;
+      lifeosTelemetry.track('habits.habit.created', { source: 'ui', stage: 'submitted' });
+      const res = await fetch('/api/habits', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      createBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus(createStatus, 'Habit created.', 'success');
+        lifeosTelemetry.track('habits.habit.created', { source: 'ui', stage: 'succeeded', habit_id: body.habit_id });
+        createForm.reset();
+        fetchHabits();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(createStatus, 'Unable to create habit.', 'error');
+        lifeosTelemetry.track('habits.habit.created', { source: 'ui', stage: 'failed', reason });
+      }
+    });
+
+    listEl.addEventListener('click', async (e) => {
+      const action = e.target?.dataset?.action;
+      if (!action) return;
+      const habitId = Number(e.target.dataset.id);
+      if (!habitId) return;
+      const card = e.target.closest('[data-habit-card]');
+      const statusNode = card?.querySelector('[data-role="row-status"]');
+
+      if (action === 'toggle-active') {
+        const nextActive = card?.dataset?.active !== 'true';
+        const res = await fetch(`/api/habits/${habitId}`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ is_active: nextActive })
+        });
+        const ok = res.ok;
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (ok) {
+          setStatus(statusNode, 'Status updated.', 'success');
+          lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'succeeded', habit_id: habitId, variant: 'toggle_active' });
+          fetchHabits();
+        } else {
+          setStatus(statusNode, 'Unable to update status.', 'error');
+          lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'failed', habit_id: habitId, variant: 'toggle_active', reason });
+        }
+      }
+
+      if (action === 'delete') {
+        setStatus(statusNode, 'Deleting...');
+        lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'submitted', habit_id: habitId, variant: 'delete' });
+        const res = await fetch(`/api/habits/${habitId}`, { method: 'DELETE', headers: lifeosAuth.authHeaders() });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, 'Deleted.', 'success');
+          lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'succeeded', habit_id: habitId, variant: 'delete' });
+          fetchHabits();
+        } else {
+          setStatus(statusNode, 'Unable to delete.', 'error');
+          lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'failed', habit_id: habitId, variant: 'delete', reason });
+        }
+      }
+
+      if (action === 'save') {
+        const fields = {};
+        ['schedule_type', 'target_count', 'time_of_day', 'difficulty'].forEach((f) => {
+          const input = card.querySelector(`[data-field="${f}"]`);
+          const val = input?.value;
+          if (val !== undefined && val !== '') fields[f] = f === 'target_count' ? Number(val) : val;
+        });
+        if (!Object.keys(fields).length) return;
+        setStatus(statusNode, 'Saving...');
+        lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'submitted', habit_id: habitId });
+        const res = await fetch(`/api/habits/${habitId}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(fields) });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, 'Updated.', 'success');
+          lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'succeeded', habit_id: habitId });
+          fetchHabits();
+        } else {
+          setStatus(statusNode, 'Update failed.', 'error');
+          lifeosTelemetry.track('habits.habit.updated', { source: 'ui', stage: 'failed', habit_id: habitId, reason });
+        }
+      }
+
+      if (action === 'log') {
+        const loggedDate = card.querySelector('[data-field="logged_date"]')?.value;
+        const valueRaw = card.querySelector('[data-field="value"]')?.value;
+        const note = card.querySelector('[data-field="note"]')?.value || null;
+        const payload = {
+          logged_date: loggedDate || undefined,
+          value: valueRaw !== '' ? Number(valueRaw) : null,
+          note,
+        };
+        setStatus(statusNode, 'Logging...');
+        lifeosTelemetry.track('habits.habit.logged', { source: 'ui', stage: 'submitted', habit_id: habitId });
+        const res = await fetch(`/api/habits/${habitId}/logs`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok !== false) {
+          setStatus(statusNode, 'Logged.', 'success');
+          lifeosTelemetry.track('habits.habit.logged', { source: 'ui', stage: 'succeeded', habit_id: habitId, log_id: body.log?.id });
+          fetchHabits();
+        } else {
+          const reason = body.error || res.status;
+          setStatus(statusNode, reason === 'inactive' ? 'Habit is inactive.' : 'Log failed.', 'error');
+          lifeosTelemetry.track('habits.habit.logged', { source: 'ui', stage: 'failed', habit_id: habitId, reason });
+        }
+      }
+    });
+
+    reloadBtn?.addEventListener('click', fetchHabits);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) fetchHabits();
+      else {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+      }
+    });
+    ensureAuth();
+    fetchHabits();
+  })();
+</script>

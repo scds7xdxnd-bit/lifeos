@@ -1,0 +1,92 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: '{{ SLACK_WEBHOOK_URL }}'
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# The root route with default options
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+
+  # Subroutes for different severities
+  routes:
+    - match:
+        severity: critical
+      receiver: 'pagerduty'
+      continue: true
+      group_wait: 0s
+      repeat_interval: 5m
+
+    - match:
+        severity: warning
+      receiver: 'slack-warnings'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    - match_re:
+        service: 'postgres|redis'
+      receiver: 'database-team'
+      continue: true
+
+    - match_re:
+        service: 'lifeos-.*'
+      receiver: 'lifeos-team'
+
+# Receivers define how alerts are handled
+receivers:
+  - name: 'default'
+    # Default to null receiver (silenced)
+
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#alerts-warnings'
+        title: 'LifeOS Alert - {{ .GroupLabels.alertname }}'
+        text: '{{ .GroupLabels.severity }} - {{ .Alerts.Firing | len }} firing'
+        send_resolved: true
+
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: '{{ PAGERDUTY_SERVICE_KEY }}'
+        description: '{{ .GroupLabels.alertname }} - {{ .Alerts.Firing | len }} critical alerts'
+        details:
+          instances: '{{ .Alerts.Firing | len }}'
+          severity: '{{ .GroupLabels.severity }}'
+
+  - name: 'database-team'
+    slack_configs:
+      - channel: '#database-alerts'
+        title: 'Database Alert - {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts.Firing }}{{ .Labels.instance }} - {{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  - name: 'lifeos-team'
+    slack_configs:
+      - channel: '#lifeos-alerts'
+        title: 'LifeOS {{ .GroupLabels.severity }} - {{ .GroupLabels.alertname }}'
+        text: |
+          Service: {{ .GroupLabels.service }}
+          {{ range .Alerts.Firing }}
+          Instance: {{ .Labels.instance }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+# Inhibition rules prevent alerts from being fired
+inhibit_rules:
+  # Suppress warning alerts if critical alert for same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['service', 'alertname']
+
+  # Suppress alerts during maintenance windows
+  - source_match:
+      alertname: 'Maintenance'
+    target_match_re:
+      alertname: '.*'
+    equal: ['service']

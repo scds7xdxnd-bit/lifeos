@@ -1,0 +1,313 @@
+{% set component_id = component_id|default('projects', true) %}
+<div class="card" id="{{ component_id }}-card">
+  <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div>
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <h2 style="margin:0;">Projects</h2>
+        {% set badge_domain = 'projects' %}{% include "components/inferred_badge.html" %}
+      </div>
+      <p style="margin:0; color:#5b6470;">Create projects, add tasks, log work, and mark completion.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+  </div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage projects.</div>
+
+  <form id="{{ component_id }}-project-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+    <div class="field">
+      <label for="{{ component_id }}-name">Project name</label>
+      <input id="{{ component_id }}-name" name="name" type="text" placeholder="e.g., Website redesign" required>
+    </div>
+    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+      <div class="field">
+        <label for="{{ component_id }}-target">Target date</label>
+        <input id="{{ component_id }}-target" name="target_date" type="date">
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{ component_id }}-description">Description</label>
+      <textarea id="{{ component_id }}-description" name="description" rows="2" placeholder="Goal and scope (optional)"></textarea>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn" id="{{ component_id }}-create-btn">Add project</button>
+      <div id="{{ component_id }}-create-status" class="auth-status"></div>
+    </div>
+  </form>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No projects yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+</div>
+
+<script>
+  (() => {
+    const prefix = "{{ component_id }}";
+    const el = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+    const reloadBtn = el('reload');
+    const createForm = el('project-form');
+    const createStatus = el('create-status');
+    const loginHint = el('login-hint');
+    const listEl = el('list');
+    const emptyEl = el('empty');
+    const createBtn = el('create-btn');
+
+    const authHeaders = (extra = {}) => {
+      const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      const base = Object.assign({'Content-Type': 'application/json'}, extra);
+      if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
+      return lifeosAuth.authHeaders(base);
+    };
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
+    };
+
+    const ensureAuth = () => {
+      const authed = !!lifeosAuth.getTokens().access_token;
+      Array.from(createForm?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
+      loginHint.style.display = authed ? 'none' : 'block';
+      return authed;
+    };
+
+    const renderProjectCard = (project) => {
+      const card = document.createElement('div');
+      card.setAttribute('data-project-card', 'true');
+      card.dataset.id = project.id;
+      card.style.border = '1px solid #e0e5ec';
+      card.style.borderRadius = '10px';
+      card.style.padding = '0.75rem';
+      card.style.background = '#fff';
+      const tags = project.tags ? project.tags.join(', ') : '';
+      card.innerHTML = `
+        <div style="display:flex; justify-content: space-between; gap:0.5rem; flex-wrap:wrap;">
+          <div>
+            <strong>${project.name}</strong>
+            <div style="color:#5b6470; font-size:0.9rem;">${project.status || ''} ${project.target_date ? '• Target ' + project.target_date : ''}</div>
+            ${project.description ? `<div style="color:#5b6470; font-size:0.9rem;">${project.description}</div>` : ''}
+            ${tags ? `<div style="color:#5b6470; font-size:0.85rem;">Tags: ${tags}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="complete" data-id="${project.id}">Complete</button>
+            <button class="btn btn-secondary" data-action="archive" data-id="${project.id}">Archive</button>
+            <button class="btn btn-secondary" data-action="delete" data-id="${project.id}">Delete</button>
+          </div>
+        </div>
+        <div style="margin-top:0.35rem; display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.95rem;">
+          <span>Tasks: ${project.task_count ?? 0}</span>
+          <span>Completed: ${project.completed_task_count ?? 0}</span>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Add task</label>
+          <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(170px,1fr));">
+            <input type="text" data-field="task_title" placeholder="Task title">
+            <input type="date" data-field="task_due">
+            <input type="number" data-field="task_priority" placeholder="Priority (1-5)">
+          </div>
+          <textarea data-field="task_notes" rows="2" placeholder="Notes (optional)" style="margin-top:0.35rem;"></textarea>
+          <div style="display:flex; gap:0.5rem; margin-top:0.35rem; align-items:center; flex-wrap:wrap;">
+            <button class="btn" data-action="task-add" data-id="${project.id}">Add task</button>
+            <span class="auth-status" data-role="row-status" style="min-width:140px;"></span>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <div style="font-weight:600; margin-bottom:0.25rem;">Tasks</div>
+          <div data-role="tasks"><div style="color:#5b6470; font-size:0.9rem;">Loading tasks…</div></div>
+        </div>
+      `;
+      return card;
+    };
+
+    const loadTasksForProject = async (projectId, tasksEl, statusNode) => {
+      if (!tasksEl) return;
+      const res = await fetch(`/api/projects/${projectId}/tasks`, { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        tasksEl.innerHTML = '<div style="color:#b3352f; font-size:0.9rem;">Unable to load tasks.</div>';
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      const items = body.items || [];
+      tasksEl.innerHTML = '';
+      if (!items.length) {
+        tasksEl.innerHTML = '<div style="color:#5b6470; font-size:0.9rem;">No tasks yet.</div>';
+        return;
+      }
+      items.forEach((t) => tasksEl.appendChild(renderTask(t)));
+      if (statusNode) statusNode.textContent = '';
+    };
+
+    const renderTask = (task) => {
+      const div = document.createElement('div');
+      div.style.border = '1px solid #e0e5ec';
+      div.style.borderRadius = '8px';
+      div.style.padding = '0.35rem 0.5rem';
+      div.style.marginTop = '0.25rem';
+      div.innerHTML = `
+        <div style="display:flex; justify-content: space-between; gap:0.35rem; flex-wrap:wrap;">
+          <div>
+            <strong>${task.title}</strong>
+            <div style="color:#5b6470; font-size:0.85rem;">${task.status || ''} ${task.due_date ? '• Due ' + task.due_date : ''} ${task.priority ? '• P' + task.priority : ''}</div>
+          </div>
+          <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="task-complete" data-id="${task.id}" data-project="${task.project_id}">Complete</button>
+            <button class="btn btn-secondary" data-action="task-delete" data-id="${task.id}" data-project="${task.project_id}">Delete</button>
+          </div>
+        </div>
+        <div style="color:#5b6470; font-size:0.85rem; margin-top:0.25rem;">${task.notes || ''}</div>
+      `;
+      return div;
+    };
+
+    const renderProjects = (projects = []) => {
+      listEl.innerHTML = '';
+      if (!projects.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      projects.forEach((p) => {
+        const card = renderProjectCard(p);
+        const tasksEl = card.querySelector('[data-role="tasks"]');
+        loadTasksForProject(p.id, tasksEl);
+        listEl.appendChild(card);
+      });
+    };
+
+    const fetchProjects = async () => {
+      if (!ensureAuth()) return;
+      setStatus(createStatus, '');
+      const res = await fetch('/api/projects', { headers: lifeosAuth.authHeaders() });
+      if (!res.ok) {
+        setStatus(createStatus, res.status === 401 ? 'Please log in.' : 'Unable to load projects.', 'error');
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      renderProjects(body.items || []);
+    };
+
+    createForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth()) {
+        setStatus(createStatus, 'Please log in.', 'error');
+        return;
+      }
+      const data = Object.fromEntries(new FormData(createForm).entries());
+      const payload = {
+        name: data.name || '',
+        description: data.description || null,
+        target_date: data.target_date || null,
+      };
+      if (!payload.name.trim()) {
+        setStatus(createStatus, 'Name required.', 'error');
+        return;
+      }
+      setStatus(createStatus, 'Saving...');
+      createBtn.disabled = true;
+      lifeosTelemetry.track('projects.project.created', { source: 'ui', stage: 'submitted' });
+      const res = await fetch('/api/projects', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      createBtn.disabled = false;
+      if (res.ok && body.ok !== false) {
+        setStatus(createStatus, 'Project created.', 'success');
+        lifeosTelemetry.track('projects.project.created', { source: 'ui', stage: 'succeeded', project_id: body.project?.id });
+        createForm.reset();
+        fetchProjects();
+      } else {
+        const reason = body.error || res.status;
+        setStatus(createStatus, reason === 401 ? 'Please log in.' : 'Unable to create project.', 'error');
+        lifeosTelemetry.track('projects.project.created', { source: 'ui', stage: 'failed', reason });
+      }
+    });
+
+    listEl.addEventListener('click', async (e) => {
+      const action = e.target?.dataset?.action;
+      if (!action) return;
+      const projectId = Number(e.target.dataset.id || e.target.dataset.project);
+      if (!projectId) return;
+      const card = e.target.closest('[data-project-card]');
+      const statusNode = card?.querySelector('[data-role="row-status"]') || card?.querySelector('.auth-status');
+
+      if (action === 'archive' || action === 'complete' || action === 'delete') {
+        setStatus(statusNode, 'Updating...');
+        const endpoint = action === 'delete' ? `/api/projects/${projectId}` : `/api/projects/${projectId}/${action}`;
+        const method = action === 'delete' ? 'DELETE' : 'POST';
+        const res = await fetch(endpoint, { method, headers: lifeosAuth.authHeaders() });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, action === 'delete' ? 'Deleted.' : 'Updated.', 'success');
+          const ev = action === 'delete' ? 'projects.project.deleted' : 'projects.project.updated';
+          lifeosTelemetry.track(ev, { source: 'ui', stage: 'succeeded', project_id: projectId, variant: action });
+          fetchProjects();
+        } else {
+          setStatus(statusNode, res.status === 401 ? 'Please log in.' : 'Action failed.', 'error');
+          const ev = action === 'delete' ? 'projects.project.deleted' : 'projects.project.updated';
+          lifeosTelemetry.track(ev, { source: 'ui', stage: 'failed', project_id: projectId, variant: action, reason });
+        }
+      }
+
+      if (action === 'task-add') {
+        const title = card.querySelector('[data-field="task_title"]')?.value || '';
+        const due = card.querySelector('[data-field="task_due"]')?.value || null;
+        const priority = card.querySelector('[data-field="task_priority"]')?.value || null;
+        const notes = card.querySelector('[data-field="task_notes"]')?.value || null;
+        if (!title.trim()) {
+          setStatus(statusNode, 'Task title required.', 'error');
+          return;
+        }
+        setStatus(statusNode, 'Saving task...');
+        lifeosTelemetry.track('projects.task.created', { source: 'ui', stage: 'submitted', project_id: projectId });
+        const res = await fetch(`/api/projects/${projectId}/tasks`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            title,
+            due_date: due || null,
+            priority: priority ? Number(priority) : null,
+            notes,
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok !== false) {
+          setStatus(statusNode, 'Task added.', 'success');
+          lifeosTelemetry.track('projects.task.created', { source: 'ui', stage: 'succeeded', project_id: projectId, task_id: body.task?.id });
+          fetchProjects();
+        } else {
+          const reason = body.error || res.status;
+          setStatus(statusNode, reason === 401 ? 'Please log in.' : 'Unable to add task.', 'error');
+          lifeosTelemetry.track('projects.task.created', { source: 'ui', stage: 'failed', project_id: projectId, reason });
+        }
+      }
+
+      if (action === 'task-complete' || action === 'task-delete') {
+        const taskId = Number(e.target.dataset.id);
+        if (!taskId) return;
+        setStatus(statusNode, action === 'task-delete' ? 'Deleting task...' : 'Completing task...');
+        const endpoint = action === 'task-delete' ? `/api/projects/tasks/${taskId}` : `/api/projects/tasks/${taskId}/complete`;
+        const method = action === 'task-delete' ? 'DELETE' : 'POST';
+        const res = await fetch(endpoint, { method, headers: lifeosAuth.authHeaders() });
+        const reason = (await res.json().catch(() => ({}))).error || res.status;
+        if (res.ok) {
+          setStatus(statusNode, action === 'task-delete' ? 'Task deleted.' : 'Task completed.', 'success');
+          const ev = action === 'task-delete' ? 'projects.task.deleted' : 'projects.task.updated';
+          lifeosTelemetry.track(ev, { source: 'ui', stage: 'succeeded', project_id: projectId, task_id: taskId, variant: action });
+          fetchProjects();
+        } else {
+          setStatus(statusNode, res.status === 401 ? 'Please log in.' : 'Action failed.', 'error');
+          const ev = action === 'task-delete' ? 'projects.task.deleted' : 'projects.task.updated';
+          lifeosTelemetry.track(ev, { source: 'ui', stage: 'failed', project_id: projectId, task_id: taskId, variant: action, reason });
+        }
+      }
+    });
+
+    reloadBtn?.addEventListener('click', fetchProjects);
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) fetchProjects();
+      else {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+      }
+    });
+    ensureAuth();
+    fetchProjects();
+  })();
+</script>

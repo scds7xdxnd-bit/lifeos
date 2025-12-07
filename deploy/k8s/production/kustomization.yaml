@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: lifeos-production
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - deployment.yaml
+  - service.yaml
+
+commonLabels:
+  app.kubernetes.io/name: lifeos
+  app.kubernetes.io/env: production
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: ghcr.io/your-org/lifeos
+    newTag: latest

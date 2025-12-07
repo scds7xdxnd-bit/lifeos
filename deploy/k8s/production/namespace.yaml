@@ -1,0 +1,10 @@
+---
+# LifeOS Production Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lifeos-production
+  labels:
+    app.kubernetes.io/name: lifeos
+    app.kubernetes.io/env: production
+    app.kubernetes.io/managed-by: devops

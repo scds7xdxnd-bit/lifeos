@@ -1,0 +1,10 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<h2>Profile</h2>
+{% if user %}
+  <p>{{ user.full_name or user.email }}</p>
+  <p>Timezone: {{ user.timezone or 'n/a' }}</p>
+{% else %}
+  <p>Please log in.</p>
+{% endif %}
+{% endblock %}
