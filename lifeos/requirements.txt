@@ -8,6 +8,7 @@ Flask-Login>=0.6
 Alembic>=1.13
 gunicorn>=21.2
 pydantic>=2.5
+defusedxml>=0.7
 pytest>=8.2
 rich>=13.7
 email-validator>=2.1

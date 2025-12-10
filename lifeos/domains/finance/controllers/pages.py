@@ -5,10 +5,20 @@ from __future__ import annotations
 from flask import Blueprint, render_template
 from flask_jwt_extended import jwt_required
 
-from lifeos.domains.finance.models.accounting_models import Account, JournalEntry, Transaction
-from lifeos.domains.finance.models.receivable_models import ReceivableManualEntry, ReceivableTracker
+from lifeos.domains.finance.models.accounting_models import (
+    Account,
+    JournalEntry,
+    Transaction,
+)
+from lifeos.domains.finance.models.receivable_models import (
+    ReceivableManualEntry,
+    ReceivableTracker,
+)
 from lifeos.domains.finance.models.schedule_models import MoneyScheduleRow
-from lifeos.domains.finance.services.trial_balance_service import calculate_trial_balance, net_balance_for_account
+from lifeos.domains.finance.services.trial_balance_service import (
+    calculate_trial_balance,
+    net_balance_for_account,
+)
 
 finance_pages_bp = Blueprint("finance_pages", __name__)
 
@@ -42,9 +52,7 @@ def transactions_page():
 @finance_pages_bp.get("/journal")
 @jwt_required(optional=True)
 def journal_page():
-    entries = (
-        JournalEntry.query.order_by(JournalEntry.posted_at.desc()).limit(50).all()
-    )
+    entries = JournalEntry.query.order_by(JournalEntry.posted_at.desc()).limit(50).all()
     return render_template("finance/journal.html", entries=entries)
 
 

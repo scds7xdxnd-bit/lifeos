@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class CalendarEventCreate(BaseModel):
     """Request body for creating a calendar event."""
+
     title: str = Field(min_length=1, max_length=255)
     description: Optional[str] = None
     start_time: datetime
@@ -24,6 +25,7 @@ class CalendarEventCreate(BaseModel):
 
 class CalendarEventUpdate(BaseModel):
     """Request body for updating a calendar event."""
+
     title: Optional[str] = Field(default=None, min_length=1, max_length=255)
     description: Optional[str] = None
     start_time: Optional[datetime] = None
@@ -38,6 +40,7 @@ class CalendarEventUpdate(BaseModel):
 
 class CalendarEventResponse(BaseModel):
     """Response schema for a calendar event."""
+
     id: int
     user_id: int
     title: str
@@ -61,6 +64,7 @@ class CalendarEventResponse(BaseModel):
 
 class InterpretationResponse(BaseModel):
     """Response schema for a calendar event interpretation."""
+
     id: int
     calendar_event_id: int
     domain: str
@@ -77,11 +81,13 @@ class InterpretationResponse(BaseModel):
 
 class InterpretationUpdate(BaseModel):
     """Request body for updating interpretation status."""
+
     status: Literal["confirmed", "rejected", "ignored"]
 
 
 class CalendarEventListParams(BaseModel):
     """Query parameters for listing calendar events."""
+
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     source: Optional[str] = None
@@ -91,6 +97,7 @@ class CalendarEventListParams(BaseModel):
 
 class InterpretationListParams(BaseModel):
     """Query parameters for listing interpretations."""
+
     domain: Optional[str] = None
     status: Optional[str] = None
     limit: int = Field(default=50, ge=1, le=500)

@@ -18,7 +18,12 @@ def upgrade():
     inspector = inspect(conn)
     existing_tables = set(inspector.get_table_names())
 
-    for tbl in ("habit", "habit_log", "relationship_contact", "relationship_interaction"):
+    for tbl in (
+        "habit",
+        "habit_log",
+        "relationship_contact",
+        "relationship_interaction",
+    ):
         if tbl in existing_tables:
             op.drop_table(tbl)
 

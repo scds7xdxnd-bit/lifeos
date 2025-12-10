@@ -45,12 +45,8 @@ def upgrade() -> None:
         sa.Column("is_private", sa.Boolean(), server_default=sa.text("0"), nullable=False),
         sa.Column("tags", sa.JSON(), nullable=True),
         sa.Column("metadata", sa.JSON(), nullable=True),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=True
-        ),
-        sa.Column(
-            "updated_at", sa.DateTime(), nullable=True
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(["user_id"], ["user.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -120,15 +116,9 @@ def upgrade() -> None:
             nullable=True,
             comment="ID of created record in target domain (if created)",
         ),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=True
-        ),
-        sa.Column(
-            "updated_at", sa.DateTime(), nullable=True
-        ),
-        sa.ForeignKeyConstraint(
-            ["calendar_event_id"], ["calendar_event.id"], ondelete="CASCADE"
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["calendar_event_id"], ["calendar_event.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["user.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -153,9 +143,7 @@ def downgrade() -> None:
     """Drop calendar tables."""
     op.drop_index("ix_interpretation_event", table_name="calendar_event_interpretation")
     op.drop_index("ix_interpretation_user_domain", table_name="calendar_event_interpretation")
-    op.drop_index(
-        "ix_interpretation_user_status", table_name="calendar_event_interpretation"
-    )
+    op.drop_index("ix_interpretation_user_status", table_name="calendar_event_interpretation")
     op.drop_table("calendar_event_interpretation")
 
     op.drop_index("ux_calendar_event_user_external", table_name="calendar_event")

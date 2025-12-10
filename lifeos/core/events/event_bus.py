@@ -24,4 +24,3 @@ class EventBus:
 
 # Global singleton
 event_bus = EventBus()
-

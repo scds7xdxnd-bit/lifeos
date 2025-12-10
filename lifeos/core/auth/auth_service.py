@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
 import secrets
+from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Optional
 
@@ -23,8 +23,8 @@ from lifeos.core.auth.schemas import (
     ResetPasswordRequest,
 )
 from lifeos.core.users.models import User
-from lifeos.platform.outbox import enqueue as enqueue_outbox
 from lifeos.extensions import db
+from lifeos.platform.outbox import enqueue as enqueue_outbox
 
 
 def authenticate_user(email: str, password: str) -> Optional[User]:
@@ -108,7 +108,12 @@ def register_user(payload: RegisterRequest, auto_issue_tokens: bool = False) -> 
 
     enqueue_outbox(
         "auth.user.registered",
-        {"user_id": user.id, "email": user.email, "full_name": user.full_name, "timezone": user.timezone},
+        {
+            "user_id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "timezone": user.timezone,
+        },
         user_id=user.id,
     )
     enqueue_outbox(
@@ -173,7 +178,12 @@ def request_password_reset(payload: ForgotPasswordRequest) -> None:
     )
     enqueue_outbox(
         "auth.email.password_reset",
-        {"user_id": user.id, "email": user.email, "token": raw_token, "expires_at": expires_at.isoformat()},
+        {
+            "user_id": user.id,
+            "email": user.email,
+            "token": raw_token,
+            "expires_at": expires_at.isoformat(),
+        },
         user_id=user.id,
     )
     db.session.commit()
@@ -182,11 +192,7 @@ def request_password_reset(payload: ForgotPasswordRequest) -> None:
 def reset_password(payload: ResetPasswordRequest) -> bool:
     """Validate reset token, rotate password, revoke sessions, and emit event."""
     hashed = _hash_token(payload.token)
-    token = (
-        PasswordResetToken.query.filter_by(jti=hashed)
-        .with_for_update()
-        .first()
-    )
+    token = PasswordResetToken.query.filter_by(jti=hashed).with_for_update().first()
     now = datetime.utcnow()
     if not token or token.used_at or token.expires_at < now or token.attempts >= RESET_TOKEN_MAX_ATTEMPTS:
         if token:

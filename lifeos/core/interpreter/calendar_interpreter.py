@@ -27,7 +27,7 @@ from lifeos.platform.outbox import enqueue as enqueue_outbox
 class CalendarInterpreter:
     """
     Subscribes to calendar events, classifies them, and creates inferred domain records.
-    
+
     The interpreter uses rule-based classification to analyze calendar event titles,
     descriptions, locations, and timing to determine which domain(s) the event
     may relate to. It creates CalendarEventInterpretation records for each
@@ -57,7 +57,7 @@ class CalendarInterpreter:
     def on_calendar_event(self, event: dict) -> None:
         """
         Handle calendar event creation/update.
-        
+
         Classifies the event and creates interpretations.
         """
         if not self.enabled:
@@ -81,7 +81,7 @@ class CalendarInterpreter:
     def interpret_event(self, event: CalendarEvent) -> List[CalendarEventInterpretation]:
         """
         Classify a calendar event and create interpretation records.
-        
+
         Returns list of created interpretations.
         """
         if not self.enabled:
@@ -132,7 +132,7 @@ class CalendarInterpreter:
     ) -> Optional[CalendarEventInterpretation]:
         """
         Create a CalendarEventInterpretation record.
-        
+
         Optionally creates an inferred record in the target domain if confidence is high.
         """
         interpretation = CalendarEventInterpretation(
@@ -191,7 +191,7 @@ class CalendarInterpreter:
     ) -> Optional[int]:
         """
         Create an inferred record in the target domain via adapter.
-        
+
         Returns record ID or None if adapter not found or creation failed.
         """
         adapter = get_adapter(domain, record_type)
@@ -209,9 +209,7 @@ class CalendarInterpreter:
         except Exception as exc:
             # Log but don't fail interpretation creation
             try:
-                current_app.logger.warning(
-                    f"Failed to create inferred {domain}.{record_type} record: {exc}"
-                )
+                current_app.logger.warning(f"Failed to create inferred {domain}.{record_type} record: {exc}")
             except RuntimeError:
                 pass
             return None

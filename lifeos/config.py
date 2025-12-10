@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from datetime import timedelta
 from typing import Dict, Type
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,22 +39,39 @@ class BaseConfig:
 
     RATELIMIT_DEFAULT = "200/hour"
     RATELIMIT_STORAGE_URI = os.environ.get("REDIS_URL", "memory://")
-    RATELIMIT_ENABLED = os.environ.get("RATELIMIT_ENABLED", "true").lower() in ("1", "true", "yes")
+    RATELIMIT_ENABLED = os.environ.get("RATELIMIT_ENABLED", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     STATIC_CACHE_MAX_AGE = int(os.environ.get("STATIC_CACHE_MAX_AGE", "3600"))
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
-    UPLOAD_ALLOWED_EXTENSIONS = set((os.environ.get("UPLOAD_ALLOWED_EXTENSIONS") or "csv,png,jpg,jpeg,gif,pdf").split(","))
+    UPLOAD_ALLOWED_EXTENSIONS = set(
+        (os.environ.get("UPLOAD_ALLOWED_EXTENSIONS") or "csv,png,jpg,jpeg,gif,pdf").split(",")
+    )
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", "instance/uploads")
 
-    ENABLE_INSIGHTS = os.environ.get("ENABLE_INSIGHTS", "true").lower() in ("1", "true", "yes")
-    ENABLE_ASSISTANT = os.environ.get("ENABLE_ASSISTANT", "true").lower() in ("1", "true", "yes")
+    ENABLE_INSIGHTS = os.environ.get("ENABLE_INSIGHTS", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ENABLE_ASSISTANT = os.environ.get("ENABLE_ASSISTANT", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     ENABLE_ML = os.environ.get("ENABLE_ML", "true").lower() in ("1", "true", "yes")
     MLSUGGESTER_MODEL_DIR = os.environ.get("MLSUGGESTER_MODEL_DIR", "flask_app")
 
     # Google Calendar OAuth
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-    GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5000/api/v1/calendar/oauth/google/callback")
+    GOOGLE_REDIRECT_URI = os.environ.get(
+        "GOOGLE_REDIRECT_URI",
+        "http://localhost:5000/api/v1/calendar/oauth/google/callback",
+    )
     GOOGLE_CALENDAR_SCOPES = [
         "https://www.googleapis.com/auth/calendar.readonly",
         "https://www.googleapis.com/auth/calendar.events.readonly",

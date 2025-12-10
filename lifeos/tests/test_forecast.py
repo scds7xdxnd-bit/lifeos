@@ -40,7 +40,13 @@ def setup_finance_user(app):
         )
         db.session.add(cat)
         db.session.flush()
-        acct = Account(user_id=user.id, name="TestAcct", account_type="asset", normalized_name="testacct", category=cat)
+        acct = Account(
+            user_id=user.id,
+            name="TestAcct",
+            account_type="asset",
+            normalized_name="testacct",
+            category=cat,
+        )
         db.session.add(acct)
         db.session.commit()
         return user, acct
@@ -53,7 +59,11 @@ def test_add_and_delete_schedule(app, client):
     # add schedule
     resp = client.post(
         "/api/finance/schedule",
-        json={"account_id": acct.id, "event_date": date.today().isoformat(), "amount": 10},
+        json={
+            "account_id": acct.id,
+            "event_date": date.today().isoformat(),
+            "amount": 10,
+        },
         headers=headers | {"Content-Type": "application/json", "X-CSRF-Token": "test"},
     )
     assert resp.status_code == 200

@@ -25,7 +25,10 @@ def upgrade():
 
     # health_biometric additions
     if not _has_column("health_biometric", "date"):
-        op.add_column("health_biometric", sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.current_date()))
+        op.add_column(
+            "health_biometric",
+            sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.current_date()),
+        )
     if not _has_column("health_biometric", "weight"):
         op.add_column("health_biometric", sa.Column("weight", sa.Numeric(10, 2)))
     if not _has_column("health_biometric", "body_fat_pct"):
@@ -39,13 +42,24 @@ def upgrade():
     if not _has_column("health_biometric", "notes"):
         op.add_column("health_biometric", sa.Column("notes", sa.Text()))
     if not _has_column("health_biometric", "created_at"):
-        op.add_column("health_biometric", sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()))
+        op.add_column(
+            "health_biometric",
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
+        )
     if not _has_index("health_biometric", "ix_health_biometric_user_date"):
         op.create_index("ix_health_biometric_user_date", "health_biometric", ["user_id", "date"])
 
     # health_workout additions
     if not _has_column("health_workout", "date"):
-        op.add_column("health_workout", sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.current_date()))
+        op.add_column(
+            "health_workout",
+            sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.current_date()),
+        )
     if not _has_column("health_workout", "workout_type"):
         op.add_column("health_workout", sa.Column("workout_type", sa.String(length=64)))
     if not _has_column("health_workout", "intensity"):
@@ -55,13 +69,24 @@ def upgrade():
     if not _has_column("health_workout", "notes"):
         op.add_column("health_workout", sa.Column("notes", sa.Text()))
     if not _has_column("health_workout", "created_at"):
-        op.add_column("health_workout", sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()))
+        op.add_column(
+            "health_workout",
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
+        )
     if not _has_index("health_workout", "ix_health_workout_user_date"):
         op.create_index("ix_health_workout_user_date", "health_workout", ["user_id", "date"])
 
     # health_nutrition_log additions
     if not _has_column("health_nutrition_log", "date"):
-        op.add_column("health_nutrition_log", sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.current_date()))
+        op.add_column(
+            "health_nutrition_log",
+            sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.current_date()),
+        )
     if not _has_column("health_nutrition_log", "meal_type"):
         op.add_column("health_nutrition_log", sa.Column("meal_type", sa.String(length=32)))
     if not _has_column("health_nutrition_log", "items"):
@@ -71,9 +96,21 @@ def upgrade():
     if not _has_column("health_nutrition_log", "quality_score"):
         op.add_column("health_nutrition_log", sa.Column("quality_score", sa.Integer()))
     if not _has_column("health_nutrition_log", "created_at"):
-        op.add_column("health_nutrition_log", sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()))
+        op.add_column(
+            "health_nutrition_log",
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
+        )
     if not _has_index("health_nutrition_log", "ix_health_nutrition_log_user_date"):
-        op.create_index("ix_health_nutrition_log_user_date", "health_nutrition_log", ["user_id", "date"])
+        op.create_index(
+            "ix_health_nutrition_log_user_date",
+            "health_nutrition_log",
+            ["user_id", "date"],
+        )
 
 
 def downgrade():

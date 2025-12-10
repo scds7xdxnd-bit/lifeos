@@ -15,8 +15,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from sqlalchemy import text
 
-from lifeos import create_app
-from lifeos.extensions import db
+from lifeos import create_app  # noqa: E402
+from lifeos.extensions import db  # noqa: E402
 
 
 def _configure_sqlite_busy_timeout() -> None:
@@ -27,60 +27,79 @@ def _configure_sqlite_busy_timeout() -> None:
             conn.exec_driver_sql("PRAGMA busy_timeout=5000;")
             conn.exec_driver_sql("PRAGMA journal_mode=WAL;")
 
-def delete_user_everywhere(user_id: int) -> None:
-    stmt = lambda sql: db.session.execute(text(sql), {"uid": user_id})
 
+def _exec_stmt(sql: str, user_id: int) -> None:
+    db.session.execute(text(sql), {"uid": user_id})
+
+
+def delete_user_everywhere(user_id: int) -> None:
     # Auth/core
-    stmt("DELETE FROM user_role WHERE user_id=:uid")
-    stmt("DELETE FROM session_token WHERE user_id=:uid")
-    stmt("DELETE FROM jwt_blocklist WHERE created_by=:uid")
-    stmt("DELETE FROM user_preference WHERE user_id=:uid")
-    stmt("DELETE FROM event_record WHERE user_id=:uid")
-    stmt("DELETE FROM insight_record WHERE user_id=:uid")
-    stmt("DELETE FROM platform_outbox WHERE user_id=:uid")
+    _exec_stmt("DELETE FROM user_role WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM session_token WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM jwt_blocklist WHERE created_by=:uid", user_id)
+    _exec_stmt("DELETE FROM user_preference WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM event_record WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM insight_record WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM platform_outbox WHERE user_id=:uid", user_id)
 
     # Finance
-    stmt("DELETE FROM finance_money_schedule_daily_balance WHERE user_id=:uid")
-    stmt("DELETE FROM finance_money_schedule_row WHERE user_id=:uid")
-    stmt("""
+    _exec_stmt("DELETE FROM finance_money_schedule_daily_balance WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM finance_money_schedule_row WHERE user_id=:uid", user_id)
+    _exec_stmt(
+        """
         DELETE FROM finance_receivable_manual_entry
         WHERE tracker_id IN (SELECT id FROM finance_receivable_tracker WHERE user_id=:uid)
-    """)
-    stmt("""
+    """,
+        user_id,
+    )
+    _exec_stmt(
+        """
         DELETE FROM finance_loan_group_link
         WHERE tracker_id IN (SELECT id FROM finance_receivable_tracker WHERE user_id=:uid)
-    """)
-    stmt("DELETE FROM finance_loan_group WHERE user_id=:uid")
-    stmt("DELETE FROM finance_receivable_tracker WHERE user_id=:uid")
-    stmt("""
+    """,
+        user_id,
+    )
+    _exec_stmt("DELETE FROM finance_loan_group WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM finance_receivable_tracker WHERE user_id=:uid", user_id)
+    _exec_stmt(
+        """
         DELETE FROM finance_journal_line
         WHERE entry_id IN (SELECT id FROM finance_journal_entry WHERE user_id=:uid)
-    """)
-    stmt("DELETE FROM finance_journal_entry WHERE user_id=:uid")
-    stmt("DELETE FROM finance_transaction WHERE user_id=:uid")
-    stmt("DELETE FROM finance_account WHERE user_id=:uid")
-    stmt("DELETE FROM finance_trial_balance_setting WHERE user_id=:uid")
+    """,
+        user_id,
+    )
+    _exec_stmt("DELETE FROM finance_journal_entry WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM finance_transaction WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM finance_account WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM finance_trial_balance_setting WHERE user_id=:uid", user_id)
 
     # Habits/Health/Skills/Projects/Relationships/Journal
-    stmt("DELETE FROM habits_habit_log WHERE user_id=:uid")
-    stmt("DELETE FROM habits_habit WHERE user_id=:uid")
-    stmt("DELETE FROM health_biometric WHERE user_id=:uid")
-    stmt("DELETE FROM health_workout WHERE user_id=:uid")
-    stmt("DELETE FROM health_nutrition_log WHERE user_id=:uid")
-    stmt("DELETE FROM skill_practice_session WHERE user_id=:uid")
-    stmt("DELETE FROM skill_metric WHERE skill_id IN (SELECT id FROM skill WHERE user_id=:uid)")
-    stmt("DELETE FROM skill WHERE user_id=:uid")
-    stmt("DELETE FROM project_task_log WHERE user_id=:uid")
-    stmt("DELETE FROM project_task WHERE user_id=:uid")
-    stmt("DELETE FROM project WHERE user_id=:uid")
-    stmt("DELETE FROM relationships_interaction WHERE user_id=:uid")
-    stmt("DELETE FROM relationships_person WHERE user_id=:uid")
-    stmt("DELETE FROM journal_entry_tag WHERE entry_id IN (SELECT id FROM journal_entry WHERE user_id=:uid)")
-    stmt("DELETE FROM journal_entry WHERE user_id=:uid")
+    _exec_stmt("DELETE FROM habits_habit_log WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM habits_habit WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM health_biometric WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM health_workout WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM health_nutrition_log WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM skill_practice_session WHERE user_id=:uid", user_id)
+    _exec_stmt(
+        "DELETE FROM skill_metric WHERE skill_id IN (SELECT id FROM skill WHERE user_id=:uid)",
+        user_id,
+    )
+    _exec_stmt("DELETE FROM skill WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM project_task_log WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM project_task WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM project WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM relationships_interaction WHERE user_id=:uid", user_id)
+    _exec_stmt("DELETE FROM relationships_person WHERE user_id=:uid", user_id)
+    _exec_stmt(
+        "DELETE FROM journal_entry_tag WHERE entry_id IN (SELECT id FROM journal_entry WHERE user_id=:uid)",
+        user_id,
+    )
+    _exec_stmt("DELETE FROM journal_entry WHERE user_id=:uid", user_id)
 
     # Finally remove the user
-    stmt('DELETE FROM "user" WHERE id=:uid')
+    _exec_stmt('DELETE FROM "user" WHERE id=:uid', user_id)
     db.session.commit()
+
 
 def main() -> None:
     if len(sys.argv) < 2:

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import List, Literal, Optional
 from decimal import Decimal
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -44,6 +44,7 @@ class AccountCategoryResponse(BaseModel):
 
 class AccountSearchQuery(BaseModel):
     """Query parameters for account search/typeahead."""
+
     q: str = Field(min_length=1, max_length=100, description="Search query")
     limit: int = Field(default=20, ge=1, le=100, description="Max results")
     include_ml: bool = Field(default=True, description="Include ML suggestions")
@@ -51,23 +52,19 @@ class AccountSearchQuery(BaseModel):
 
 class AccountInlineCreate(BaseModel):
     """Request body for inline account creation."""
+
     name: str = Field(min_length=1, max_length=255, description="Account display name")
-    account_type: Literal["asset", "liability", "equity", "income", "expense"] = Field(
-        description="Type of account"
-    )
+    account_type: Literal["asset", "liability", "equity", "income", "expense"] = Field(description="Type of account")
     account_subtype: Optional[str] = Field(
         default=None,
         max_length=64,
-        description="Optional subtype (e.g., 'cash', 'bank', 'loan')"
+        description="Optional subtype (e.g., 'cash', 'bank', 'loan')",
     )
-    category_id: Optional[int] = Field(
-        default=None,
-        description="Existing category ID to assign"
-    )
+    category_id: Optional[int] = Field(default=None, description="Existing category ID to assign")
     category_name_new: Optional[str] = Field(
         default=None,
         max_length=128,
-        description="New category name to create and assign"
+        description="New category name to create and assign",
     )
 
 
@@ -78,6 +75,7 @@ class AccountUpdateCategory(BaseModel):
 
 class AccountSearchResult(BaseModel):
     """Single account in search results."""
+
     id: int
     name: str
     account_type: str
@@ -89,6 +87,7 @@ class AccountSearchResult(BaseModel):
 
 class AccountSubtypesResponse(BaseModel):
     """Response for GET /finance/accounts/subtypes/<type>."""
+
     account_type: str
     subtypes: List[str]
 
@@ -208,4 +207,3 @@ class TrialBalanceRow(BaseModel):
     debit: float
     credit: float
     net: float
-

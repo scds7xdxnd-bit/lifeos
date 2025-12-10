@@ -8,7 +8,11 @@ pytestmark = pytest.mark.integration
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
-from lifeos.domains.finance.models.accounting_models import Account, AccountCategory, JournalEntry
+from lifeos.domains.finance.models.accounting_models import (
+    Account,
+    AccountCategory,
+    JournalEntry,
+)
 from lifeos.extensions import db
 
 
@@ -43,8 +47,20 @@ def _setup_accounts(app):
         )
         db.session.add_all([asset, income])
         db.session.flush()
-        cash = Account(user_id=user.id, name="Cash", account_type="asset", normalized_name="cash", category=asset)
-        revenue = Account(user_id=user.id, name="Revenue", account_type="income", normalized_name="revenue", category=income)
+        cash = Account(
+            user_id=user.id,
+            name="Cash",
+            account_type="asset",
+            normalized_name="cash",
+            category=asset,
+        )
+        revenue = Account(
+            user_id=user.id,
+            name="Revenue",
+            account_type="income",
+            normalized_name="revenue",
+            category=income,
+        )
         db.session.add_all([cash, revenue])
         db.session.commit()
         return user, cash, revenue
@@ -64,14 +80,24 @@ def test_import_preview_and_commit(app, client):
     headers = _auth_headers(app, user.id) | {"X-CSRF-Token": "test"}
 
     file_data = {"file": (_csv_bytes(cash.id, revenue.id), "import.csv")}
-    resp = client.post("/api/finance/import/preview", data=file_data, headers=headers, content_type="multipart/form-data")
+    resp = client.post(
+        "/api/finance/import/preview",
+        data=file_data,
+        headers=headers,
+        content_type="multipart/form-data",
+    )
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["ok"] is True
     assert data["count"] == 2
 
     file_data_commit = {"file": (_csv_bytes(cash.id, revenue.id), "import.csv")}
-    resp = client.post("/api/finance/import/commit", data=file_data_commit, headers=headers, content_type="multipart/form-data")
+    resp = client.post(
+        "/api/finance/import/commit",
+        data=file_data_commit,
+        headers=headers,
+        content_type="multipart/form-data",
+    )
     assert resp.status_code == 200
     payload = resp.get_json()
     assert payload["ok"] is True

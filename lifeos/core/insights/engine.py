@@ -6,7 +6,14 @@ from typing import List
 
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.events.event_models import EventRecord
-from lifeos.core.insights.rules import finance_rules, habit_rules, health_rules, project_rules, skill_rules, cross_rules
+from lifeos.core.insights.rules import (
+    cross_rules,
+    finance_rules,
+    habit_rules,
+    health_rules,
+    project_rules,
+    skill_rules,
+)
 from lifeos.core.insights.services import persist_insights
 
 

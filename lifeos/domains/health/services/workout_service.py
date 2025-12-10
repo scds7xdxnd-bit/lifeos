@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from lifeos.domains.health.services.health_service import create_workout
 from lifeos.domains.health.models.health_models import Workout
+from lifeos.domains.health.services.health_service import create_workout
 
 
 def log_workout(user_id: int, activity: str, duration_minutes: int, calories: float | None = None) -> Workout:

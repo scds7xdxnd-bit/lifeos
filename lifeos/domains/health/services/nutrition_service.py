@@ -9,7 +9,12 @@ from lifeos.domains.health.services.health_service import create_nutrition_log
 
 
 def log_meal(
-    user_id: int, meal: str, calories: float, protein: float | None = None, carbs: float | None = None, fat: float | None = None
+    user_id: int,
+    meal: str,
+    calories: float,
+    protein: float | None = None,
+    carbs: float | None = None,
+    fat: float | None = None,
 ) -> NutritionLog:
     # Legacy wrapper: map to new schema fields
     return create_nutrition_log(

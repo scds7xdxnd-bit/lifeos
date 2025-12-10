@@ -39,14 +39,20 @@ class MoneyScheduleScenario(db.Model):
     name: Mapped[str] = mapped_column(db.String(128), nullable=False)
     description: Mapped[str | None] = mapped_column(db.Text)
 
-    rows: Mapped[list["MoneyScheduleScenarioRow"]] = relationship("MoneyScheduleScenarioRow", back_populates="scenario", cascade="all, delete-orphan")
+    rows: Mapped[list["MoneyScheduleScenarioRow"]] = relationship(
+        "MoneyScheduleScenarioRow",
+        back_populates="scenario",
+        cascade="all, delete-orphan",
+    )
 
 
 class MoneyScheduleScenarioRow(db.Model):
     __tablename__ = "finance_money_schedule_scenario_row"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    scenario_id: Mapped[int] = mapped_column(db.ForeignKey("finance_money_schedule_scenario.id"), index=True, nullable=False)
+    scenario_id: Mapped[int] = mapped_column(
+        db.ForeignKey("finance_money_schedule_scenario.id"), index=True, nullable=False
+    )
     base_row_id: Mapped[int] = mapped_column(db.ForeignKey("finance_money_schedule_row.id"), nullable=True)
     delta_amount: Mapped[float] = mapped_column(db.Numeric(18, 2), nullable=False, default=0)
 

@@ -21,13 +21,25 @@ def upgrade():
     op.create_table(
         "password_reset_token",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False, index=True),
+        sa.Column(
+            "user_id",
+            sa.Integer(),
+            sa.ForeignKey("user.id"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("jti", sa.String(length=128), nullable=False, unique=True),
         sa.Column("expires_at", sa.DateTime(), nullable=False),
         sa.Column("used_at", sa.DateTime()),
         sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+        ),
     )
     op.create_index(
         "ix_password_reset_user_expires_at",

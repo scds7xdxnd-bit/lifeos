@@ -6,9 +6,18 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from lifeos.core.utils.decorators import csrf_protected, require_roles
-from lifeos.domains.finance.schemas.finance_schemas import ForecastParams, ScheduleRowCreate, ScheduleRowUpdate
+from lifeos.domains.finance.schemas.finance_schemas import (
+    ForecastParams,
+    ScheduleRowCreate,
+    ScheduleRowUpdate,
+)
 from lifeos.domains.finance.services.forecast_service import generate_forecast
-from lifeos.domains.finance.services.schedule_service import add_schedule_row, delete_schedule_row, recompute_daily_balances, update_schedule_row
+from lifeos.domains.finance.services.schedule_service import (
+    add_schedule_row,
+    delete_schedule_row,
+    recompute_daily_balances,
+    update_schedule_row,
+)
 
 forecast_api_bp = Blueprint("finance_forecast_api", __name__)
 
@@ -34,7 +43,13 @@ def add_schedule():
         data = ScheduleRowCreate.model_validate(payload)
     except Exception:
         return jsonify({"ok": False, "error": "validation_error"}), 400
-    row = add_schedule_row(int(get_jwt_identity()), data.account_id, data.event_date, data.amount, data.memo)
+    row = add_schedule_row(
+        int(get_jwt_identity()),
+        data.account_id,
+        data.event_date,
+        data.amount,
+        data.memo,
+    )
     return jsonify({"ok": True, "row_id": row.id})
 
 

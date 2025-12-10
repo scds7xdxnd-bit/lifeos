@@ -31,7 +31,12 @@ def _config(**overrides) -> DispatchConfig:
     return DispatchConfig(**defaults)
 
 
-def _enqueue(user_id: int = 1, event_type: str = "test.event", status: str = "pending", available_at: datetime | None = None) -> OutboxMessage:
+def _enqueue(
+    user_id: int = 1,
+    event_type: str = "test.event",
+    status: str = "pending",
+    available_at: datetime | None = None,
+) -> OutboxMessage:
     msg = OutboxMessage(
         user_id=user_id,
         event_type=event_type,

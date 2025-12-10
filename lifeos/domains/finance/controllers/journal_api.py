@@ -8,12 +8,13 @@ from pydantic import ValidationError
 from sqlalchemy.orm import selectinload
 
 from lifeos.core.utils.decorators import csrf_protected, require_roles
-from lifeos.extensions import limiter
-
 from lifeos.domains.finance.mappers import map_journal_entry_request
 from lifeos.domains.finance.models.accounting_models import JournalEntry, JournalLine
 from lifeos.domains.finance.schemas.finance_schemas import JournalEntryCreateRequest
-from lifeos.domains.finance.services.accounting_service import post_journal_entry_with_totals
+from lifeos.domains.finance.services.accounting_service import (
+    post_journal_entry_with_totals,
+)
+from lifeos.extensions import limiter
 
 journal_api_bp = Blueprint("finance_journal_api", __name__)
 
@@ -26,8 +27,7 @@ def list_journal_entries():
     # Get total count per user to present a user-scoped entry number (avoids global ID confusion)
     total_count = JournalEntry.query.filter_by(user_id=user_id).count()
     entries = (
-        JournalEntry.query
-        .filter_by(user_id=user_id)
+        JournalEntry.query.filter_by(user_id=user_id)
         .options(selectinload(JournalEntry.lines))
         .order_by(JournalEntry.posted_at.desc())
         .limit(50)
@@ -64,9 +64,7 @@ def get_journal_entry_detail(entry_id: int):
 
     user_id = int(get_jwt_identity())
     entry = (
-        JournalEntry.query.options(
-            selectinload(JournalEntry.lines).selectinload(JournalLine.account)
-        )
+        JournalEntry.query.options(selectinload(JournalEntry.lines).selectinload(JournalLine.account))
         .filter_by(id=entry_id, user_id=user_id)
         .first()
     )
@@ -116,7 +114,10 @@ def create_journal_entry():
     try:
         data = JournalEntryCreateRequest.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
 
     try:
         entry, debit_total, credit_total = post_journal_entry_with_totals(

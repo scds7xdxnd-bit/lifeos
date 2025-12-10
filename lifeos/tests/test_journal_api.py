@@ -142,8 +142,16 @@ def test_list_journal_filter_by_mood(app, client, user_with_tokens):
     csrf_token = _prime_csrf(client)
     headers = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
 
-    client.post("/api/journal", json={"title": "Happy", "body": "Great day", "mood": 5}, headers=headers)
-    client.post("/api/journal", json={"title": "Sad", "body": "Bad day", "mood": -3}, headers=headers)
+    client.post(
+        "/api/journal",
+        json={"title": "Happy", "body": "Great day", "mood": 5},
+        headers=headers,
+    )
+    client.post(
+        "/api/journal",
+        json={"title": "Sad", "body": "Bad day", "mood": -3},
+        headers=headers,
+    )
 
     resp = client.get("/api/journal?mood=5", headers=headers)
     body = resp.get_json()
@@ -178,7 +186,11 @@ def test_list_journal_search_text(app, client, user_with_tokens):
     csrf_token = _prime_csrf(client)
     headers = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
 
-    client.post("/api/journal", json={"title": "Python", "body": "Learning Flask"}, headers=headers)
+    client.post(
+        "/api/journal",
+        json={"title": "Python", "body": "Learning Flask"},
+        headers=headers,
+    )
     client.post("/api/journal", json={"title": "Random", "body": "Nothing"}, headers=headers)
 
     resp = client.get("/api/journal?search_text=Python", headers=headers)
@@ -218,7 +230,7 @@ def test_list_journal_pagination(app, client, user_with_tokens):
 def test_list_journal_isolation(app, client, user_with_tokens, other_user_tokens):
     """Should only list user's own entries."""
     csrf_token = _prime_csrf(client)
-    
+
     # User 1 creates entry
     headers1 = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
     client.post("/api/journal", json={"title": "Private", "body": "Secret"}, headers=headers1)

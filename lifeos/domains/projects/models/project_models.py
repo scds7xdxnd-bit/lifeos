@@ -66,7 +66,9 @@ class ProjectTaskLog(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
-    task_id: Mapped[int] = mapped_column(db.ForeignKey("project_task.id", ondelete="CASCADE"), index=True, nullable=False)
+    task_id: Mapped[int] = mapped_column(
+        db.ForeignKey("project_task.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     note: Mapped[str | None] = mapped_column(db.Text)
     logged_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     status_snapshot: Mapped[str | None] = mapped_column(db.String(32))

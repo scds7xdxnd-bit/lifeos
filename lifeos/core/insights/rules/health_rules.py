@@ -20,4 +20,3 @@ def apply_rules(event: EventRecord) -> List[dict]:
             }
         ]
     return []
-

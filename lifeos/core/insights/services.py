@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, List, Sequence
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
@@ -52,9 +52,4 @@ def recent_events(
 
 
 def fetch_insights(user_id: int, limit: int = 20) -> List[InsightRecord]:
-    return (
-        InsightRecord.query.filter_by(user_id=user_id)
-        .order_by(InsightRecord.created_at.desc())
-        .limit(limit)
-        .all()
-    )
+    return InsightRecord.query.filter_by(user_id=user_id).order_by(InsightRecord.created_at.desc()).limit(limit).all()

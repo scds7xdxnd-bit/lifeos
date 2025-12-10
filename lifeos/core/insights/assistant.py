@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import List
 
-from lifeos.core.insights.engine import insights_engine
 from lifeos.core.insights.ml.embeddings import embed_text
 
 
@@ -30,4 +29,3 @@ class AIAssistant:
 
 
 assistant = AIAssistant()
-

@@ -28,4 +28,3 @@ def set_preference(user: User, key: str, value: Any) -> None:
         existing.value = value
     else:
         user.preferences.append(UserPreference(key=key, value=value))
-
