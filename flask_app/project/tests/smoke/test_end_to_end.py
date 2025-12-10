@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
+from src.common import settings
+from src.models import evaluate, train
 
 from scripts import download_sample_data
-from src.models import evaluate, train
-from src.common import settings
-from src.service_online.app import finance_app
 
 
 def test_end_to_end(tmp_path, monkeypatch):

@@ -57,7 +57,7 @@ jobs:
           DATABASE_URL: postgresql://lifeos:lifeos@localhost/lifeos_test
           FLASK_APP: lifeos.wsgi
           PYTHONPATH: ${{ github.workspace }}
-        run: cd lifeos && flask db upgrade head
+        run: flask db upgrade head
       
       - name: Run full test suite
         env:

@@ -4,12 +4,12 @@ from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
-    JSON,
     Numeric,
     String,
     UniqueConstraint,

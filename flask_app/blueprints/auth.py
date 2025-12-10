@@ -1,12 +1,11 @@
 import datetime
 
-from flask import Blueprint, render_template, redirect, url_for, request, session, flash
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from finance_app.extensions import db
+from finance_app.lib.auth import _get_csrf_token
 from finance_app.models.accounting_models import LoginSession
 from finance_app.models.user_models import User
-from finance_app.lib.auth import _get_csrf_token
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 auth_bp = Blueprint('auth_bp', __name__)
 

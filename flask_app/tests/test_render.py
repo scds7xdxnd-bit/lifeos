@@ -1,10 +1,7 @@
-import json
 from pathlib import Path
 
 import pytest
-
 from trial_balance_pdf import generate_trial_balance_pdf
-
 
 SAMPLE = {
     "rows": [

@@ -167,10 +167,10 @@ jobs:
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://lifeos:lifeos@localhost/lifeos_test
-          FLASK_APP: lifeos.wsgi
+          APP_ENV: ci
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          cd lifeos && flask db upgrade head
+          make run-migrations
       
       - name: Run integration tests
         env:

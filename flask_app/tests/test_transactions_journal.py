@@ -6,11 +6,10 @@ import tempfile
 from decimal import Decimal
 
 import pytest
-from flask import session
-
-from finance_app import create_app, db, User
+from finance_app import User, create_app, db
 from finance_app.blueprints.transactions import save_transaction
 from finance_app.models.accounting_models import JournalEntry
+from flask import session
 
 os.environ.setdefault("AUTO_CREATE_SCHEMA", "true")
 

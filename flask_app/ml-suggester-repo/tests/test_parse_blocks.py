@@ -1,5 +1,6 @@
 import pandas as pd
-from ml_suggester.parse_blocks import infer_transactions, explode_to_lines
+from ml_suggester.parse_blocks import explode_to_lines, infer_transactions
+
 
 def test_smoke_transform_multicurrency():
     df = pd.DataFrame([

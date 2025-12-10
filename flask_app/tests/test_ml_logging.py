@@ -1,13 +1,12 @@
+import datetime as dt
 import json
 import os
-import datetime as dt
-from unittest import mock
 
 # Ensure an isolated in-memory database for these tests
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-from finance_app import create_app, db, User
-from finance_app.models.accounting_models import AccountSuggestionLog, AccountSuggestionHint
-from finance_app.services.ml_service import record_suggestion_hint, best_hint_suggestion
+from finance_app import User, create_app, db
+from finance_app.models.accounting_models import AccountSuggestionHint, AccountSuggestionLog
+from finance_app.services.ml_service import best_hint_suggestion, record_suggestion_hint
 
 
 def _login(client, user_id):

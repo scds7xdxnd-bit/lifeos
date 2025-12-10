@@ -120,17 +120,17 @@ def upgrade() -> None:
     if not _has_column("finance_account_category", "is_default"):
         op.add_column(
             "finance_account_category",
-            sa.Column("is_default", sa.Boolean(), nullable=False, server_default="0"),
+            sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("FALSE")),
         )
 
     # Add is_system column
     if not _has_column("finance_account_category", "is_system"):
         op.add_column(
             "finance_account_category",
-            sa.Column("is_system", sa.Boolean(), nullable=False, server_default="1"),
+            sa.Column("is_system", sa.Boolean(), nullable=False, server_default=sa.text("TRUE")),
         )
         # Mark existing categories as system categories
-        op.execute("UPDATE finance_account_category SET is_system = 1 WHERE user_id IS NULL;")
+        op.execute("UPDATE finance_account_category SET is_system = TRUE WHERE user_id IS NULL;")
 
     # Add created_at column
     if not _has_column("finance_account_category", "created_at"):
@@ -138,8 +138,12 @@ def upgrade() -> None:
             "finance_account_category",
             sa.Column("created_at", sa.DateTime(), nullable=True),
         )
-        # Backfill with current timestamp
-        op.execute("UPDATE finance_account_category SET created_at = datetime('now') WHERE created_at IS NULL;")
+        # Backfill with current timestamp (SQLite vs Postgres)
+        bind = op.get_bind()
+        if bind.dialect.name == "sqlite":
+            op.execute("UPDATE finance_account_category SET created_at = datetime('now') WHERE created_at IS NULL;")
+        else:
+            op.execute("UPDATE finance_account_category SET created_at = now() WHERE created_at IS NULL;")
 
     # Add updated_at column
     if not _has_column("finance_account_category", "updated_at"):
@@ -147,8 +151,12 @@ def upgrade() -> None:
             "finance_account_category",
             sa.Column("updated_at", sa.DateTime(), nullable=True),
         )
-        # Backfill with current timestamp
-        op.execute("UPDATE finance_account_category SET updated_at = datetime('now') WHERE updated_at IS NULL;")
+        # Backfill with current timestamp (SQLite vs Postgres)
+        bind = op.get_bind()
+        if bind.dialect.name == "sqlite":
+            op.execute("UPDATE finance_account_category SET updated_at = datetime('now') WHERE updated_at IS NULL;")
+        else:
+            op.execute("UPDATE finance_account_category SET updated_at = now() WHERE updated_at IS NULL;")
 
     # =========================================================================
     # 2. Create indexes on finance_account_category

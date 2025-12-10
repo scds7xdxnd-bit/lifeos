@@ -4,7 +4,7 @@ import time
 
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
-from finance_app import create_app, db, User  # noqa: E402
+from finance_app import User, create_app, db  # noqa: E402
 from finance_app.models.accounting_models import AccountSuggestionLog  # noqa: E402
 from finance_app.services.account_service import _BG_JOBS  # noqa: E402
 from finance_app.services.user_model_service import (  # noqa: E402

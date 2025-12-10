@@ -34,9 +34,9 @@ if "alembic" not in sys.modules:
     sys.modules["alembic.command"] = command_mod
     sys.modules["alembic.config"] = config_mod
 
+from blueprints.auth import auth_bp
 from finance_app.extensions import db
 from finance_app.models.user_models import User
-from blueprints.auth import auth_bp
 
 
 @pytest.fixture()

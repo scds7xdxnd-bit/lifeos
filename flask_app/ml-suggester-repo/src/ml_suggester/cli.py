@@ -1,8 +1,12 @@
 from __future__ import annotations
-import click
+
 from pathlib import Path
+
+import click
+
 from .data_io import load_excel, write_table
-from .parse_blocks import infer_transactions, explode_to_lines
+from .parse_blocks import explode_to_lines, infer_transactions
+
 
 @click.group()
 def main():
@@ -47,6 +51,7 @@ def _default_imbalanced_path(out_path: str, out_format: str) -> str:
     return str(p.with_name(f"{stem}.imbalanced{suffix}"))
 
 from .train_cli import traincli
+
 main.add_command(traincli, name="model")
 
 if __name__ == "__main__":

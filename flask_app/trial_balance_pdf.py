@@ -23,14 +23,10 @@ import argparse
 import datetime as _dt
 import hashlib
 import json
-import os
-import shutil
-import sys
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from jinja2 import Environment, BaseLoader, select_autoescape
+from jinja2 import BaseLoader, Environment, select_autoescape
 
 
 def _currency_symbol(code: str) -> str:
@@ -259,7 +255,7 @@ def generate_trial_balance_pdf(
     try:
         pages = render_with_weasyprint(html, out_pdf)
         return pages, _sha256_file(out_pdf)
-    except Exception as e:
+    except Exception:
         # Surface a clear, WeasyPrint-only message
         raise
 

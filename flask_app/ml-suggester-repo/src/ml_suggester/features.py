@@ -1,7 +1,9 @@
 from __future__ import annotations
-import pandas as pd
-import numpy as np
+
 import re
+
+import pandas as pd
+
 
 def _clean(s: str) -> str:
     s = s.lower()

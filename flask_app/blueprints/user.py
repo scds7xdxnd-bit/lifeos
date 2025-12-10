@@ -2,11 +2,6 @@ import datetime
 import os
 from typing import TYPE_CHECKING
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
-from flask import session as flask_session
-from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
-
 from finance_app.extensions import db
 from finance_app.lib.auth import current_user
 from finance_app.models.accounting_models import (
@@ -16,9 +11,13 @@ from finance_app.models.accounting_models import (
     Transaction,
 )
 from finance_app.models.user_models import User, UserPost, UserProfile
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import session as flask_session
+from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 if TYPE_CHECKING:  # pragma: no cover - import for type hints only
-    from finance_app.blueprints import accounting  # type: ignore
+    pass  # type: ignore
 
 user_bp = Blueprint('user_bp', __name__)
 
@@ -38,6 +37,7 @@ def _compute_financial_pulse(user):
     """Derive a simple financial health summary from the latest trial balance."""
     try:
         import datetime as _dt
+
         from finance_app.blueprints.accounting import tb_monthly  # type: ignore
 
         today = _dt.date.today()

@@ -1,21 +1,23 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import date as ddate, datetime as dt_datetime, timedelta
-from decimal import Decimal, ROUND_HALF_UP
 import calendar
+from collections import defaultdict
+from datetime import date as ddate
+from datetime import datetime as dt_datetime
+from datetime import timedelta
+from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import func, or_
 
 from finance_app import db
 from finance_app.models.money_schedule import (
-    MoneyScheduleRow,
-    Setting,
     MoneyScheduleAssetInclude,
     MoneyScheduleDailyBalance,
     MoneyScheduleRecurringEvent,
+    MoneyScheduleRow,
     MoneyScheduleScenario,
     MoneyScheduleScenarioRow,
+    Setting,
 )
 
 EPS = Decimal("0.01")
@@ -254,9 +256,11 @@ def rebuild_daily_balances(user_id: int | None, end_date: ddate | None = None) -
 
     # Gather net change per day for included accounts.
     net_by_day: dict[ddate, Decimal] = {}
-    from finance_app import JournalEntry, JournalLine  # local import to avoid circular
-
-    from finance_app import Account  # ensure account ownership
+    from finance_app import (  # local import to avoid circular
+        Account,  # ensure account ownership
+        JournalEntry,
+        JournalLine,
+    )
     owned_account_ids = {
         acc.id
         for acc in Account.query.filter(Account.id.in_(account_id_list))

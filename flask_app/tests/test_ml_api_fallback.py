@@ -1,7 +1,7 @@
 import json
 from unittest import mock
 
-from finance_app import create_app, db, User
+from finance_app import User, create_app, db
 
 
 def test_ml_suggestions_fallback(monkeypatch):

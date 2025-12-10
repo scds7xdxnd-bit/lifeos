@@ -1,7 +1,8 @@
 import os
-from finance_app.services.ml_service import record_suggestion_hint, best_hint_suggestion
+
 from finance_app import create_app, db
 from finance_app.models.accounting_models import AccountSuggestionHint
+from finance_app.services.ml_service import record_suggestion_hint
 
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 """Utility helpers for the journal suggester package."""
 
-from dataclasses import asdict, dataclass
-from pathlib import Path
 import json
 import logging
 import math
 import random
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Sequence
 
 import numpy as np
 import yaml

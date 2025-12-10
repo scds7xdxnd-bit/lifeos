@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import datetime
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Iterable, Tuple
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Tuple
 
 from finance_app import _parse_date_tuple
 from finance_app.extensions import db

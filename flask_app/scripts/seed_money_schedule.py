@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import os
 from datetime import date, timedelta
 from decimal import Decimal
-import os
 
 from finance_app import MoneyScheduleAccount, TrialBalanceSetting, User, create_app, db
 from finance_app.models.money_schedule import AccountSnapshot, MoneyScheduleRow

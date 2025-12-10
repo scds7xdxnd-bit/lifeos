@@ -13,8 +13,8 @@ from sqlalchemy import func
 
 from finance_app.extensions import db
 from finance_app.models.accounting_models import AccountSuggestionLog
-from finance_app.services.ml_service import _desc_tokens
 from finance_app.services.account_service import _BG_JOBS
+from finance_app.services.ml_service import _desc_tokens
 
 
 def _model_dir() -> str:

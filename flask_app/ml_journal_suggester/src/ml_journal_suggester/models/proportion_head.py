@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Heads that predict per-account proportions on each side."""
 
-from typing import Iterable, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import torch
 from torch import nn

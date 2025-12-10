@@ -9,10 +9,10 @@ from typing import Iterable, Optional
 
 from finance_app.extensions import db
 from finance_app.models.accounting_models import (
-    ReceivableManualEntry,
-    ReceivableTracker,
     Account,
     AccountCategory,
+    ReceivableManualEntry,
+    ReceivableTracker,
 )
 
 # --- Classification helpers ----------------------------------------------------

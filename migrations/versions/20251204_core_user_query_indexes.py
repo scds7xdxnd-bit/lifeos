@@ -8,7 +8,6 @@ Create Date: 2025-12-04
 from __future__ import annotations
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "20251204_core_user_query_indexes"

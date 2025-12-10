@@ -1,0 +1,12 @@
+line-length = 120
+target-version = "py310"
+[lint]
+select = ["E", "F"]
+
+[lint.per-file-ignores]
+"lifeos/tests/**/*" = ["E402", "F401", "F811", "F841", "E741", "E731", "E712", "I001"]
+"lifeos/migrations/versions/**/*" = ["F401", "E501", "I001"]
+"lifeos/wsgi.py" = ["E402", "I001"]
+"lifeos/cleaner.py" = ["E402", "I001"]
+"migrations/versions/**/*" = ["E501", "I001"]
+"flask_app/**/*" = ["ALL"]

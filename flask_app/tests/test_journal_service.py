@@ -6,14 +6,13 @@ import tempfile
 from decimal import Decimal
 
 import pytest
-
-from finance_app import create_app, db, User
+from finance_app import User, create_app, db
 from finance_app.models.accounting_models import Account
 from finance_app.services.journal_service import (
     JournalBalanceError,
     JournalLinePayload,
-    create_journal_entry,
     _validate_balanced,
+    create_journal_entry,
 )
 
 os.environ.setdefault("AUTO_CREATE_SCHEMA", "true")

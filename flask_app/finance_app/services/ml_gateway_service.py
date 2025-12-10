@@ -14,7 +14,7 @@ from finance_app.services.ml_service import (
     best_hint_suggestion,
     record_suggestion_hint,
 )
-from finance_app.services.user_model_service import predict_user_model, train_user_model, user_model_exists
+from finance_app.services.user_model_service import predict_user_model, train_user_model
 
 
 class MlGatewayError(Exception):

@@ -6,16 +6,15 @@ import tempfile
 from datetime import date
 
 import pytest
-
 from finance_app import (
-    app,
-    db,
-    User,
-    AccountCategory,
     Account,
+    AccountCategory,
     JournalEntry,
     JournalLine,
     ReceivableManualEntry,
+    User,
+    app,
+    db,
 )
 
 os.environ.setdefault("AUTO_CREATE_SCHEMA", "true")

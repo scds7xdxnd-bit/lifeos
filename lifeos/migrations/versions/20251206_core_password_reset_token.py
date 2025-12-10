@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "20251206_core_password_reset_token"
-down_revision = "20251205_skills_initial_schema"
+down_revision = "20251205_expand_alembic_version"
 branch_labels = None
 depends_on = None
 

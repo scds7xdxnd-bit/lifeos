@@ -1,11 +1,12 @@
+import datetime as dt
 from collections import defaultdict
 from typing import Dict, List, Tuple
-import datetime as dt
+
+from sqlalchemy import func
 
 from finance_app.extensions import db
 from finance_app.lib.dates import _normalize_date_for_ml
 from finance_app.models.accounting_models import AccountSuggestionHint
-from sqlalchemy import func
 
 
 def _desc_tokens(desc: str):
@@ -203,7 +204,7 @@ def _compute_ml_line_features(
     )
     if user_id:
         try:
-            from finance_app.models.accounting_models import JournalLine, JournalEntry  # local import to avoid circular
+            from finance_app.models.accounting_models import JournalEntry, JournalLine  # local import to avoid circular
 
             recent = (
                 db.session.query(JournalLine.account_id)

@@ -5,9 +5,9 @@ from __future__ import annotations
 import datetime as _dt
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Iterable, Sequence, Tuple
+from typing import Iterable, Sequence
 
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_, func, or_
 
 from finance_app import _parse_date_tuple
 from finance_app.extensions import db

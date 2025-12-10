@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pytest
-
-from finance_app import create_app, db, User
+from finance_app import User, create_app, db
 from finance_app.models.accounting_models import JournalEntry, JournalLine
 
 

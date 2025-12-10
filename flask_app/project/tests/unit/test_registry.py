@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 
 import pytest
-
 from src.common import settings
+
 
 def _create_artifact_dir(base: Path, version: int) -> Path:
     run_dir = base / f"run_v{version}"

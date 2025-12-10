@@ -1,9 +1,9 @@
 """FastAPI service for the ml-suggester account prediction models."""
 from __future__ import annotations
 
+import datetime
 import hashlib
 import os
-import datetime
 from pathlib import Path
 from threading import Lock
 from typing import Dict, List, Optional
@@ -14,7 +14,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, validator
 
-from .features import prepare_dataframe, feature_target_split
+from .features import feature_target_split, prepare_dataframe
 
 
 def _default_model_root() -> Path:

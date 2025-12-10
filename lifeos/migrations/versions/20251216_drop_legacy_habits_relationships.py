@@ -18,11 +18,12 @@ def upgrade():
     inspector = inspect(conn)
     existing_tables = set(inspector.get_table_names())
 
+    # Drop child tables before parents to satisfy FK constraints (Postgres).
     for tbl in (
-        "habit",
         "habit_log",
-        "relationship_contact",
+        "habit",
         "relationship_interaction",
+        "relationship_contact",
     ):
         if tbl in existing_tables:
             op.drop_table(tbl)

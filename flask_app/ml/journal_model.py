@@ -11,7 +11,8 @@ class JournalModel:
         return os.path.join(os.path.dirname(__file__), 'journal_state.json')
 
     def _load_state(self):
-        import json, os
+        import json
+        import os
         p = self._state_path()
         if os.path.exists(p):
             try:
@@ -138,7 +139,8 @@ class JournalModel:
                         Y[j,:] = np.linalg.lstsq(A, b, rcond=None)[0]
             # Save embeddings mapping
             emb = { a: X[idx[a]].tolist() for a in accounts }
-            import json, os
+            import json
+            import os
             p = os.path.join(os.path.dirname(__file__), 'account_embeds.json')
             with open(p, 'w') as f:
                 json.dump({'accounts': accounts, 'embeddings': emb}, f)

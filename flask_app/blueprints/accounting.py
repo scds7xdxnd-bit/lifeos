@@ -1,39 +1,60 @@
 import datetime as _dt
 import json
-import uuid
 from collections import defaultdict
-from decimal import Decimal
-from decimal import ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Dict, List, Set
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session, current_app, Response
-from sqlalchemy import func
-from finance_app import db, current_user, LoanGroup, LoanGroupLink
-from finance_app.services.journal_service import JournalBalanceError, JournalLinePayload, create_journal_entry, _validate_balanced
-from finance_app.services.receivable_service import (
-    link_receivable_lines,
-    create_manual_receivable,
-    resolve_receivable_scope,
-    serialize_receivable_line,
-    serialize_manual_receivable,
-)
-from finance_app.services.trial_balance_service import (
-    set_initialization as tb_set_initialization,
-    reset_data as tb_reset_data,
-    monthly as tb_monthly_service,
-    set_first_month as tb_set_first_month_service,
+from finance_app import LoanGroup, LoanGroupLink, current_user, db
+from finance_app.services.journal_service import (
+    JournalBalanceError,
+    JournalLinePayload,
+    _validate_balanced,
 )
 from finance_app.services.loan_group_service import (
     create_group as loan_group_create,
-    update_group as loan_group_update,
+)
+from finance_app.services.loan_group_service import (
     delete_group as loan_group_delete,
+)
+from finance_app.services.loan_group_service import (
     get_group as loan_group_get,
-    list_groups as loan_group_list,
+)
+from finance_app.services.loan_group_service import (
     group_summary as loan_group_summary,
+)
+from finance_app.services.loan_group_service import (
     link_journal_lines as loan_group_link_lines,
-    unlink as loan_group_unlink,
+)
+from finance_app.services.loan_group_service import (
     suggest_allocation,
 )
+from finance_app.services.loan_group_service import (
+    unlink as loan_group_unlink,
+)
+from finance_app.services.loan_group_service import (
+    update_group as loan_group_update,
+)
+from finance_app.services.receivable_service import (
+    create_manual_receivable,
+    link_receivable_lines,
+    resolve_receivable_scope,
+    serialize_manual_receivable,
+    serialize_receivable_line,
+)
+from finance_app.services.trial_balance_service import (
+    monthly as tb_monthly_service,
+)
+from finance_app.services.trial_balance_service import (
+    reset_data as tb_reset_data,
+)
+from finance_app.services.trial_balance_service import (
+    set_first_month as tb_set_first_month_service,
+)
+from finance_app.services.trial_balance_service import (
+    set_initialization as tb_set_initialization,
+)
+from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, session, url_for
+from sqlalchemy import func
 
 # We avoid importing from app at module import time to prevent circular imports.
 # Instead, import needed symbols inside route functions.
@@ -333,7 +354,16 @@ def _accumulate_contact_group(contact_groups, row):
 
 @accounting_bp.route('/accounting', methods=['GET'])
 def accounting():
-    from finance_app import db, Account, AccountCategory, Transaction, AccountOpeningBalance, TrialBalanceSetting, current_user, _get_csrf_token
+    from finance_app import (
+        Account,
+        AccountCategory,
+        AccountOpeningBalance,
+        Transaction,
+        TrialBalanceSetting,
+        _get_csrf_token,
+        current_user,
+        db,
+    )
     user = current_user()
     if not user:
         flash('Login required.')
@@ -415,7 +445,7 @@ def _format_journal_entries(entries):
     if not entries:
         return []
     try:
-        from finance_app import JournalLine, Account, _parse_date_tuple
+        from finance_app import Account, JournalLine, _parse_date_tuple
     except Exception:
         return []
     from collections import defaultdict
@@ -482,7 +512,7 @@ def _format_journal_entries(entries):
 
 @accounting_bp.route('/accounting/codes/refresh', methods=['POST'])
 def refresh_codes():
-    from finance_app import current_user, assign_codes_for_user
+    from finance_app import assign_codes_for_user, current_user
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -564,7 +594,7 @@ def move_account():
 
 @accounting_bp.route('/accounting/category/reorder', methods=['POST'])
 def reorder_categories():
-    from finance_app import db, AccountCategory, current_user
+    from finance_app import AccountCategory, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -582,7 +612,7 @@ def reorder_categories():
 
 @accounting_bp.route('/accounting/category/delete/<int:cat_id>', methods=['POST'])
 def delete_category(cat_id):
-    from finance_app import db, Account, AccountCategory, current_user
+    from finance_app import Account, AccountCategory, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -604,7 +634,7 @@ def delete_category(cat_id):
 
 @accounting_bp.route('/accounting/account/delete/<int:acc_id>', methods=['POST'])
 def delete_account(acc_id):
-    from finance_app import db, Account, AccountOpeningBalance, Transaction, current_user
+    from finance_app import Account, AccountOpeningBalance, Transaction, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -639,7 +669,7 @@ def bulk_set_currency():
     """Bulk-assign currency_code for selected accounts and auto-refresh codes.
     Body JSON: { account_ids: [int], currency_code: 'KRW' }
     """
-    from finance_app import current_user, db, Account
+    from finance_app import Account, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -672,7 +702,7 @@ def bulk_set_currency():
 
 @accounting_bp.route('/accounting/category/rename/<int:cat_id>', methods=['POST'])
 def rename_category(cat_id):
-    from finance_app import db, AccountCategory, current_user
+    from finance_app import AccountCategory, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -697,7 +727,7 @@ def rename_category(cat_id):
 
 @accounting_bp.route('/accounting/account/rename/<int:acc_id>', methods=['POST'])
 def rename_account(acc_id):
-    from finance_app import db, Account, Transaction, current_user, _account_sort_key
+    from finance_app import Account, Transaction, _account_sort_key, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -733,7 +763,7 @@ def rename_account(acc_id):
 
 @accounting_bp.route('/accounting/account/code/<int:acc_id>', methods=['POST'])
 def update_account_code(acc_id):
-    from finance_app import db, Account, current_user, _account_sort_key
+    from finance_app import Account, _account_sort_key, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -759,7 +789,7 @@ def set_category_group():
     """Assign or clear Trial Balance group for a folder (AccountCategory).
     JSON: { category_id: int, tb_group: 'asset'|'liability'|'equity'|'expense'|'income'|null }
     """
-    from finance_app import db, AccountCategory, current_user
+    from finance_app import AccountCategory, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -783,7 +813,7 @@ def set_category_group():
 
 @accounting_bp.route('/accounting/tb/opening_balance', methods=['POST'])
 def set_opening_balance():
-    from finance_app import db, Account, AccountOpeningBalance, current_user
+    from finance_app import Account, AccountOpeningBalance, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -883,8 +913,19 @@ def bulk_unassign_accounts():
 
 @accounting_bp.route('/accounting/receivables/data', methods=['GET'])
 def receivables_data():
-    from finance_app import current_user, db, JournalLine, JournalEntry, Account, ReceivableTracker, ReceivableManualEntry, TrialBalanceSetting, _parse_date_tuple, LoanGroup, LoanGroupLink
-    from sqlalchemy import or_, and_
+    from finance_app import (
+        Account,
+        JournalEntry,
+        JournalLine,
+        LoanGroup,
+        ReceivableManualEntry,
+        ReceivableTracker,
+        TrialBalanceSetting,
+        _parse_date_tuple,
+        current_user,
+        db,
+    )
+    from sqlalchemy import and_, or_
 
     user = current_user()
     if not user:
@@ -1125,7 +1166,16 @@ def receivables_data():
 
 @accounting_bp.route('/accounting/receivables/save', methods=['POST'])
 def receivables_save():
-    from finance_app import current_user, db, JournalLine, JournalEntry, Account, ReceivableTracker, ReceivableManualEntry, _parse_date_tuple
+    from finance_app import (
+        Account,
+        JournalEntry,
+        JournalLine,
+        ReceivableManualEntry,
+        ReceivableTracker,
+        _parse_date_tuple,
+        current_user,
+        db,
+    )
 
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
@@ -1244,7 +1294,7 @@ def receivables_save():
 
 @accounting_bp.route('/accounting/receivables/link', methods=['POST'])
 def receivables_link():
-    from finance_app import current_user, db, JournalLine, JournalEntry, Account, ReceivableTracker, _parse_date_tuple
+    from finance_app import Account, JournalEntry, JournalLine, current_user, db
 
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
@@ -1336,7 +1386,15 @@ def receivables_link():
 
 @accounting_bp.route('/accounting/receivables/delete', methods=['POST'])
 def receivables_delete():
-    from finance_app import current_user, db, JournalLine, JournalEntry, Account, ReceivableTracker, ReceivableManualEntry
+    from finance_app import (
+        Account,
+        JournalEntry,
+        JournalLine,
+        ReceivableManualEntry,
+        ReceivableTracker,
+        current_user,
+        db,
+    )
 
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
@@ -1406,8 +1464,7 @@ def receivables_delete():
 
 @accounting_bp.route('/accounting/receivables/create', methods=['POST'])
 def receivables_create():
-    from finance_app import current_user, db, Account, _parse_date_tuple
-    from finance_app.services.receivable_service import create_manual_receivable
+    from finance_app import Account, _parse_date_tuple, current_user, db
 
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
@@ -1794,7 +1851,7 @@ def loan_group_suggest():
     if strategy not in ('oldest-first', 'lowest-balance-first'):
         strategy = 'oldest-first'
 
-    from finance_app import JournalLine, JournalEntry, Account
+    from finance_app import Account, JournalEntry, JournalLine
     from finance_app.models.accounting_models import ReceivableTracker
 
     record = (
@@ -1862,7 +1919,7 @@ def tb_close_month():
     Body JSON: { ym: 'YYYY-MM' }
     Admin-only for now.
     """
-    from finance_app import current_user, db, AccountMonthlyBalance
+    from finance_app import AccountMonthlyBalance, current_user, db
     if not _check_csrf():
         return ("CSRF token missing or invalid", 400)
     user = current_user()
@@ -1873,7 +1930,6 @@ def tb_close_month():
     if not ym:
         return {'ok': False, 'error': 'ym required (YYYY-MM)'}, 400
     # Compute TB for the requested month within a request context so tb_monthly sees args
-    from flask import current_app
     with current_app.test_request_context(f"/accounting/tb/monthly?ym={ym}"):
         monthly = tb_monthly()
     if not isinstance(monthly, dict) or not monthly.get('ok', False):
@@ -1906,8 +1962,9 @@ def tb_close_month():
 @accounting_bp.route('/accounting/statement/data', methods=['GET'])
 def statement_data():
     """Return statement-ready data for the requested month."""
-    from finance_app import current_user
     import datetime as _dt
+
+    from finance_app import current_user
 
     user = current_user()
     if not user:
@@ -1972,10 +2029,10 @@ def statement_data():
             return {'ok': False, 'error': err}, 400
 
     from statements_pdf import (
-        build_income_statement_data,
+        _fmt,
         build_balance_sheet_data,
         build_cashflow_statement_data,
-        _fmt,
+        build_income_statement_data,
     )
 
     org = (request.args.get('org') or 'PALS Finance').strip() or 'PALS Finance'
@@ -2303,9 +2360,10 @@ def statement_data():
 @accounting_bp.route('/accounting/statement/export', methods=['GET'])
 def statement_export():
     """Export statement data as CSV or XLSX."""
-    from finance_app import current_user
     import csv
     import io
+
+    from finance_app import current_user
 
     user = current_user()
     if not user:
@@ -2448,10 +2506,11 @@ def statement_pdf():
       - logo: optional logo path/url
     Returns PDF, or HTML fallback if PDF rendering fails.
     """
-    from finance_app import current_user
-    from flask import send_file, Response
     import datetime as _dt
     from pathlib import Path
+
+    from finance_app import current_user
+    from flask import Response, send_file
 
     user = current_user()
     if not user:
@@ -2502,15 +2561,18 @@ def statement_pdf():
 
     try:
         if kind == 'income':
-            from statements_pdf import generate_income_statement_pdf, render_html as st_render_html, IS_TEMPLATE
+            from statements_pdf import IS_TEMPLATE, generate_income_statement_pdf
+            from statements_pdf import render_html as st_render_html
             generate_income_statement_pdf(monthly, org, start.isoformat(), end.isoformat(), out_path, logo)
             return send_file(str(out_path), as_attachment=True, download_name=f"income_statement_{ym}.pdf", mimetype='application/pdf')
         elif kind == 'balance':
-            from statements_pdf import generate_balance_sheet_pdf, render_html as st_render_html, BS_TEMPLATE
+            from statements_pdf import BS_TEMPLATE, generate_balance_sheet_pdf
+            from statements_pdf import render_html as st_render_html
             generate_balance_sheet_pdf(monthly, org, end.isoformat(), out_path, logo)
             return send_file(str(out_path), as_attachment=True, download_name=f"balance_sheet_{ym}.pdf", mimetype='application/pdf')
         elif kind == 'cashflow':
-            from statements_pdf import generate_cashflow_pdf, render_html as st_render_html, CF_TEMPLATE
+            from statements_pdf import CF_TEMPLATE, generate_cashflow_pdf
+            from statements_pdf import render_html as st_render_html
             generate_cashflow_pdf(
                 monthly,
                 org,
@@ -2528,7 +2590,8 @@ def statement_pdf():
         try:
             if kind == 'income':
                 # build HTML context quickly via generator helpers
-                from statements_pdf import generate_income_statement_pdf, render_html as st_render_html, IS_TEMPLATE
+                from statements_pdf import IS_TEMPLATE, generate_income_statement_pdf
+                from statements_pdf import render_html as st_render_html
                 # Recreate HTML context without writing PDF by calling rendering pipeline pieces
                 # Simpler: render template with naive context from monthly groups
                 rows = []
@@ -2544,7 +2607,8 @@ def statement_pdf():
                 html = st_render_html(IS_TEMPLATE, {'org': org, 'period': f"{start} to {end}", 'generated_at': _dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'rows': rows, 'totals': { 'revenue_fmt': f"₩ {rev_total:,.0f}", 'expense_fmt': f"₩ {exp_total:,.0f}", 'net_income_fmt': f"₩ {(rev_total-exp_total):,.0f}" }, 'logo': logo })
                 return Response(html, status=200, mimetype='text/html')
             if kind == 'balance':
-                from statements_pdf import render_html as st_render_html, BS_TEMPLATE
+                from statements_pdf import BS_TEMPLATE
+                from statements_pdf import render_html as st_render_html
                 rows = []
                 assets = liabilities = equity = 0.0
                 for item in (monthly.get('groups', {}).get('asset') or []):
@@ -2559,7 +2623,8 @@ def statement_pdf():
                 html = st_render_html(BS_TEMPLATE, {'org': org, 'period': f"As of {end}", 'period_end': f"{end}", 'generated_at': _dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'rows': rows, 'totals': {'assets_fmt': f"₩ {assets:,.0f}", 'liabilities_fmt': f"₩ {liabilities:,.0f}", 'equity_fmt': f"₩ {equity:,.0f}", 'le_sum_fmt': f"₩ {(liabilities+equity):,.0f}"}, 'logo': logo })
                 return Response(html, status=200, mimetype='text/html')
             if kind == 'cashflow':
-                from statements_pdf import render_html as st_render_html, CF_TEMPLATE
+                from statements_pdf import CF_TEMPLATE
+                from statements_pdf import render_html as st_render_html
                 opening = closing = 0.0
                 for item in (monthly.get('groups', {}).get('asset') or []):
                     name = (item.get('category_name') or item.get('name') or '').lower()
@@ -2626,7 +2691,7 @@ def update_journal_entry(entry_id):
         return ("CSRF token missing or invalid", 400)
     from finance_app import current_user, db, ensure_account
     try:
-        from finance_app import JournalEntry, JournalLine, Account, _parse_date_tuple
+        from finance_app import Account, JournalEntry, JournalLine, _parse_date_tuple
     except Exception:
         return {'ok': False, 'error': 'Journal model not available'}, 500
 
@@ -2647,7 +2712,7 @@ def update_journal_entry(entry_id):
         return {'ok': False, 'error': 'Invalid inputs'}, 400
 
     import datetime as _dt
-    from decimal import Decimal, ROUND_HALF_UP
+    from decimal import ROUND_HALF_UP, Decimal
 
     try:
         parsed = _dt.datetime.strptime(date_raw.replace('-', '/'), '%Y/%m/%d')
@@ -2743,10 +2808,11 @@ def tb_pdf():
       - logo: optional, path/URL to logo image
     Returns application/pdf.
     """
-    from finance_app import current_user
     import datetime as _dt
-    from flask import send_file
     from pathlib import Path
+
+    from finance_app import current_user
+    from flask import send_file
 
     user = current_user()
     if not user:
@@ -2811,7 +2877,7 @@ def tb_pdf():
 
     # Render PDF into memory
     try:
-        from trial_balance_pdf import generate_trial_balance_pdf, render_html, _prepare_rows, _format_amount
+        from trial_balance_pdf import _format_amount, _prepare_rows, generate_trial_balance_pdf, render_html
     except Exception as e:
         return { 'ok': False, 'error': f'PDF generator not available: {e}' }, 500
 
@@ -2838,7 +2904,7 @@ def tb_pdf():
             download_name=f"trial_balance_{ym}.pdf",
             mimetype='application/pdf'
         )
-    except Exception as e:
+    except Exception:
         # Fallback: serve HTML so the user can save/print to PDF (no banner)
         try:
             rows, totals_fmt, imbalance = _prepare_rows(data)
@@ -2890,7 +2956,7 @@ def delete_journal_entry(entry_id):
 
 @accounting_bp.route('/first_tb_month', methods=['GET'])
 def first_tb_month():
-    from finance_app import db, TrialBalanceSetting, current_user
+    from finance_app import TrialBalanceSetting, current_user
     user = current_user()
     if not user:
         return {"error": "User not authenticated."}, 401

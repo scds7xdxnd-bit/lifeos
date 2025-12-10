@@ -8,7 +8,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from src.common import settings
 from src.data.schema import (
     ALLOWED_MERCHANT_TYPES,

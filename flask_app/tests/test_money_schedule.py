@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
-from decimal import Decimal
 import os
 import shutil
 import tempfile
+from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -12,39 +12,37 @@ from sqlalchemy.exc import IntegrityError
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from finance_app import (
-    app,
-    db,
-    TrialBalanceSetting,
-    User,
+    Account,
+    AccountCategory,
+    AccountOpeningBalance,
     JournalEntry,
     JournalLine,
-    AccountCategory,
-    Account,
-    AccountOpeningBalance,
+    TrialBalanceSetting,
+    User,
+    app,
+    db,
 )
 from finance_app.models.money_schedule import (
-    MoneyScheduleRow,
     MoneyScheduleAssetInclude,
-    MoneyScheduleRecurringEvent,
-    MoneyScheduleScenarioRow,
-    MoneyScheduleScenario,
-    Setting,
     MoneyScheduleDailyBalance,
+    MoneyScheduleRecurringEvent,
+    MoneyScheduleRow,
+    MoneyScheduleScenario,
+    MoneyScheduleScenarioRow,
 )
 from finance_app.services.money_schedule_service import (
-    finance_apply_recurring_events,
     apply_recurring_events,
-    ensure_rows_between,
-    recompute_from,
-    create_scenario_from_window,
-    update_scenario_row,
-    quick_add_entry,
-    update_row_amounts,
     create_recurring_event,
-    update_recurring_event,
-    toggle_recurring_event,
+    create_scenario_from_window,
     delete_recurring_event,
     delete_scenario_for_user,
+    ensure_rows_between,
+    quick_add_entry,
+    recompute_from,
+    toggle_recurring_event,
+    update_recurring_event,
+    update_row_amounts,
+    update_scenario_row,
 )
 
 os.environ.setdefault("AUTO_CREATE_SCHEMA", "true")

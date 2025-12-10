@@ -6,10 +6,10 @@ Run:
   python3 scripts/smoke_test.py
 """
 from __future__ import annotations
-import sys
-from contextlib import contextmanager
+
 import os
 import sys
+from contextlib import contextmanager
 
 # Ensure ML is disabled for quick smoke runs
 os.environ.setdefault('DISABLE_ML', '1')

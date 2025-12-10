@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import pandas as pd
-
-from src.data.features import build_features as feature_module
 from src.data import schema
+from src.data.features import build_features as feature_module
 
 
 def test_feature_transformer_creates_expected_dimensions():

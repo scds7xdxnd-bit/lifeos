@@ -1,7 +1,13 @@
 from __future__ import annotations
-import json, joblib, click, pandas as pd
+
+import json
 from pathlib import Path
-from .features import prepare_dataframe, feature_target_split
+
+import click
+import joblib
+import pandas as pd
+
+from .features import feature_target_split, prepare_dataframe
 from .models import train_eval_pipeline
 
 
@@ -36,7 +42,6 @@ def train(input_path, outdir, fmt, min_class_count, currency, other_threshold):
     groups = df["Transaction_ID"]
     model, metrics = train_eval_pipeline(X, y, groups=groups, min_class_count=1) 
 
-    import json
     joblib.dump(model, out / "model.joblib")
     (out / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     (out / "schema.json").write_text(json.dumps({"feature_columns": list(X.columns)}, indent=2), encoding="utf-8")
@@ -51,9 +56,9 @@ def train(input_path, outdir, fmt, min_class_count, currency, other_threshold):
 @click.option("--out", "out_path", required=False, type=str, help="Where to write predictions (CSV). If omitted, prints head()")
 def predict(model_path, input_path, topk, out_path):
     """Score lines and return top-k account suggestions."""
+    import joblib
     import numpy as np
     import pandas as pd
-    import joblib
 
     model = joblib.load(model_path)
 
@@ -62,7 +67,7 @@ def predict(model_path, input_path, topk, out_path):
     df = pd.read_parquet(input_path) if fmt == "parquet" else pd.read_csv(input_path)
 
     # Prepare features (label column not required)
-    from .features import prepare_dataframe, feature_target_split
+    from .features import feature_target_split, prepare_dataframe
     df2 = prepare_dataframe(df.assign(Account_Name=df.get("Account_Name", "")))
     X, _ = feature_target_split(df2)
 

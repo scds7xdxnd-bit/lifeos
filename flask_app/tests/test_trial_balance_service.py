@@ -4,14 +4,20 @@ import datetime as _dt
 import os
 
 import pytest
-
-from finance_app import create_app, db, User
-from finance_app.models.accounting_models import Account, AccountCategory, AccountOpeningBalance, TrialBalanceSetting, JournalEntry, JournalLine
+from finance_app import User, create_app, db
+from finance_app.models.accounting_models import (
+    Account,
+    AccountCategory,
+    AccountOpeningBalance,
+    JournalEntry,
+    JournalLine,
+    TrialBalanceSetting,
+)
 from finance_app.services.trial_balance_service import (
-    set_initialization,
+    monthly,
     reset_data,
     set_first_month,
-    monthly,
+    set_initialization,
 )
 
 os.environ.setdefault("AUTO_CREATE_SCHEMA", "true")

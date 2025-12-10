@@ -1,15 +1,16 @@
 from __future__ import annotations
+
+from typing import Dict, List, Tuple
+
 import pandas as pd
-import numpy as np
-from typing import List, Dict, Tuple
 from dateutil.parser import parse as dtparse
 
 from .utils import (
-    stable_txn_id,
-    safe_float,
-    isclose,
     detect_currency_pairs,
+    isclose,
     normalize_line_type_any_currency,
+    safe_float,
+    stable_txn_id,
 )
 
 BASE_REQUIRED = ["Date", "Affected Accounts", "Transaction Description"]

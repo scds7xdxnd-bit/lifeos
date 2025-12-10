@@ -1,10 +1,9 @@
 import pytest
-from flask import Flask
-
 from finance_app import db
 from finance_app.models.accounting_models import Transaction
 from finance_app.models.user_models import User
 from finance_app.services.transaction_service import delete_transaction_for_user
+from flask import Flask
 
 
 @pytest.fixture()

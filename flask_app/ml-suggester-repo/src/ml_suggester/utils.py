@@ -1,7 +1,8 @@
 from __future__ import annotations
-from uuid import UUID, uuid5
-from typing import Optional, Tuple, List
+
 import re
+from typing import List, Optional, Tuple
+from uuid import UUID, uuid5
 
 TXN_NS = UUID("12345678-1234-5678-1234-567812345678")  # deterministic namespace
 

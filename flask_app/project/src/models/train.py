@@ -15,10 +15,10 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 
-from ..data.features import build_features as feature_module
-from ..data import preprocess, schema, split
-from ..data.loaders import load_csv
 from ..common import settings
+from ..data import preprocess, schema, split
+from ..data.features import build_features as feature_module
+from ..data.loaders import load_csv
 from . import registry
 
 
