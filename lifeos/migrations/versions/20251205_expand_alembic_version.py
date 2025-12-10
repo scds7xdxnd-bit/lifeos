@@ -10,6 +10,7 @@ revision = "20251205_expand_alembic_version"
 down_revision = "20251205_skills_initial_schema"
 branch_labels = None
 depends_on = None
+TWO_PHASE = True
 
 
 def upgrade() -> None:
