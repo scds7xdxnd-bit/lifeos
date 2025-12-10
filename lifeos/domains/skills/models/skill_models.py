@@ -6,10 +6,11 @@ from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from lifeos.extensions import db
+
+
 # Forward decl to satisfy type checkers; actual class imported via relationship resolution.
 class SkillMetric: ...
-
-from lifeos.extensions import db
 
 
 class Skill(db.Model):

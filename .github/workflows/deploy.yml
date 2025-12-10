@@ -1,3 +1,9 @@
+name: Deploy (Manual)
+
+on:
+  workflow_dispatch:
+    inputs: {}
+
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest

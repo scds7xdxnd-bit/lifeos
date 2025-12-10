@@ -30,9 +30,14 @@ def apply_rules(event: EventRecord) -> List[dict]:
                 insights.append(
                     {
                         "type": "finance_sleep_spend",
-                        "message": "High spending while sleep is low. Consider pausing major purchases after short sleep.",
+                        "message": (
+                            "High spending while sleep is low. Consider pausing major purchases after short sleep."
+                        ),
                         "severity": "warning",
-                        "context": {"amount": amount, "recent_sleep_events": len(sleep_events)},
+                        "context": {
+                            "amount": amount,
+                            "recent_sleep_events": len(sleep_events),
+                        },
                     }
                 )
 
@@ -44,7 +49,9 @@ def apply_rules(event: EventRecord) -> List[dict]:
             insights.append(
                 {
                     "type": "habit_project_synergy",
-                    "message": "Strong habit streak alongside task completions. Keep the routine to sustain project velocity.",
+                    "message": (
+                        "Strong habit streak alongside task completions. Keep the routine to sustain project velocity."
+                    ),
                     "severity": "info",
                     "context": {"max_streak": max(streaks), "tasks_completed": 1},
                 }
@@ -58,7 +65,9 @@ def apply_rules(event: EventRecord) -> List[dict]:
             insights.append(
                 {
                     "type": "skill_mood_uplift",
-                    "message": "Practice sessions follow low-mood journal entries. Track whether practice improves mood.",
+                    "message": (
+                        "Practice sessions follow low-mood journal entries. Track whether practice improves mood."
+                    ),
                     "severity": "info",
                     "context": {"journal_moods": moods},
                 }

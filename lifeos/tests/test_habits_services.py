@@ -317,7 +317,10 @@ class TestStreakCalculation:
             # Log for 10 consecutive days with values
             for i in range(10):
                 log_habit_completion(
-                    test_user.id, habit.id, logged_date=today - timedelta(days=i), value=1.5
+                    test_user.id,
+                    habit.id,
+                    logged_date=today - timedelta(days=i),
+                    value=1.5,
                 )
 
             stats = compute_habit_stats(test_user.id, habit.id, window_days=30)
@@ -348,9 +351,7 @@ class TestHabitHistory:
                 log_habit_completion(test_user.id, habit.id, logged_date=today - timedelta(days=i))
 
             # Get last 7 days
-            history = get_habit_history(
-                test_user.id, habit.id, start=today - timedelta(days=7), end=today
-            )
+            history = get_habit_history(test_user.id, habit.id, start=today - timedelta(days=7), end=today)
 
             assert len(history) == 8  # 7 days inclusive
 
@@ -461,9 +462,7 @@ class TestHabitEventEmission:
 
             create_habit(test_user.id, name="Event Habit")
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.created"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.created").count()
 
             assert final_count == initial_count + 1
 
@@ -480,9 +479,7 @@ class TestHabitEventEmission:
 
             update_habit(test_user.id, habit.id, description="Updated")
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.updated"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.updated").count()
 
             assert final_count == initial_count + 1
 
@@ -518,9 +515,7 @@ class TestHabitEventEmission:
 
             delete_habit(test_user.id, habit.id)
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.deleted"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.deleted").count()
 
             assert final_count == initial_count + 1
 
@@ -537,9 +532,7 @@ class TestHabitEventEmission:
 
             log_habit_completion(test_user.id, habit.id)
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.logged"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.logged").count()
 
             assert final_count == initial_count + 1
 

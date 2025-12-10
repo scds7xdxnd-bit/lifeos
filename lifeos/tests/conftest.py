@@ -12,9 +12,16 @@ from lifeos.extensions import db
 from lifeos.core.auth import models as auth_models
 from lifeos.core.users import models as user_models
 from lifeos.core.events import event_models
-from lifeos.domains.finance.models import accounting_models, schedule_models, receivable_models
+from lifeos.domains.finance.models import (
+    accounting_models,
+    schedule_models,
+    receivable_models,
+)
 from lifeos.domains.habits.models import habit
-from lifeos.domains.skills.models.skill_models import Skill as skill, PracticeSession as practice_session
+from lifeos.domains.skills.models.skill_models import (
+    Skill as skill,
+    PracticeSession as practice_session,
+)
 from lifeos.domains.skills.models import skill_metric
 from lifeos.domains.health.models import biometrics, workout, nutrition
 from lifeos.domains.journal.models import journal_entry

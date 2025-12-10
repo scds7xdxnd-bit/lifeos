@@ -37,7 +37,7 @@ class DomainAdapter(ABC):
     ) -> Optional[int]:
         """
         Create an inferred record in the domain.
-        
+
         Returns record ID or None if creation failed.
         """
         raise NotImplementedError

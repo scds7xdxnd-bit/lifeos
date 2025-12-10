@@ -37,7 +37,7 @@ def create_calendar_event(
 ) -> CalendarEvent:
     """
     Create a new calendar event.
-    
+
     Emits calendar.event.created event for interpreter processing.
     """
     title = (title or "").strip()
@@ -100,7 +100,7 @@ def update_calendar_event(
 ) -> CalendarEvent:
     """
     Update an existing calendar event.
-    
+
     Emits calendar.event.updated event for interpreter re-processing.
     """
     event = CalendarEvent.query.filter_by(id=event_id, user_id=user_id).first()
@@ -180,7 +180,7 @@ def update_calendar_event(
 def delete_calendar_event(user_id: int, event_id: int) -> None:
     """
     Delete a calendar event and its interpretations.
-    
+
     Emits calendar.event.deleted event.
     """
     event = CalendarEvent.query.filter_by(id=event_id, user_id=user_id).first()
@@ -216,7 +216,7 @@ def list_calendar_events(
 ) -> List[CalendarEvent]:
     """
     List calendar events with optional filters.
-    
+
     Returns events ordered by start_time descending.
     """
     query = CalendarEvent.query.filter(CalendarEvent.user_id == user_id)
@@ -228,12 +228,7 @@ def list_calendar_events(
     if source:
         query = query.filter(CalendarEvent.source == source)
 
-    return (
-        query.order_by(CalendarEvent.start_time.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEvent.start_time.desc()).offset(offset).limit(limit).all()
 
 
 def get_pending_interpretations(
@@ -253,12 +248,7 @@ def get_pending_interpretations(
     if domain:
         query = query.filter(CalendarEventInterpretation.domain == domain)
 
-    return (
-        query.order_by(CalendarEventInterpretation.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEventInterpretation.created_at.desc()).offset(offset).limit(limit).all()
 
 
 def update_interpretation_status(
@@ -269,15 +259,13 @@ def update_interpretation_status(
 ) -> CalendarEventInterpretation:
     """
     Update interpretation status (confirm, reject, ignore).
-    
+
     Emits appropriate event based on new status.
     """
     if status not in {"confirmed", "rejected", "ignored"}:
         raise ValueError("invalid_status")
 
-    interpretation = CalendarEventInterpretation.query.filter_by(
-        id=interpretation_id, user_id=user_id
-    ).first()
+    interpretation = CalendarEventInterpretation.query.filter_by(id=interpretation_id, user_id=user_id).first()
     if not interpretation:
         raise ValueError("not_found")
 

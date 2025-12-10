@@ -21,7 +21,9 @@ class Role(db.Model, TimestampMixin):
     name: Mapped[str] = mapped_column(db.String(64), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(db.String(255), default="")
 
-    permissions: Mapped[list["Permission"]] = relationship("Permission", secondary="role_permission", back_populates="roles")
+    permissions: Mapped[list["Permission"]] = relationship(
+        "Permission", secondary="role_permission", back_populates="roles"
+    )
 
 
 class Permission(db.Model, TimestampMixin):

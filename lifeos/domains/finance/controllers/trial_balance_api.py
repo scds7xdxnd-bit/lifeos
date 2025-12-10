@@ -6,7 +6,10 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
-from lifeos.domains.finance.schemas.finance_schemas import PeriodBalanceFilter, TrialBalanceFilter
+from lifeos.domains.finance.schemas.finance_schemas import (
+    PeriodBalanceFilter,
+    TrialBalanceFilter,
+)
 from lifeos.domains.finance.services import trial_balance_service
 
 trial_balance_api_bp = Blueprint("trial_balance_api", __name__)
@@ -19,10 +22,19 @@ def trial_balance():
     try:
         data = TrialBalanceFilter.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     result = trial_balance_service.trial_balance_view(user_id, as_of=data.as_of)
-    return jsonify({"ok": True, "accounts": result.get("accounts", []), "categories": result.get("categories", [])})
+    return jsonify(
+        {
+            "ok": True,
+            "accounts": result.get("accounts", []),
+            "categories": result.get("categories", []),
+        }
+    )
 
 
 @trial_balance_api_bp.get("/trial_balance/period")
@@ -32,7 +44,10 @@ def period_balance():
     try:
         data = PeriodBalanceFilter.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     totals = trial_balance_service.period_balance(user_id, start_date=data.start, end_date=data.end)
     return jsonify({"ok": True, "totals": totals})

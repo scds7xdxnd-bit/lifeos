@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from flask_login import UserMixin
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from lifeos.extensions import db
 
@@ -25,7 +25,9 @@ class User(db.Model, TimestampMixin, UserMixin):
     timezone: Mapped[str | None] = mapped_column(db.String(64))
     is_active: Mapped[bool] = mapped_column(default=True)
 
-    preferences: Mapped[list["UserPreference"]] = relationship("UserPreference", back_populates="user", cascade="all, delete-orphan")
+    preferences: Mapped[list["UserPreference"]] = relationship(
+        "UserPreference", back_populates="user", cascade="all, delete-orphan"
+    )
     roles = relationship("Role", secondary="user_role", backref="users", lazy="joined")
 
     @property

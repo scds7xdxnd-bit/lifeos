@@ -32,7 +32,10 @@ def import_preview():
     except ValueError:
         return jsonify({"ok": False, "error": "validation_error"}), 400
     except Exception as exc:
-        return jsonify({"ok": False, "error": "import_failed", "details": str(exc)}), 400
+        return (
+            jsonify({"ok": False, "error": "import_failed", "details": str(exc)}),
+            400,
+        )
 
 
 @import_api_bp.post("/import/commit")
@@ -50,4 +53,7 @@ def import_commit():
     except ValueError:
         return jsonify({"ok": False, "error": "validation_error"}), 400
     except Exception as exc:
-        return jsonify({"ok": False, "error": "import_failed", "details": str(exc)}), 400
+        return (
+            jsonify({"ok": False, "error": "import_failed", "details": str(exc)}),
+            400,
+        )

@@ -36,7 +36,10 @@ def create_skill_endpoint():
     try:
         data = SkillCreate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     try:
         skill = create_skill(user_id=user_id, **data.model_dump())
@@ -75,9 +78,16 @@ def update_skill_endpoint(skill_id: int):
     try:
         data = SkillUpdate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
-    skill = update_skill(user_id, skill_id, **{k: v for k, v in data.model_dump().items() if v is not None})
+    skill = update_skill(
+        user_id,
+        skill_id,
+        **{k: v for k, v in data.model_dump().items() if v is not None},
+    )
     if not skill:
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True})
@@ -102,7 +112,10 @@ def log_practice_endpoint(skill_id: int):
     try:
         data = PracticeSessionCreate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     try:
         session = log_practice_session(user_id, skill_id, **data.model_dump())
@@ -122,9 +135,16 @@ def update_practice_endpoint(session_id: int):
     try:
         data = PracticeSessionUpdate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
-    session = update_practice_session(user_id, session_id, **{k: v for k, v in data.model_dump().items() if v is not None})
+    session = update_practice_session(
+        user_id,
+        session_id,
+        **{k: v for k, v in data.model_dump().items() if v is not None},
+    )
     if not session:
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True, "session": map_session_response(session).model_dump()})

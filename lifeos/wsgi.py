@@ -15,9 +15,13 @@ if str(PARENT) not in sys.path:
 if str(ROOT) in sys.path:
     sys.path.remove(str(ROOT))
 
-from lifeos import create_app
+from lifeos import create_app  # noqa: E402
 
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
+    import os
+
+    host = os.environ.get("FLASK_RUN_HOST", "127.0.0.1")
+    port = int(os.environ.get("FLASK_RUN_PORT", "5001"))
+    app.run(host=host, port=port)  # nosec B104

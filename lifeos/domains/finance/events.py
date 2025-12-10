@@ -155,4 +155,3 @@ __all__ = [
     "FINANCE_ML_SUGGEST_ACCOUNTS",
     "FINANCE_ML_FEEDBACK",
 ]
-

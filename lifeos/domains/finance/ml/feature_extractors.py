@@ -16,4 +16,3 @@ def extract_transaction_features(payload: Dict) -> Dict[str, float]:
     if payload.get("counterparty"):
         features["has_counterparty"] = 1.0
     return features
-

@@ -81,10 +81,7 @@ class TestAccountSearchEndpoint:
 
     def test_search_with_valid_query(self, client, auth_headers, setup_test_data):
         """Test searching accounts with valid query."""
-        response = client.get(
-            "/api/finance/accounts/search?q=savings&limit=20",
-            headers=auth_headers
-        )
+        response = client.get("/api/finance/accounts/search?q=savings&limit=20", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.get_json()
@@ -108,20 +105,14 @@ class TestAccountSearchEndpoint:
 
     def test_search_query_too_long(self, client, auth_headers):
         """Test search with oversized query returns error."""
-        response = client.get(
-            f"/api/finance/accounts/search?q={'x' * 101}",
-            headers=auth_headers
-        )
+        response = client.get(f"/api/finance/accounts/search?q={'x' * 101}", headers=auth_headers)
         assert response.status_code == 400
         data = response.get_json()
         assert data["ok"] is False
 
     def test_search_respects_limit(self, client, auth_headers, setup_test_data):
         """Test that search respects limit parameter."""
-        response = client.get(
-            "/api/finance/accounts/search?q=a&limit=1",
-            headers=auth_headers
-        )
+        response = client.get("/api/finance/accounts/search?q=a&limit=1", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.get_json()

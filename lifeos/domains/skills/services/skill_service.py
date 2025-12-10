@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func
 
 from lifeos.domains.skills.events import (
     SKILLS_PRACTICE_LOGGED,
@@ -14,8 +14,8 @@ from lifeos.domains.skills.events import (
     SKILLS_SKILL_UPDATED,
 )
 from lifeos.domains.skills.models.skill_models import PracticeSession, Skill
-from lifeos.platform.outbox import enqueue as enqueue_outbox
 from lifeos.extensions import db
+from lifeos.platform.outbox import enqueue as enqueue_outbox
 
 
 def create_skill(
@@ -74,7 +74,15 @@ def update_skill(user_id: int, skill_id: int, **fields) -> Optional[Skill]:
         return None
 
     changed_fields: Dict[str, object] = {}
-    for key in ("name", "category", "difficulty", "target_level", "current_level", "description", "tags"):
+    for key in (
+        "name",
+        "category",
+        "difficulty",
+        "target_level",
+        "current_level",
+        "description",
+        "tags",
+    ):
         if key in fields:
             val = fields[key]
             if isinstance(val, str):
@@ -88,7 +96,7 @@ def update_skill(user_id: int, skill_id: int, **fields) -> Optional[Skill]:
             "skill_id": skill.id,
             "user_id": user_id,
             "fields": changed_fields,
-            "updated_at": skill.updated_at.isoformat() if skill.updated_at else datetime.utcnow().isoformat(),
+            "updated_at": (skill.updated_at.isoformat() if skill.updated_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )
@@ -195,13 +203,7 @@ def get_skill_summary(user_id: int, skill_id: int, recent_limit: int = 10) -> Op
 
 
 def list_skills_with_aggregates(user_id: int, limit: int = 50, offset: int = 0) -> List[dict]:
-    skills = (
-        Skill.query.filter_by(user_id=user_id)
-        .order_by(Skill.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    skills = Skill.query.filter_by(user_id=user_id).order_by(Skill.created_at.desc()).offset(offset).limit(limit).all()
     skill_ids = [s.id for s in skills]
     aggregates = _aggregate_sessions(user_id, skill_ids)
 
@@ -249,14 +251,20 @@ def _aggregate_sessions(user_id: int, skill_ids: List[int]) -> Dict[int, dict]:
         .group_by(PracticeSession.skill_id)
         .all()
     )
-    aggregates = {row.skill_id: {
-        "total_minutes": int(row.total_minutes or 0),
-        "session_count": int(row.session_count or 0),
-        "last_practiced_at": row.last_practiced_at,
-    } for row in base}
+    aggregates = {
+        row.skill_id: {
+            "total_minutes": int(row.total_minutes or 0),
+            "session_count": int(row.session_count or 0),
+            "last_practiced_at": row.last_practiced_at,
+        }
+        for row in base
+    }
 
     # last 7 / 30 day counts
-    for window, key in ((seven_days, "sessions_last_7"), (thirty_days, "sessions_last_30")):
+    for window, key in (
+        (seven_days, "sessions_last_7"),
+        (thirty_days, "sessions_last_30"),
+    ):
         rows = (
             db.session.query(
                 PracticeSession.skill_id,
@@ -269,7 +277,10 @@ def _aggregate_sessions(user_id: int, skill_ids: List[int]) -> Dict[int, dict]:
             .all()
         )
         for row in rows:
-            aggregates.setdefault(row.skill_id, {"total_minutes": 0, "session_count": 0, "last_practiced_at": None})
+            aggregates.setdefault(
+                row.skill_id,
+                {"total_minutes": 0, "session_count": 0, "last_practiced_at": None},
+            )
             aggregates[row.skill_id][key] = int(row.count or 0)
         for sid in skill_ids:
             aggregates.setdefault(sid, {"total_minutes": 0, "session_count": 0, "last_practiced_at": None})

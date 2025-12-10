@@ -222,7 +222,7 @@ def test_habit_detail_other_user_not_visible(app, client):
             )
         )
         tokens1 = issue_tokens(user1)
-        
+
         user2 = create_user(
             UserCreateRequest(
                 email="user2-habits@example.com",
@@ -434,7 +434,11 @@ def test_update_log_success(app, client, user_with_tokens):
     resp = client.post("/api/habits", json=payload, headers=headers)
     habit_id = resp.get_json()["habit_id"]
 
-    log_payload = {"logged_date": date.today().isoformat(), "value": 1, "note": "Original"}
+    log_payload = {
+        "logged_date": date.today().isoformat(),
+        "value": 1,
+        "note": "Original",
+    }
     resp = client.post(f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers)
     log_id = resp.get_json()["log"]["id"]
 

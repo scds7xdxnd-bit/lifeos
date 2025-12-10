@@ -4,16 +4,19 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import date
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from lifeos.domains.finance.events import (
     FINANCE_SCHEDULE_CREATED,
-    FINANCE_SCHEDULE_UPDATED,
     FINANCE_SCHEDULE_DELETED,
     FINANCE_SCHEDULE_RECOMPUTED,
+    FINANCE_SCHEDULE_UPDATED,
 )
 from lifeos.domains.finance.models.accounting_models import Account
-from lifeos.domains.finance.models.schedule_models import MoneyScheduleDailyBalance, MoneyScheduleRow
+from lifeos.domains.finance.models.schedule_models import (
+    MoneyScheduleDailyBalance,
+    MoneyScheduleRow,
+)
 from lifeos.extensions import db
 from lifeos.platform.outbox import enqueue as enqueue_outbox
 
@@ -24,14 +27,32 @@ def _validate_account(user_id: int, account_id: int) -> None:
         raise ValueError("not_found")
 
 
-def add_schedule_row(user_id: int, account_id: int, event_date: date, amount: float, memo: str | None = None) -> MoneyScheduleRow:
+def add_schedule_row(
+    user_id: int,
+    account_id: int,
+    event_date: date,
+    amount: float,
+    memo: str | None = None,
+) -> MoneyScheduleRow:
     _validate_account(user_id, account_id)
-    row = MoneyScheduleRow(user_id=user_id, account_id=account_id, event_date=event_date, amount=amount, memo=memo)
+    row = MoneyScheduleRow(
+        user_id=user_id,
+        account_id=account_id,
+        event_date=event_date,
+        amount=amount,
+        memo=memo,
+    )
     db.session.add(row)
     db.session.flush()
     enqueue_outbox(
         FINANCE_SCHEDULE_CREATED,
-        {"row_id": row.id, "user_id": user_id, "amount": float(amount), "account_id": account_id, "event_date": event_date.isoformat()},
+        {
+            "row_id": row.id,
+            "user_id": user_id,
+            "amount": float(amount),
+            "account_id": account_id,
+            "event_date": event_date.isoformat(),
+        },
         user_id=user_id,
     )
     db.session.commit()
@@ -73,7 +94,11 @@ def delete_schedule_row(user_id: int, row_id: int) -> bool:
     if not row:
         return False
     db.session.delete(row)
-    enqueue_outbox(FINANCE_SCHEDULE_DELETED, {"row_id": row_id, "user_id": user_id}, user_id=user_id)
+    enqueue_outbox(
+        FINANCE_SCHEDULE_DELETED,
+        {"row_id": row_id, "user_id": user_id},
+        user_id=user_id,
+    )
     db.session.commit()
     return True
 
@@ -92,5 +117,9 @@ def recompute_daily_balances(user_id: int) -> Dict[str, float]:
     for date_str, amount in totals.items():
         db.session.add(MoneyScheduleDailyBalance(user_id=user_id, as_of=date.fromisoformat(date_str), balance=amount))
     db.session.commit()
-    enqueue_outbox(FINANCE_SCHEDULE_RECOMPUTED, {"user_id": user_id, "days": len(totals)}, user_id=user_id)
+    enqueue_outbox(
+        FINANCE_SCHEDULE_RECOMPUTED,
+        {"user_id": user_id, "days": len(totals)},
+        user_id=user_id,
+    )
     return totals

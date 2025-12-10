@@ -15,4 +15,3 @@ habit_pages_bp = Blueprint("habit_pages", __name__)
 def list_habits():
     habits = Habit.query.all()
     return render_template("habits/index.html", habits=habits)
-

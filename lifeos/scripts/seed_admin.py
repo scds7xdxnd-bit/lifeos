@@ -47,7 +47,11 @@ def seed_roles_and_permissions() -> None:
 def seed_admin_user(email: str, password: str, full_name: str | None = None) -> User:
     user = User.query.filter_by(email=email).first()
     if not user:
-        user = User(email=email, full_name=full_name or "Admin", password_hash=hash_password(password))
+        user = User(
+            email=email,
+            full_name=full_name or "Admin",
+            password_hash=hash_password(password),
+        )
         db.session.add(user)
         db.session.flush()
     # attach admin role

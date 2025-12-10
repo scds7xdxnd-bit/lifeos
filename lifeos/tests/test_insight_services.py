@@ -5,7 +5,11 @@ pytestmark = [pytest.mark.integration, pytest.mark.ml]
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
-from lifeos.core.insights.services import fetch_insights, persist_insights, recent_events
+from lifeos.core.insights.services import (
+    fetch_insights,
+    persist_insights,
+    recent_events,
+)
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.extensions import db
@@ -22,7 +26,11 @@ def _create_user(email: str = "insight-service@example.com"):
     )
 
 
-def _create_event(user, event_type: str = "finance.transaction.created", created_at: datetime | None = None):
+def _create_event(
+    user,
+    event_type: str = "finance.transaction.created",
+    created_at: datetime | None = None,
+):
     event = EventRecord(
         event_type=event_type,
         payload={"source": "tests"},
@@ -41,7 +49,12 @@ def test_persist_insights_saves_records_with_defaults(app):
 
         insights = [
             {"message": "first insight"},
-            {"type": "alert", "message": "second insight", "severity": "warning", "context": {"foo": "bar"}},
+            {
+                "type": "alert",
+                "message": "second insight",
+                "severity": "warning",
+                "context": {"foo": "bar"},
+            },
         ]
 
         saved = persist_insights(insights, event)
@@ -117,7 +130,15 @@ def test_recent_events_filters_by_user_type_and_time_window(app):
             user_id=other_user.id,
             created_at=now - timedelta(days=1),
         )
-        db.session.add_all([matching_recent, matching_latest, matching_old, other_type, other_user_event])
+        db.session.add_all(
+            [
+                matching_recent,
+                matching_latest,
+                matching_old,
+                other_type,
+                other_user_event,
+            ]
+        )
         db.session.commit()
 
         results = recent_events(user.id, ["finance.transaction.created"], days=7, limit=5)

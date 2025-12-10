@@ -12,4 +12,3 @@ def estimate_risk(biometrics: Dict[str, float]) -> str:
     if score > 200:
         return "medium"
     return "low"
-

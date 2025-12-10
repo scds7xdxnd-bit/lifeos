@@ -9,8 +9,8 @@ from sqlalchemy import func
 
 from lifeos.domains.habits.events import (
     HABITS_HABIT_CREATED,
-    HABITS_HABIT_DELETED,
     HABITS_HABIT_DEACTIVATED,
+    HABITS_HABIT_DELETED,
     HABITS_HABIT_LOGGED,
     HABITS_HABIT_UPDATED,
 )
@@ -74,7 +74,16 @@ def update_habit(user_id: int, habit_id: int, **fields) -> Optional[Habit]:
     if not habit:
         return None
 
-    allowed = ("name", "description", "domain_link", "schedule_type", "target_count", "time_of_day", "difficulty", "is_active")
+    allowed = (
+        "name",
+        "description",
+        "domain_link",
+        "schedule_type",
+        "target_count",
+        "time_of_day",
+        "difficulty",
+        "is_active",
+    )
     changed: Dict[str, object] = {}
     for key in allowed:
         if key in fields:
@@ -89,7 +98,7 @@ def update_habit(user_id: int, habit_id: int, **fields) -> Optional[Habit]:
             "habit_id": habit.id,
             "user_id": user_id,
             "fields": changed,
-            "updated_at": habit.updated_at.isoformat() if habit.updated_at else datetime.utcnow().isoformat(),
+            "updated_at": (habit.updated_at.isoformat() if habit.updated_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )
@@ -104,7 +113,11 @@ def deactivate_habit(user_id: int, habit_id: int) -> Optional[Habit]:
     habit.is_active = False
     enqueue_outbox(
         HABITS_HABIT_DEACTIVATED,
-        {"habit_id": habit.id, "user_id": user_id, "deactivated_at": datetime.utcnow().isoformat()},
+        {
+            "habit_id": habit.id,
+            "user_id": user_id,
+            "deactivated_at": datetime.utcnow().isoformat(),
+        },
         user_id=user_id,
     )
     db.session.commit()
@@ -118,7 +131,11 @@ def delete_habit(user_id: int, habit_id: int) -> bool:
     db.session.delete(habit)
     enqueue_outbox(
         HABITS_HABIT_DELETED,
-        {"habit_id": habit_id, "user_id": user_id, "deleted_at": datetime.utcnow().isoformat()},
+        {
+            "habit_id": habit_id,
+            "user_id": user_id,
+            "deleted_at": datetime.utcnow().isoformat(),
+        },
         user_id=user_id,
     )
     db.session.commit()
@@ -195,10 +212,7 @@ def delete_habit_log(user_id: int, log_id: int) -> bool:
 
 def get_today_habits(user_id: int, today: date) -> List[dict]:
     habits = Habit.query.filter_by(user_id=user_id, is_active=True).all()
-    log_map = {
-        log.habit_id: log
-        for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()
-    }
+    log_map = {log.habit_id: log for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()}
     payload = []
     for habit in habits:
         log = log_map.get(habit.id)
@@ -250,9 +264,7 @@ def compute_habit_stats(user_id: int, habit_id: int, window_days: int = 30) -> d
 
 def compute_streak(habit: Habit) -> int:
     logs = (
-        HabitLog.query.filter_by(habit_id=habit.id, user_id=habit.user_id)
-        .order_by(HabitLog.logged_date.desc())
-        .all()
+        HabitLog.query.filter_by(habit_id=habit.id, user_id=habit.user_id).order_by(HabitLog.logged_date.desc()).all()
     )
     current, _ = _streaks(logs)
     return current
@@ -285,12 +297,15 @@ def list_habits(user_id: int) -> List[dict]:
         .group_by(HabitLog.habit_id)
         .all()
     )
-    stats_by_id = {row.habit_id: {"count": int(row.count or 0), "last_logged_date": row.last_logged_date} for row in log_counts}
-    today = date.today()
-    today_logs = {
-        log.habit_id: log
-        for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()
+    stats_by_id = {
+        row.habit_id: {
+            "count": int(row.count or 0),
+            "last_logged_date": row.last_logged_date,
+        }
+        for row in log_counts
     }
+    today = date.today()
+    today_logs = {log.habit_id: log for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()}
 
     payload = []
     for habit in habits:

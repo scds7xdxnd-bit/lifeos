@@ -631,13 +631,13 @@ class TestCalendarEventDatabaseIntegration:
     def test_ordering_by_start_time(self, app, multiple_events, test_user):
         """Test events can be ordered by start_time."""
         with app.app_context():
-            ascending = CalendarEvent.query.filter_by(
-                user_id=test_user.id
-            ).order_by(CalendarEvent.start_time.asc()).all()
+            ascending = (
+                CalendarEvent.query.filter_by(user_id=test_user.id).order_by(CalendarEvent.start_time.asc()).all()
+            )
 
-            descending = CalendarEvent.query.filter_by(
-                user_id=test_user.id
-            ).order_by(CalendarEvent.start_time.desc()).all()
+            descending = (
+                CalendarEvent.query.filter_by(user_id=test_user.id).order_by(CalendarEvent.start_time.desc()).all()
+            )
 
             assert ascending[0].start_time <= ascending[-1].start_time
             assert descending[0].start_time >= descending[-1].start_time
@@ -1196,9 +1196,7 @@ class TestCalendarEventIsolation:
             db.session.commit()
 
             # Query as second_user should return nothing
-            events = CalendarEvent.query.filter_by(
-                user_id=second_user.id
-            ).all()
+            events = CalendarEvent.query.filter_by(user_id=second_user.id).all()
 
             assert len(events) == 0
             assert not any(e.id == event.id for e in events)
@@ -1226,9 +1224,7 @@ class TestCalendarEventIsolation:
             db.session.commit()
 
             # Query as second_user should return nothing
-            interpretations = CalendarEventInterpretation.query.filter_by(
-                user_id=second_user.id
-            ).all()
+            interpretations = CalendarEventInterpretation.query.filter_by(user_id=second_user.id).all()
 
             assert len(interpretations) == 0
 
@@ -1359,10 +1355,10 @@ class TestCalendarSchemaValidation:
 class TestCalendarAPIInvalidIds:
     """
     Tests for API endpoints with invalid event IDs.
-    
+
     These tests document the expected behavior when the frontend passes
     invalid IDs like 'null', empty strings, or non-numeric values.
-    
+
     Bug context: Frontend was observed calling GET /api/calendar/events/null
     when editing an event, indicating the event ID was not properly captured.
     """
@@ -1370,7 +1366,7 @@ class TestCalendarAPIInvalidIds:
     def test_get_event_with_null_string_returns_404(self, client, auth_headers):
         """
         Test GET /api/calendar/events/null returns 404.
-        
+
         This reproduces the bug where frontend passes 'null' as event_id.
         The API should gracefully handle this with a 404 response.
         """
@@ -1405,7 +1401,7 @@ class TestCalendarAPIInvalidIds:
     def test_update_event_with_null_string_returns_404(self, client, auth_headers):
         """
         Test PATCH /api/calendar/events/null returns 404.
-        
+
         This ensures update endpoint also handles invalid IDs gracefully.
         """
         response = client.patch(
@@ -1470,7 +1466,7 @@ class TestCalendarAPIInvalidIds:
     def test_get_event_after_creation_returns_valid_id(self, client, auth_headers, app):
         """
         Test that event creation returns a valid numeric ID that can be used for GET.
-        
+
         This tests the happy path to ensure the API returns usable event IDs.
         """
         # Create an event
@@ -1486,9 +1482,9 @@ class TestCalendarAPIInvalidIds:
         assert create_response.status_code == 201
         create_data = create_response.get_json()
         assert create_data["ok"] is True
-        
+
         event_id = create_data["event"]["id"]
-        
+
         # Verify ID is a valid integer
         assert event_id is not None
         assert isinstance(event_id, int)
@@ -1509,7 +1505,7 @@ class TestCalendarAPIInvalidIds:
     def test_update_event_returns_valid_id(self, client, auth_headers, app):
         """
         Test that event update response includes the same valid ID.
-        
+
         Ensures ID consistency across create and update operations.
         """
         # Create an event
@@ -1540,7 +1536,7 @@ class TestCalendarAPIInvalidIds:
     def test_list_events_returns_valid_ids(self, client, auth_headers, app, test_user):
         """
         Test that listing events returns valid numeric IDs for all events.
-        
+
         Frontend should use these IDs for edit/delete operations.
         """
         # Create multiple events

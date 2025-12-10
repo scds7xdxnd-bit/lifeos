@@ -7,7 +7,12 @@ pytestmark = pytest.mark.integration
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
-from lifeos.domains.finance.models.accounting_models import Account, AccountCategory, JournalEntry, JournalLine
+from lifeos.domains.finance.models.accounting_models import (
+    Account,
+    AccountCategory,
+    JournalEntry,
+    JournalLine,
+)
 from lifeos.extensions import db
 
 
@@ -109,7 +114,10 @@ def test_trial_balance_period_and_monthly(app, client):
     user, cash, _ = _setup_finance_data(app)
     headers = _auth_header(app, user.id)
 
-    resp = client.get("/api/finance/trial_balance/period?start=2025-02-01&end=2025-02-28", headers=headers)
+    resp = client.get(
+        "/api/finance/trial_balance/period?start=2025-02-01&end=2025-02-28",
+        headers=headers,
+    )
     assert resp.status_code == 200
     totals = resp.get_json()["totals"]
     assert str(cash.id) in totals

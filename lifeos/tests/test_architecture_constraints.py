@@ -53,7 +53,7 @@ def _load_catalog_event_types() -> Set[str]:
     catalog_events: Set[str] = set()
     for events_file in LIFEOS_ROOT.glob("domains/*/events.py"):
         namespace: dict = {}
-        exec(events_file.read_text(), namespace)  # events modules have no side effects beyond constants
+        exec(events_file.read_text(), namespace)  # nosec B102: safe, event modules only declare constants
         catalog = namespace.get("EVENT_CATALOG") or {}
         catalog_events.update(catalog.keys())
     return catalog_events

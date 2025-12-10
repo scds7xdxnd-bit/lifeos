@@ -30,7 +30,11 @@ def _latest_interaction_subquery(user_id: int):
             func.row_number()
             .over(
                 partition_by=Interaction.person_id,
-                order_by=(Interaction.date.desc(), Interaction.created_at.desc(), Interaction.id.desc()),
+                order_by=(
+                    Interaction.date.desc(),
+                    Interaction.created_at.desc(),
+                    Interaction.id.desc(),
+                ),
             )
             .label("rank"),
         )
@@ -90,7 +94,15 @@ def update_person(user_id: int, person_id: int, **fields) -> Optional[Person]:
     if not person:
         return None
 
-    allowed = ("name", "relationship_type", "importance_level", "tags", "notes", "birthday", "first_met_date")
+    allowed = (
+        "name",
+        "relationship_type",
+        "importance_level",
+        "tags",
+        "notes",
+        "birthday",
+        "first_met_date",
+    )
     changed: Dict[str, object] = {}
     for key in allowed:
         if key in fields:
@@ -105,7 +117,7 @@ def update_person(user_id: int, person_id: int, **fields) -> Optional[Person]:
             "person_id": person.id,
             "user_id": user_id,
             "fields": changed,
-            "updated_at": person.updated_at.isoformat() if person.updated_at else datetime.utcnow().isoformat(),
+            "updated_at": (person.updated_at.isoformat() if person.updated_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )
@@ -170,9 +182,7 @@ def list_people(
         like = f"%{search}%"
         query = query.filter(Person.name.ilike(like))
     people: List[Person] = []
-    for person, last_date, last_method in (
-        query.order_by(Person.created_at.desc()).offset(offset).limit(limit).all()
-    ):
+    for person, last_date, last_method in query.order_by(Person.created_at.desc()).offset(offset).limit(limit).all():
         person.last_interaction_date = last_date
         person.last_interaction_method = last_method
         people.append(person)
@@ -194,14 +204,20 @@ def compute_reconnect_candidates(user_id: int, limit: int = 20, cutoff_days: int
         db.session.query(Person, subq.c.last_date)
         .outerjoin(subq, Person.id == subq.c.person_id)
         .filter(Person.user_id == user_id)
-        .filter(or_(subq.c.last_date == None, subq.c.last_date < cutoff_date))  # noqa: E711
+        .filter(or_(subq.c.last_date.is_(None), subq.c.last_date < cutoff_date))
         .order_by(subq.c.last_date.asc().nullsfirst(), Person.created_at.asc())
         .limit(limit)
     )
     results = []
     for person, last_date in query.all():
         days_since = (date.today() - last_date).days if last_date else None
-        results.append({"person": person, "last_interaction_date": last_date, "days_since": days_since})
+        results.append(
+            {
+                "person": person,
+                "last_interaction_date": last_date,
+                "days_since": days_since,
+            }
+        )
     return results
 
 

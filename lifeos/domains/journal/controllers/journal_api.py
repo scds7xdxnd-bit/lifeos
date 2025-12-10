@@ -27,7 +27,10 @@ def list_journal():
     try:
         filters = JournalEntryListFilter.model_validate(request.args)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     entries, total = journal_service.list_entries(
         user_id=user_id,
         date_from=filters.date_from,
@@ -39,7 +42,15 @@ def list_journal():
         per_page=filters.per_page,
     )
     pages = (total + filters.per_page - 1) // filters.per_page if filters.per_page else 1
-    return jsonify({"ok": True, "items": [map_entry(e) for e in entries], "page": filters.page, "pages": pages, "total": total})
+    return jsonify(
+        {
+            "ok": True,
+            "items": [map_entry(e) for e in entries],
+            "page": filters.page,
+            "pages": pages,
+            "total": total,
+        }
+    )
 
 
 @journal_api_bp.get("/<int:entry_id>")
@@ -60,7 +71,10 @@ def create_journal_entry():
     try:
         data = JournalEntryCreate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     try:
         entry = journal_service.create_entry(
@@ -87,7 +101,10 @@ def update_journal_entry(entry_id: int):
     try:
         data = JournalEntryUpdate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     entry = journal_service.update_entry(
         user_id,

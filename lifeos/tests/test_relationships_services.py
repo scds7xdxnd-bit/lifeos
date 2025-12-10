@@ -30,7 +30,10 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for relationships tests."""
     with app.app_context():
-        user = User(email="relationships-tester@example.com", password_hash=hash_password("secret"))
+        user = User(
+            email="relationships-tester@example.com",
+            password_hash=hash_password("secret"),
+        )
         db.session.add(user)
         db.session.commit()
         yield user
@@ -279,10 +282,16 @@ class TestInteractionService:
             person = create_person(test_user.id, name="List Interactions Person")
             log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
             log_interaction(
-                test_user.id, person.id, date_value=date.today() - timedelta(days=1), method="message"
+                test_user.id,
+                person.id,
+                date_value=date.today() - timedelta(days=1),
+                method="message",
             )
             log_interaction(
-                test_user.id, person.id, date_value=date.today() - timedelta(days=2), method="meeting"
+                test_user.id,
+                person.id,
+                date_value=date.today() - timedelta(days=2),
+                method="meeting",
             )
 
             interactions = list_interactions(test_user.id, person.id)
@@ -299,9 +308,7 @@ class TestInteractionService:
         """Edit an existing interaction."""
         with app.app_context():
             person = create_person(test_user.id, name="Edit Interaction Person")
-            interaction = log_interaction(
-                test_user.id, person.id, date_value=date.today(), method="call"
-            )
+            interaction = log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
 
             updated = edit_interaction(
                 test_user.id,

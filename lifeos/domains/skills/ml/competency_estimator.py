@@ -12,4 +12,3 @@ def estimate_level(metrics: Dict[str, float]) -> str:
     if score > 50:
         return "intermediate"
     return "beginner"
-
