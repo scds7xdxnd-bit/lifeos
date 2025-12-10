@@ -94,7 +94,7 @@ jobs:
       - name: Run unit tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: "sqlite:///:memory:"
           APP_ENV: ci
         run: |
           pytest lifeos/tests/ \

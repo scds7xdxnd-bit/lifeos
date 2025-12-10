@@ -70,10 +70,21 @@ def revoke_refresh_token(jti: str) -> None:
 
 # --- Registration and recovery flows ---
 
-DEFAULT_TIMEZONE = "UTC"
+DEFAULT_TIMEZONE = "utc"
 RESET_TOKEN_TTL_MINUTES = 30
 RESET_TOKEN_MAX_ATTEMPTS = 5
-DEFAULT_REGISTER_ROLES = ("user", "finance:write")
+# Roles granted to every new account by default.
+DEFAULT_REGISTER_ROLES = (
+    "user",
+    "finance:write",
+    "calendar:write",
+    "health:write",
+    "habits:write",
+    "skills:write",
+    "projects:write",
+    "relationships:write",
+    "journal:write",
+)
 
 
 def register_user(payload: RegisterRequest, auto_issue_tokens: bool = False) -> dict:

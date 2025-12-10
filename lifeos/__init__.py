@@ -5,14 +5,40 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 
 from flask import Flask, redirect, url_for
+from sqlalchemy.engine import processors
 
 from lifeos.config import config_by_name
 from lifeos.core.auth.csrf import generate_csrf_token
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.insights.engine import insights_engine
 from lifeos.extensions import init_extensions, login_manager
+
+
+def _patch_str_to_datetime_processor() -> None:
+    """Make SQLAlchemy tolerant of sqlite returning datetime objects.
+
+    sqlite3 with detect_types enabled can emit datetime objects; SQLAlchemy's
+    default str_to_datetime expects strings and will raise TypeError. This
+    shim returns datetime values as-is while delegating normal parsing to the
+    original processor for strings.
+    """
+    original = processors.str_to_datetime
+
+    def _safe(value):
+        if value is None or isinstance(value, datetime):
+            return value
+        try:
+            return original(value)
+        except TypeError:
+            return value
+
+    processors.str_to_datetime = _safe
+
+
+_patch_str_to_datetime_processor()
 
 
 def create_app(config_name: Optional[str] = None) -> Flask:
@@ -42,11 +68,33 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
     # Normalize sqlite path to absolute to avoid "unable to open database file"
     db_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
-    if db_uri and db_uri.startswith("sqlite:///"):
+    is_sqlite = db_uri and db_uri.startswith("sqlite:")
+    if is_sqlite and db_uri.startswith("sqlite:///"):
         db_path = db_uri.replace("sqlite:///", "", 1)
         abs_path = project_root / db_path
         abs_path.parent.mkdir(parents=True, exist_ok=True)
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{abs_path}"
+
+    if is_sqlite:
+        # Guard against sqlite3 returning datetime objects that SQLAlchemy also tries to parse.
+        engine_opts = app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
+        connect_args = engine_opts.setdefault("connect_args", {})
+        # Force-disable sqlite datetime parsing so values stay as strings for SQLAlchemy's processors.
+        connect_args["detect_types"] = 0
+        # Increase busy timeout to reduce "database is locked" errors when multiple writes happen.
+        connect_args.setdefault("timeout", 30)
+        try:
+            import sqlite3
+
+            sqlite3.register_converter(
+                "DATETIME", lambda val: val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
+            )
+            sqlite3.register_converter(
+                "TIMESTAMP", lambda val: val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
+            )
+        except Exception:
+            # If sqlite3 is unavailable or converters cannot be registered, continue with detect_types disabled.
+            pass
 
     init_extensions(app)
     _register_blueprints(app)

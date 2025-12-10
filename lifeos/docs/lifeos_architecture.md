@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution  
-_Last updated: 2025-12-07 (Sprint Complete)_
+_Last updated: 2025-12-10 (v2.1 — CI/CD operational, Calendar-First complete)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2025-12-07)
+# 0. Implementation Status (as of 2025-12-10)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -14,6 +14,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
 - **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with 23 additive migrations (head: `20251219_calendar_oauth_tokens`)
+- **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
 - **Habits Domain**: Habits, logs, streaks, metrics (complete lifecycle)
@@ -112,6 +113,11 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
   - Set up GitHub environment protection rules (requires admin access)
   - Add `CODECOV_TOKEN` secret to GitHub
   - Test pipelines end-to-end (push PR to trigger)
+
+## 🔜 Immediate Next Steps (post-Phase 2)
+- DevOps: monitor first `lifeos-main.yml` run; configure GitHub Secrets (`CODECOV_TOKEN`, registry creds), and enforce branch protections/approvals on main/staging/prod; archive `docs/DEVOPS_HANDOFF_CI_FIX.md` after confirming green.
+- QA: verify coverage uploads (Codecov) and CI environment parity; maintain nightly monitoring (`lifeos-nightly.yml`); add remaining inferred-record integration tests.
+- All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## ⚠️ Partially Implemented / Planned
 - **Broker Integration**: Stub in `lifeos/platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
@@ -892,43 +898,42 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 ---
 
 # 15. Future Roadmap (directional, post-v1)
-**Phase 1 (Current — v1.0):**
+**Phase 1 (Complete — v1.0):**
 - ✅ Multi-domain event architecture (7 domains operational)
 - ✅ Outbox pattern with worker dispatcher
 - ✅ Basic insights engine
 - ✅ Flask + Jinja2 frontend
 - ⚠️ ML account suggester (integrated but rules engine pending)
 
-**Phase 1.5 (Complete — Calendar-First Backend):**
+**Phase 1.5 (Complete — Calendar-First):**
 - ✅ Calendar domain implementation (`lifeos/domains/calendar/`) — models, services, controllers, events
 - ✅ Calendar Interpreter layer (`lifeos/core/interpreter/`) — classification rules, domain adapters, constants
 - ✅ Inferred record support in all existing domains — columns added via migration
-- ✅ Migrations applied: `20251206_calendar_initial.py`, `20251207_domains_inferred_columns.py`
-- 🚧 Review/confirmation workflow UI — frontend pending
-- 🚧 Calendar UI (calendar view, event creation, interpretation review) — frontend pending
-- 🚧 External calendar sync (Google/Apple OAuth) — integration pending
+- ✅ External calendar sync (Google/Apple OAuth), background sync task, confirm/reject API, review UI, calendar UI views
+- ✅ Acceptance criteria recorded in this doc (Section 0)
 - **Specification**: `lifeos/docs/CALENDAR_FIRST_ARCHITECTURE.md`
 
-**Phase 2 (Q1 2026):**
-- [ ] External calendar sync (Google Calendar, Apple Calendar via OAuth)
-- [ ] Read-model projections (materialized views for complex queries)
+**Phase 3a (Next) — Cross-Domain Intelligence (2026 Q1 kickoff):**
+- [ ] Correlate calendar + journal + domain events to surface insights (energy vs habits, finance stress vs health, etc.)
+- [ ] Define/read projections for high-value queries (read models for insights, dashboards)
+- [ ] Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence auto-routed with audit trail
+- [ ] Telemetry: insight generation metrics, coverage, false-positive/negative tracking
+- [ ] ML enablement: keep model hooks behind services; log `model_version`/`payload_version`
+
+**Phase 3b (Option) — Mobile/API Hardening:**
+- [ ] API versioning strategy (`/api/v1`, `/api/v2`)
+- [ ] Auth/session hardening for mobile clients; offline/sync design
+
+**Phase 3c (Option) — Data Sync & Broker:**
 - [ ] Broker integration (RabbitMQ/Kafka replacing in-process bus)
-- [ ] Advanced insights (ML-based anomaly detection, correlations)
-- [ ] Admin dashboard (audit log, system health, user management)
-- [ ] API versioning (`/api/v1/`, `/api/v2/`)
+- [ ] Read-model projections (materialized views) for heavy queries
+- [ ] Multi-device sync/offline support
 
-**Phase 3 (Q2-Q3 2026):**
-- [ ] Autonomous assistant (NLU + RL-based suggestions)
-- [ ] Mobile app (React Native or Flutter)
-- [ ] RL-based personalization (habit recommendations, spend forecasts)
-- [ ] Data export (CSV, JSON, PDF reports)
-- [ ] Third-party integrations (Stripe, Plaid, Fitbit, Google Calendar)
-
-**Phase 4 (Q4 2026+):**
-- [ ] Multi-tenant support (currently single-tenant)
-- [ ] Collaborative features (budget sharing, group projects)
-- [ ] Advanced ML (time-series forecasting, clustering)
-- [ ] Compliance (SOC 2, GDPR audit, data residency options)
+**Phase 4 (Later):**
+- [ ] Autonomous assistant; RL-based personalization
+- [ ] Multi-tenant support; collaboration
+- [ ] Third-party integrations (Stripe, Plaid, Fitbit, etc.)
+- [ ] Compliance (SOC 2, GDPR, residency)
 
 ---
 
@@ -1089,14 +1094,14 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.0 (Calendar-First Phase 2 Complete): 2025-12-07. Author: LifeOS Architect._
+_Constitution v2.1 (Calendar-First Phase 2 Complete; CI/CD operational): 2025-12-10. Author: LifeOS Architect._
 
-**Sprint Summary (2025-12-07):**
+**Sprint Summary (2025-12-10):**
 - ✅ Calendar-First Phase 2: All acceptance criteria verified by QA
-- ✅ CI/CD Infrastructure: Fully implemented by DevOps
+- ✅ CI/CD Infrastructure: Pipelines operational (PR/main/release/nightly), Codecov wired
 - ✅ Test Coverage: 521 tests passing, 85% coverage, 10 xfailed (documented bugs)
 - ✅ Database: Single head at `20251219_calendar_oauth_tokens`
-- ⏳ User Actions Required: GitHub secrets configuration, environment protection rules
+- ⏳ User Actions Required: GitHub secrets (`CODECOV_TOKEN`, staging/prod), environment protection rules, registry credentials
 
 ---
 

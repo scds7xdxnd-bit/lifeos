@@ -16,7 +16,7 @@
         <button type="button" class="btn" id="cal-create-btn">+ New Event</button>
       </div>
     </div>
-    <div id="cal-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with calendar:write to manage events.</div>
+    <div id="cal-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with to manage events.</div>
   </div>
 
   <!-- Quick Stats -->
@@ -191,6 +191,14 @@
 
 <script>
 (() => {
+  const localDateKey = (d) => {
+    if (!d) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   // Get auth headers with CSRF token from meta tag (session-bound)
   const getAuthHeaders = (extra = {}) => {
     const base = lifeosAuth.authHeaders(extra);
@@ -266,8 +274,8 @@
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
   
-  startDateInput.value = weekStart.toISOString().split('T')[0];
-  endDateInput.value = weekEnd.toISOString().split('T')[0];
+  startDateInput.value = localDateKey(weekStart);
+  endDateInput.value = localDateKey(weekEnd);
 
   // ==================== View Mode Logic ====================
   const switchView = (viewName) => {
@@ -327,7 +335,7 @@
 
   // ==================== Day View Rendering ====================
   const renderDayView = () => {
-    const dateStr = currentDate.toISOString().split('T')[0];
+    const dateStr = localDateKey(currentDate);
     const dayTitle = document.getElementById('cal-day-title');
     dayTitle.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     
@@ -390,7 +398,7 @@
       for (let d = 0; d < 7; d++) {
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + d);
-        const dateStr = day.toISOString().split('T')[0];
+        const dateStr = localDateKey(day);
         html += `<div style="min-height:30px; border-top:1px solid #f0f0f0; border-left:1px solid #e0e5ec; position:relative;" data-hour="${h}" data-date="${dateStr}"></div>`;
       }
     }
@@ -438,10 +446,10 @@
     }
     
     // Days of month
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = localDateKey(new Date());
     for (let day = 1; day <= lastDay.getDate(); day++) {
       const dateObj = new Date(year, month, day);
-      const dateStr = dateObj.toISOString().split('T')[0];
+      const dateStr = localDateKey(dateObj);
       const isToday = dateStr === todayStr;
       const dayEvents = allEvents.filter(e => e.start_time.startsWith(dateStr));
       
@@ -554,7 +562,7 @@
   };
 
   const updateStats = (events) => {
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = localDateKey(today);
     const todayEvents = events.filter(e => e.start_time.startsWith(todayStr));
     statToday.textContent = todayEvents.length;
     statWeek.textContent = events.length;
@@ -807,7 +815,7 @@
       } else {
         // Map backend error codes to user-friendly messages
         const errorMessages = {
-          'forbidden': 'Permission denied. Your account may need calendar:write access.',
+          'forbidden': 'Permission denied. Your account does not have access to this resource.',
           'csrf_failed': 'Session expired. Please refresh the page and try again.',
           'validation_error': 'Please check the form fields and try again.',
           'unauthorized': 'Please log in to continue.',

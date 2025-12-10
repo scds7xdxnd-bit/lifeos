@@ -15,7 +15,7 @@
       <p style="margin:0; color:#5b6470;">Record a balanced double-entry journal entry.</p>
     </div>
   </div>
-  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with finance:write to post journal entries.</div>
+  <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to post journal entries.</div>
   <form id="{{ component_id }}-form" autocomplete="off" style="margin-top:0.75rem; display:grid; gap:0.75rem;">
     <div class="field">
       <label for="{{ component_id }}-description">Description</label>
@@ -94,7 +94,7 @@
         linesTable.querySelectorAll('input, select, textarea, button').forEach((node) => { node.disabled = !allowed; });
       }
       if (!allowed) {
-        loginHint.textContent = authed ? 'Requires finance:write to post journal entries.' : 'Please log in with finance:write to post journal entries.';
+        loginHint.textContent = authed ? 'Requires permission to post journal entries.' : 'Please log in to post journal entries.';
         loginHint.style.display = 'block';
       } else {
         loginHint.style.display = 'none';

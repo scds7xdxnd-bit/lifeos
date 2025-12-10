@@ -1,0 +1,39 @@
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+
+# Environment files (keep examples tracked)
+.env
+.env.local
+.env.*.local
+
+# Node / build artifacts
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+
+# Local data / databases
+instance/
+flask_app/instance/
+*.sqlite
+*.sqlite3
+*.db
