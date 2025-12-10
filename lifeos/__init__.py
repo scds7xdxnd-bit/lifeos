@@ -97,6 +97,16 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         except Exception:
             # If sqlite3 is unavailable or converters cannot be registered, continue with detect_types disabled.
             pass
+    else:
+        # Remove sqlite-specific connect_args that break Postgres/MySQL drivers in CI
+        engine_opts = app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
+        connect_args = engine_opts.get("connect_args") or {}
+        connect_args.pop("detect_types", None)
+        # If nothing remains, drop connect_args entirely
+        if not connect_args and "connect_args" in engine_opts:
+            engine_opts.pop("connect_args")
+        else:
+            engine_opts["connect_args"] = connect_args
 
     init_extensions(app)
     _register_blueprints(app)
