@@ -37,3 +37,4 @@ flask_app/instance/
 *.sqlite
 *.sqlite3
 *.db
+:memory:

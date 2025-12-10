@@ -11,7 +11,9 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
-export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
+# Hard-reset PYTHONPATH so stdlib modules (e.g., platform) cannot be shadowed by
+# our lifeos/platform package during CLI startup. CWD provides lifeos on sys.path.
+export PYTHONPATH=""
 
 echo "=== Applying Database Migrations ==="
 
@@ -29,17 +31,17 @@ echo "Target database: ${MASKED_URL}"
 # Show current state
 echo ""
 echo "Current migration state:"
-cd lifeos && python -m flask --app wsgi:app db current
+python -m flask --app lifeos.wsgi db current
 
 # Apply migrations
 echo ""
 echo "Applying pending migrations..."
-cd lifeos && python -m flask --app wsgi:app db upgrade head
+python -m flask --app lifeos.wsgi db upgrade head
 
 # Verify final state
 echo ""
 echo "Final migration state:"
-cd lifeos && python -m flask --app wsgi:app db current
+python -m flask --app lifeos.wsgi db current
 
 echo ""
 echo "✓ Migrations applied successfully"
