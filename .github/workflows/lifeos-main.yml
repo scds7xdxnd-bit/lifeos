@@ -273,7 +273,7 @@ jobs:
                 }
               ]
             }
-            EOF
+EOF
           fi
       
       - name: Upload Trivy scan results
