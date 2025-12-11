@@ -248,7 +248,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image_tag }}
           format: 'sarif'
           output: '${{ github.workspace }}/trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -257,23 +257,23 @@ jobs:
         if: always()
         run: |
           if [ ! -f "${{ github.workspace }}/trivy-results.sarif" ]; then
-            cat > "${{ github.workspace }}/trivy-results.sarif" <<'EOF'
-            {
-              "version": "2.1.0",
-              "runs": [
-                {
-                  "tool": {
-                    "driver": {
-                      "name": "trivy",
-                      "informationUri": "https://github.com/aquasecurity/trivy",
-                      "version": "unknown"
-                    }
-                  },
-                  "results": []
-                }
-              ]
-            }
-            EOF
+cat > "${{ github.workspace }}/trivy-results.sarif" <<'EOF'
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "trivy",
+          "informationUri": "https://github.com/aquasecurity/trivy",
+          "version": "unknown"
+        }
+      },
+      "results": []
+    }
+  ]
+}
+EOF
           fi
       
       - name: Upload Trivy scan results
