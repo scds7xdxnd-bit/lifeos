@@ -252,17 +252,32 @@ jobs:
           format: 'sarif'
           output: '${{ github.workspace }}/trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-        continue-on-error: true
 
       - name: Ensure Trivy SARIF exists
         if: always()
         run: |
           if [ ! -f "${{ github.workspace }}/trivy-results.sarif" ]; then
-            echo '{"version":"2.1.0","runs":[]}' > "${{ github.workspace }}/trivy-results.sarif"
+            cat > "${{ github.workspace }}/trivy-results.sarif" <<'EOF'
+            {
+              "version": "2.1.0",
+              "runs": [
+                {
+                  "tool": {
+                    "driver": {
+                      "name": "trivy",
+                      "informationUri": "https://github.com/aquasecurity/trivy",
+                      "version": "unknown"
+                    }
+                  },
+                  "results": []
+                }
+              ]
+            }
+            EOF
           fi
       
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: '${{ github.workspace }}/trivy-results.sarif'
