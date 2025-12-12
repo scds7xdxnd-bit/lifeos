@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Literal, Optional
 
-
 ReadModelType = Literal["snapshot", "timeline", "aggregate"]
 
 
