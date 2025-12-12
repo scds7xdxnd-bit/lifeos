@@ -6,8 +6,8 @@ These Pydantic models define the emitted payloads for all cross-domain
 same models instead of handling ad-hoc dictionaries.
 
 False-positive/false-negative convention:
-- Classification-style errors (e.g., predicted workout but user rejects) set `is_false_positive=True`.
-- Structured/label corrections (e.g., model guessed category/record A, user corrected to B) set `is_false_negative=True`.
+- Classification errors (e.g., predicted workout but user rejects) set `is_false_positive=True`.
+- Label corrections (e.g., model guessed category/record A, user corrected to B) set `is_false_negative=True`.
 Both flags may be present if the prediction was wrong and user supplied the missing/correct target.
 """
 
@@ -44,7 +44,10 @@ class MealInference(_BaseInference):
     meal_type: Optional[str] = Field(default=None, description="Breakfast/lunch/dinner/snack.")
     items: Optional[List[str]] = Field(default=None, description="Free-text meal items or ingredients.")
     calories_est: Optional[float] = Field(default=None, description="Estimated calories (kcal).")
-    macros: Optional[Dict[str, float]] = Field(default=None, description="Macro estimates keyed by protein/fat/carbs (grams).")
+    macros: Optional[Dict[str, float]] = Field(
+        default=None,
+        description="Macro estimates keyed by protein/fat/carbs (grams).",
+    )
 
 
 class WorkoutInference(_BaseInference):

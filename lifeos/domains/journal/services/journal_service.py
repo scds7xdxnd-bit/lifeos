@@ -7,7 +7,6 @@ from typing import List, Optional, Tuple
 
 import json
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 from lifeos.domains.journal.events import (
     JOURNAL_ENTRY_CREATED,
