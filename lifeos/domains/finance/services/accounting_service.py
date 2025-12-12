@@ -18,6 +18,7 @@ from lifeos.domains.finance.models.accounting_models import (
     JournalEntry,
     JournalLine,
 )
+from lifeos.domains.finance.services.suggestion_service import suggest_accounts
 from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
@@ -271,6 +272,7 @@ def search_accounts(user_id: int, query: str, limit: int = 20) -> List[Account]:
 
 def get_suggested_accounts(user_id: int, query: str, limit: int = 10, include_ml: bool = True) -> List[dict]:
     """Get suggested accounts combining existing search + optional ML suggestions."""
+    query = (query or "").strip()
     # Derive a safe search limit: if caller asks for fewer than 3, search with that limit (never negative).
     search_limit = limit if limit <= 2 else max(1, limit - 2)
 
@@ -280,19 +282,53 @@ def get_suggested_accounts(user_id: int, query: str, limit: int = 10, include_ml
     except ValueError:
         return []
 
-    results = [
-        {
+    def _serialize(acc: Account) -> dict:
+        return {
             "id": acc.id,
             "name": acc.name,
             "account_type": acc.account_type,
             "account_subtype": acc.account_subtype,
             "is_existing": True,
         }
-        for acc in existing
-    ]
 
-    # TODO: Add ML suggestions if enabled (future enhancement)
-    # For now, just return existing accounts
+    results = [_serialize(acc) for acc in existing]
+    if not include_ml:
+        return results[:limit]
+
+    # Use ML ranking to supplement results (keeping existing semantics for empty/invalid queries).
+    if len(results) >= limit:
+        return results[:limit]
+    if not query:
+        return results
+
+    ml_ranked_ids = suggest_accounts(user_id, query) or []
+    if not ml_ranked_ids:
+        return results[:limit]
+
+    already_added = {item["id"] for item in results}
+    # Fetch any accounts not already in the base search to merge by ML rank.
+    missing_ids = [acc_id for acc_id in ml_ranked_ids if acc_id not in already_added]
+    if missing_ids:
+        extra_accounts = (
+            Account.query.filter(Account.user_id == user_id)
+            .filter(Account.id.in_(missing_ids))
+            .filter(Account.is_active.is_(True))
+            .all()
+        )
+        account_map = {acc.id: acc for acc in extra_accounts}
+    else:
+        account_map = {}
+
+    for acc_id in ml_ranked_ids:
+        if len(results) >= limit:
+            break
+        if acc_id in already_added:
+            continue
+        account = account_map.get(acc_id)
+        if not account:
+            continue
+        results.append(_serialize(account))
+        already_added.add(acc_id)
 
     return results[:limit]
 

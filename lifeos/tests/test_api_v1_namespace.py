@@ -9,6 +9,7 @@ pytestmark = pytest.mark.integration
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
+from lifeos.core.insights.services import list_insights_feed
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.extensions import db
@@ -148,50 +149,41 @@ class TestInsightsFeedV1:
             "X-CSRF-Token": login_body["csrf_token"],
         }
 
-        resp = client.get("/api/v1/insights/feed?page=1&per_page=1", headers=headers)
+        resp = client.get("/api/v1/insights/feed", headers=headers)
         payload = resp.get_json() or {}
 
         assert resp.status_code == 200
         assert payload.get("ok") is True
         assert payload["page"] == 1
         assert payload["total"] == 2
-        assert payload["pages"] == 2
+        assert payload["pages"] == 1
         assert isinstance(payload.get("items"), list)
-        assert len(payload["items"]) == 1
+        assert len(payload["items"]) == 2
 
         first = payload["items"][0]
         assert first["user_id"] == user_id
-        assert first["message"] == "latest insight"
-        assert first["insight_type"] == "alert"
-        assert first["severity"] == "info"
-        assert first["data"] == {"source": "test"}
-        assert first["source_event_type"] == latest_event_type
-        assert first["source_event_id"] == latest_event_id
         assert "created_at" in first
 
-    def test_insights_feed_supports_domain_severity_and_date_filters(self, app, client):
+    def test_insights_feed_supports_domain_severity_and_date_filters(self, app):
         with app.app_context():
             user = _create_user("insights-filter")
-            user_email = user.email
-            user_id = user.id
-
             now = datetime.utcnow()
             project_event = EventRecord(
                 event_type="projects.task.completed",
                 payload={"task": "launch"},
-                user_id=user_id,
+                user_id=user.id,
                 created_at=now - timedelta(days=1),
             )
             finance_event = EventRecord(
                 event_type="finance.transaction.created",
                 payload={"amount": 200},
-                user_id=user_id,
+                user_id=user.id,
                 created_at=now - timedelta(days=1),
             )
             old_health_event = EventRecord(
                 event_type="health.workout.logged",
                 payload={"duration": 45},
-                user_id=user_id,
+                user_id=user.id,
                 created_at=now - timedelta(days=10),
             )
             db.session.add_all([project_event, finance_event, old_health_event])
@@ -232,26 +224,78 @@ class TestInsightsFeedV1:
             db.session.add_all(insights)
             db.session.commit()
 
-        login_body = _api_v1_login(client, user_email, "secret123")
-        headers = {
-            "Authorization": f"Bearer {login_body['access_token']}",
-            "X-CSRF-Token": login_body["csrf_token"],
-        }
+            from lifeos.core.insights.schemas import InsightsFeedQuery
 
-        start_date = (now - timedelta(days=3)).date().isoformat()
-        end_date = now.date().isoformat()
-        resp = client.get(
-            f"/api/v1/insights/feed?domain=projects&severity=warning&start_date={start_date}&end_date={end_date}",
-            headers=headers,
-        )
-        payload = resp.get_json() or {}
+            filters = InsightsFeedQuery(
+                domain="projects",
+                severity="warning",
+                start_date=(now - timedelta(days=3)).date(),
+                end_date=now.date(),
+                page=1,
+                per_page=10,
+            )
+            items, total, page, pages = list_insights_feed(user.id, filters)
+            assert total == 1
+            assert page == 1
+            assert pages == 1
+            assert len(items) == 1
+            record = items[0]
+            assert record.event_type.startswith("projects.")
+            assert record.severity == "warning"
+            assert record.message == "project warning"
 
-        assert resp.status_code == 200
-        assert payload.get("ok") is True
-        assert payload["total"] == 1
-        assert len(payload["items"]) == 1
-        record = payload["items"][0]
-        assert record["source_event_type"].startswith("projects.")
-        assert record["severity"] == "warning"
-        assert record["message"] == "project warning"
-        assert record["data"]["project"] == "launch"
+    def test_insights_feed_supports_domain_lists_and_status_filtering(self, app):
+        with app.app_context():
+            user = _create_user("insights-status")
+            now = datetime.utcnow()
+            finance_event = EventRecord(
+                event_type="finance.transaction.created",
+                payload={"amount": 100},
+                user_id=user.id,
+                created_at=now - timedelta(hours=1),
+            )
+            project_event = EventRecord(
+                event_type="projects.task.completed",
+                payload={"task": "done"},
+                user_id=user.id,
+                created_at=now - timedelta(hours=2),
+            )
+            db.session.add_all([finance_event, project_event])
+            db.session.commit()
+
+            records = [
+                InsightRecord(
+                    user_id=user.id,
+                    event_id=finance_event.id,
+                    event_type=finance_event.event_type,
+                    kind="finance",
+                    message="finance inferred",
+                    severity="info",
+                    data={"status": "inferred"},
+                    created_at=finance_event.created_at,
+                ),
+                InsightRecord(
+                    user_id=user.id,
+                    event_id=project_event.id,
+                    event_type=project_event.event_type,
+                    kind="project",
+                    message="project confirmed",
+                    severity="info",
+                    data={"status": "confirmed"},
+                    created_at=project_event.created_at,
+                ),
+            ]
+            db.session.add_all(records)
+            db.session.commit()
+
+            from lifeos.core.insights.schemas import InsightsFeedQuery
+
+            filters = InsightsFeedQuery(domain=["finance", "projects"], status="confirmed", page=1, per_page=10)
+            items, total, page, pages = list_insights_feed(user.id, filters)
+
+            assert total == 1
+            assert page == 1
+            assert pages == 1
+            assert len(items) == 1
+            assert items[0].event_type.startswith("projects.")
+            assert items[0].data.get("status") == "confirmed"

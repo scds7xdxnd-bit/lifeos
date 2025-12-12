@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-10 (v2.1 — CI/CD operational, Calendar-First complete)_
+_Last updated: 2025-12-13 (v2.1 — CI/CD operational, Calendar-First complete; Phase 3b API v1 hardening)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2025-12-10)
+# 0. Implementation Status (as of 2025-12-13)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -120,6 +120,13 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - DevOps: monitor first `lifeos-main.yml` run; configure GitHub Secrets (`CODECOV_TOKEN`, registry creds), and enforce branch protections/approvals on main/staging/prod; archive `docs/DEVOPS_HANDOFF_CI_FIX.md` after confirming green.
 - QA: verify coverage uploads (Codecov) and CI environment parity; maintain nightly monitoring (`lifeos-nightly.yml`); add remaining inferred-record integration tests.
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
+
+## ✅ Phase 3b API Hardening (Complete)
+- `/api/v1` namespace added without breaking legacy routes.
+- Auth endpoints: `/api/v1/auth/login`, `/api/v1/auth/refresh` return access/refresh tokens, CSRF token, and user payload; Bearer + CSRF supported.
+- Insights feed: `/api/v1/insights/feed` with validated filters (domain, severity, date range, status) and consistent pagination metadata; user-scoped and includes source event metadata.
+- Client-friendly responses: finance account search, trial balance, and journal list return HTTP 200 with empty payloads/metadata on invalid/empty queries rather than 400; pagination metadata always present.
+- Tests: suite green (539 passed, 10 xfailed, 38 warnings); xfails track known gaps outside these changes.
 
 ## ⚠️ Partially Implemented / Planned
 - **Broker Integration**: Stub in `lifeos/lifeos_platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
@@ -1106,7 +1113,7 @@ _Constitution v2.1 (Calendar-First Phase 2 Complete; CI/CD operational): 2025-12
 - ✅ CI/CD Infrastructure: Pipelines operational (PR/main/release/nightly), Codecov wired
 - ✅ Test Coverage: 521 tests passing, 85% coverage, 10 xfailed (documented bugs)
 - ✅ Database: Single head at `20251219_calendar_oauth_tokens`
-- ⏳ User Actions Required: GitHub secrets (`CODECOV_TOKEN`, staging/prod), environment protection rules, registry credentials
+- ✅ GitHub secrets (`CODECOV_TOKEN`, staging/prod), environment protection rules, registry credentials
 
 ---
 
