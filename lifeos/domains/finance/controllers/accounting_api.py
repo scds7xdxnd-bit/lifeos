@@ -68,7 +68,8 @@ def search_accounts_endpoint():
     try:
         data = AccountSearchQuery.model_validate(request.args)
     except Exception:
-        return jsonify({"ok": False, "error": "invalid_query"}), 400
+        # On invalid query, return empty results to keep client logic simple.
+        return jsonify({"ok": True, "results": []}), 200
 
     try:
         results = get_suggested_accounts(
@@ -81,7 +82,7 @@ def search_accounts_endpoint():
     except ValueError as exc:
         code = str(exc)
         if code == "invalid_query":
-            return jsonify({"ok": False, "error": "invalid_query"}), 400
+            return jsonify({"ok": True, "results": []}), 200
         return jsonify({"ok": False, "error": "validation_error"}), 400
 
 

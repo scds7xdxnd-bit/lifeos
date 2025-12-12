@@ -65,6 +65,11 @@ All issues were resolved via config alignment, reproducible local CI execution, 
 3) Pin and surface tool versions in CI (Black, Ruff, etc.).
 4) Require `./scripts/ci/lint.sh` locally before push; Black formats, Ruff enforces imports.
 5) Keep tests environment-agnostic; ensure teardown logic doesn’t assume Postgres when running on SQLite.
+6) SQLAlchemy upgrade readiness: track and replace `Query.get()` with `Session.get()` incrementally; do not silence warnings globally until coverage is clean.
+7) Test hygiene guardrails to freeze:
+   - DB isolation enforced centrally (per-test transaction/savepoint; no ad-hoc cleanup).
+   - `xfail` entries carry reasons; no silent skips.
+   - Tests never disable constraints or swallow `IntegrityError`.
 
 ---
 

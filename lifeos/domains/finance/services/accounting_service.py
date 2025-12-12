@@ -230,12 +230,14 @@ def search_accounts(user_id: int, query: str, limit: int = 20) -> List[Account]:
         List of matching Account objects
 
     Raises:
-        ValueError("invalid_query") if query is empty or too long
+        ValueError("invalid_query") if query is too long
     """
     query = (query or "").strip()
 
-    if not query or len(query) > 100:
+    if len(query) > 100:
         raise ValueError("invalid_query")
+    if not query:
+        return []
 
     normalized_query = _normalize_name(query)
 
@@ -276,7 +278,7 @@ def get_suggested_accounts(user_id: int, query: str, limit: int = 10, include_ml
     try:
         existing = search_accounts(user_id, query, limit=search_limit)
     except ValueError:
-        raise
+        return []
 
     results = [
         {

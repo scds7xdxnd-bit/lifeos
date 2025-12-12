@@ -20,6 +20,7 @@ Backend Focus (order)
 
 Tests to Add/Run
 - Integration: `/api/v1/insights/feed` (auth, filters, pagination).
-- Auth regression: login/refresh/header handling (Bearer + CSRF).
+- Auth regression: `/api/v1/auth/login` + `/api/v1/auth/refresh` headers and tokens (Bearer + CSRF).
+- Test hygiene baseline: each test wraps DB work in a per-test transaction/savepoint; fixtures must use unique data (e.g., UUID emails) and avoid cross-test commits.
 - Guardrails: event catalog completeness; additive migrations; architecture constraints.
 - If read-model tables: migration test + service correctness.

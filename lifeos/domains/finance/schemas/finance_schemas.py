@@ -45,7 +45,7 @@ class AccountCategoryResponse(BaseModel):
 class AccountSearchQuery(BaseModel):
     """Query parameters for account search/typeahead."""
 
-    q: str = Field(min_length=1, max_length=100, description="Search query")
+    q: Optional[str] = Field(default="", max_length=100, description="Search query (empty returns [])")
     limit: int = Field(default=20, ge=1, le=100, description="Max results")
     include_ml: bool = Field(default=True, description="Include ML suggestions")
 

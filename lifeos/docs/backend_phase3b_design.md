@@ -9,6 +9,10 @@ Goals
 - Deliver an insights feed endpoint that aggregates `insight_record` with filters (date range, domain, severity), paginated and user-scoped.
 - Standardize auth flows for API consumers: login returns tokens (Bearer + CSRF), refresh works, and headers are documented/consistent.
 - Optional: add lightweight read-model tables/views (additive) gated by config; default to service-level queries.
+- API semantics decisions (client-friendly defaults):
+  - Finance account search: empty query returns `200` with an empty `results` list (no 400 for blank input).
+  - Trial balance: invalid params return `200` with empty accounts/categories (no 400).
+  - Journal list: always returns pagination metadata; invalid filters yield `200` with empty items + `page/pages/total`.
 
 Non-Goals
 - No broker migration; stay on outbox + in-memory bus.
