@@ -5,6 +5,7 @@ import os
 
 import pytest
 import sqlalchemy as sa
+from sqlalchemy.orm import scoped_session, sessionmaker
 from alembic import command
 from alembic.config import Config as AlembicConfig
 
@@ -77,18 +78,46 @@ def migrated_db():
 
 @pytest.fixture()
 def app(migrated_db):
+    """
+    Create a per-test app with an isolated database transaction.
+
+    We wrap each test in its own transaction + savepoint so committed data rolls
+    back after the test, preventing cross-test leakage (e.g., duplicate emails).
+    """
     app = create_app("testing")
-    with app.app_context():
+    ctx = app.app_context()
+    ctx.push()
+
+    connection = db.engine.connect()
+    transaction = connection.begin()
+
+    session_factory = scoped_session(sessionmaker(bind=connection))
+    db.session = session_factory
+    session = session_factory()
+    session.begin_nested()
+
+    @sa.event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(sess, trans):
+        if trans.nested and not trans._parent.nested:
+            sess.begin_nested()
+
+    try:
         # Seed a default user for FK-dependent tests
-        if not User.query.filter_by(email="test@example.com").first():
-            db.session.add(User(email="test@example.com", password_hash="test"))
-            db.session.commit()
-        # seed a default admin role so require_roles can find it
-        if not Role.query.filter_by(name="admin").first():
-            db.session.add(Role(name="admin", description="admin role for tests"))
-            db.session.commit()
+        if not session.query(User).filter_by(email="test@example.com").first():
+            session.add(User(email="test@example.com", password_hash="test"))
+            session.commit()
+        # Seed a default admin role so require_roles can find it
+        if not session.query(Role).filter_by(name="admin").first():
+            session.add(Role(name="admin", description="admin role for tests"))
+            session.commit()
+
         yield app
-        db.session.remove()
+    finally:
+        sa.event.remove(session, "after_transaction_end", restart_savepoint)
+        session_factory.remove()
+        transaction.rollback()
+        connection.close()
+        ctx.pop()
 
 
 @pytest.fixture()
