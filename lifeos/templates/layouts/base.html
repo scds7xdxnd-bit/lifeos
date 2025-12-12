@@ -45,20 +45,26 @@
     <header class="app-header">
       <div class="brand-nav">
         <h1>LifeOS</h1>
-        <nav>
+        <nav class="top-nav">
           <a href="/calendar/" style="font-weight:600;">📅 Calendar</a>
-          <a href="/finance/">Finance</a>
-          <a href="/finance/journal">Journal</a>
-          <a href="/finance/trial-balance">Trial Balance</a>
-          <a href="/finance/receivables">Receivables</a>
-          <a href="/finance/forecast">Forecast</a>
-          <a href="/finance/import">Import</a>
+          <details class="nav-group">
+            <summary aria-label="Finance">Finance ▾</summary>
+            <div class="nav-group-menu">
+              <a href="/finance/">Dashboard</a>
+              <a href="/finance/journal">Journal</a>
+              <a href="/finance/trial-balance">Trial balance</a>
+              <a href="/finance/receivables">Receivables</a>
+              <a href="/finance/forecast">Forecast</a>
+              <a href="/finance/import">Import</a>
+            </div>
+          </details>
           <a href="/habits/">Habits</a>
           <a href="/skills/">Skills</a>
           <a href="/health/">Health</a>
           <a href="/journal/">Journal</a>
           <a href="/relationships/">Relationships</a>
           <a href="/projects/">Projects</a>
+          <a href="/users/profile">Profile</a>
         </nav>
         <div style="margin-top:0.25rem;font-size:0.9rem;color:#5b6470;">Demo: admin@example.com / admin12345 or demo@lifeos.test / demo12345</div>
       </div>

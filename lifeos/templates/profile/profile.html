@@ -1,10 +1,114 @@
 {% extends "layouts/base.html" %}
 {% block content %}
-<h2>Profile</h2>
-{% if user %}
-  <p>{{ user.full_name or user.email }}</p>
-  <p>Timezone: {{ user.timezone or 'n/a' }}</p>
-{% else %}
-  <p>Please log in.</p>
-{% endif %}
+<div class="container" style="max-width: 900px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
+  <div id="profile-empty" class="card empty-state" style="display:none;">Please log in to view your profile.</div>
+
+  <div id="profile-card" class="card" style="display:none; gap:0.75rem;">
+    <div style="display:flex; justify-content: space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap;">
+      <div>
+        <div class="meta">Profile</div>
+        <h2 id="profile-name" style="margin:4px 0 6px; letter-spacing:-0.02em;">—</h2>
+        <div class="meta" id="profile-email">Email · —</div>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <span id="profile-timezone" class="badge">Timezone not set</span>
+        <span id="profile-roles-count" class="badge" style="display:none;"></span>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:0.75rem;">
+      <div class="card" style="padding:0.75rem;">
+        <div class="meta" style="margin-bottom:4px;">Roles</div>
+        <div id="profile-roles" class="muted">No roles assigned.</div>
+      </div>
+      <div class="card" style="padding:0.75rem;">
+        <div class="meta" style="margin-bottom:4px;">Account</div>
+        <div style="display:grid; gap:6px; color: var(--text-strong);">
+          <div><strong>Timezone:</strong> <span id="profile-tz-value">Not set</span></div>
+          <div><strong>Member since:</strong> <span id="profile-created">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profile-info" class="card" style="display:none; gap:0.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <div>
+        <div class="meta">Preferences</div>
+        <h3 style="margin:4px 0 0;">Session & notifications</h3>
+      </div>
+      <a class="btn btn-secondary" href="/calendar/">Go to Calendar</a>
+    </div>
+    <div class="muted">Profile data is read-only here. Manage activity from the main apps.</div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const card = document.getElementById('profile-card');
+    const info = document.getElementById('profile-info');
+    const empty = document.getElementById('profile-empty');
+
+    const setLoggedOut = () => {
+      if (card) card.style.display = 'none';
+      if (info) info.style.display = 'none';
+      if (empty) empty.style.display = 'block';
+    };
+
+    const renderUser = (user) => {
+      if (!user) return setLoggedOut();
+      empty.style.display = 'none';
+      card.style.display = 'grid';
+      info.style.display = 'grid';
+      document.getElementById('profile-name').textContent = user.full_name || user.email || 'User';
+      document.getElementById('profile-email').textContent = `Email · ${user.email || '—'}`;
+      document.getElementById('profile-timezone').textContent = user.timezone || 'Timezone not set';
+      document.getElementById('profile-tz-value').textContent = user.timezone || 'Not set';
+      document.getElementById('profile-created').textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';
+
+      const roles = Array.isArray(user.role_codes) ? user.role_codes : [];
+      const rolesEl = document.getElementById('profile-roles');
+      const rolesCount = document.getElementById('profile-roles-count');
+      if (roles.length) {
+        rolesEl.innerHTML = roles.map((r) => `<span class="badge" style="background: var(--bg-secondary); color: var(--text-strong);">${r}</span>`).join(' ');
+        rolesEl.classList.remove('muted');
+        rolesCount.style.display = 'inline-flex';
+        rolesCount.textContent = `${roles.length} role${roles.length !== 1 ? 's' : ''}`;
+      } else {
+        rolesEl.textContent = 'No roles assigned.';
+        rolesEl.classList.add('muted');
+        rolesCount.style.display = 'none';
+      }
+    };
+
+    const fetchProfile = async () => {
+      const tokens = lifeosAuth.getTokens();
+      if (!tokens?.access_token) {
+        setLoggedOut();
+        return;
+      }
+      try {
+        const res = await fetch('/api/users/me', { headers: lifeosAuth.authHeaders() });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok !== false && body.user) {
+          renderUser(body.user);
+        } else {
+          setLoggedOut();
+        }
+      } catch (_) {
+        setLoggedOut();
+      }
+    };
+
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      if (e.detail?.loggedIn) fetchProfile();
+      else setLoggedOut();
+    });
+
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(fetchProfile);
+    } else {
+      fetchProfile();
+    }
+  })();
+</script>
 {% endblock %}
