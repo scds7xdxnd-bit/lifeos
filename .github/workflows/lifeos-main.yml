@@ -46,6 +46,14 @@ jobs:
       - name: Run lint checks
         run: make lint
 
+      - name: Black diff on a single file (debug)
+        if: always()
+        run: |
+          pwd
+          ls
+          black --version
+          black --check lifeos/core/auth/models.py --diff | sed -n '1,80p'
+
   security:
     name: Security Scan
     runs-on: ubuntu-latest
