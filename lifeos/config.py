@@ -7,8 +7,23 @@ from datetime import timedelta
 from typing import Dict, Type
 
 from dotenv import load_dotenv
+from sqlalchemy.engine.url import make_url
 
 load_dotenv()
+
+
+def _engine_options_from_uri(uri: str) -> dict:
+    url = make_url(uri)
+    # Always keep pool_pre_ping, vary connect_args by dialect.
+    if url.get_backend_name() == "sqlite":
+        return {
+            "pool_pre_ping": True,
+            "connect_args": {"detect_types": 0, "timeout": 30},
+        }
+    if url.get_backend_name() in {"postgresql", "postgres"}:
+        timeout = int(os.environ.get("DB_CONNECT_TIMEOUT_SECONDS", "10"))
+        return {"pool_pre_ping": True, "connect_args": {"connect_timeout": timeout}}
+    return {"pool_pre_ping": True}
 
 
 class BaseConfig:
@@ -19,12 +34,7 @@ class BaseConfig:
         "DATABASE_URL", "sqlite:///instance/lifeos.db"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        # Keep SQLite from returning datetime objects so SQLAlchemy can handle string parsing consistently.
-        # Also increase busy timeout to reduce "database is locked" errors under concurrent writes.
-        "connect_args": {"detect_types": 0, "timeout": 30},
-    }
+    SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.environ.get(
@@ -98,6 +108,7 @@ class DevelopmentConfig(BaseConfig):
 class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
+    SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
     JWT_TOKEN_LOCATION = ["headers"]
@@ -114,4 +125,6 @@ config_by_name: Dict[str, Type[BaseConfig]] = {
     "development": DevelopmentConfig,
     "testing": TestingConfig,
     "production": ProductionConfig,
+    # CI pipelines set APP_ENV=ci; map to testing defaults.
+    "ci": TestingConfig,
 }
