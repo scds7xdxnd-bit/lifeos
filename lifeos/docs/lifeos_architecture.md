@@ -122,7 +122,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## ⚠️ Partially Implemented / Planned
-- **Broker Integration**: Stub in `lifeos/platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
+- **Broker Integration**: Stub in `lifeos/lifeos_platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
 - **Read Model Projections**: Not yet implemented; events flow to outbox but no materialized read-side views
 - **Autonomous Assistant**: Framework ready; rules/NLU inference deferred
 - **RL-based Personalization**: Blocked on read models; placeholder for future
@@ -306,22 +306,20 @@ lifeos/
 │       ├── events.py               # calendar.event.* events
 │       ├── mappers.py
 │       └── tasks.py                # Periodic sync tasks (future)
-├── platform/                       # Async runtime, outbox, broker stubs
+├── lifeos_platform/                # Async runtime, outbox, broker stubs
 │   ├── outbox/
 │   │   ├── models.py              # OutboxMessage (durable envelope)
 │   │   ├── services.py            # enqueue, dequeue_batch, mark_sent, dispatch_ready
-│   │   └── schemas.py
+│   │   └── __init__.py
 │   ├── worker/                     # Dispatcher runtime
 │   │   ├── config.py              # DispatchConfig (env-driven)
 │   │   ├── dispatcher.py          # Main loop: claim→publish→mark_sent/failed
 │   │   ├── run.py                 # CLI entrypoint
 │   │   └── __init__.py            # Helper exports
 │   ├── broker/                     # Stub (post-v1: RabbitMQ/Kafka)
-│   │   ├── client.py              # Interface for publish/subscribe
-│   │   └── adapters/
+│   │   └── __init__.py
 │   └── clients/                    # External service adapters
-│       ├── email.py               # SMTP, SendGrid, etc.
-│       └── sms.py                 # Twilio, etc.
+│       └── __init__.py
 ├── migrations/                     # Single Alembic home
 │   ├── alembic.ini
 │   ├── env.py
@@ -588,13 +586,13 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 # 9. Platform & Outbox (fully implemented)
 **Outbox Model:**
-- `lifeos/platform/outbox/models.py`: `OutboxMessage` (SQLAlchemy table `platform_outbox`)
+- `lifeos/lifeos_platform/outbox/models.py`: `OutboxMessage` (SQLAlchemy table `platform_outbox`)
 - Columns: `id` (PK), `user_id` (FK + index), `event_type`, `payload` (JSON), `status` (enum), `attempts`, `available_at`, `last_error`, `created_at`
 - Composite indexes: `(user_id, available_at)` for ready-queue polling, `(user_id, status, available_at)` for status queries
 - Migration: `20251205_platform_outbox.py` (idempotent; creates table + indexes)
 
 **Outbox Services:**
-- `lifeos/platform/outbox/services.py` exports:
+- `lifeos/lifeos_platform/outbox/services.py` exports:
   - `enqueue(user_id, event_type, payload)` → creates row with status `pending`, available_at = now
   - `dequeue_batch(batch_size, backoff_factor)` → SELECT ... FOR UPDATE SKIP LOCKED; orders by available_at; returns ready rows
   - `mark_sent(message_id)` → updates status → `sent`
@@ -904,12 +902,12 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 ---
 
 # 15. Future Roadmap (directional, post-v1)
-**Phase 1 (Complete — v1.0):**
-- ✅ Multi-domain event architecture (7 domains operational)
-- ✅ Outbox pattern with worker dispatcher
-- ✅ Basic insights engine
-- ✅ Flask + Jinja2 frontend
-- ⚠️ ML account suggester (integrated but rules engine pending)
+- **Phase 1 (Complete — v1.0):**
+  - ✅ Multi-domain event architecture (7 domains operational)
+  - ✅ Outbox pattern with worker dispatcher
+  - ✅ Basic insights engine
+  - ✅ Flask + Jinja2 frontend
+  - ⚠️ ML account suggester (integrated but rules engine pending)
 
 **Phase 1.5 (Complete — Calendar-First):**
 - ✅ Calendar domain implementation (`lifeos/domains/calendar/`) — models, services, controllers, events

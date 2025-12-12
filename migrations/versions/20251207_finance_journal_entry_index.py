@@ -25,4 +25,6 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ix_finance_journal_entry_user_posted_at", table_name="finance_journal_entry")
+    op.drop_index(
+        "ix_finance_journal_entry_user_posted_at", table_name="finance_journal_entry"
+    )

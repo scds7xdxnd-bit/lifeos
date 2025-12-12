@@ -24,11 +24,25 @@ def upgrade():
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), index=True),
         sa.Column("event_type", sa.String(length=128), nullable=False, index=True),
         sa.Column("payload", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
-        sa.Column("status", sa.String(length=32), nullable=False, server_default="pending", index=True),
+        sa.Column(
+            "status",
+            sa.String(length=32),
+            nullable=False,
+            server_default="pending",
+            index=True,
+        ),
         sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("available_at", sa.DateTime(), nullable=False, server_default=sa.func.now(), index=True),
+        sa.Column(
+            "available_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.func.now(),
+            index=True,
+        ),
         sa.Column("last_error", sa.Text()),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
     )
     op.create_index(
         "ix_platform_outbox_user_available_at",

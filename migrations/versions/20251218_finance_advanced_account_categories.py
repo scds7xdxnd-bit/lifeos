@@ -44,6 +44,7 @@ BASE_TYPE_NORMAL_BALANCE = {
 
 _slug_pattern = re.compile(r"[^a-z0-9]+")
 
+
 def _slugify(value: str) -> str:
     value = (value or "").lower().strip()
     value = _slug_pattern.sub("-", value)
@@ -55,13 +56,39 @@ def upgrade():
     conn = op.get_bind()
 
     # --- schema changes: account categories ---
-    op.add_column("finance_account_category", sa.Column("user_id", sa.Integer(), nullable=True))
-    op.add_column("finance_account_category", sa.Column("slug", sa.String(length=128), nullable=True))
-    op.add_column("finance_account_category", sa.Column("base_type", sa.String(length=16), nullable=True))
-    op.add_column("finance_account_category", sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.false()))
-    op.add_column("finance_account_category", sa.Column("is_system", sa.Boolean(), nullable=False, server_default=sa.false()))
-    op.add_column("finance_account_category", sa.Column("created_at", sa.DateTime(), nullable=True, server_default=sa.func.now()))
-    op.add_column("finance_account_category", sa.Column("updated_at", sa.DateTime(), nullable=True, server_default=sa.func.now()))
+    op.add_column(
+        "finance_account_category", sa.Column("user_id", sa.Integer(), nullable=True)
+    )
+    op.add_column(
+        "finance_account_category",
+        sa.Column("slug", sa.String(length=128), nullable=True),
+    )
+    op.add_column(
+        "finance_account_category",
+        sa.Column("base_type", sa.String(length=16), nullable=True),
+    )
+    op.add_column(
+        "finance_account_category",
+        sa.Column(
+            "is_default", sa.Boolean(), nullable=False, server_default=sa.false()
+        ),
+    )
+    op.add_column(
+        "finance_account_category",
+        sa.Column("is_system", sa.Boolean(), nullable=False, server_default=sa.false()),
+    )
+    op.add_column(
+        "finance_account_category",
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=True, server_default=sa.func.now()
+        ),
+    )
+    op.add_column(
+        "finance_account_category",
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=True, server_default=sa.func.now()
+        ),
+    )
     op.create_foreign_key(
         "fk_finance_account_category_user",
         "finance_account_category",
@@ -71,26 +98,47 @@ def upgrade():
     )
 
     # --- schema changes: accounts ---
-    op.alter_column("finance_account", "category_id", existing_type=sa.Integer(), nullable=True)
-    op.create_index("ix_finance_account_user_category", "finance_account", ["user_id", "category_id"], unique=False)
+    op.alter_column(
+        "finance_account", "category_id", existing_type=sa.Integer(), nullable=True
+    )
+    op.create_index(
+        "ix_finance_account_user_category",
+        "finance_account",
+        ["user_id", "category_id"],
+        unique=False,
+    )
 
     # Normalize account_type and normalized_name where missing
-    conn.execute(sa.text("""
+    conn.execute(
+        sa.text(
+            """
         UPDATE finance_account
         SET account_type = 'asset'
         WHERE account_type IS NULL OR account_type = ''
-    """))
-    conn.execute(sa.text("""
+    """
+        )
+    )
+    conn.execute(
+        sa.text(
+            """
         UPDATE finance_account
         SET normalized_name = lower(trim(name))
         WHERE normalized_name IS NULL OR normalized_name = ''
-    """))
+    """
+        )
+    )
 
     # Backfill category base_type/slug/system defaults
-    categories = conn.execute(sa.text("SELECT id, code, name, normal_balance FROM finance_account_category")).fetchall()
+    categories = conn.execute(
+        sa.text("SELECT id, code, name, normal_balance FROM finance_account_category")
+    ).fetchall()
     for row in categories:
         code = (row.code or "").upper()
-        base_type = BASE_TYPE_MAP.get(code) or ("liability" if (row.normal_balance or "debit").lower() == "credit" else "asset")
+        base_type = BASE_TYPE_MAP.get(code) or (
+            "liability"
+            if (row.normal_balance or "debit").lower() == "credit"
+            else "asset"
+        )
         slug = _slugify(row.name)
         conn.execute(
             sa.text(
@@ -100,7 +148,12 @@ def upgrade():
                 WHERE id = :id
                 """
             ),
-            {"id": row.id, "base_type": base_type, "slug": slug, "now": datetime.utcnow()},
+            {
+                "id": row.id,
+                "base_type": base_type,
+                "slug": slug,
+                "now": datetime.utcnow(),
+            },
         )
 
     # Insert system defaults per base_type if missing
@@ -160,10 +213,30 @@ def upgrade():
         )
 
     # Ensure base_type and slug are non-null after backfill
-    op.alter_column("finance_account_category", "base_type", existing_type=sa.String(length=16), nullable=False)
-    op.alter_column("finance_account_category", "slug", existing_type=sa.String(length=128), nullable=False)
-    op.alter_column("finance_account_category", "created_at", existing_type=sa.DateTime(), nullable=False)
-    op.alter_column("finance_account_category", "updated_at", existing_type=sa.DateTime(), nullable=False)
+    op.alter_column(
+        "finance_account_category",
+        "base_type",
+        existing_type=sa.String(length=16),
+        nullable=False,
+    )
+    op.alter_column(
+        "finance_account_category",
+        "slug",
+        existing_type=sa.String(length=128),
+        nullable=False,
+    )
+    op.alter_column(
+        "finance_account_category",
+        "created_at",
+        existing_type=sa.DateTime(),
+        nullable=False,
+    )
+    op.alter_column(
+        "finance_account_category",
+        "updated_at",
+        existing_type=sa.DateTime(),
+        nullable=False,
+    )
 
     # Indexes/uniques
     op.create_unique_constraint(
@@ -186,14 +259,28 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ix_finance_account_category_user_base_name", table_name="finance_account_category")
-    op.drop_index("ix_finance_account_category_user_base_default", table_name="finance_account_category")
-    op.drop_constraint("uq_finance_account_category_user_base_slug", "finance_account_category", type_="unique")
+    op.drop_index(
+        "ix_finance_account_category_user_base_name",
+        table_name="finance_account_category",
+    )
+    op.drop_index(
+        "ix_finance_account_category_user_base_default",
+        table_name="finance_account_category",
+    )
+    op.drop_constraint(
+        "uq_finance_account_category_user_base_slug",
+        "finance_account_category",
+        type_="unique",
+    )
     op.alter_column("finance_account_category", "updated_at", nullable=True)
     op.alter_column("finance_account_category", "created_at", nullable=True)
     op.alter_column("finance_account_category", "slug", nullable=True)
     op.alter_column("finance_account_category", "base_type", nullable=True)
-    op.drop_constraint("fk_finance_account_category_user", "finance_account_category", type_="foreignkey")
+    op.drop_constraint(
+        "fk_finance_account_category_user",
+        "finance_account_category",
+        type_="foreignkey",
+    )
     op.drop_column("finance_account_category", "updated_at")
     op.drop_column("finance_account_category", "created_at")
     op.drop_column("finance_account_category", "is_system")
@@ -203,4 +290,6 @@ def downgrade():
     op.drop_column("finance_account_category", "user_id")
 
     op.drop_index("ix_finance_account_user_category", table_name="finance_account")
-    op.alter_column("finance_account", "category_id", existing_type=sa.Integer(), nullable=False)
+    op.alter_column(
+        "finance_account", "category_id", existing_type=sa.Integer(), nullable=False
+    )
