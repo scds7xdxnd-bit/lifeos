@@ -870,11 +870,18 @@
   document.getElementById('cal-reload-week')?.addEventListener('click', () => { fetchEvents(); });
   document.getElementById('cal-reload-month')?.addEventListener('click', () => { fetchEvents(); });
 
-  // Initialize
-  ensureAuth();
-  updateNavLabel();
-  fetchEvents();
-  fetchPendingCount();
+  // Initialize after auth session check to avoid firing with stale tokens
+  const init = () => {
+    ensureAuth();
+    updateNavLabel();
+    fetchEvents();
+    fetchPendingCount();
+  };
+  if (window.lifeosAuthReady?.then) {
+    window.lifeosAuthReady.finally(init);
+  } else {
+    init();
+  }
 })();
 </script>
 {% endblock %}

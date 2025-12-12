@@ -487,8 +487,15 @@
   });
 
   // Initialize
-  ensureAuth();
-  fetchInterpretations();
+  const start = () => {
+    ensureAuth();
+    fetchInterpretations();
+  };
+  if (window.lifeosAuthReady?.then) {
+    window.lifeosAuthReady.finally(start);
+  } else {
+    start();
+  }
 })();
 </script>
 {% endblock %}

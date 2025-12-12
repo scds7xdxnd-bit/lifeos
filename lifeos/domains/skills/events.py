@@ -6,6 +6,7 @@ SKILLS_SKILL_CREATED = "skills.skill.created"
 SKILLS_SKILL_UPDATED = "skills.skill.updated"
 SKILLS_SKILL_DELETED = "skills.skill.deleted"
 SKILLS_PRACTICE_LOGGED = "skills.practice.logged"
+SKILLS_PRACTICE_INFERRED = "skills.practice.inferred"
 
 EVENT_CATALOG = {
     SKILLS_SKILL_CREATED: {
@@ -48,6 +49,21 @@ EVENT_CATALOG = {
             "practiced_at": "datetime",
         },
     },
+    SKILLS_PRACTICE_INFERRED: {
+        "version": "v1",
+        "payload": {
+            "session_id": "int",
+            "skill_id": "int",
+            "calendar_event_id": "int",
+            "user_id": "int",
+            "confidence_score": "float",
+            "duration_minutes": "int?",
+            "payload_version": "str",
+            "model_version": "str?",
+            "is_false_positive": "bool?",
+            "is_false_negative": "bool?",
+        },
+    },
 }
 
 __all__ = [
@@ -56,4 +72,5 @@ __all__ = [
     "SKILLS_SKILL_UPDATED",
     "SKILLS_SKILL_DELETED",
     "SKILLS_PRACTICE_LOGGED",
+    "SKILLS_PRACTICE_INFERRED",
 ]

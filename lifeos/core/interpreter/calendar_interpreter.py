@@ -14,6 +14,7 @@ from lifeos.core.interpreter.constants import (
     MINIMUM_CONFIDENCE_THRESHOLD,
     STATUS_INFERRED,
 )
+from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.core.interpreter.domain_adapters import get_adapter
 from lifeos.domains.calendar.events import CALENDAR_INTERPRETATION_CREATED
 from lifeos.domains.calendar.models.calendar_event import (
@@ -135,6 +136,7 @@ class CalendarInterpreter:
 
         Optionally creates an inferred record in the target domain if confidence is high.
         """
+        model_version = "calendar-interpreter-v1"
         interpretation = CalendarEventInterpretation(
             calendar_event_id=event.id,
             user_id=event.user_id,
@@ -158,6 +160,9 @@ class CalendarInterpreter:
                 "domain": domain,
                 "record_type": record_type,
                 "confidence_score": confidence_score,
+                "status": STATUS_INFERRED,
+                "payload_version": "v1",
+                "model_version": model_version,
                 "created_at": interpretation.created_at.isoformat(),
             },
             user_id=event.user_id,
@@ -176,6 +181,20 @@ class CalendarInterpreter:
             )
             if record_id:
                 interpretation.record_id = record_id
+
+        # Emit inference event payload using typed schema
+        emit_inference_event(
+            domain=domain,
+            record_type=record_type,
+            user_id=event.user_id,
+            calendar_event_id=event.id,
+            confidence=confidence_score,
+            inferred_data=extracted_data,
+            record_id=interpretation.record_id,
+            status=STATUS_INFERRED,
+            model_version=model_version,
+            context={"source": "calendar_interpreter", "record_id": interpretation.record_id},
+        )
 
         return interpretation
 

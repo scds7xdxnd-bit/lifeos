@@ -366,7 +366,11 @@
       });
 
       selectView('login');
-      ensureServerSession();
+      // Expose a promise that resolves after the initial server session check.
+      // Page-level scripts can await this to avoid firing API calls with stale/invalid tokens.
+      const authReady = Promise.resolve().then(() => ensureServerSession()).catch(() => {});
+      window.lifeosAuthReady = authReady;
+      authReady.finally(() => window.dispatchEvent(new CustomEvent('lifeos:auth-ready')));
     </script>
     <!-- Finance domain scripts -->
     <script src="{{ url_for('static', filename='js/finance-account-subtypes.js') }}"></script>

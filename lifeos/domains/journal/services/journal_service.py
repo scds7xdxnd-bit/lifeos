@@ -5,6 +5,10 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import List, Optional, Tuple
 
+import json
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
 from lifeos.domains.journal.events import (
     JOURNAL_ENTRY_CREATED,
     JOURNAL_ENTRY_DELETED,
@@ -139,7 +143,15 @@ def list_entries(
     if mood is not None:
         query = query.filter(JournalEntry.mood == _validate_mood(mood))
     if tag:
-        query = query.filter(JournalEntry.tags.contains([tag]))
+        dialect = db.session.bind.dialect.name if db.session.bind else ""
+        if dialect == "postgresql":
+            # Explicit JSONB containment to avoid LIKE fallback.
+            json_literal = json.dumps([tag])
+            query = query.filter(
+                sa.text("journal_entry.tags::jsonb @> :tag_literal")
+            ).params(tag_literal=json_literal)
+        else:
+            query = query.filter(JournalEntry.tags.contains([tag]))
     if search_text:
         like = f"%{search_text}%"
         query = query.filter(

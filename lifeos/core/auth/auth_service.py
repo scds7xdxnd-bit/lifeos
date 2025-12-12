@@ -14,6 +14,12 @@ from flask_jwt_extended import (
 )
 from sqlalchemy import func
 
+from lifeos.core.auth.events import (
+    AUTH_USER_PASSWORD_RESET_COMPLETED,
+    AUTH_USER_PASSWORD_RESET_REQUESTED,
+    AUTH_USER_REGISTERED,
+    AUTH_USER_USERNAME_REMINDER_REQUESTED,
+)
 from lifeos.core.auth.models import JWTBlocklist, PasswordResetToken, Role, SessionToken
 from lifeos.core.auth.password import hash_password, verify_password
 from lifeos.core.auth.schemas import (
@@ -107,7 +113,7 @@ def register_user(payload: RegisterRequest, auto_issue_tokens: bool = False) -> 
     db.session.flush()  # ensure user.id for events
 
     enqueue_outbox(
-        "auth.user.registered",
+        AUTH_USER_REGISTERED,
         {
             "user_id": user.id,
             "email": user.email,
@@ -133,7 +139,7 @@ def request_username_reminder(payload: ForgotUsernameRequest) -> None:
     user = User.query.filter(func.lower(User.email) == payload.email).first()
     if user:
         enqueue_outbox(
-            "auth.user.username_reminder_requested",
+            AUTH_USER_USERNAME_REMINDER_REQUESTED,
             {"user_id": user.id, "email": user.email},
             user_id=user.id,
         )
@@ -146,7 +152,7 @@ def request_username_reminder(payload: ForgotUsernameRequest) -> None:
     else:
         # Emit an event without user_id to keep metrics without leaking existence.
         enqueue_outbox(
-            "auth.user.username_reminder_requested",
+            AUTH_USER_USERNAME_REMINDER_REQUESTED,
             {"email": payload.email},
             user_id=None,
         )
@@ -158,7 +164,7 @@ def request_password_reset(payload: ForgotPasswordRequest) -> None:
     user = User.query.filter(func.lower(User.email) == payload.email).first()
     if not user:
         enqueue_outbox(
-            "auth.user.password_reset_requested",
+            AUTH_USER_PASSWORD_RESET_REQUESTED,
             {"email": payload.email, "user_id": None, "expires_at": None},
             user_id=None,
         )
@@ -172,7 +178,7 @@ def request_password_reset(payload: ForgotPasswordRequest) -> None:
     db.session.flush()
 
     enqueue_outbox(
-        "auth.user.password_reset_requested",
+        AUTH_USER_PASSWORD_RESET_REQUESTED,
         {"user_id": user.id, "email": user.email, "expires_at": expires_at.isoformat()},
         user_id=user.id,
     )
@@ -213,7 +219,7 @@ def reset_password(payload: ResetPasswordRequest) -> bool:
     _revoke_user_sessions(user.id)
 
     enqueue_outbox(
-        "auth.user.password_reset_completed",
+        AUTH_USER_PASSWORD_RESET_COMPLETED,
         {"user_id": user.id, "reset_id": token.id},
         user_id=user.id,
     )

@@ -292,9 +292,16 @@
         forecastBody.innerHTML = '';
       }
     });
-    ensureAuth();
-    fetchSchedule();
-    fetchForecast();
+    const start = () => {
+      ensureAuth();
+      fetchSchedule();
+      fetchForecast();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>
 {% endblock %}

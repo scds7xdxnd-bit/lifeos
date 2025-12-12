@@ -269,9 +269,12 @@ def search_accounts(user_id: int, query: str, limit: int = 20) -> List[Account]:
 
 def get_suggested_accounts(user_id: int, query: str, limit: int = 10, include_ml: bool = True) -> List[dict]:
     """Get suggested accounts combining existing search + optional ML suggestions."""
+    # Derive a safe search limit: if caller asks for fewer than 3, search with that limit (never negative).
+    search_limit = limit if limit <= 2 else max(1, limit - 2)
+
     # Get existing accounts
     try:
-        existing = search_accounts(user_id, query, limit=limit - 2)
+        existing = search_accounts(user_id, query, limit=search_limit)
     except ValueError:
         raise
 

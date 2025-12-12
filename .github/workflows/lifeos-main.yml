@@ -257,8 +257,23 @@ jobs:
         if: always()
         run: |
           if [ ! -f "${{ github.workspace }}/trivy-results.sarif" ]; then
-            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"trivy","informationUri":"https://github.com/aquasecurity/trivy","version":"unknown"}},"results":[]}]}'
-              > "${{ github.workspace }}/trivy-results.sarif"
+            cat > "${{ github.workspace }}/trivy-results.sarif" <<'EOF'
+            {
+              "version": "2.1.0",
+              "runs": [
+                {
+                  "tool": {
+                    "driver": {
+                      "name": "trivy",
+                      "informationUri": "https://github.com/aquasecurity/trivy",
+                      "version": "unknown"
+                    }
+                  },
+                  "results": []
+                }
+              ]
+            }
+          EOF
           fi
       
       - name: Upload Trivy scan results

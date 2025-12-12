@@ -14,7 +14,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
 - **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with 23 additive migrations (head: `20251219_calendar_oauth_tokens`)
-- **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live
+- **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live. Latest runs: PR workflow reported 24 passed / 10 xfailed / 497 errors (needs investigation on selective job), main workflow reported 515 passed / 6 deselected / 10 xfailed (green).
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
 - **Habits Domain**: Habits, logs, streaks, metrics (complete lifecycle)
@@ -27,6 +27,8 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Calendar Interpreter**: Rule-based classification engine (`lifeos/core/interpreter/`), domain adapters, confidence scoring, constants
 - **Inferred Records**: All existing domains extended with `source`, `calendar_event_id`, `confidence_score`, `inferred_status` columns (migration applied)
 - **Insights Engine**: Rule-based pipeline (ingest→enrich→rules→persist→deliver); per-domain handlers; feature flags
+- **Inference Telemetry**: In-memory telemetry for insight/inference events (counts, latency, FP/FN flags per domain/model_version); admin-only debug endpoint in non-prod (`GET /admin/debug/insight-telemetry`) exposes bounded snapshots
+- **Event Catalog Completeness**: All domains updated to include inference events with payload_version/model_version and optional `is_false_positive`/`is_false_negative`; guardrail tests enforce catalog coverage
 - **Health Endpoints**: `/health` and `/api/v1/ping` for CI/CD smoketests
 - **Testing**: 521 tests passing, 85% coverage, all tests with proper markers (33 integration, 1 unit, 24 ml)
 
@@ -454,16 +456,17 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
   - `calendar.event.deleted` → {event_id, user_id}
   - `calendar.event.synced` → {event_id, user_id, source, external_id} (for external calendar sync)
   - **Interpreter/Inferred Events (NEW):**
-  - `calendar.interpretation.created` → {interpretation_id, calendar_event_id, user_id, domain, record_type, confidence_score, status}
-  - `calendar.interpretation.confirmed` → {interpretation_id, user_id, record_id}
-  - `calendar.interpretation.rejected` → {interpretation_id, user_id, reason?}
-  - `finance.transaction.inferred` → {transaction_id, calendar_event_id, user_id, confidence_score, amount?, description}
-  - `health.meal.inferred` → {nutrition_id, calendar_event_id, user_id, confidence_score, meal_type}
-  - `health.workout.inferred` → {workout_id, calendar_event_id, user_id, confidence_score, workout_type, duration_minutes?}
-  - `habits.habit.inferred` → {log_id, habit_id, calendar_event_id, user_id, confidence_score}
-  - `skills.practice.inferred` → {session_id, skill_id, calendar_event_id, user_id, confidence_score, duration_minutes?}
-  - `projects.work_session.inferred` → {log_id, project_id?, task_id?, calendar_event_id, user_id, confidence_score}
-  - `relationships.interaction.inferred` → {interaction_id, person_id?, calendar_event_id, user_id, confidence_score, interaction_type}
+  - `calendar.interpretation.created` → {interpretation_id, calendar_event_id, user_id, domain, record_type, confidence_score, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `calendar.interpretation.confirmed` → {interpretation_id, user_id, record_id, payload_version, model_version}
+  - `calendar.interpretation.rejected` → {interpretation_id, user_id, reason?, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `finance.transaction.inferred` → {transaction_id, calendar_event_id, user_id, confidence_score, amount?, description, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `health.meal.inferred` → {nutrition_id, calendar_event_id, user_id, confidence_score, meal_type, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `health.workout.inferred` → {workout_id, calendar_event_id, user_id, confidence_score, workout_type, duration_minutes?, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `habits.habit.inferred` → {log_id, habit_id, calendar_event_id, user_id, confidence_score, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `skills.practice.inferred` → {session_id, skill_id, calendar_event_id, user_id, confidence_score, duration_minutes?, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `projects.work_session.inferred` → {log_id, project_id?, task_id?, calendar_event_id, user_id, confidence_score, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `relationships.interaction.inferred` → {interaction_id, person_id?, calendar_event_id, user_id, confidence_score, interaction_type, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - All inference events carry `inferred_structure` metadata where available and are versioned; guardrails enforce presence.
 - Rule: any new event must be added to the emitting domain's `events.py` with payload versioning when changed.
 
 ---
@@ -579,6 +582,7 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 - Backfills live in scripts/management commands, not long Alembic steps.  
 - Index rule: always index `user_id` plus primary query dimension (e.g., date/event_type). Enforced via models and migration `20251204_core_user_query_indexes.py`.  
 - If DB is stamped with legacy IDs, stamp to `20251204_core_add_insight_record` (or `_core_initial` if empty) then upgrade to newest.
+- Dialect-aware patterns: use `to_char`/`strftime` for date grouping; avoid SQLite-only `connect_args` on Postgres/MySQL; JSON containment on Postgres (`::jsonb @>`) with `.contains` fallback elsewhere; type casts (e.g., journal.mood integer) must include `postgresql_using` for Postgres safety.
 
 ---
 
@@ -634,6 +638,7 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 **Components:**
 - `engine.py`: `InsightEngine` class; registers subscribers on bus; fires rules on event
+- `telemetry.py`: in-memory telemetry (counts, latencies, coverage, FP/FN by domain/model_version); bounded retention; ops/debug only
 - `rules/`: One file per domain
   - `finance_rules.py`: High-spend alerts, budget overruns, forecast variance, receivable due-dates, anomalies
   - `health_rules.py`: Weight trends, sleep quality derivation, fitness progression, stress/energy patterns
@@ -666,6 +671,7 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 - Batch-friendly: rules query recent events (e.g., last 7 days) not full history
 - Caching: user prefs cached in Redis (with TTL); aggregate rollups computed nightly (scheduled tasks)
 - Early exit: rule checks feature flag first; expensive computations gated behind config
+- Telemetry: counts/latency/FP-FN exposed via admin-only debug endpoint (non-prod): `GET /admin/debug/insight-telemetry`; read-only, requires admin JWT; in-memory only
 
 **Example Rule Flow:**
 ```
@@ -914,11 +920,12 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - **Specification**: `lifeos/docs/CALENDAR_FIRST_ARCHITECTURE.md`
 
 **Phase 3a (Next) — Cross-Domain Intelligence (2026 Q1 kickoff):**
-- [ ] Correlate calendar + journal + domain events to surface insights (energy vs habits, finance stress vs health, etc.)
-- [ ] Define/read projections for high-value queries (read models for insights, dashboards)
-- [ ] Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence auto-routed with audit trail
-- [ ] Telemetry: insight generation metrics, coverage, false-positive/negative tracking
-- [ ] ML enablement: keep model hooks behind services; log `model_version`/`payload_version`
+- [ ] Correlate calendar + journal + domain events to surface insights (energy vs habits, finance stress vs health, calendar→finance/habits/health impacts).
+- [ ] Define/read projections for high-value queries (read models for insights, dashboards).
+- [ ] Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence auto-routed with audit trail.
+- [ ] Telemetry: insight generation metrics, coverage, false-positive/negative tracking.
+- [ ] ML enablement: keep model hooks behind services; log `model_version`/`payload_version`.
+- [ ] Backend tasks: harden event catalog completeness, add projection layer (materialized views or cached queries), extend insights rules to consume calendar/journal cross-signals.
 
 **Phase 3b (Option) — Mobile/API Hardening:**
 - [ ] API versioning strategy (`/api/v1`, `/api/v2`)

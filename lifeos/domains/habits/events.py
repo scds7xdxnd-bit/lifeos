@@ -7,6 +7,7 @@ HABITS_HABIT_UPDATED = "habits.habit.updated"
 HABITS_HABIT_DEACTIVATED = "habits.habit.deactivated"
 HABITS_HABIT_LOGGED = "habits.habit.logged"
 HABITS_HABIT_DELETED = "habits.habit.deleted"
+HABITS_HABIT_INFERRED = "habits.habit.inferred"
 
 EVENT_CATALOG = {
     HABITS_HABIT_CREATED: {
@@ -58,6 +59,19 @@ EVENT_CATALOG = {
             "deleted_at": "datetime",
         },
     },
+    HABITS_HABIT_INFERRED: {
+        "version": "v1",
+        "payload": {
+            "log_id": "int",
+            "habit_id": "int",
+            "calendar_event_id": "int",
+            "user_id": "int",
+            "confidence_score": "float",
+            "payload_version": "str",
+            "is_false_positive": "bool?",
+            "is_false_negative": "bool?",
+        },
+    },
 }
 
 __all__ = [
@@ -67,4 +81,5 @@ __all__ = [
     "HABITS_HABIT_DEACTIVATED",
     "HABITS_HABIT_LOGGED",
     "HABITS_HABIT_DELETED",
+    "HABITS_HABIT_INFERRED",
 ]

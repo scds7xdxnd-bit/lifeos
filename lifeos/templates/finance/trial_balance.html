@@ -306,10 +306,17 @@
       }
     });
 
-    ensureAuth();
-    fetchTrialBalance();
-    fetchPeriod();
-    fetchMonthly();
+    const runInitial = () => {
+      ensureAuth();
+      fetchTrialBalance();
+      fetchPeriod();
+      fetchMonthly();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(runInitial);
+    } else {
+      runInitial();
+    }
   })();
 </script>
 {% endblock %}

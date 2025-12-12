@@ -446,6 +446,14 @@
               </label>
             </div>
             
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.9rem; color: #1f2430;">Subtype (optional)</label>
+              <select id="inline-subtype-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
+                <option value="">Loading subtypes…</option>
+              </select>
+              <small id="inline-subtype-hint" style="color: #5b6470; font-size: 0.8rem; display: block; margin-top: 0.25rem;"></small>
+            </div>
+            
             <div style="margin-bottom: 1.5rem;">
               <label style="display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.9rem; color: #1f2430;">Category (optional)</label>
               <select id="inline-category-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
@@ -470,8 +478,42 @@
 
           const categorySelect = modal.querySelector('#inline-category-select');
           const categoryNewInput = modal.querySelector('#inline-category-new');
+          const subtypeSelect = modal.querySelector('#inline-subtype-select');
+          const subtypeHint = modal.querySelector('#inline-subtype-hint');
           const errorEl = modal.querySelector('#inline-create-error');
           const typeRadios = modal.querySelectorAll('input[name="account-type"]');
+
+          // Populate subtypes for the given base type
+          const populateSubtypes = async (baseType) => {
+            if (!subtypeSelect) return;
+            subtypeSelect.innerHTML = '<option value="">— None / other —</option>';
+            subtypeSelect.disabled = true;
+            if (subtypeHint) {
+              subtypeHint.textContent = 'Loading subtypes...';
+            }
+            if (!window.lifeosAccountSubtypes?.getSubtypes) {
+              if (subtypeHint) subtypeHint.textContent = 'Subtype list unavailable (module not loaded).';
+              return;
+            }
+            try {
+              const subs = await window.lifeosAccountSubtypes.getSubtypes(baseType);
+              if (Array.isArray(subs) && subs.length) {
+                subs.forEach((sub) => {
+                  const opt = document.createElement('option');
+                  opt.value = sub;
+                  opt.textContent = sub.replace(/_/g, ' ');
+                  subtypeSelect.appendChild(opt);
+                });
+                subtypeSelect.disabled = false;
+                if (subtypeHint) subtypeHint.textContent = `${subs.length} subtype option(s) for ${baseType}`;
+              } else if (subtypeHint) {
+                subtypeHint.textContent = 'No subtype suggestions for this type.';
+              }
+            } catch (err) {
+              console.warn('Failed to load subtypes', err);
+              if (subtypeHint) subtypeHint.textContent = 'Unable to load subtypes. You can continue without one.';
+            }
+          };
 
           // Populate categories based on selected type
           const populateCategories = async (baseType) => {
@@ -493,12 +535,14 @@
 
           // Initialize with default selection
           populateCategories('asset');
+          populateSubtypes('asset');
 
           // Update categories when type changes
           typeRadios.forEach(radio => {
             radio.addEventListener('change', () => {
               if (radio.checked) {
                 populateCategories(radio.value);
+                populateSubtypes(radio.value);
               }
             });
           });
@@ -517,6 +561,7 @@
             const accountType = getSelectedType();
             const categoryId = categorySelect.value ? parseInt(categorySelect.value) : null;
             const categoryNameNew = categoryNewInput.value.trim() || null;
+            const accountSubtype = subtypeSelect?.value || null;
             
             errorEl.textContent = '';
 
@@ -525,7 +570,7 @@
               const account = await window.lifeosAccountSearch?.createAccountInline?.(
                 name,
                 accountType,
-                null, // subtype
+                accountSubtype || null, // subtype
                 categoryId,
                 categoryNameNew
               );

@@ -7,6 +7,7 @@
 const lifeosAccountSubtypes = (() => {
   // Cache: { asset: [...], liability: [...], ... }
   const cache = {};
+  const API_BASE = "/api/finance/accounts/subtypes";
 
   const VALID_TYPES = ['asset', 'liability', 'equity', 'income', 'expense'];
 
@@ -27,15 +28,14 @@ const lifeosAccountSubtypes = (() => {
     }
 
     try {
-      const response = await fetch(
-        `/finance/accounts/subtypes/${encodeURIComponent(accountType)}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+      const headers = Object.assign(
+        { 'Content-Type': 'application/json' },
+        window.lifeosAuth?.authHeaders?.() || {}
       );
+      const response = await fetch(`${API_BASE}/${encodeURIComponent(accountType)}`, {
+        method: 'GET',
+        headers,
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);

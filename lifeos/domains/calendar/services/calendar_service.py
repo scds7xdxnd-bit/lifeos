@@ -12,6 +12,7 @@ from lifeos.domains.calendar.events import (
     CALENDAR_INTERPRETATION_CONFIRMED,
     CALENDAR_INTERPRETATION_REJECTED,
 )
+from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.models.calendar_event import (
     CalendarEvent,
     CalendarEventInterpretation,
@@ -258,17 +259,18 @@ def update_interpretation_status(
     record_id: Optional[int] = None,
 ) -> CalendarEventInterpretation:
     """
-    Update interpretation status (confirm, reject, ignore).
+    Update interpretation status (confirm, reject, ignore, ambiguous).
 
     Emits appropriate event based on new status.
     """
-    if status not in {"confirmed", "rejected", "ignored"}:
+    if status not in {"confirmed", "rejected", "ignored", "ambiguous"}:
         raise ValueError("invalid_status")
 
     interpretation = CalendarEventInterpretation.query.filter_by(id=interpretation_id, user_id=user_id).first()
     if not interpretation:
         raise ValueError("not_found")
 
+    previous_record_id = interpretation.record_id
     interpretation.status = status
     if record_id is not None:
         interpretation.record_id = record_id
@@ -286,6 +288,8 @@ def update_interpretation_status(
                 "domain": interpretation.domain,
                 "record_type": interpretation.record_type,
                 "record_id": record_id,
+                "status": status,
+                "payload_version": "v1",
                 "confirmed_at": datetime.utcnow().isoformat(),
             },
             user_id=user_id,
@@ -299,10 +303,50 @@ def update_interpretation_status(
                 "user_id": user_id,
                 "domain": interpretation.domain,
                 "record_type": interpretation.record_type,
+                "status": status,
+                "payload_version": "v1",
                 "rejected_at": datetime.utcnow().isoformat(),
             },
             user_id=user_id,
         )
+    elif status == "ambiguous":
+        enqueue_outbox(
+            CALENDAR_INTERPRETATION_REJECTED,
+            {
+                "interpretation_id": interpretation.id,
+                "calendar_event_id": interpretation.calendar_event_id,
+                "user_id": user_id,
+                "domain": interpretation.domain,
+                "record_type": interpretation.record_type,
+                "status": status,
+                "payload_version": "v1",
+                "updated_at": datetime.utcnow().isoformat(),
+            },
+            user_id=user_id,
+        )
+
+    is_false_positive = status in {"rejected", "ambiguous"}
+    is_false_negative = False
+    if status == "confirmed" and record_id is not None:
+        if previous_record_id and record_id != previous_record_id:
+            is_false_negative = True  # model pointed to wrong entity; user corrected
+        elif previous_record_id is None:
+            is_false_negative = True  # model missed mapping; user supplied
+
+    emit_inference_event(
+        domain=interpretation.domain,
+        record_type=interpretation.record_type,
+        user_id=user_id,
+        calendar_event_id=interpretation.calendar_event_id,
+        confidence=float(interpretation.confidence_score),
+        inferred_data=interpretation.classification_data or {},
+        record_id=interpretation.record_id,
+        status=status,
+        model_version="calendar-interpreter-v1",
+        context={"source": "user_review", "interpretation_id": interpretation.id},
+        is_false_positive=is_false_positive,
+        is_false_negative=is_false_negative,
+    )
 
     db.session.commit()
     return interpretation

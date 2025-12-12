@@ -30,6 +30,7 @@ from lifeos.domains.projects.models import project, task, task_log
 from lifeos.core.insights import models as insight_models
 from lifeos.domains.finance.models import schedule_models
 from lifeos.core.auth.models import Role
+from lifeos.core.users.models import User
 from lifeos.platform.outbox import models as outbox_models
 from lifeos.domains.calendar.models import calendar_event as calendar_models
 
@@ -73,6 +74,10 @@ def app():
             calendar_models,
         )
         db.create_all()
+        # Seed a default user for FK-dependent tests
+        if not User.query.filter_by(email="test@example.com").first():
+            db.session.add(User(email="test@example.com", password_hash="test"))
+            db.session.commit()
         # seed a default admin role so require_roles can find it
         if not Role.query.filter_by(name="admin").first():
             db.session.add(Role(name="admin", description="admin role for tests"))

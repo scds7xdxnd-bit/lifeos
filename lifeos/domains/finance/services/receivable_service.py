@@ -45,6 +45,8 @@ def create_receivable(
             "user_id": user_id,
             "principal": float(principal),
             "counterparty": counterparty,
+            "start_date": start_date.isoformat(),
+            "due_date": due_date.isoformat() if due_date else None,
         },
         user_id=user_id,
     )

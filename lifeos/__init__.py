@@ -102,6 +102,12 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         engine_opts = app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
         connect_args = engine_opts.get("connect_args") or {}
         connect_args.pop("detect_types", None)
+        # Convert sqlite busy timeout to Postgres connect_timeout, otherwise drop it
+        if "timeout" in connect_args:
+            timeout_val = connect_args.pop("timeout")
+            is_postgres = db_uri.startswith("postgresql")
+            if is_postgres:
+                connect_args.setdefault("connect_timeout", timeout_val)
         # If nothing remains, drop connect_args entirely
         if not connect_args and "connect_args" in engine_opts:
             engine_opts.pop("connect_args")
@@ -180,6 +186,7 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.domains.relationships.controllers.rel_pages import rel_pages_bp
     from lifeos.domains.skills.controllers.skill_api import skill_api_bp
     from lifeos.domains.skills.controllers.skill_pages import skill_pages_bp
+    from lifeos.core.admin.controllers import admin_debug_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(user_api_bp, url_prefix="/api/users")
@@ -210,6 +217,11 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
     app.register_blueprint(calendar_pages_bp, url_prefix="/calendar")
+
+    # Admin/debug endpoints: register only in non-production or when debugging.
+    env = (app.config.get("ENV") or "").lower()
+    if env != "production" or app.debug:
+        app.register_blueprint(admin_debug_bp)
 
 
 def _register_error_handlers(app: Flask) -> None:

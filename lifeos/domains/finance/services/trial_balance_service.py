@@ -6,6 +6,7 @@ import datetime as dt
 from collections import defaultdict
 from typing import Dict, List
 
+import sqlalchemy as sa
 from sqlalchemy import func
 
 from lifeos.domains.finance.models.accounting_models import (
@@ -65,16 +66,21 @@ def period_balance(user_id: int, start_date: dt.date, end_date: dt.date) -> Dict
 
 def monthly_rollup(user_id: int) -> Dict[str, Dict[str, float]]:
     """Aggregate debits/credits by YYYY-MM for the user."""
+    dialect = db.session.bind.dialect.name if db.session.bind else "sqlite"
+    if dialect == "sqlite":
+        month_expr = func.strftime("%Y-%m", JournalEntry.posted_at)
+    else:
+        month_expr = func.to_char(JournalEntry.posted_at, sa.literal_column("'YYYY-MM'"))
     query = (
         db.session.query(
-            func.strftime("%Y-%m", JournalEntry.posted_at).label("ym"),
+            month_expr.label("ym"),
             func.sum(JournalLine.debit),
             func.sum(JournalLine.credit),
         )
         .join(JournalEntry, JournalEntry.id == JournalLine.entry_id)
         .filter(JournalEntry.user_id == user_id)
-        .group_by("ym")
-        .order_by("ym")
+        .group_by(month_expr)
+        .order_by(month_expr)
     )
     rollup: Dict[str, Dict[str, float]] = {}
     for ym, debit_sum, credit_sum in query.all():

@@ -269,8 +269,15 @@
         emptyEl.style.display = 'block';
       }
     });
-    ensureAuth();
-    fetchReceivables();
+    const start = () => {
+      ensureAuth();
+      fetchReceivables();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>
 {% endblock %}
