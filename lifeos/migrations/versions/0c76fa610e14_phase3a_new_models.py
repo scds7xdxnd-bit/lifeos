@@ -39,7 +39,9 @@ def _has_index_columns(table: str, columns: list[str]) -> bool:
 
 
 def _set_default_if_null(table: str, column: str, default_sql: str) -> None:
-    op.execute(text(f"UPDATE {table} SET {column} = {default_sql} WHERE {column} IS NULL"))
+    op.execute(
+        text(f"UPDATE {table} SET {column} = {default_sql} WHERE {column} IS NULL")
+    )
 
 
 def _create_fk_if_supported(
@@ -57,7 +59,9 @@ def _create_fk_if_supported(
     inspector = inspect(bind)
     if any(fk["name"] == constraint_name for fk in inspector.get_foreign_keys(table)):
         return
-    op.create_foreign_key(constraint_name, table, referent, local_cols, remote_cols, ondelete=ondelete)
+    op.create_foreign_key(
+        constraint_name, table, referent, local_cols, remote_cols, ondelete=ondelete
+    )
 
 
 def upgrade() -> None:
@@ -70,8 +74,18 @@ def upgrade() -> None:
     _set_default_if_null("calendar_event", "created_at", "CURRENT_TIMESTAMP")
     _set_default_if_null("calendar_event", "updated_at", "CURRENT_TIMESTAMP")
     with op.batch_alter_table("calendar_event") as batch:
-        batch.alter_column("tags", existing_type=sa.JSON(), nullable=False, server_default=sa.text("'[]'"))
-        batch.alter_column("metadata", existing_type=sa.JSON(), nullable=False, server_default=sa.text("'{}'"))
+        batch.alter_column(
+            "tags",
+            existing_type=sa.JSON(),
+            nullable=False,
+            server_default=sa.text("'[]'"),
+        )
+        batch.alter_column(
+            "metadata",
+            existing_type=sa.JSON(),
+            nullable=False,
+            server_default=sa.text("'{}'"),
+        )
         batch.alter_column(
             "created_at",
             existing_type=sa.DateTime(),
@@ -87,12 +101,18 @@ def upgrade() -> None:
     if not _has_index("calendar_event", "ix_calendar_event_user_id"):
         op.create_index("ix_calendar_event_user_id", "calendar_event", ["user_id"])
     if not _has_index_columns("calendar_event", ["start_time"]):
-        op.create_index("ix_calendar_event_start_time", "calendar_event", ["start_time"])
+        op.create_index(
+            "ix_calendar_event_start_time", "calendar_event", ["start_time"]
+        )
 
     # Calendar interpretations: tighten types/nullability and ensure lookup indexes.
     _set_default_if_null("calendar_event_interpretation", "classification_data", "'{}'")
-    _set_default_if_null("calendar_event_interpretation", "created_at", "CURRENT_TIMESTAMP")
-    _set_default_if_null("calendar_event_interpretation", "updated_at", "CURRENT_TIMESTAMP")
+    _set_default_if_null(
+        "calendar_event_interpretation", "created_at", "CURRENT_TIMESTAMP"
+    )
+    _set_default_if_null(
+        "calendar_event_interpretation", "updated_at", "CURRENT_TIMESTAMP"
+    )
     with op.batch_alter_table("calendar_event_interpretation") as batch:
         batch.alter_column(
             "domain",
@@ -144,7 +164,11 @@ def upgrade() -> None:
             ["calendar_event_id"],
         )
     if not _has_index_columns("calendar_event_interpretation", ["user_id"]):
-        op.create_index("ix_calendar_event_interpretation_user_id", "calendar_event_interpretation", ["user_id"])
+        op.create_index(
+            "ix_calendar_event_interpretation_user_id",
+            "calendar_event_interpretation",
+            ["user_id"],
+        )
 
     # Calendar OAuth tokens: timestamps required for rotation/monitoring.
     _set_default_if_null("calendar_oauth_token", "created_at", "CURRENT_TIMESTAMP")
@@ -199,8 +223,14 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("CURRENT_TIMESTAMP"),
         )
-    if not _has_index("finance_account_category", "ix_finance_account_category_user_id"):
-        op.create_index("ix_finance_account_category_user_id", "finance_account_category", ["user_id"])
+    if not _has_index(
+        "finance_account_category", "ix_finance_account_category_user_id"
+    ):
+        op.create_index(
+            "ix_finance_account_category_user_id",
+            "finance_account_category",
+            ["user_id"],
+        )
     _create_fk_if_supported(
         "finance_account_category",
         "fk_finance_account_category_user",
@@ -210,7 +240,9 @@ def upgrade() -> None:
     )
 
     # Money schedule: ensure composite date index exists.
-    if not _has_index("finance_money_schedule_row", "ix_finance_money_schedule_row_user_event_date"):
+    if not _has_index(
+        "finance_money_schedule_row", "ix_finance_money_schedule_row_user_event_date"
+    ):
         op.create_index(
             "ix_finance_money_schedule_row_user_event_date",
             "finance_money_schedule_row",
@@ -226,7 +258,11 @@ def upgrade() -> None:
             nullable=True,
         )
     if not _has_index_columns("finance_transaction", ["calendar_event_id"]):
-        op.create_index("ix_finance_transaction_calendar_event", "finance_transaction", ["calendar_event_id"])
+        op.create_index(
+            "ix_finance_transaction_calendar_event",
+            "finance_transaction",
+            ["calendar_event_id"],
+        )
     _create_fk_if_supported(
         "finance_transaction",
         "fk_finance_transaction_calendar_event",
@@ -257,7 +293,11 @@ def upgrade() -> None:
             nullable=True,
         )
     if not _has_index_columns("health_nutrition_log", ["calendar_event_id"]):
-        op.create_index("ix_health_nutrition_log_calendar_event", "health_nutrition_log", ["calendar_event_id"])
+        op.create_index(
+            "ix_health_nutrition_log_calendar_event",
+            "health_nutrition_log",
+            ["calendar_event_id"],
+        )
     _create_fk_if_supported(
         "health_nutrition_log",
         "fk_health_nutrition_log_calendar_event",
@@ -288,7 +328,9 @@ def upgrade() -> None:
             nullable=True,
         )
     if not _has_index_columns("health_workout", ["calendar_event_id"]):
-        op.create_index("ix_health_workout_calendar_event", "health_workout", ["calendar_event_id"])
+        op.create_index(
+            "ix_health_workout_calendar_event", "health_workout", ["calendar_event_id"]
+        )
     _create_fk_if_supported(
         "health_workout",
         "fk_health_workout_calendar_event",
@@ -299,7 +341,9 @@ def upgrade() -> None:
     )
 
     # Journal: normalize mood to integer; keep legacy columns for compatibility.
-    op.execute(text("UPDATE journal_entry SET mood = mood_int WHERE mood_int IS NOT NULL"))
+    op.execute(
+        text("UPDATE journal_entry SET mood = mood_int WHERE mood_int IS NOT NULL")
+    )
     if dialect == "sqlite":
         op.execute(
             text(
@@ -320,7 +364,11 @@ def upgrade() -> None:
                 """
             )
         )
-        op.execute(text("UPDATE journal_entry SET mood = NULL WHERE mood IS NOT NULL AND mood !~ '^-?[0-9]+$'"))
+        op.execute(
+            text(
+                "UPDATE journal_entry SET mood = NULL WHERE mood IS NOT NULL AND mood !~ '^-?[0-9]+$'"
+            )
+        )
     with op.batch_alter_table("journal_entry") as batch:
         batch.alter_column(
             "mood",
@@ -356,7 +404,9 @@ def upgrade() -> None:
         )
     if not _has_index("project_task", "ix_project_task_user_id"):
         op.create_index("ix_project_task_user_id", "project_task", ["user_id"])
-    _create_fk_if_supported("project_task", "fk_project_task_user", "user", ["user_id"], ["id"])
+    _create_fk_if_supported(
+        "project_task", "fk_project_task_user", "user", ["user_id"], ["id"]
+    )
 
     op.execute(
         text(
@@ -387,7 +437,11 @@ def upgrade() -> None:
     if not _has_index("project_task_log", "ix_project_task_log_user_id"):
         op.create_index("ix_project_task_log_user_id", "project_task_log", ["user_id"])
     if not _has_index_columns("project_task_log", ["calendar_event_id"]):
-        op.create_index("ix_project_task_log_calendar_event", "project_task_log", ["calendar_event_id"])
+        op.create_index(
+            "ix_project_task_log_calendar_event",
+            "project_task_log",
+            ["calendar_event_id"],
+        )
     _create_fk_if_supported(
         "project_task_log",
         "fk_project_task_log_calendar_event",
@@ -396,7 +450,9 @@ def upgrade() -> None:
         ["id"],
         ondelete="SET NULL",
     )
-    _create_fk_if_supported("project_task_log", "fk_project_task_log_user", "user", ["user_id"], ["id"])
+    _create_fk_if_supported(
+        "project_task_log", "fk_project_task_log_user", "user", ["user_id"], ["id"]
+    )
 
     # Relationships: inference precision + calendar linkage.
     with op.batch_alter_table("relationships_interaction") as batch:
@@ -453,9 +509,15 @@ def upgrade() -> None:
             nullable=True,
         )
     if not _has_index("skill_practice_session", "ix_skill_practice_session_user_id"):
-        op.create_index("ix_skill_practice_session_user_id", "skill_practice_session", ["user_id"])
+        op.create_index(
+            "ix_skill_practice_session_user_id", "skill_practice_session", ["user_id"]
+        )
     if not _has_index_columns("skill_practice_session", ["calendar_event_id"]):
-        op.create_index("ix_skill_session_calendar_event", "skill_practice_session", ["calendar_event_id"])
+        op.create_index(
+            "ix_skill_session_calendar_event",
+            "skill_practice_session",
+            ["calendar_event_id"],
+        )
     _create_fk_if_supported(
         "skill_practice_session",
         "fk_skill_practice_session_calendar_event",
@@ -464,8 +526,16 @@ def upgrade() -> None:
         ["id"],
         ondelete="SET NULL",
     )
-    _create_fk_if_supported("skill_practice_session", "fk_skill_practice_session_user", "user", ["user_id"], ["id"])
+    _create_fk_if_supported(
+        "skill_practice_session",
+        "fk_skill_practice_session_user",
+        "user",
+        ["user_id"],
+        ["id"],
+    )
 
 
 def downgrade() -> None:
-    raise RuntimeError("Downgrade is not supported for 0c76fa610e14_phase3a_new_models.")
+    raise RuntimeError(
+        "Downgrade is not supported for 0c76fa610e14_phase3a_new_models."
+    )
