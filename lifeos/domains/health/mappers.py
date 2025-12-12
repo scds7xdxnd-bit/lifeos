@@ -35,7 +35,11 @@ def map_workout(w: Workout) -> dict:
 def map_nutrition_log(n: NutritionLog) -> dict:
     raw_items = n.items
     if isinstance(raw_items, str):
-        items_list = [part.strip() for part in raw_items.replace("\n", ",").split(",") if part.strip()]
+        items_list = [
+            part.strip()
+            for part in raw_items.replace("\n", ",").split(",")
+            if part.strip()
+        ]
     elif isinstance(raw_items, list):
         items_list = raw_items
     else:

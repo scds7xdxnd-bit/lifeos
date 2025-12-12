@@ -1,4 +1,4 @@
-# LifeOS Architecture Constitution  
+# LifeOS Architecture Constitution
 _Last updated: 2025-12-10 (v2.1 — CI/CD operational, Calendar-First complete)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
@@ -131,7 +131,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 
 ---
 
-# 1. Purpose & Scope  
+# 1. Purpose & Scope
 LifeOS is a multi-domain, event-aware system for a single tenant (the user). Controllers are thin; services own business rules; domains integrate via events/read models; insights consume events and persist derived signals.
 
 ---
@@ -139,7 +139,7 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 # 2. Domain Boundaries (authoritative)
 **8 fully-defined domains, each with controllers, services, models, events, and tasks:**
 
-- **Core**: auth (register, login, password-reset, username-reminder), users/prefs, roles/permissions, events, insights, **interpreter** (calendar classification), utils, app factory, extensions, worker runtime, outbox platform.  
+- **Core**: auth (register, login, password-reset, username-reminder), users/prefs, roles/permissions, events, insights, **interpreter** (calendar classification), utils, app factory, extensions, worker runtime, outbox platform.
 - **Calendar** _(NEW)_: calendar events (title, description, start/end time, location, recurrence), external sync (Google/Apple), event interpretations, tagging, UI views. Primary input surface for life activity capture.
 - **Finance**: ledger (accounts + categories, journal entries/lines), transactions, schedules/forecasts, receivables/loans, trial balance, imports, ML account suggester. _Extended with inferred transaction support._
 - **Habits**: habit definitions, logs, streaks/metrics, habit-driven tasks (recurring schedules via money_schedule integration). _Extended with inferred habit log support._
@@ -147,7 +147,7 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 - **Skills**: skill definitions, practice sessions, metrics (hours logged, streak, proficiency), competency tracking. _Extended with inferred practice session support._
 - **Projects**: project lifecycle (created→updated→archived→completed), tasks (created→updated→completed→logged), task logs, status/priority tracking. _Extended with inferred work session support._
 - **Relationships**: people (contact directory with reconnect cues), interactions (call, message, meeting logged), reunion planning, relationship signals. _Extended with inferred interaction support._
-- **Journal**: personal entries (markdown/text, mood, tags, privacy), signals for insights, search/tagging.  
+- **Journal**: personal entries (markdown/text, mood, tags, privacy), signals for insights, search/tagging.
 
 **Integration Points:**
 - **Calendar → Interpreter → Domains**: Calendar events flow through interpreter for classification; inferred records created in target domains with `source='calendar'`, `calendar_event_id`, `confidence_score`.
@@ -160,9 +160,9 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 ---
 
 # 3. Layering & Folder Map (current)
-**Backend Stack:** Flask + SQLAlchemy + Alembic + Pytest  
-**Frontend:** Jinja2 templates (server-rendered) with htmx/Alpine.js for interactivity  
-**Broker:** Stub (RabbitMQ/Kafka post-v1)  
+**Backend Stack:** Flask + SQLAlchemy + Alembic + Pytest
+**Frontend:** Jinja2 templates (server-rendered) with htmx/Alpine.js for interactivity
+**Broker:** Stub (RabbitMQ/Kafka post-v1)
 
 **Folder Structure:**
 ```
@@ -417,39 +417,39 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 ---
 
 # 4. Event System & Catalog (implemented)
-- Bus: `lifeos/core/events/event_bus.py` (in-memory today; planned to move to outbox+broker under `lifeos/platform`).  
-- Persistence: `event_record` remains an audit log.  
-- Catalog (per-domain `events.py`, mirrored here):  
-  - `auth.user.registered` → {user_id, email, full_name?, timezone?}  
-  - `auth.user.username_reminder_requested` → {user_id?, email}  
-  - `auth.user.password_reset_requested` → {user_id?, email, expires_at}  
-  - `auth.user.password_reset_completed` → {user_id, reset_id}  
-  - `finance.transaction.created` → {transaction_id, user_id, amount, description?, category?, counterparty?, occurred_at}  
-  - `finance.journal.posted` → {entry_id, user_id, debit_total, credit_total, line_count}  
-  - `finance.schedule.created` → {row_id, user_id, amount, account_id, event_date}  
-  - `finance.schedule.updated` → {row_id, user_id, amount?, account_id?, event_date?, memo?}  
-  - `finance.schedule.deleted` → {row_id, user_id}  
-  - `finance.schedule.recomputed` → {user_id, days}  
-  - `finance.receivable.created` → {tracker_id, user_id, principal, counterparty, start_date, due_date?}  
-  - `finance.receivable.entry_recorded` → {tracker_id, amount, entry_date}  
-  - `finance.ml.suggest_accounts` → {user_id, description, suggestions:[account_id], model, model_version?, payload_version?, context?}  
-  - `habits.habit.created` / `habits.habit.updated` / `habits.habit.deactivated` / `habits.habit.deleted`  
-    - created payload: {habit_id, user_id, name, schedule_type, target_count?, domain_link?, is_active, created_at}  
-    - updated payload: {habit_id, user_id, fields, updated_at}  
-    - deactivated payload: {habit_id, user_id, deactivated_at}  
-    - deleted payload: {habit_id, user_id, deleted_at}  
-  - `habits.habit.logged` → {log_id, habit_id, user_id, logged_date, value?, note?}  
-  - `health.biometric.logged` → {biometric_id, user_id, date, weight?, body_fat_pct?, resting_hr?, energy_level?, stress_level?}  
-  - `health.workout.logged` → {workout_id, user_id, date, workout_type, duration_minutes, intensity, calories_est?}  
-  - `health.nutrition.logged` → {nutrition_id, user_id, date, meal_type, calories_est?, quality_score?}  
-  - `skills.practice.logged` → {skill_id, user_id, duration_minutes, practiced_at}  
-  - `projects.project.created/updated/archived/completed` (see projects/events.py payloads)  
-  - `projects.task.created/updated/completed/logged` (see projects/events.py payloads)  
-  - `relationships.person.created/updated/deleted` (see relationships/events.py payloads)  
-  - `relationships.interaction.logged/updated` (see relationships/events.py payloads)  
-  - `journal.entry.created` → {entry_id, user_id, entry_date, mood?, tags?, is_private, created_at}  
-  - `journal.entry.updated` → {entry_id, user_id, fields, updated_at}  
-  - `journal.entry.deleted` → {entry_id, user_id}  
+- Bus: `lifeos/core/events/event_bus.py` (in-memory today; planned to move to outbox+broker under `lifeos/platform`).
+- Persistence: `event_record` remains an audit log.
+- Catalog (per-domain `events.py`, mirrored here):
+  - `auth.user.registered` → {user_id, email, full_name?, timezone?}
+  - `auth.user.username_reminder_requested` → {user_id?, email}
+  - `auth.user.password_reset_requested` → {user_id?, email, expires_at}
+  - `auth.user.password_reset_completed` → {user_id, reset_id}
+  - `finance.transaction.created` → {transaction_id, user_id, amount, description?, category?, counterparty?, occurred_at}
+  - `finance.journal.posted` → {entry_id, user_id, debit_total, credit_total, line_count}
+  - `finance.schedule.created` → {row_id, user_id, amount, account_id, event_date}
+  - `finance.schedule.updated` → {row_id, user_id, amount?, account_id?, event_date?, memo?}
+  - `finance.schedule.deleted` → {row_id, user_id}
+  - `finance.schedule.recomputed` → {user_id, days}
+  - `finance.receivable.created` → {tracker_id, user_id, principal, counterparty, start_date, due_date?}
+  - `finance.receivable.entry_recorded` → {tracker_id, amount, entry_date}
+  - `finance.ml.suggest_accounts` → {user_id, description, suggestions:[account_id], model, model_version?, payload_version?, context?}
+  - `habits.habit.created` / `habits.habit.updated` / `habits.habit.deactivated` / `habits.habit.deleted`
+    - created payload: {habit_id, user_id, name, schedule_type, target_count?, domain_link?, is_active, created_at}
+    - updated payload: {habit_id, user_id, fields, updated_at}
+    - deactivated payload: {habit_id, user_id, deactivated_at}
+    - deleted payload: {habit_id, user_id, deleted_at}
+  - `habits.habit.logged` → {log_id, habit_id, user_id, logged_date, value?, note?}
+  - `health.biometric.logged` → {biometric_id, user_id, date, weight?, body_fat_pct?, resting_hr?, energy_level?, stress_level?}
+  - `health.workout.logged` → {workout_id, user_id, date, workout_type, duration_minutes, intensity, calories_est?}
+  - `health.nutrition.logged` → {nutrition_id, user_id, date, meal_type, calories_est?, quality_score?}
+  - `skills.practice.logged` → {skill_id, user_id, duration_minutes, practiced_at}
+  - `projects.project.created/updated/archived/completed` (see projects/events.py payloads)
+  - `projects.task.created/updated/completed/logged` (see projects/events.py payloads)
+  - `relationships.person.created/updated/deleted` (see relationships/events.py payloads)
+  - `relationships.interaction.logged/updated` (see relationships/events.py payloads)
+  - `journal.entry.created` → {entry_id, user_id, entry_date, mood?, tags?, is_private, created_at}
+  - `journal.entry.updated` → {entry_id, user_id, fields, updated_at}
+  - `journal.entry.deleted` → {entry_id, user_id}
   - **Calendar Events (NEW):**
   - `calendar.event.created` → {event_id, user_id, title, start_time, end_time?, source, created_at}
   - `calendar.event.updated` → {event_id, user_id, fields, updated_at}
@@ -568,19 +568,19 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 ---
 
 # 7. Naming Conventions
-- Events: `domain.resource.action[.variant]` (lowercase, dot-separated).  
-- Migrations: `<timestamp>_<domain>_<short_action>.py` (e.g., `20251205_platform_outbox.py`).  
-- Tasks: `domains.<domain>.tasks.<action>.run`.  
+- Events: `domain.resource.action[.variant]` (lowercase, dot-separated).
+- Migrations: `<timestamp>_<domain>_<short_action>.py` (e.g., `20251205_platform_outbox.py`).
+- Tasks: `domains.<domain>.tasks.<action>.run`.
 - Tables: prefix with domain for non-core (`finance_*`, `health_*`, etc.); core tables unprefixed.
 
 ---
 
 # 8. Schema Evolution & Migrations
-- Single Alembic home: `lifeos/migrations`. Root `alembic.ini` targets it; `migrate.init_app` uses the absolute path.  
-- Additive-first: new columns nullable/defaulted; new tables allowed. Destructive changes require two-phase (shadow + backfill + swap).  
-- Migration ownership: domain team for domain tables; core team for shared tables.  
-- Backfills live in scripts/management commands, not long Alembic steps.  
-- Index rule: always index `user_id` plus primary query dimension (e.g., date/event_type). Enforced via models and migration `20251204_core_user_query_indexes.py`.  
+- Single Alembic home: `lifeos/migrations`. Root `alembic.ini` targets it; `migrate.init_app` uses the absolute path.
+- Additive-first: new columns nullable/defaulted; new tables allowed. Destructive changes require two-phase (shadow + backfill + swap).
+- Migration ownership: domain team for domain tables; core team for shared tables.
+- Backfills live in scripts/management commands, not long Alembic steps.
+- Index rule: always index `user_id` plus primary query dimension (e.g., date/event_type). Enforced via models and migration `20251204_core_user_query_indexes.py`.
 - If DB is stamped with legacy IDs, stamp to `20251204_core_add_insight_record` (or `_core_initial` if empty) then upgrade to newest.
 - Dialect-aware patterns: use `to_char`/`strftime` for date grouping; avoid SQLite-only `connect_args` on Postgres/MySQL; JSON containment on Postgres (`::jsonb @>`) with `.contains` fallback elsewhere; type casts (e.g., journal.mood integer) must include `postgresql_using` for Postgres safety.
 
@@ -602,15 +602,15 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
   - `dispatch_ready(user_id?, batch_size)` → convenience; returns [messages] ready to send
 
 **Worker Dispatcher:**
-- `lifeos/platform/worker/config.py`: `DispatchConfig(batch_size, poll_interval_seconds, max_attempts, backoff_base, backoff_max_seconds)`
+- `lifeos/lifeos_platform/worker/config.py`: `DispatchConfig(batch_size, poll_interval_seconds, max_attempts, backoff_base, backoff_max_seconds)`
   - Loaded from env: `WORKER_BATCH_SIZE`, `WORKER_POLL_INTERVAL`, `WORKER_MAX_ATTEMPTS`, `WORKER_BACKOFF_BASE`
-- `lifeos/platform/worker/dispatcher.py`: Main event loop
+- `lifeos/lifeos_platform/worker/dispatcher.py`: Main event loop
   - Claims batch from outbox with skip-locked
   - For each message: publishes to `EventBusAdapter` (wraps in-process bus + assigns external_id)
   - On success: calls `mark_sent()`
   - On failure: calls `mark_failed()` (retries with backoff) → after max_attempts, status = `dead`
   - Logs all transitions; tracks telemetry (latency, failure reasons)
-- `lifeos/platform/worker/run.py`: CLI entrypoint `python -m lifeos.platform.worker.run`
+- `lifeos/lifeos_platform/worker/run.py`: CLI entrypoint `python -m lifeos.lifeos_platform.worker.run`
   - Creates Flask app, acquires app context, runs `run_dispatcher(config)` in infinite loop
 - Docker Compose service: `worker` (separate container, shares DB + cache)
 - Logging: `WORKER_LOGLEVEL` env controls level (default: INFO)
@@ -761,7 +761,7 @@ ENABLE_ASSISTANT=false
 - Enables asynchronous event delivery without blocking HTTP requests
 
 **Entry Points:**
-- CLI: `python -m lifeos.platform.worker.run` (from command line, for local testing)
+- CLI: `python -m lifeos.lifeos_platform.worker.run` (from command line, for local testing)
 - Docker: `docker-compose up worker` (from compose; service defined in docker-compose.yml)
 - Kubernetes: `kubectl apply -f lifeos-worker-deployment.yaml` (post-v1)
 
@@ -1032,7 +1032,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 2. `pip install -r lifeos/requirements.txt`
 3. `export DATABASE_URL=sqlite:///instance/lifeos.db && python -m flask --app lifeos db upgrade`
 4. `python -m flask --app lifeos run` (web at :5000)
-5. In another terminal: `python -m lifeos.platform.worker.run` (worker)
+5. In another terminal: `python -m lifeos.lifeos_platform.worker.run` (worker)
 6. Read domain `services.py` + `events.py` to understand the pattern
 7. Add your feature: Controller → Service → Model → Event → Test
 

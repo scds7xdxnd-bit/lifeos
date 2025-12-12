@@ -43,7 +43,9 @@ def delete_user_everywhere(user_id: int) -> None:
     _exec_stmt("DELETE FROM platform_outbox WHERE user_id=:uid", user_id)
 
     # Finance
-    _exec_stmt("DELETE FROM finance_money_schedule_daily_balance WHERE user_id=:uid", user_id)
+    _exec_stmt(
+        "DELETE FROM finance_money_schedule_daily_balance WHERE user_id=:uid", user_id
+    )
     _exec_stmt("DELETE FROM finance_money_schedule_row WHERE user_id=:uid", user_id)
     _exec_stmt(
         """

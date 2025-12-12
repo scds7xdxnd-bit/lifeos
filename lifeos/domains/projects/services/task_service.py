@@ -17,7 +17,7 @@ from lifeos.domains.projects.models.project_models import (
     ProjectTaskLog,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 _TASK_STATUSES = {"open", "in_progress", "completed", "blocked", "archived"}
 
@@ -81,7 +81,11 @@ def update_task(user_id: int, task_id: int, **fields) -> ProjectTask | None:
             "project_id": task.project_id,
             "user_id": user_id,
             "fields": changed,
-            "updated_at": (task.updated_at.isoformat() if task.updated_at else datetime.utcnow().isoformat()),
+            "updated_at": (
+                task.updated_at.isoformat()
+                if task.updated_at
+                else datetime.utcnow().isoformat()
+            ),
         },
         user_id=user_id,
     )
@@ -127,7 +131,9 @@ def list_tasks(
             ProjectTask.due_date.isnot(None),
             ProjectTask.due_date <= due_before,
         )
-    query = query.order_by(ProjectTask.due_date.asc().nullsfirst(), ProjectTask.created_at.desc())
+    query = query.order_by(
+        ProjectTask.due_date.asc().nullsfirst(), ProjectTask.created_at.desc()
+    )
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
@@ -169,11 +175,15 @@ def log_task_activity(
     return log
 
 
-def list_task_logs(user_id: int, task_id: int, page: int = 1, per_page: int = 100) -> Tuple[List[ProjectTaskLog], int]:
+def list_task_logs(
+    user_id: int, task_id: int, page: int = 1, per_page: int = 100
+) -> Tuple[List[ProjectTaskLog], int]:
     task = ProjectTask.query.filter_by(id=task_id, user_id=user_id).first()
     if not task:
         raise ValueError("not_found")
-    query = ProjectTaskLog.query.filter_by(user_id=user_id, task_id=task_id).order_by(ProjectTaskLog.logged_at.desc())
+    query = ProjectTaskLog.query.filter_by(user_id=user_id, task_id=task_id).order_by(
+        ProjectTaskLog.logged_at.desc()
+    )
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total

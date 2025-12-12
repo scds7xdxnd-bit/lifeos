@@ -27,7 +27,9 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for skills tests."""
     with app.app_context():
-        user = User(email="skills-tester@example.com", password_hash=hash_password("secret"))
+        user = User(
+            email="skills-tester@example.com", password_hash=hash_password("secret")
+        )
         db.session.add(user)
         db.session.commit()
         yield user
@@ -96,7 +98,9 @@ class TestSkillService:
     def test_update_skill_success(self, app, test_user):
         """Update an existing skill."""
         with app.app_context():
-            skill = create_skill(test_user.id, name="JavaScript", category="Programming")
+            skill = create_skill(
+                test_user.id, name="JavaScript", category="Programming"
+            )
 
             updated = update_skill(
                 test_user.id,
@@ -121,7 +125,9 @@ class TestSkillService:
             skill = create_skill(test_user.id, name="Rust")
 
             # Create another user
-            other_user = User(email="other-skills@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-skills@example.com", password_hash=hash_password("secret")
+            )
             db.session.add(other_user)
             db.session.commit()
 
@@ -262,7 +268,9 @@ class TestSkillAggregation:
             assert len(records) == 2
 
             # Find Python skill record
-            python_rec = next(r for r in records if r["skill"].name == "Python Programming")
+            python_rec = next(
+                r for r in records if r["skill"].name == "Python Programming"
+            )
             assert python_rec["totals"]["total_minutes"] == 150
             assert python_rec["totals"]["session_count"] == 2
 
@@ -273,7 +281,9 @@ class TestSkillAggregation:
 
             # Log sessions over multiple days
             now = datetime.utcnow()
-            log_practice_session(test_user.id, skill.id, duration_minutes=30, practiced_at=now)
+            log_practice_session(
+                test_user.id, skill.id, duration_minutes=30, practiced_at=now
+            )
             log_practice_session(
                 test_user.id,
                 skill.id,
@@ -310,7 +320,9 @@ class TestSkillProgress:
     def test_skill_summary_with_sessions(self, app, test_user):
         """Get summary for skill with practice history."""
         with app.app_context():
-            skill = create_skill(test_user.id, name="TypeScript", target_level=5, current_level=2)
+            skill = create_skill(
+                test_user.id, name="TypeScript", target_level=5, current_level=2
+            )
 
             now = datetime.utcnow()
             # Log sessions over the past week
@@ -349,7 +361,7 @@ class TestSkillEventEmission:
     def test_skill_created_event_emitted(self, app, test_user):
         """Skill creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="skills.skill.created"
@@ -357,14 +369,16 @@ class TestSkillEventEmission:
 
             create_skill(test_user.id, name="Event Test Skill")
 
-            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="skills.skill.created").count()
+            final_count = OutboxMessage.query.filter_by(
+                user_id=test_user.id, event_type="skills.skill.created"
+            ).count()
 
             assert final_count == initial_count + 1
 
     def test_skill_updated_event_emitted(self, app, test_user):
         """Skill update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             skill = create_skill(test_user.id, name="Update Event Skill")
 
@@ -374,14 +388,16 @@ class TestSkillEventEmission:
 
             update_skill(test_user.id, skill.id, description="Updated")
 
-            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="skills.skill.updated").count()
+            final_count = OutboxMessage.query.filter_by(
+                user_id=test_user.id, event_type="skills.skill.updated"
+            ).count()
 
             assert final_count == initial_count + 1
 
     def test_skill_deleted_event_emitted(self, app, test_user):
         """Skill deletion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             skill = create_skill(test_user.id, name="Delete Event Skill")
 
@@ -391,14 +407,16 @@ class TestSkillEventEmission:
 
             delete_skill(test_user.id, skill.id)
 
-            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="skills.skill.deleted").count()
+            final_count = OutboxMessage.query.filter_by(
+                user_id=test_user.id, event_type="skills.skill.deleted"
+            ).count()
 
             assert final_count == initial_count + 1
 
     def test_practice_logged_event_emitted(self, app, test_user):
         """Practice session logging should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             skill = create_skill(test_user.id, name="Practice Event Skill")
 
@@ -428,7 +446,9 @@ class TestSkillUserIsolation:
             create_skill(test_user.id, name="User A Skill")
 
             # Create another user with skill
-            other_user = User(email="other-skills2@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-skills2@example.com", password_hash=hash_password("secret")
+            )
             db.session.add(other_user)
             db.session.commit()
             create_skill(other_user.id, name="User B Skill")

@@ -76,7 +76,9 @@ def upgrade() -> None:
             "finance_account_category",
             sa.Column("user_id", sa.Integer(), nullable=True),
         )
-        if not _has_index("finance_account_category", "ix_finance_account_category_user_id"):
+        if not _has_index(
+            "finance_account_category", "ix_finance_account_category_user_id"
+        ):
             op.create_index(
                 "ix_finance_account_category_user_id",
                 "finance_account_category",
@@ -92,7 +94,7 @@ def upgrade() -> None:
         # Backfill slug from name (lowercase, replace spaces with underscores)
         op.execute(
             """
-            UPDATE finance_account_category 
+            UPDATE finance_account_category
             SET slug = LOWER(REPLACE(REPLACE(TRIM(name), ' ', '_'), '-', '_'))
             WHERE slug = '';
         """
@@ -102,13 +104,15 @@ def upgrade() -> None:
     if not _has_column("finance_account_category", "base_type"):
         op.add_column(
             "finance_account_category",
-            sa.Column("base_type", sa.String(16), nullable=False, server_default="asset"),
+            sa.Column(
+                "base_type", sa.String(16), nullable=False, server_default="asset"
+            ),
         )
         # Backfill base_type - infer from normal_balance or default to 'asset'
         op.execute(
             """
-            UPDATE finance_account_category 
-            SET base_type = CASE 
+            UPDATE finance_account_category
+            SET base_type = CASE
                 WHEN normal_balance = 'credit' THEN 'liability'
                 ELSE 'asset'
             END
@@ -120,17 +124,29 @@ def upgrade() -> None:
     if not _has_column("finance_account_category", "is_default"):
         op.add_column(
             "finance_account_category",
-            sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("FALSE")),
+            sa.Column(
+                "is_default",
+                sa.Boolean(),
+                nullable=False,
+                server_default=sa.text("FALSE"),
+            ),
         )
 
     # Add is_system column
     if not _has_column("finance_account_category", "is_system"):
         op.add_column(
             "finance_account_category",
-            sa.Column("is_system", sa.Boolean(), nullable=False, server_default=sa.text("TRUE")),
+            sa.Column(
+                "is_system",
+                sa.Boolean(),
+                nullable=False,
+                server_default=sa.text("TRUE"),
+            ),
         )
         # Mark existing categories as system categories
-        op.execute("UPDATE finance_account_category SET is_system = TRUE WHERE user_id IS NULL;")
+        op.execute(
+            "UPDATE finance_account_category SET is_system = TRUE WHERE user_id IS NULL;"
+        )
 
     # Add created_at column
     if not _has_column("finance_account_category", "created_at"):
@@ -141,9 +157,13 @@ def upgrade() -> None:
         # Backfill with current timestamp (SQLite vs Postgres)
         bind = op.get_bind()
         if bind.dialect.name == "sqlite":
-            op.execute("UPDATE finance_account_category SET created_at = datetime('now') WHERE created_at IS NULL;")
+            op.execute(
+                "UPDATE finance_account_category SET created_at = datetime('now') WHERE created_at IS NULL;"
+            )
         else:
-            op.execute("UPDATE finance_account_category SET created_at = now() WHERE created_at IS NULL;")
+            op.execute(
+                "UPDATE finance_account_category SET created_at = now() WHERE created_at IS NULL;"
+            )
 
     # Add updated_at column
     if not _has_column("finance_account_category", "updated_at"):
@@ -154,22 +174,30 @@ def upgrade() -> None:
         # Backfill with current timestamp (SQLite vs Postgres)
         bind = op.get_bind()
         if bind.dialect.name == "sqlite":
-            op.execute("UPDATE finance_account_category SET updated_at = datetime('now') WHERE updated_at IS NULL;")
+            op.execute(
+                "UPDATE finance_account_category SET updated_at = datetime('now') WHERE updated_at IS NULL;"
+            )
         else:
-            op.execute("UPDATE finance_account_category SET updated_at = now() WHERE updated_at IS NULL;")
+            op.execute(
+                "UPDATE finance_account_category SET updated_at = now() WHERE updated_at IS NULL;"
+            )
 
     # =========================================================================
     # 2. Create indexes on finance_account_category
     # =========================================================================
 
-    if not _has_index("finance_account_category", "ix_finance_account_category_user_base_default"):
+    if not _has_index(
+        "finance_account_category", "ix_finance_account_category_user_base_default"
+    ):
         op.create_index(
             "ix_finance_account_category_user_base_default",
             "finance_account_category",
             ["user_id", "base_type", "is_default"],
         )
 
-    if not _has_index("finance_account_category", "ix_finance_account_category_user_base_name"):
+    if not _has_index(
+        "finance_account_category", "ix_finance_account_category_user_base_name"
+    ):
         op.create_index(
             "ix_finance_account_category_user_base_name",
             "finance_account_category",
@@ -182,7 +210,9 @@ def upgrade() -> None:
 
     # SQLite doesn't support adding constraints after table creation
     # Use a unique index instead
-    if not _has_index("finance_account_category", "uq_finance_account_category_user_base_slug"):
+    if not _has_index(
+        "finance_account_category", "uq_finance_account_category_user_base_slug"
+    ):
         op.create_index(
             "uq_finance_account_category_user_base_slug",
             "finance_account_category",
@@ -232,7 +262,9 @@ def downgrade() -> None:
     except Exception:
         pass
     try:
-        op.drop_index("ix_finance_account_category_user_id", table_name="finance_account_category")
+        op.drop_index(
+            "ix_finance_account_category_user_id", table_name="finance_account_category"
+        )
     except Exception:
         pass
 

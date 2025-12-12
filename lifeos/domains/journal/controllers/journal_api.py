@@ -28,7 +28,9 @@ def list_journal():
         filters = JournalEntryListFilter.model_validate(request.args)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     entries, total = journal_service.list_entries(
@@ -41,7 +43,9 @@ def list_journal():
         page=filters.page,
         per_page=filters.per_page,
     )
-    pages = (total + filters.per_page - 1) // filters.per_page if filters.per_page else 1
+    pages = (
+        (total + filters.per_page - 1) // filters.per_page if filters.per_page else 1
+    )
     return jsonify(
         {
             "ok": True,
@@ -72,7 +76,9 @@ def create_journal_entry():
         data = JournalEntryCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -102,7 +108,9 @@ def update_journal_entry(entry_id: int):
         data = JournalEntryUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())

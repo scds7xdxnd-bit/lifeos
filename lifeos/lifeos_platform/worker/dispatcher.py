@@ -10,8 +10,8 @@ from typing import Callable, List, Optional
 from sqlalchemy.exc import SQLAlchemyError
 
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
-from lifeos.platform.outbox.services import (
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.services import (
     STATUS_FAILED,
     STATUS_PENDING,
     STATUS_RETRY,
@@ -19,7 +19,7 @@ from lifeos.platform.outbox.services import (
     STATUS_SENT,
     EventBusAdapter,
 )
-from lifeos.platform.worker.config import DispatchConfig
+from lifeos.lifeos_platform.worker.config import DispatchConfig
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,9 @@ def claim_ready_messages(
     return messages
 
 
-def _apply_failure_backoff(message: OutboxMessage, exc: Exception, config: DispatchConfig) -> None:
+def _apply_failure_backoff(
+    message: OutboxMessage, exc: Exception, config: DispatchConfig
+) -> None:
     attempts = message.attempts or 1
     delay_seconds = _compute_backoff_seconds(attempts, config)
     next_available = datetime.utcnow() + timedelta(seconds=delay_seconds)

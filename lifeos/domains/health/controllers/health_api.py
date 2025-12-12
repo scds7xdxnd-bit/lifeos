@@ -40,7 +40,9 @@ def list_biometrics():
     params, err = _parse_query(BiometricListFilter)
     if err:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": err.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": err.errors()}
+            ),
             400,
         )
     items, total = services.list_biometrics(
@@ -71,7 +73,9 @@ def create_biometric():
         data = BiometricCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -100,7 +104,9 @@ def list_workouts():
     params, err = _parse_query(WorkoutListFilter)
     if err:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": err.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": err.errors()}
+            ),
             400,
         )
     items, total = services.list_workouts(
@@ -131,7 +137,9 @@ def create_workout():
         data = WorkoutCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -157,7 +165,9 @@ def list_nutrition():
     params, err = _parse_query(NutritionListFilter)
     if err:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": err.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": err.errors()}
+            ),
             400,
         )
     items, total = services.list_nutrition_logs(
@@ -188,7 +198,9 @@ def create_nutrition():
         data = NutritionCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -219,7 +231,9 @@ def daily_summary():
     payload = DailySummaryResponse.model_validate(
         {
             "date": summary["date"],
-            "biometric": (map_biometric(summary["biometric"]) if summary["biometric"] else None),
+            "biometric": (
+                map_biometric(summary["biometric"]) if summary["biometric"] else None
+            ),
             "workouts": summary["workouts"],
             "nutrition": summary["nutrition"],
             "energy_level": summary["energy_level"],

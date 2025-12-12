@@ -29,7 +29,9 @@ def dashboard():
     accounts = Account.query.limit(10).all()
     totals = calculate_trial_balance(accounts[0].user_id) if accounts else {}
     balances = {acct.id: net_balance_for_account(acct, totals) for acct in accounts}
-    return render_template("finance/dashboard.html", accounts=accounts, balances=balances)
+    return render_template(
+        "finance/dashboard.html", accounts=accounts, balances=balances
+    )
 
 
 @finance_pages_bp.get("/accounts")
@@ -38,7 +40,9 @@ def accounts_page():
     accounts = Account.query.all()
     totals = calculate_trial_balance(accounts[0].user_id) if accounts else {}
     balances = {acct.id: net_balance_for_account(acct, totals) for acct in accounts}
-    return render_template("finance/accounts.html", accounts=accounts, balances=balances)
+    return render_template(
+        "finance/accounts.html", accounts=accounts, balances=balances
+    )
 
 
 @finance_pages_bp.get("/transactions")
@@ -46,7 +50,9 @@ def accounts_page():
 def transactions_page():
     txns = Transaction.query.order_by(Transaction.occurred_at.desc()).limit(100).all()
     accounts = Account.query.all()
-    return render_template("finance/transactions.html", transactions=txns, accounts=accounts)
+    return render_template(
+        "finance/transactions.html", transactions=txns, accounts=accounts
+    )
 
 
 @finance_pages_bp.get("/journal")
@@ -106,5 +112,9 @@ def import_page():
 @jwt_required(optional=True)
 def forecast_page():
     accounts = Account.query.all()
-    rows = MoneyScheduleRow.query.order_by(MoneyScheduleRow.event_date.asc()).limit(50).all()
+    rows = (
+        MoneyScheduleRow.query.order_by(MoneyScheduleRow.event_date.asc())
+        .limit(50)
+        .all()
+    )
     return render_template("finance/forecast.html", accounts=accounts, rows=rows)

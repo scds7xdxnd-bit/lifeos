@@ -21,9 +21,14 @@ def apply_rules(event: EventRecord) -> List[dict]:
         if amount < 0:
             amount = -amount
         if amount >= 100:
-            sleep_events = recent_events(user_id, ["health.metric.updated"], days=3, limit=5)
+            sleep_events = recent_events(
+                user_id, ["health.metric.updated"], days=3, limit=5
+            )
             low_sleep = any(
-                (e.payload.get("metric") == "sleep_hours" and float(e.payload.get("value") or 0.0) < 6.0)
+                (
+                    e.payload.get("metric") == "sleep_hours"
+                    and float(e.payload.get("value") or 0.0) < 6.0
+                )
                 for e in sleep_events
             )
             if low_sleep:
@@ -44,7 +49,11 @@ def apply_rules(event: EventRecord) -> List[dict]:
     # Habit streak boosts project completion insight
     if event.event_type == "projects.task.completed":
         habit_logs = recent_events(user_id, ["habits.habit.logged"], days=7, limit=10)
-        streaks = [int(ev.payload.get("streak") or 0) for ev in habit_logs if ev.payload.get("streak") is not None]
+        streaks = [
+            int(ev.payload.get("streak") or 0)
+            for ev in habit_logs
+            if ev.payload.get("streak") is not None
+        ]
         if streaks and max(streaks) >= 5:
             insights.append(
                 {
@@ -59,9 +68,17 @@ def apply_rules(event: EventRecord) -> List[dict]:
 
     # Skill practice + journal sentiment check
     if event.event_type == "skills.practice.logged":
-        journal_events = recent_events(user_id, ["journal.entry.created"], days=3, limit=5)
-        moods = [ev.payload.get("mood") for ev in journal_events if ev.payload.get("mood")]
-        if moods and any(m.lower() in {"tired", "sad", "stressed"} for m in moods if isinstance(m, str)):
+        journal_events = recent_events(
+            user_id, ["journal.entry.created"], days=3, limit=5
+        )
+        moods = [
+            ev.payload.get("mood") for ev in journal_events if ev.payload.get("mood")
+        ]
+        if moods and any(
+            m.lower() in {"tired", "sad", "stressed"}
+            for m in moods
+            if isinstance(m, str)
+        ):
             insights.append(
                 {
                     "type": "skill_mood_uplift",

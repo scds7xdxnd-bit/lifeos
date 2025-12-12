@@ -452,7 +452,9 @@ class TestCalendarEventInterpretationModel:
                 assert interpretation.domain == domain
                 assert interpretation.record_type == record_type
 
-    def test_interpretation_confidence_score_precision(self, app, sample_calendar_event):
+    def test_interpretation_confidence_score_precision(
+        self, app, sample_calendar_event
+    ):
         """Test confidence score maintains decimal precision."""
         with app.app_context():
             interpretation = CalendarEventInterpretation(
@@ -503,7 +505,9 @@ class TestCalendarEventInterpretationModel:
             assert loaded.classification_data == complex_data
             assert loaded.classification_data["time_context"]["morning"] is True
 
-    def test_interpretation_calendar_event_relationship(self, app, event_with_interpretation):
+    def test_interpretation_calendar_event_relationship(
+        self, app, event_with_interpretation
+    ):
         """Test interpretation back-reference to calendar event."""
         event, interpretation = event_with_interpretation
 
@@ -632,11 +636,15 @@ class TestCalendarEventDatabaseIntegration:
         """Test events can be ordered by start_time."""
         with app.app_context():
             ascending = (
-                CalendarEvent.query.filter_by(user_id=test_user.id).order_by(CalendarEvent.start_time.asc()).all()
+                CalendarEvent.query.filter_by(user_id=test_user.id)
+                .order_by(CalendarEvent.start_time.asc())
+                .all()
             )
 
             descending = (
-                CalendarEvent.query.filter_by(user_id=test_user.id).order_by(CalendarEvent.start_time.desc()).all()
+                CalendarEvent.query.filter_by(user_id=test_user.id)
+                .order_by(CalendarEvent.start_time.desc())
+                .all()
             )
 
             assert ascending[0].start_time <= ascending[-1].start_time
@@ -810,7 +818,9 @@ class TestCalendarServiceIntegration:
 class TestInterpretationWorkflow:
     """Integration tests for the interpretation review workflow."""
 
-    def test_get_pending_interpretations(self, app, event_with_interpretation, test_user):
+    def test_get_pending_interpretations(
+        self, app, event_with_interpretation, test_user
+    ):
         """Test retrieving pending interpretations."""
         from lifeos.domains.calendar.services.calendar_service import (
             get_pending_interpretations,
@@ -875,7 +885,9 @@ class TestInterpretationWorkflow:
 
             assert updated.status == STATUS_IGNORED
 
-    def test_invalid_interpretation_status(self, app, event_with_interpretation, test_user):
+    def test_invalid_interpretation_status(
+        self, app, event_with_interpretation, test_user
+    ):
         """Test that invalid status values are rejected."""
         from lifeos.domains.calendar.services.calendar_service import (
             update_interpretation_status,
@@ -920,7 +932,9 @@ class TestCalendarEventOutboxMocks:
         from lifeos.domains.calendar.events import CALENDAR_EVENT_CREATED
 
         with app.app_context():
-            with patch("lifeos.domains.calendar.services.calendar_service.enqueue_outbox") as mock_enqueue:
+            with patch(
+                "lifeos.domains.calendar.services.calendar_service.enqueue_outbox"
+            ) as mock_enqueue:
                 event = create_calendar_event(
                     user_id=test_user.id,
                     title="Outbox Test Event",
@@ -941,7 +955,9 @@ class TestCalendarEventOutboxMocks:
         from lifeos.domains.calendar.events import CALENDAR_EVENT_UPDATED
 
         with app.app_context():
-            with patch("lifeos.domains.calendar.services.calendar_service.enqueue_outbox") as mock_enqueue:
+            with patch(
+                "lifeos.domains.calendar.services.calendar_service.enqueue_outbox"
+            ) as mock_enqueue:
                 update_calendar_event(
                     user_id=sample_calendar_event.user_id,
                     event_id=sample_calendar_event.id,
@@ -962,7 +978,9 @@ class TestCalendarEventOutboxMocks:
 
         with app.app_context():
             event_id = sample_calendar_event.id
-            with patch("lifeos.domains.calendar.services.calendar_service.enqueue_outbox") as mock_enqueue:
+            with patch(
+                "lifeos.domains.calendar.services.calendar_service.enqueue_outbox"
+            ) as mock_enqueue:
                 delete_calendar_event(
                     user_id=sample_calendar_event.user_id,
                     event_id=event_id,
@@ -973,7 +991,9 @@ class TestCalendarEventOutboxMocks:
                 assert call_args[0][0] == CALENDAR_EVENT_DELETED
                 assert call_args[0][1]["event_id"] == event_id
 
-    def test_confirm_interpretation_emits_event(self, app, event_with_interpretation, test_user):
+    def test_confirm_interpretation_emits_event(
+        self, app, event_with_interpretation, test_user
+    ):
         """Test that confirming interpretation emits confirmation event."""
         from lifeos.domains.calendar.services.calendar_service import (
             update_interpretation_status,
@@ -983,7 +1003,9 @@ class TestCalendarEventOutboxMocks:
         event, interpretation = event_with_interpretation
 
         with app.app_context():
-            with patch("lifeos.domains.calendar.services.calendar_service.enqueue_outbox") as mock_enqueue:
+            with patch(
+                "lifeos.domains.calendar.services.calendar_service.enqueue_outbox"
+            ) as mock_enqueue:
                 update_interpretation_status(
                     user_id=test_user.id,
                     interpretation_id=interpretation.id,
@@ -997,7 +1019,9 @@ class TestCalendarEventOutboxMocks:
                 assert call_args[0][1]["interpretation_id"] == interpretation.id
                 assert call_args[0][1]["record_id"] == 789
 
-    def test_reject_interpretation_emits_event(self, app, event_with_interpretation, test_user):
+    def test_reject_interpretation_emits_event(
+        self, app, event_with_interpretation, test_user
+    ):
         """Test that rejecting interpretation emits rejection event."""
         from lifeos.domains.calendar.services.calendar_service import (
             update_interpretation_status,
@@ -1007,7 +1031,9 @@ class TestCalendarEventOutboxMocks:
         event, interpretation = event_with_interpretation
 
         with app.app_context():
-            with patch("lifeos.domains.calendar.services.calendar_service.enqueue_outbox") as mock_enqueue:
+            with patch(
+                "lifeos.domains.calendar.services.calendar_service.enqueue_outbox"
+            ) as mock_enqueue:
                 update_interpretation_status(
                     user_id=test_user.id,
                     interpretation_id=interpretation.id,
@@ -1018,7 +1044,9 @@ class TestCalendarEventOutboxMocks:
                 call_args = mock_enqueue.call_args
                 assert call_args[0][0] == CALENDAR_INTERPRETATION_REJECTED
 
-    def test_ignored_interpretation_no_event(self, app, event_with_interpretation, test_user):
+    def test_ignored_interpretation_no_event(
+        self, app, event_with_interpretation, test_user
+    ):
         """Test that ignoring interpretation does not emit an event."""
         from lifeos.domains.calendar.services.calendar_service import (
             update_interpretation_status,
@@ -1027,7 +1055,9 @@ class TestCalendarEventOutboxMocks:
         event, interpretation = event_with_interpretation
 
         with app.app_context():
-            with patch("lifeos.domains.calendar.services.calendar_service.enqueue_outbox") as mock_enqueue:
+            with patch(
+                "lifeos.domains.calendar.services.calendar_service.enqueue_outbox"
+            ) as mock_enqueue:
                 update_interpretation_status(
                     user_id=test_user.id,
                     interpretation_id=interpretation.id,
@@ -1147,7 +1177,9 @@ class TestCalendarEventEdgeCases:
             loaded = CalendarEventInterpretation.query.get(interpretation.id)
             assert float(loaded.confidence_score) == 1.0
 
-    def test_multiple_interpretations_for_single_event(self, app, sample_calendar_event):
+    def test_multiple_interpretations_for_single_event(
+        self, app, sample_calendar_event
+    ):
         """Test that an event can have multiple interpretations."""
         with app.app_context():
             interpretation1 = CalendarEventInterpretation(
@@ -1201,7 +1233,9 @@ class TestCalendarEventIsolation:
             assert len(events) == 0
             assert not any(e.id == event.id for e in events)
 
-    def test_user_cannot_access_other_user_interpretations(self, app, test_user, second_user):
+    def test_user_cannot_access_other_user_interpretations(
+        self, app, test_user, second_user
+    ):
         """Test interpretation isolation between users."""
         with app.app_context():
             event = CalendarEvent(
@@ -1224,7 +1258,9 @@ class TestCalendarEventIsolation:
             db.session.commit()
 
             # Query as second_user should return nothing
-            interpretations = CalendarEventInterpretation.query.filter_by(user_id=second_user.id).all()
+            interpretations = CalendarEventInterpretation.query.filter_by(
+                user_id=second_user.id
+            ).all()
 
             assert len(interpretations) == 0
 

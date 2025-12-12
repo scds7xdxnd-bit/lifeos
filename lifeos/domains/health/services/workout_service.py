@@ -8,7 +8,9 @@ from lifeos.domains.health.models.health_models import Workout
 from lifeos.domains.health.services.health_service import create_workout
 
 
-def log_workout(user_id: int, activity: str, duration_minutes: int, calories: float | None = None) -> Workout:
+def log_workout(
+    user_id: int, activity: str, duration_minutes: int, calories: float | None = None
+) -> Workout:
     # Legacy wrapper mapping to new service
     return create_workout(
         user_id,

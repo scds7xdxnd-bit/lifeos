@@ -88,11 +88,15 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
             sqlite3.register_converter(
                 "DATETIME",
-                lambda val: (val.decode() if isinstance(val, (bytes, bytearray)) else str(val)),
+                lambda val: (
+                    val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
+                ),
             )
             sqlite3.register_converter(
                 "TIMESTAMP",
-                lambda val: (val.decode() if isinstance(val, (bytes, bytearray)) else str(val)),
+                lambda val: (
+                    val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
+                ),
             )
         except Exception:
             # If sqlite3 is unavailable or converters cannot be registered, continue with detect_types disabled.

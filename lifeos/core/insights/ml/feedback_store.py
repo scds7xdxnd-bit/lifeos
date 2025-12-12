@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 def fetch_flagged_inference_events(

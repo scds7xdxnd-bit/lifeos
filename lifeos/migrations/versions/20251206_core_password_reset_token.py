@@ -32,7 +32,9 @@ def upgrade():
         sa.Column("expires_at", sa.DateTime(), nullable=False),
         sa.Column("used_at", sa.DateTime()),
         sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -51,5 +53,7 @@ def upgrade():
 
 def downgrade():
     op.drop_index("ix_password_reset_jti", table_name="password_reset_token")
-    op.drop_index("ix_password_reset_user_expires_at", table_name="password_reset_token")
+    op.drop_index(
+        "ix_password_reset_user_expires_at", table_name="password_reset_token"
+    )
     op.drop_table("password_reset_token")

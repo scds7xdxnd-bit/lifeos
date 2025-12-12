@@ -18,10 +18,14 @@ class CalendarOAuthToken(db.Model):
     """
 
     __tablename__ = "calendar_oauth_token"
-    __table_args__ = (db.UniqueConstraint("user_id", "provider", name="uq_user_provider"),)
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "provider", name="uq_user_provider"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        db.ForeignKey("user.id"), index=True, nullable=False
+    )
 
     # Provider identifier: 'google', 'apple', etc.
     provider: Mapped[str] = mapped_column(db.String(32), nullable=False)
@@ -36,15 +40,21 @@ class CalendarOAuthToken(db.Model):
 
     # Sync state
     last_sync_at: Mapped[datetime | None] = mapped_column()
-    sync_token: Mapped[str | None] = mapped_column(db.String(512))  # For incremental sync
+    sync_token: Mapped[str | None] = mapped_column(
+        db.String(512)
+    )  # For incremental sync
 
     # Status
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     error_message: Mapped[str | None] = mapped_column(db.String(512))
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     @property
     def is_expired(self) -> bool:

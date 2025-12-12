@@ -52,4 +52,9 @@ def recent_events(
 
 
 def fetch_insights(user_id: int, limit: int = 20) -> List[InsightRecord]:
-    return InsightRecord.query.filter_by(user_id=user_id).order_by(InsightRecord.created_at.desc()).limit(limit).all()
+    return (
+        InsightRecord.query.filter_by(user_id=user_id)
+        .order_by(InsightRecord.created_at.desc())
+        .limit(limit)
+        .all()
+    )

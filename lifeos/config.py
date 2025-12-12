@@ -15,7 +15,9 @@ class BaseConfig:
     """Base configuration loaded for all environments."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///instance/lifeos.db")
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "DATABASE_URL", "sqlite:///instance/lifeos.db"
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
@@ -25,7 +27,9 @@ class BaseConfig:
     }
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
+    SESSION_COOKIE_SECURE = os.environ.get(
+        "SESSION_COOKIE_SECURE", "false"
+    ).lower() in ("1", "true", "yes")
     PERMANENT_SESSION_LIFETIME = int(os.environ.get("SESSION_TTL_SECONDS", "86400"))
     WTF_CSRF_ENABLED = True
 
@@ -34,8 +38,12 @@ class BaseConfig:
     JWT_COOKIE_CSRF_PROTECT = True
     JWT_COOKIE_SECURE = SESSION_COOKIE_SECURE
     JWT_COOKIE_SAMESITE = SESSION_COOKIE_SAMESITE
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=int(os.environ.get("JWT_ACCESS_MINUTES", "30")))
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=int(os.environ.get("JWT_REFRESH_DAYS", "14")))
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        minutes=int(os.environ.get("JWT_ACCESS_MINUTES", "30"))
+    )
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(
+        days=int(os.environ.get("JWT_REFRESH_DAYS", "14"))
+    )
 
     RATELIMIT_DEFAULT = "200/hour"
     RATELIMIT_STORAGE_URI = os.environ.get("REDIS_URL", "memory://")
@@ -46,9 +54,13 @@ class BaseConfig:
     )
 
     STATIC_CACHE_MAX_AGE = int(os.environ.get("STATIC_CACHE_MAX_AGE", "3600"))
-    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
+    MAX_CONTENT_LENGTH = int(
+        os.environ.get("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024))
+    )
     UPLOAD_ALLOWED_EXTENSIONS = set(
-        (os.environ.get("UPLOAD_ALLOWED_EXTENSIONS") or "csv,png,jpg,jpeg,gif,pdf").split(",")
+        (
+            os.environ.get("UPLOAD_ALLOWED_EXTENSIONS") or "csv,png,jpg,jpeg,gif,pdf"
+        ).split(",")
     )
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", "instance/uploads")
 

@@ -13,7 +13,7 @@ from lifeos.domains.finance.models.accounting_models import (
 )
 from lifeos.domains.finance.services.accounting_service import create_account
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 def _login_headers(client, email: str, password: str) -> dict[str, str]:
@@ -81,7 +81,9 @@ def test_create_transaction_succeeds_and_emits_outbox(app, client):
         entry = JournalEntry.query.get(entry_id)
         assert entry is not None
         assert len(entry.lines) == 2
-        outbox = OutboxMessage.query.filter_by(event_type=FINANCE_JOURNAL_POSTED, user_id=user.id).first()
+        outbox = OutboxMessage.query.filter_by(
+            event_type=FINANCE_JOURNAL_POSTED, user_id=user.id
+        ).first()
         assert outbox is not None
         assert outbox.status == "pending"
         assert outbox.payload["entry_id"] == entry.id
@@ -114,7 +116,10 @@ def test_create_transaction_with_missing_account_returns_not_found(app, client):
 
     with app.app_context():
         assert JournalEntry.query.count() == 0
-        assert OutboxMessage.query.filter_by(event_type=FINANCE_JOURNAL_POSTED).count() == 0
+        assert (
+            OutboxMessage.query.filter_by(event_type=FINANCE_JOURNAL_POSTED).count()
+            == 0
+        )
 
 
 def test_transactions_page_renders_template(app, client):

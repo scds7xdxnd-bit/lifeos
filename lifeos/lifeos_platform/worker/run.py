@@ -6,8 +6,8 @@ import logging
 import os
 
 from lifeos import create_app
-from lifeos.platform.worker.config import DispatchConfig
-from lifeos.platform.worker.dispatcher import run_dispatcher
+from lifeos.lifeos_platform.worker.config import DispatchConfig
+from lifeos.lifeos_platform.worker.dispatcher import run_dispatcher
 
 
 def main() -> None:

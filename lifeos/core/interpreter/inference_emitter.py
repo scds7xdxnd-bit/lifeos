@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from lifeos.core.insights.telemetry import insight_telemetry
 from lifeos.core.insights.ml.event_schemas import INFERENCE_EVENT_MODELS
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 # Default model version for rule-based calendar interpreter outputs.
 DEFAULT_MODEL_VERSION = "calendar-interpreter-v1"
@@ -88,7 +88,11 @@ def emit_inference_event(
             payload_kwargs["record_id"] = record_id
 
     event_model = model_cls(**payload_kwargs)
-    enqueue_outbox(event_model.event_name, event_model.to_payload(), user_id if isinstance(user_id, int) else None)
+    enqueue_outbox(
+        event_model.event_name,
+        event_model.to_payload(),
+        user_id if isinstance(user_id, int) else None,
+    )
     insight_telemetry.record_inference_feedback(
         event_model.event_name,
         event_model.model_version or DEFAULT_MODEL_VERSION,

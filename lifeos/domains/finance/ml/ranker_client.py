@@ -25,10 +25,16 @@ class RankerResult:
     context: Dict[str, Any] = field(default_factory=dict)
 
 
-def predict_account(description: str, candidates: List[Tuple[int, str]]) -> RankerResult:
+def predict_account(
+    description: str, candidates: List[Tuple[int, str]]
+) -> RankerResult:
     """Return account IDs ranked by semantic similarity to the description."""
     query_vec = embed_text(description)
-    candidate_vecs = [(account_id, embed_text(label)) for account_id, label in candidates]
+    candidate_vecs = [
+        (account_id, embed_text(label)) for account_id, label in candidates
+    ]
     ranked = rank_candidates(query_vec, candidate_vecs)
     suggestions = [account_id for account_id in ranked]
-    return RankerResult(suggestions=suggestions, context={"candidate_count": len(candidates)})
+    return RankerResult(
+        suggestions=suggestions, context={"candidate_count": len(candidates)}
+    )

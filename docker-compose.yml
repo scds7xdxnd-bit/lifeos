@@ -134,7 +134,7 @@ services:
       dockerfile: deploy/Dockerfile
     image: lifeos-web:${APP_VERSION:-latest}
     container_name: lifeos-worker
-    command: ["python", "-m", "lifeos.platform.worker.run"]
+    command: ["python", "-m", "lifeos.lifeos_platform.worker.run"]
     environment:
       <<: *common-env
       OUTBOX_BATCH_SIZE: ${OUTBOX_BATCH_SIZE:-50}

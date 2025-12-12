@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import sqlalchemy as sa
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -31,7 +32,7 @@ from lifeos.core.insights import models as insight_models
 from lifeos.domains.finance.models import schedule_models
 from lifeos.core.auth.models import Role
 from lifeos.core.users.models import User
-from lifeos.platform.outbox import models as outbox_models
+from lifeos.lifeos_platform.outbox import models as outbox_models
 from lifeos.domains.calendar.models import calendar_event as calendar_models
 
 
@@ -49,6 +50,10 @@ def pytest_configure(config):
 def app():
     app = create_app("testing")
     with app.app_context():
+        # Ensure a clean schema even if a persistent test DB is reused.
+        db.drop_all()
+        db.session.execute(sa.text("DROP TABLE IF EXISTS journal_entry_tag"))
+        db.session.commit()
         # ensure all models are imported so metadata is populated before create_all
         _ = (
             auth_models,
@@ -84,6 +89,15 @@ def app():
             db.session.commit()
         yield app
         db.session.remove()
+        # Manually drop legacy junction table before dropping known models to avoid
+        # dependency ordering issues on Postgres CI.
+        if db.engine.dialect.name == "postgresql":
+            db.session.execute(
+                sa.text("DROP TABLE IF EXISTS journal_entry_tag CASCADE")
+            )
+        else:
+            db.session.execute(sa.text("DROP TABLE IF EXISTS journal_entry_tag"))
+        db.session.commit()
         db.drop_all()
 
 

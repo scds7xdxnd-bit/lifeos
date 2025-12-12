@@ -129,7 +129,9 @@ def refresh_access_token(oauth_token: CalendarOAuthToken) -> CalendarOAuthToken:
         data = resp.json()
 
         oauth_token.access_token = data["access_token"]
-        oauth_token.expires_at = datetime.utcnow() + timedelta(seconds=data.get("expires_in", 3600))
+        oauth_token.expires_at = datetime.utcnow() + timedelta(
+            seconds=data.get("expires_in", 3600)
+        )
         oauth_token.error_message = None
         db.session.commit()
 
@@ -159,7 +161,9 @@ def save_oauth_token(user_id: int, token_data: Dict[str, Any]) -> CalendarOAuthT
         expires_at = datetime.utcnow() + timedelta(seconds=token_data["expires_in"])
 
     # Find existing or create new
-    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="google").first()
+    token = CalendarOAuthToken.query.filter_by(
+        user_id=user_id, provider="google"
+    ).first()
 
     if token:
         token.access_token = token_data["access_token"]
@@ -192,7 +196,9 @@ def get_valid_token(user_id: int) -> Optional[CalendarOAuthToken]:
     Returns:
         Valid token or None if unavailable
     """
-    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="google", is_active=True).first()
+    token = CalendarOAuthToken.query.filter_by(
+        user_id=user_id, provider="google", is_active=True
+    ).first()
 
     if not token:
         return None
@@ -216,7 +222,9 @@ def disconnect_google_calendar(user_id: int) -> bool:
     Returns:
         True if disconnected, False if no connection existed
     """
-    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="google").first()
+    token = CalendarOAuthToken.query.filter_by(
+        user_id=user_id, provider="google"
+    ).first()
 
     if not token:
         return False
@@ -278,7 +286,9 @@ def fetch_google_events(
 
         # Handle invalid sync token - full sync needed
         if resp.status_code == 410:
-            logger.info(f"Sync token expired for user {oauth_token.user_id}, performing full sync")
+            logger.info(
+                f"Sync token expired for user {oauth_token.user_id}, performing full sync"
+            )
             oauth_token.sync_token = None
             db.session.commit()
             return fetch_google_events(oauth_token, time_min, time_max, max_results)
@@ -292,7 +302,9 @@ def fetch_google_events(
         return events, next_sync_token
 
     except requests.RequestException as e:
-        logger.error(f"Failed to fetch Google events for user {oauth_token.user_id}: {e}")
+        logger.error(
+            f"Failed to fetch Google events for user {oauth_token.user_id}: {e}"
+        )
         raise SyncError(f"Failed to fetch events: {e}") from e
 
 
@@ -342,12 +354,24 @@ def sync_google_calendar(user_id: int) -> Dict[str, int]:
 
         if all_day:
             start_time = datetime.fromisoformat(start_data["date"])
-            end_time = datetime.fromisoformat(end_data["date"]) if end_data.get("date") else None
+            end_time = (
+                datetime.fromisoformat(end_data["date"])
+                if end_data.get("date")
+                else None
+            )
         else:
             start_str = start_data.get("dateTime", "")
             end_str = end_data.get("dateTime", "")
-            start_time = datetime.fromisoformat(start_str.replace("Z", "+00:00")) if start_str else None
-            end_time = datetime.fromisoformat(end_str.replace("Z", "+00:00")) if end_str else None
+            start_time = (
+                datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+                if start_str
+                else None
+            )
+            end_time = (
+                datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+                if end_str
+                else None
+            )
 
         if not start_time:
             continue
@@ -357,7 +381,9 @@ def sync_google_calendar(user_id: int) -> Dict[str, int]:
         location = g_event.get("location")
 
         # Find existing or create
-        existing = CalendarEvent.query.filter_by(user_id=user_id, external_id=external_id, source="sync_google").first()
+        existing = CalendarEvent.query.filter_by(
+            user_id=user_id, external_id=external_id, source="sync_google"
+        ).first()
 
         if existing:
             # Update existing event
@@ -405,7 +431,9 @@ def get_sync_status(user_id: int) -> Dict[str, Any]:
     Returns:
         Status dict with connection info
     """
-    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="google").first()
+    token = CalendarOAuthToken.query.filter_by(
+        user_id=user_id, provider="google"
+    ).first()
 
     if not token:
         return {

@@ -1,7 +1,7 @@
 """Transactional outbox models and helpers."""
 
-from lifeos.platform.outbox.models import OutboxMessage
-from lifeos.platform.outbox.services import (
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.services import (
     EventBusAdapter,
     dequeue_batch,
     dispatch_ready,

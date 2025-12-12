@@ -50,7 +50,9 @@ def register():
         data = RegisterRequest.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}),
+            jsonify(
+                {"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}
+            ),
             400,
         )
     try:
@@ -85,7 +87,9 @@ def login():
         data = LoginRequest.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}),
+            jsonify(
+                {"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}
+            ),
             400,
         )
     user = authenticate_user(data.email, data.password)
@@ -140,7 +144,9 @@ def forgot_username():
         data = ForgotUsernameRequest.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}),
+            jsonify(
+                {"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}
+            ),
             400,
         )
     request_username_reminder(data)
@@ -155,7 +161,9 @@ def forgot_password():
         data = ForgotPasswordRequest.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}),
+            jsonify(
+                {"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}
+            ),
             400,
         )
     request_password_reset(data)
@@ -170,7 +178,9 @@ def reset_password_route():
         data = ResetPasswordRequest.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}),
+            jsonify(
+                {"ok": False, "error": "bad_request", "details": _jsonable_errors(exc)}
+            ),
             400,
         )
     try:

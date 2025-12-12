@@ -10,7 +10,7 @@ from sqlalchemy import or_
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.events.event_models import EventRecord
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 STATUS_PENDING = "pending"
 STATUS_SENDING = "sending"
@@ -71,7 +71,9 @@ def enqueue(
     return message
 
 
-def dequeue_batch(limit: int = 50, user_id: Optional[int] = None) -> List[OutboxMessage]:
+def dequeue_batch(
+    limit: int = 50, user_id: Optional[int] = None
+) -> List[OutboxMessage]:
     """
     Lock and return ready messages (pending or retryable failed). Marks them as sending.
     """
@@ -85,7 +87,12 @@ def dequeue_batch(limit: int = 50, user_id: Optional[int] = None) -> List[Outbox
     )
     if user_id is not None:
         query = query.filter(OutboxMessage.user_id == user_id)
-    ready = query.order_by(OutboxMessage.available_at).with_for_update(skip_locked=True).limit(limit).all()
+    ready = (
+        query.order_by(OutboxMessage.available_at)
+        .with_for_update(skip_locked=True)
+        .limit(limit)
+        .all()
+    )
 
     for message in ready:
         message.status = STATUS_SENDING

@@ -18,7 +18,9 @@ from lifeos.extensions import db
 
 def _auth_header(app, user_id: int):
     with app.app_context():
-        token = create_access_token(identity=str(user_id), additional_claims={"roles": ["finance:write"]})
+        token = create_access_token(
+            identity=str(user_id), additional_claims={"roles": ["finance:write"]}
+        )
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -64,33 +66,49 @@ def _setup_finance_data(app):
         db.session.add_all([cash, income])
         db.session.flush()
         # entry in Jan
-        entry1 = JournalEntry(user_id=user.id, description="jan", posted_at=datetime(2025, 1, 5))
+        entry1 = JournalEntry(
+            user_id=user.id, description="jan", posted_at=datetime(2025, 1, 5)
+        )
         db.session.add(entry1)
         db.session.flush()
         db.session.add_all(
             [
-                JournalLine(entry_id=entry1.id, account_id=cash.id, debit=100, credit=0),
-                JournalLine(entry_id=entry1.id, account_id=income.id, debit=0, credit=100),
+                JournalLine(
+                    entry_id=entry1.id, account_id=cash.id, debit=100, credit=0
+                ),
+                JournalLine(
+                    entry_id=entry1.id, account_id=income.id, debit=0, credit=100
+                ),
             ]
         )
         # entry in Feb
-        entry2 = JournalEntry(user_id=user.id, description="feb", posted_at=datetime(2025, 2, 1))
+        entry2 = JournalEntry(
+            user_id=user.id, description="feb", posted_at=datetime(2025, 2, 1)
+        )
         db.session.add(entry2)
         db.session.flush()
         db.session.add_all(
             [
                 JournalLine(entry_id=entry2.id, account_id=cash.id, debit=50, credit=0),
-                JournalLine(entry_id=entry2.id, account_id=income.id, debit=0, credit=50),
+                JournalLine(
+                    entry_id=entry2.id, account_id=income.id, debit=0, credit=50
+                ),
             ]
         )
         # other user noise
         other = User(email="other@test.com", password_hash=hash_password("pw"))
         db.session.add(other)
         db.session.flush()
-        other_entry = JournalEntry(user_id=other.id, description="other", posted_at=datetime(2025, 1, 5))
+        other_entry = JournalEntry(
+            user_id=other.id, description="other", posted_at=datetime(2025, 1, 5)
+        )
         db.session.add(other_entry)
         db.session.flush()
-        db.session.add(JournalLine(entry_id=other_entry.id, account_id=cash.id, debit=999, credit=0))
+        db.session.add(
+            JournalLine(
+                entry_id=other_entry.id, account_id=cash.id, debit=999, credit=0
+            )
+        )
         db.session.commit()
         return user, cash, income
 

@@ -48,7 +48,9 @@ def create_person():
         data = PersonCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -81,7 +83,9 @@ def update_person(person_id: int):
         data = PersonUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -113,12 +117,16 @@ def list_interactions(person_id: int):
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 50))
     try:
-        interactions = services.list_interactions(user_id, person_id, page=page, per_page=per_page)
+        interactions = services.list_interactions(
+            user_id, person_id, page=page, per_page=per_page
+        )
     except ValueError as exc:
         if str(exc) == "not_found":
             return jsonify({"ok": False, "error": "not_found"}), 404
         raise
-    return jsonify({"ok": True, "interactions": [map_interaction(i) for i in interactions]})
+    return jsonify(
+        {"ok": True, "interactions": [map_interaction(i) for i in interactions]}
+    )
 
 
 @rel_api_bp.post("/people/<int:person_id>/interactions")
@@ -130,7 +138,9 @@ def log_interaction(person_id: int):
         data = InteractionCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -159,7 +169,9 @@ def update_interaction(interaction_id: int):
         data = InteractionUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -190,12 +202,16 @@ def reconnect():
     user_id = int(get_jwt_identity())
     limit = int(request.args.get("limit", 20))
     cutoff_days = int(request.args.get("cutoff_days", 30))
-    candidates = services.compute_reconnect_candidates(user_id, limit=limit, cutoff_days=cutoff_days)
+    candidates = services.compute_reconnect_candidates(
+        user_id, limit=limit, cutoff_days=cutoff_days
+    )
     payload = [
         {
             "person": map_person(item["person"]),
             "last_interaction_date": (
-                item["last_interaction_date"].isoformat() if item["last_interaction_date"] else None
+                item["last_interaction_date"].isoformat()
+                if item["last_interaction_date"]
+                else None
             ),
             "days_since": item["days_since"],
         }

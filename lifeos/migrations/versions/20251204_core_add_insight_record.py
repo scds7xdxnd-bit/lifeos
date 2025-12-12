@@ -22,11 +22,15 @@ def upgrade():
         "insight_record",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), index=True),
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("event_record.id"), index=True),
+        sa.Column(
+            "event_id", sa.Integer(), sa.ForeignKey("event_record.id"), index=True
+        ),
         sa.Column("event_type", sa.String(length=128), nullable=False, index=True),
         sa.Column("kind", sa.String(length=64), nullable=False, index=True),
         sa.Column("message", sa.Text(), nullable=False, server_default=""),
-        sa.Column("severity", sa.String(length=16), nullable=False, server_default="info"),
+        sa.Column(
+            "severity", sa.String(length=16), nullable=False, server_default="info"
+        ),
         sa.Column("data", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
         sa.Column(
             "created_at",

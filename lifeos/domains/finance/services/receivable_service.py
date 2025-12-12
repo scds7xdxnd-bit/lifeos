@@ -16,7 +16,7 @@ from lifeos.domains.finance.models.receivable_models import (
     ReceivableTracker,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def create_receivable(
@@ -54,7 +54,9 @@ def create_receivable(
     return tracker
 
 
-def update_receivable(user_id: int, tracker_id: int, **fields) -> ReceivableTracker | None:
+def update_receivable(
+    user_id: int, tracker_id: int, **fields
+) -> ReceivableTracker | None:
     tracker = ReceivableTracker.query.filter_by(id=tracker_id, user_id=user_id).first()
     if not tracker:
         return None
@@ -78,8 +80,12 @@ def get_receivable(user_id: int, tracker_id: int) -> ReceivableTracker | None:
     return ReceivableTracker.query.filter_by(id=tracker_id, user_id=user_id).first()
 
 
-def list_receivables(user_id: int, page: int = 1, per_page: int = 50) -> Tuple[List[ReceivableTracker], int]:
-    query = ReceivableTracker.query.filter_by(user_id=user_id).order_by(ReceivableTracker.start_date.desc())
+def list_receivables(
+    user_id: int, page: int = 1, per_page: int = 50
+) -> Tuple[List[ReceivableTracker], int]:
+    query = ReceivableTracker.query.filter_by(user_id=user_id).order_by(
+        ReceivableTracker.start_date.desc()
+    )
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
@@ -95,7 +101,9 @@ def record_receivable_entry(
     tracker = ReceivableTracker.query.filter_by(id=tracker_id, user_id=user_id).first()
     if not tracker:
         raise ValueError("not_found")
-    entry = ReceivableManualEntry(tracker_id=tracker_id, amount=amount, entry_date=entry_date, memo=memo)
+    entry = ReceivableManualEntry(
+        tracker_id=tracker_id, amount=amount, entry_date=entry_date, memo=memo
+    )
     db.session.add(entry)
     db.session.flush()
     enqueue_outbox(
@@ -126,7 +134,9 @@ def list_receivable_entries(
     return items, total
 
 
-def create_loan_group(user_id: int, name: str, description: str | None = None) -> LoanGroup:
+def create_loan_group(
+    user_id: int, name: str, description: str | None = None
+) -> LoanGroup:
     group = LoanGroup(
         user_id=user_id,
         name=name.strip(),
@@ -137,7 +147,9 @@ def create_loan_group(user_id: int, name: str, description: str | None = None) -
     return group
 
 
-def link_tracker_to_group(user_id: int, group_id: int, tracker_id: int) -> LoanGroupLink | None:
+def link_tracker_to_group(
+    user_id: int, group_id: int, tracker_id: int
+) -> LoanGroupLink | None:
     group = LoanGroup.query.filter_by(id=group_id, user_id=user_id).first()
     tracker = ReceivableTracker.query.filter_by(id=tracker_id, user_id=user_id).first()
     if not group or not tracker:

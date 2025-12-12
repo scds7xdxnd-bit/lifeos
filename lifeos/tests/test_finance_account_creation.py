@@ -18,7 +18,7 @@ from lifeos.domains.finance.services.accounting_service import (
     ACCOUNT_SUBTYPES_MAP,
 )
 from lifeos.domains.finance.events import FINANCE_ACCOUNT_CREATED
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 class TestNormalizeName:
@@ -378,7 +378,9 @@ class TestGetSuggestedAccounts:
         """Test getting suggestions returns existing accounts."""
         with app.app_context():
             data = setup_accounts_for_suggestions
-            results = get_suggested_accounts(data["user_id"], "salary", limit=10, include_ml=False)
+            results = get_suggested_accounts(
+                data["user_id"], "salary", limit=10, include_ml=False
+            )
 
             assert len(results) >= 1
             assert results[0]["is_existing"] is True

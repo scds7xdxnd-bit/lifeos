@@ -37,7 +37,9 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for project tests."""
     with app.app_context():
-        user = User(email="projects-tester@example.com", password_hash=hash_password("secret"))
+        user = User(
+            email="projects-tester@example.com", password_hash=hash_password("secret")
+        )
         db.session.add(user)
         db.session.commit()
         yield user
@@ -84,7 +86,9 @@ class TestProjectService:
             with pytest.raises(ValueError, match="duplicate"):
                 create_project(test_user.id, name="Unique Project")
 
-    @pytest.mark.xfail(reason="Outbox event payload contains date object that cannot be JSON serialized")
+    @pytest.mark.xfail(
+        reason="Outbox event payload contains date object that cannot be JSON serialized"
+    )
     def test_update_project_success(self, app, test_user):
         """Update an existing project."""
         with app.app_context():
@@ -203,7 +207,9 @@ class TestProjectService:
             active_items, active_total = list_projects(test_user.id, status="active")
             assert active_total == 2
 
-            archived_items, archived_total = list_projects(test_user.id, status="archived")
+            archived_items, archived_total = list_projects(
+                test_user.id, status="archived"
+            )
             assert archived_total == 1
 
 
@@ -308,10 +314,14 @@ class TestTaskService:
             task2 = create_task(test_user.id, project.id, title="Completed Task")
             complete_task(test_user.id, task2.id)
 
-            open_items, open_total = list_tasks(test_user.id, project_id=project.id, status="open")
+            open_items, open_total = list_tasks(
+                test_user.id, project_id=project.id, status="open"
+            )
             assert open_total == 1
 
-            completed_items, completed_total = list_tasks(test_user.id, project_id=project.id, status="completed")
+            completed_items, completed_total = list_tasks(
+                test_user.id, project_id=project.id, status="completed"
+            )
             assert completed_total == 1
 
     def test_list_tasks_due_before_filter(self, app, test_user):
@@ -393,7 +403,7 @@ class TestProjectEventEmission:
     def test_project_created_event_emitted(self, app, test_user):
         """Project creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="projects.project.created"
@@ -410,7 +420,7 @@ class TestProjectEventEmission:
     def test_project_updated_event_emitted(self, app, test_user):
         """Project update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Update Event Project")
 
@@ -429,7 +439,7 @@ class TestProjectEventEmission:
     def test_project_archived_event_emitted(self, app, test_user):
         """Project archive should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Archive Event Project")
 
@@ -448,7 +458,7 @@ class TestProjectEventEmission:
     def test_project_completed_event_emitted(self, app, test_user):
         """Project completion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Complete Event Project")
 
@@ -467,7 +477,7 @@ class TestProjectEventEmission:
     def test_task_created_event_emitted(self, app, test_user):
         """Task creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Task Event Project")
 
@@ -515,7 +525,9 @@ class TestProjectUserIsolation:
         """Users can only create tasks for their own projects."""
         with app.app_context():
             # Create another user's project
-            other_user = User(email="other-tasks@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-tasks@example.com", password_hash=hash_password("secret")
+            )
             db.session.add(other_user)
             db.session.commit()
             other_project = create_project(other_user.id, name="Other Project")

@@ -19,7 +19,7 @@ from lifeos.domains.finance.models.accounting_models import (
     JournalLine,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 MAX_DESCRIPTION_LENGTH = 512
 MAX_JOURNAL_LINES = 100
@@ -35,7 +35,9 @@ def post_journal_entry(
     max_lines: int = MAX_JOURNAL_LINES,
 ) -> JournalEntry:
     """Create a balanced journal entry with validation and emit event via outbox."""
-    entry, _, _ = _create_journal_entry(user_id, description, lines, posted_at, max_lines=max_lines)
+    entry, _, _ = _create_journal_entry(
+        user_id, description, lines, posted_at, max_lines=max_lines
+    )
     return entry
 
 
@@ -47,7 +49,9 @@ def post_journal_entry_with_totals(
     max_lines: int = MAX_JOURNAL_LINES,
 ) -> Tuple[JournalEntry, Decimal, Decimal]:
     """Create a journal entry and return totals for response payloads."""
-    return _create_journal_entry(user_id, description, lines, posted_at, max_lines=max_lines)
+    return _create_journal_entry(
+        user_id, description, lines, posted_at, max_lines=max_lines
+    )
 
 
 def _normalize_journal_lines(lines: List[dict]) -> Tuple[List[dict], Decimal, Decimal]:
@@ -72,7 +76,9 @@ def _normalize_journal_lines(lines: List[dict]) -> Tuple[List[dict], Decimal, De
 
         if dc is not None or amount is not None:
             dc = str(dc or "").upper()
-            amount_dec = Decimal(str(amount or 0)).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
+            amount_dec = Decimal(str(amount or 0)).quantize(
+                TWO_PLACES, rounding=ROUND_HALF_UP
+            )
             if amount_dec <= 0:
                 raise ValueError("validation_error")
             if dc not in {"D", "C"}:
@@ -80,8 +86,12 @@ def _normalize_journal_lines(lines: List[dict]) -> Tuple[List[dict], Decimal, De
             debit = amount_dec if dc == "D" else Decimal("0")
             credit = amount_dec if dc == "C" else Decimal("0")
         else:
-            debit = Decimal(str(raw.get("debit") or 0)).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
-            credit = Decimal(str(raw.get("credit") or 0)).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
+            debit = Decimal(str(raw.get("debit") or 0)).quantize(
+                TWO_PLACES, rounding=ROUND_HALF_UP
+            )
+            credit = Decimal(str(raw.get("credit") or 0)).quantize(
+                TWO_PLACES, rounding=ROUND_HALF_UP
+            )
             if debit < 0 or credit < 0:
                 raise ValueError("validation_error")
             if debit == 0 and credit == 0:
@@ -93,7 +103,9 @@ def _normalize_journal_lines(lines: List[dict]) -> Tuple[List[dict], Decimal, De
         credit_total += credit
         has_debit = has_debit or debit > 0
         has_credit = has_credit or credit > 0
-        normalized.append({"account_id": account_id, "debit": debit, "credit": credit, "memo": memo})
+        normalized.append(
+            {"account_id": account_id, "debit": debit, "credit": credit, "memo": memo}
+        )
 
     if not has_debit or not has_credit:
         raise ValueError("unbalanced_entry")
@@ -103,7 +115,11 @@ def _normalize_journal_lines(lines: List[dict]) -> Tuple[List[dict], Decimal, De
 
 
 def _validate_accounts(user_id: int, account_ids: List[int]) -> None:
-    accounts = Account.query.filter(Account.user_id == user_id).filter(Account.id.in_(account_ids)).all()
+    accounts = (
+        Account.query.filter(Account.user_id == user_id)
+        .filter(Account.id.in_(account_ids))
+        .all()
+    )
     if len(accounts) != len(set(account_ids)):
         raise ValueError("not_found")
     inactive = [acct.id for acct in accounts if not acct.is_active]
@@ -130,7 +146,9 @@ def _create_journal_entry(
     normalized_lines, debit_total, credit_total = _normalize_journal_lines(lines)
     _validate_accounts(user_id, [line["account_id"] for line in normalized_lines])
 
-    entry = JournalEntry(user_id=user_id, description=desc, posted_at=posted_at or datetime.utcnow())
+    entry = JournalEntry(
+        user_id=user_id, description=desc, posted_at=posted_at or datetime.utcnow()
+    )
     for line in normalized_lines:
         entry.lines.append(
             JournalLine(
@@ -267,7 +285,9 @@ def search_accounts(user_id: int, query: str, limit: int = 20) -> List[Account]:
     return prefix_matches + substring_matches
 
 
-def get_suggested_accounts(user_id: int, query: str, limit: int = 10, include_ml: bool = True) -> List[dict]:
+def get_suggested_accounts(
+    user_id: int, query: str, limit: int = 10, include_ml: bool = True
+) -> List[dict]:
     """Get suggested accounts combining existing search + optional ML suggestions."""
     # Derive a safe search limit: if caller asks for fewer than 3, search with that limit (never negative).
     search_limit = limit if limit <= 2 else max(1, limit - 2)
@@ -303,10 +323,14 @@ def list_account_categories(
     if base_type:
         query = query.filter(AccountCategory.base_type == base_type)
     if include_system:
-        query = query.filter((AccountCategory.user_id == user_id) | (AccountCategory.user_id.is_(None)))
+        query = query.filter(
+            (AccountCategory.user_id == user_id) | (AccountCategory.user_id.is_(None))
+        )
     else:
         query = query.filter(AccountCategory.user_id == user_id)
-    return query.order_by(AccountCategory.base_type.asc(), AccountCategory.name.asc()).all()
+    return query.order_by(
+        AccountCategory.base_type.asc(), AccountCategory.name.asc()
+    ).all()
 
 
 def _get_category_for_user(user_id: int, category_id: int) -> AccountCategory:
@@ -389,10 +413,14 @@ def get_or_create_default_category(user_id: int, base_type: str) -> AccountCateg
         return system_default
 
     # As a fallback, create a user-scoped default to avoid failures
-    return create_custom_account_category(user_id, base_type, f"Default {base_type.title()}", is_default=True)
+    return create_custom_account_category(
+        user_id, base_type, f"Default {base_type.title()}", is_default=True
+    )
 
 
-def _validate_account_inputs(name: str, account_type: str, account_subtype: str | None) -> tuple[str, str | None]:
+def _validate_account_inputs(
+    name: str, account_type: str, account_subtype: str | None
+) -> tuple[str, str | None]:
     name = (name or "").strip()
     if not name or len(name) > 255:
         raise ValueError("invalid_name")
@@ -400,7 +428,9 @@ def _validate_account_inputs(name: str, account_type: str, account_subtype: str 
         raise ValueError("invalid_account_type")
     if account_subtype is not None:
         account_subtype = (account_subtype or "").strip() or None
-        if account_subtype and account_subtype not in get_account_subtypes(account_type):
+        if account_subtype and account_subtype not in get_account_subtypes(
+            account_type
+        ):
             raise ValueError("invalid_account_subtype")
     return name, account_subtype
 
@@ -428,7 +458,9 @@ def create_account(
         return existing
 
     if category_name_new:
-        category = create_custom_account_category(user_id, base_type, category_name_new, is_default=False)
+        category = create_custom_account_category(
+            user_id, base_type, category_name_new, is_default=False
+        )
     elif category_id:
         category = _get_category_for_user(user_id, category_id)
     else:
@@ -484,7 +516,9 @@ def update_account_category(
 
     base_type = account.account_type
     if category_name_new:
-        category = create_custom_account_category(user_id, base_type, category_name_new, is_default=False)
+        category = create_custom_account_category(
+            user_id, base_type, category_name_new, is_default=False
+        )
     elif category_id:
         category = _get_category_for_user(user_id, category_id)
     else:

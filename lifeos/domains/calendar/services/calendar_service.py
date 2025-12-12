@@ -18,7 +18,7 @@ from lifeos.domains.calendar.models.calendar_event import (
     CalendarEventInterpretation,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def create_calendar_event(
@@ -229,7 +229,12 @@ def list_calendar_events(
     if source:
         query = query.filter(CalendarEvent.source == source)
 
-    return query.order_by(CalendarEvent.start_time.desc()).offset(offset).limit(limit).all()
+    return (
+        query.order_by(CalendarEvent.start_time.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 
 def get_pending_interpretations(
@@ -249,7 +254,12 @@ def get_pending_interpretations(
     if domain:
         query = query.filter(CalendarEventInterpretation.domain == domain)
 
-    return query.order_by(CalendarEventInterpretation.created_at.desc()).offset(offset).limit(limit).all()
+    return (
+        query.order_by(CalendarEventInterpretation.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 
 def update_interpretation_status(
@@ -266,7 +276,9 @@ def update_interpretation_status(
     if status not in {"confirmed", "rejected", "ignored", "ambiguous"}:
         raise ValueError("invalid_status")
 
-    interpretation = CalendarEventInterpretation.query.filter_by(id=interpretation_id, user_id=user_id).first()
+    interpretation = CalendarEventInterpretation.query.filter_by(
+        id=interpretation_id, user_id=user_id
+    ).first()
     if not interpretation:
         raise ValueError("not_found")
 

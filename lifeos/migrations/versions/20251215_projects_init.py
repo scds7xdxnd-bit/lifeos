@@ -40,7 +40,9 @@ def upgrade():
             ),
             sa.Column("name", sa.String(length=255), nullable=False),
             sa.Column("description", sa.Text(), nullable=True),
-            sa.Column("status", sa.String(length=32), nullable=False, server_default="active"),
+            sa.Column(
+                "status", sa.String(length=32), nullable=False, server_default="active"
+            ),
             sa.Column("target_date", sa.Date(), nullable=True),
             sa.Column(
                 "created_at",
@@ -75,7 +77,9 @@ def upgrade():
     if not _has_index("project", "ix_project_user_status"):
         op.create_index("ix_project_user_status", "project", ["user_id", "status"])
     if not _has_index("project", "ix_project_user_target_date"):
-        op.create_index("ix_project_user_target_date", "project", ["user_id", "target_date"])
+        op.create_index(
+            "ix_project_user_target_date", "project", ["user_id", "target_date"]
+        )
 
     # project_task table
     if not _has_table("project_task"):
@@ -97,7 +101,9 @@ def upgrade():
                 index=True,
             ),
             sa.Column("title", sa.String(length=255), nullable=False),
-            sa.Column("status", sa.String(length=32), nullable=False, server_default="open"),
+            sa.Column(
+                "status", sa.String(length=32), nullable=False, server_default="open"
+            ),
             sa.Column("due_date", sa.Date(), nullable=True),
             sa.Column("priority", sa.Integer(), nullable=True),
             sa.Column("notes", sa.Text(), nullable=True),
@@ -116,9 +122,13 @@ def upgrade():
         )
     else:
         if not _has_column("project_task", "user_id"):
-            op.add_column("project_task", sa.Column("user_id", sa.Integer(), nullable=True))
+            op.add_column(
+                "project_task", sa.Column("user_id", sa.Integer(), nullable=True)
+            )
         if not _has_column("project_task", "priority"):
-            op.add_column("project_task", sa.Column("priority", sa.Integer(), nullable=True))
+            op.add_column(
+                "project_task", sa.Column("priority", sa.Integer(), nullable=True)
+            )
         if not _has_column("project_task", "notes"):
             op.add_column("project_task", sa.Column("notes", sa.Text(), nullable=True))
         if not _has_column("project_task", "updated_at"):
@@ -138,7 +148,9 @@ def upgrade():
             ["user_id", "project_id", "status"],
         )
     if not _has_index("project_task", "ix_project_task_user_due_date"):
-        op.create_index("ix_project_task_user_due_date", "project_task", ["user_id", "due_date"])
+        op.create_index(
+            "ix_project_task_user_due_date", "project_task", ["user_id", "due_date"]
+        )
     if not _has_index("project_task", "ix_project_task_user_project_due_date"):
         op.create_index(
             "ix_project_task_user_project_due_date",
@@ -166,7 +178,9 @@ def upgrade():
                 index=True,
             ),
             sa.Column("note", sa.Text(), nullable=True),
-            sa.Column("logged_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
+            sa.Column(
+                "logged_at", sa.DateTime(), server_default=sa.func.now(), nullable=False
+            ),
             sa.Column("status_snapshot", sa.String(length=32), nullable=True),
             sa.Column(
                 "created_at",
@@ -177,7 +191,9 @@ def upgrade():
         )
     else:
         if not _has_column("project_task_log", "user_id"):
-            op.add_column("project_task_log", sa.Column("user_id", sa.Integer(), nullable=True))
+            op.add_column(
+                "project_task_log", sa.Column("user_id", sa.Integer(), nullable=True)
+            )
         if not _has_column("project_task_log", "status_snapshot"):
             op.add_column(
                 "project_task_log",
@@ -209,7 +225,9 @@ def upgrade():
 
 def downgrade():
     op.drop_index("ix_project_task_log_user_logged_at", table_name="project_task_log")
-    op.drop_index("ix_project_task_log_user_task_logged_at", table_name="project_task_log")
+    op.drop_index(
+        "ix_project_task_log_user_task_logged_at", table_name="project_task_log"
+    )
     op.drop_table("project_task_log")
     op.drop_index("ix_project_task_user_project_due_date", table_name="project_task")
     op.drop_index("ix_project_task_user_due_date", table_name="project_task")

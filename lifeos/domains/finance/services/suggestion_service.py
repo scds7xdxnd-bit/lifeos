@@ -43,13 +43,17 @@ def _maybe_rank_with_legacy(app, description: str) -> Optional[RankerResult]:
         return None
     cache = app.extensions.setdefault("legacy_ml_cache", {})
     if "models" not in cache:
-        cache["models"] = load_legacy_models(app.config.get("MLSUGGESTER_MODEL_DIR") or "flask_app")
+        cache["models"] = load_legacy_models(
+            app.config.get("MLSUGGESTER_MODEL_DIR") or "flask_app"
+        )
     legacy_models: Dict[str, Any] = cache.get("models") or {}
     if not legacy_models:
         return None
     result = predict_account_with_legacy(description, legacy_models)
     if result:
-        result.payload_version = result.payload_version or _event_payload_version() or RANKER_PAYLOAD_VERSION
+        result.payload_version = (
+            result.payload_version or _event_payload_version() or RANKER_PAYLOAD_VERSION
+        )
     return result
 
 
@@ -57,7 +61,9 @@ def _rank_with_embeddings(user_id: int, description: str) -> RankerResult:
     accounts = Account.query.filter_by(user_id=user_id, is_active=True).all()
     candidates = [(acct.id, f"{acct.name} {acct.code or ''}") for acct in accounts]
     result = predict_account(description, candidates)
-    result.payload_version = result.payload_version or _event_payload_version() or RANKER_PAYLOAD_VERSION
+    result.payload_version = (
+        result.payload_version or _event_payload_version() or RANKER_PAYLOAD_VERSION
+    )
     if not result.context:
         result.context = {}
     result.context.setdefault("candidate_count", len(candidates))

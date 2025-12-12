@@ -35,7 +35,9 @@ def upgrade():
         sa.Column("current_level", sa.Integer()),
         sa.Column("description", sa.Text()),
         sa.Column("tags", sa.JSON(), nullable=False, server_default=sa.text("'[]'")),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -44,8 +46,12 @@ def upgrade():
             onupdate=sa.func.now(),
         ),
     )
-    op.create_index("ux_skills_skill_user_name", "skills_skill", ["user_id", "name"], unique=True)
-    op.create_index("ix_skills_skill_user_category", "skills_skill", ["user_id", "category"])
+    op.create_index(
+        "ux_skills_skill_user_name", "skills_skill", ["user_id", "name"], unique=True
+    )
+    op.create_index(
+        "ix_skills_skill_user_category", "skills_skill", ["user_id", "category"]
+    )
 
     op.create_table(
         "skills_skill_practice_session",
@@ -74,7 +80,9 @@ def upgrade():
             server_default=sa.func.now(),
             index=True,
         ),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
     )
     op.create_index(
         "ix_skills_session_user_practiced_at",

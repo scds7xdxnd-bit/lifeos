@@ -62,7 +62,11 @@ def seed_accounts(user_id: int) -> tuple[list[AccountCategory], list[Account]]:
     for name, code in acc_defs:
         existing = Account.query.filter_by(user_id=user_id, code=code).first()
         if not existing:
-            cat = categories[0] if "Cash" in name or "Checking" in name else categories[2 if "Revenue" in name else 3]
+            cat = (
+                categories[0]
+                if "Cash" in name or "Checking" in name
+                else categories[2 if "Revenue" in name else 3]
+            )
             acc = Account(user_id=user_id, name=name, code=code, category=cat)
             db.session.add(acc)
             accounts.append(acc)
@@ -78,13 +82,21 @@ def seed_journal_and_transactions(user_id: int, accounts: list[Account]) -> None
     expense = next(a for a in accounts if "Expense" in a.name)
 
     entry1 = JournalEntry(user_id=user_id, description="Demo sale")
-    entry1.lines.append(JournalLine(account=cash, debit=500, credit=0, memo="Cash sale"))
-    entry1.lines.append(JournalLine(account=revenue, debit=0, credit=500, memo="Revenue"))
+    entry1.lines.append(
+        JournalLine(account=cash, debit=500, credit=0, memo="Cash sale")
+    )
+    entry1.lines.append(
+        JournalLine(account=revenue, debit=0, credit=500, memo="Revenue")
+    )
     db.session.add(entry1)
 
     entry2 = JournalEntry(user_id=user_id, description="Buy supplies")
-    entry2.lines.append(JournalLine(account=expense, debit=150, credit=0, memo="Supplies"))
-    entry2.lines.append(JournalLine(account=cash, debit=0, credit=150, memo="Cash payment"))
+    entry2.lines.append(
+        JournalLine(account=expense, debit=150, credit=0, memo="Supplies")
+    )
+    entry2.lines.append(
+        JournalLine(account=cash, debit=0, credit=150, memo="Cash payment")
+    )
     db.session.add(entry2)
     db.session.flush()
 
@@ -108,7 +120,9 @@ def seed_journal_and_transactions(user_id: int, accounts: list[Account]) -> None
 
 
 def seed_receivables(user_id: int) -> None:
-    tracker = ReceivableTracker(user_id=user_id, counterparty="Alice", principal=300, start_date=date.today())
+    tracker = ReceivableTracker(
+        user_id=user_id, counterparty="Alice", principal=300, start_date=date.today()
+    )
     db.session.add(tracker)
     db.session.flush()
     db.session.add(

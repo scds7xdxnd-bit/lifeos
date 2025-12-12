@@ -72,7 +72,9 @@ def other_user(app):
 def test_create_entry_success(app, test_user):
     """Should create journal entry with all fields."""
     with app.app_context():
-        with patch("lifeos.domains.journal.services.journal_service.enqueue_outbox") as mock_enqueue:
+        with patch(
+            "lifeos.domains.journal.services.journal_service.enqueue_outbox"
+        ) as mock_enqueue:
             entry = journal_service.create_entry(
                 user_id=test_user.id,
                 title="My First Entry",
@@ -224,7 +226,9 @@ def test_create_entry_mood_none_allowed(app, test_user):
 def test_update_entry_success(app, test_user):
     """Should update entry fields."""
     with app.app_context():
-        with patch("lifeos.domains.journal.services.journal_service.enqueue_outbox") as mock_enqueue:
+        with patch(
+            "lifeos.domains.journal.services.journal_service.enqueue_outbox"
+        ) as mock_enqueue:
             # Create entry
             entry = journal_service.create_entry(
                 user_id=test_user.id,
@@ -320,7 +324,9 @@ def test_update_entry_other_user(app, test_user, other_user):
 def test_delete_entry_success(app, test_user):
     """Should delete entry."""
     with app.app_context():
-        with patch("lifeos.domains.journal.services.journal_service.enqueue_outbox") as mock_enqueue:
+        with patch(
+            "lifeos.domains.journal.services.journal_service.enqueue_outbox"
+        ) as mock_enqueue:
             entry = journal_service.create_entry(
                 user_id=test_user.id,
                 title="Delete Me",
@@ -507,7 +513,9 @@ def test_list_entries_filter_by_mood(app, test_user):
         assert entries[0].title == "Happy"
 
 
-@pytest.mark.xfail(reason="SQLite JSON contains() filter does not work correctly with array fields")
+@pytest.mark.xfail(
+    reason="SQLite JSON contains() filter does not work correctly with array fields"
+)
 def test_list_entries_filter_by_tag(app, test_user):
     """Should filter by tag."""
     with app.app_context():
@@ -550,12 +558,16 @@ def test_list_entries_search_text(app, test_user):
             )
 
         # Search in title
-        entries, total = journal_service.list_entries(test_user.id, search_text="Python")
+        entries, total = journal_service.list_entries(
+            test_user.id, search_text="Python"
+        )
         assert total == 1
         assert entries[0].title == "Python Learning"
 
         # Search in body
-        entries, total = journal_service.list_entries(test_user.id, search_text="decorators")
+        entries, total = journal_service.list_entries(
+            test_user.id, search_text="decorators"
+        )
         assert total == 1
 
 

@@ -64,7 +64,9 @@ def get_journal_entry_detail(entry_id: int):
 
     user_id = int(get_jwt_identity())
     entry = (
-        JournalEntry.query.options(selectinload(JournalEntry.lines).selectinload(JournalLine.account))
+        JournalEntry.query.options(
+            selectinload(JournalEntry.lines).selectinload(JournalLine.account)
+        )
         .filter_by(id=entry_id, user_id=user_id)
         .first()
     )
@@ -115,7 +117,9 @@ def create_journal_entry():
         data = JournalEntryCreateRequest.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
 

@@ -1,8 +1,8 @@
 # LifeOS Calendar-First Architecture Specification
 
-**Status:** Architectural Design (approved by Architect)  
-**Date:** 2025-12-07  
-**Author:** LifeOS Architect  
+**Status:** Architectural Design (approved by Architect)
+**Date:** 2025-12-07
+**Author:** LifeOS Architect
 
 ---
 
@@ -271,7 +271,7 @@ CLASSIFICATION_RULES = {
 
 class DomainAdapter:
     """Base class for domain service adapters."""
-    
+
     def create_inferred_record(
         self,
         user_id: int,
@@ -285,7 +285,7 @@ class DomainAdapter:
 
 class FinanceAdapter(DomainAdapter):
     """Adapter for finance domain inferred transactions."""
-    
+
     def create_inferred_record(self, user_id, calendar_event_id, confidence_score, extracted_data):
         from lifeos.domains.finance.services import transaction_service
         return transaction_service.create_inferred_transaction(
@@ -301,7 +301,7 @@ class FinanceAdapter(DomainAdapter):
 
 class HealthMealAdapter(DomainAdapter):
     """Adapter for health meal logging."""
-    
+
     def create_inferred_record(self, user_id, calendar_event_id, confidence_score, extracted_data):
         from lifeos.domains.health.services import health_service
         return health_service.log_inferred_meal(
@@ -316,7 +316,7 @@ class HealthMealAdapter(DomainAdapter):
 
 class HealthWorkoutAdapter(DomainAdapter):
     """Adapter for health workout logging."""
-    
+
     def create_inferred_record(self, user_id, calendar_event_id, confidence_score, extracted_data):
         from lifeos.domains.health.services import health_service
         return health_service.log_inferred_workout(
@@ -331,7 +331,7 @@ class HealthWorkoutAdapter(DomainAdapter):
 
 class HabitsAdapter(DomainAdapter):
     """Adapter for habits logging."""
-    
+
     def create_inferred_record(self, user_id, calendar_event_id, confidence_score, extracted_data):
         from lifeos.domains.habits.services import habits_service
         return habits_service.log_inferred_habit(
@@ -346,7 +346,7 @@ class HabitsAdapter(DomainAdapter):
 
 class SkillsAdapter(DomainAdapter):
     """Adapter for skills practice logging."""
-    
+
     def create_inferred_record(self, user_id, calendar_event_id, confidence_score, extracted_data):
         from lifeos.domains.skills.services import skills_service
         return skills_service.log_inferred_practice(
@@ -362,7 +362,7 @@ class SkillsAdapter(DomainAdapter):
 
 class ProjectsAdapter(DomainAdapter):
     """Adapter for projects work session logging."""
-    
+
     def create_inferred_record(self, user_id, calendar_event_id, confidence_score, extracted_data):
         from lifeos.domains.projects.services import projects_service
         return projects_service.log_inferred_work_session(
@@ -379,7 +379,7 @@ class ProjectsAdapter(DomainAdapter):
 
 class RelationshipsAdapter(DomainAdapter):
     """Adapter for relationships interaction logging."""
-    
+
     def create_inferred_record(self, user_id, calendar_event_id, confidence_score, extracted_data):
         from lifeos.domains.relationships.services import relationships_service
         return relationships_service.log_inferred_interaction(
@@ -402,7 +402,7 @@ class CalendarInterpreter:
     """
     Subscribes to calendar events, classifies them, and creates inferred domain records.
     """
-    
+
     def __init__(self):
         self.adapters = {
             ("finance", "transaction"): FinanceAdapter(),
@@ -413,13 +413,13 @@ class CalendarInterpreter:
             ("projects", "work_session"): ProjectsAdapter(),
             ("relationships", "interaction"): RelationshipsAdapter(),
         }
-    
+
     def register_subscriptions(self):
         """Register event bus subscriptions."""
         from lifeos.core.events.event_bus import event_bus
         event_bus.subscribe("calendar.event.created", self.on_calendar_event)
         event_bus.subscribe("calendar.event.updated", self.on_calendar_event)
-    
+
     def on_calendar_event(self, event: EventRecord):
         """Handle calendar event creation/update."""
         payload = event.payload
@@ -430,7 +430,7 @@ class CalendarInterpreter:
         start_time = payload["start_time"]
         end_time = payload.get("end_time")
         location = payload.get("location", "")
-        
+
         # Classify the event
         classifications = self.classify(
             user_id=user_id,
@@ -440,7 +440,7 @@ class CalendarInterpreter:
             end_time=end_time,
             location=location,
         )
-        
+
         # Create interpretations and inferred records
         for classification in classifications:
             self.create_interpretation_and_record(
@@ -448,7 +448,7 @@ class CalendarInterpreter:
                 calendar_event_id=calendar_event_id,
                 classification=classification,
             )
-    
+
     def classify(self, user_id, title, description, start_time, end_time, location):
         """
         Apply classification rules to extract domain-specific interpretations.
@@ -456,11 +456,11 @@ class CalendarInterpreter:
         """
         # Implementation uses CLASSIFICATION_RULES + user's habits/skills/projects
         ...
-    
+
     def create_interpretation_and_record(self, user_id, calendar_event_id, classification):
         """Create CalendarEventInterpretation and call domain adapter."""
         domain, record_type, confidence, extracted_data = classification
-        
+
         # Create interpretation record
         interpretation = CalendarEventInterpretation(
             calendar_event_id=calendar_event_id,
@@ -472,7 +472,7 @@ class CalendarInterpreter:
             classification_data=extracted_data,
         )
         db.session.add(interpretation)
-        
+
         # Call domain adapter to create inferred record
         adapter = self.adapters.get((domain, record_type))
         if adapter:
@@ -483,15 +483,15 @@ class CalendarInterpreter:
                 extracted_data=extracted_data,
             )
             interpretation.record_id = record_id
-        
+
         db.session.commit()
-        
+
         # Emit inferred event
         self.emit_inferred_event(domain, record_type, user_id, calendar_event_id, interpretation.id, confidence)
-    
+
     def emit_inferred_event(self, domain, record_type, user_id, calendar_event_id, interpretation_id, confidence):
         """Emit domain.*.inferred event to the bus."""
-        from lifeos.platform.outbox import enqueue
+        from lifeos.lifeos_platform.outbox import enqueue
         event_type = f"{domain}.{record_type}.inferred"
         enqueue(
             user_id=user_id,
@@ -736,7 +736,7 @@ def upgrade():
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
     )
-    
+
     # Indexes for calendar_event
     op.create_index("ix_calendar_event_user_start", "calendar_event", ["user_id", "start_time"])
     op.create_index("ix_calendar_event_user_end", "calendar_event", ["user_id", "end_time"])
@@ -748,7 +748,7 @@ def upgrade():
         unique=True,
         postgresql_where=sa.text("external_id IS NOT NULL"),
     )
-    
+
     # calendar_event_interpretation table
     op.create_table(
         "calendar_event_interpretation",
@@ -764,7 +764,7 @@ def upgrade():
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
     )
-    
+
     # Indexes for calendar_event_interpretation
     op.create_index("ix_interpretation_user_domain", "calendar_event_interpretation", ["user_id", "domain", "status"])
     op.create_index("ix_interpretation_user_status", "calendar_event_interpretation", ["user_id", "status"])
@@ -803,37 +803,37 @@ def upgrade():
     op.add_column("finance_transaction", sa.Column("confidence_score", sa.Numeric(3, 2), nullable=True))
     op.add_column("finance_transaction", sa.Column("inference_status", sa.String(16), nullable=True))
     op.create_index("ix_finance_transaction_inference_status", "finance_transaction", ["user_id", "inference_status"])
-    
+
     # Health: health_workout
     op.add_column("health_workout", sa.Column("source", sa.String(32), nullable=False, server_default="manual"))
     op.add_column("health_workout", sa.Column("calendar_event_id", sa.Integer(), sa.ForeignKey("calendar_event.id"), nullable=True))
     op.add_column("health_workout", sa.Column("confidence_score", sa.Numeric(3, 2), nullable=True))
     op.add_column("health_workout", sa.Column("inference_status", sa.String(16), nullable=True))
-    
+
     # Health: health_nutrition_log
     op.add_column("health_nutrition_log", sa.Column("source", sa.String(32), nullable=False, server_default="manual"))
     op.add_column("health_nutrition_log", sa.Column("calendar_event_id", sa.Integer(), sa.ForeignKey("calendar_event.id"), nullable=True))
     op.add_column("health_nutrition_log", sa.Column("confidence_score", sa.Numeric(3, 2), nullable=True))
     op.add_column("health_nutrition_log", sa.Column("inference_status", sa.String(16), nullable=True))
-    
+
     # Habits: habit_log
     op.add_column("habit_log", sa.Column("source", sa.String(32), nullable=False, server_default="manual"))
     op.add_column("habit_log", sa.Column("calendar_event_id", sa.Integer(), sa.ForeignKey("calendar_event.id"), nullable=True))
     op.add_column("habit_log", sa.Column("confidence_score", sa.Numeric(3, 2), nullable=True))
     op.add_column("habit_log", sa.Column("inference_status", sa.String(16), nullable=True))
-    
+
     # Skills: skill_practice_session
     op.add_column("skill_practice_session", sa.Column("source", sa.String(32), nullable=False, server_default="manual"))
     op.add_column("skill_practice_session", sa.Column("calendar_event_id", sa.Integer(), sa.ForeignKey("calendar_event.id"), nullable=True))
     op.add_column("skill_practice_session", sa.Column("confidence_score", sa.Numeric(3, 2), nullable=True))
     op.add_column("skill_practice_session", sa.Column("inference_status", sa.String(16), nullable=True))
-    
+
     # Projects: project_task_log
     op.add_column("project_task_log", sa.Column("source", sa.String(32), nullable=False, server_default="manual"))
     op.add_column("project_task_log", sa.Column("calendar_event_id", sa.Integer(), sa.ForeignKey("calendar_event.id"), nullable=True))
     op.add_column("project_task_log", sa.Column("confidence_score", sa.Numeric(3, 2), nullable=True))
     op.add_column("project_task_log", sa.Column("inference_status", sa.String(16), nullable=True))
-    
+
     # Relationships: relationships_interaction
     op.add_column("relationships_interaction", sa.Column("source", sa.String(32), nullable=False, server_default="manual"))
     op.add_column("relationships_interaction", sa.Column("calendar_event_id", sa.Integer(), sa.ForeignKey("calendar_event.id"), nullable=True))
@@ -843,11 +843,11 @@ def upgrade():
 
 def downgrade():
     # Reverse all column additions (in reverse order)
-    for table in ["relationships_interaction", "project_task_log", "skill_practice_session", 
+    for table in ["relationships_interaction", "project_task_log", "skill_practice_session",
                   "habit_log", "health_nutrition_log", "health_workout", "finance_transaction"]:
         for col in ["inference_status", "confidence_score", "calendar_event_id", "source"]:
             op.drop_column(table, col)
-    
+
     op.drop_index("ix_finance_transaction_inference_status", "finance_transaction")
 ```
 
@@ -947,7 +947,7 @@ def create_inferred_transaction(
 ) -> int:
     """
     Create an inferred transaction from a calendar event.
-    
+
     Returns: transaction_id
     """
     tx = Transaction(
@@ -963,10 +963,10 @@ def create_inferred_transaction(
     )
     db.session.add(tx)
     db.session.commit()
-    
+
     # Emit event
     enqueue(user_id, FINANCE_TRANSACTION_INFERRED, {...})
-    
+
     return tx.id
 
 
@@ -982,7 +982,7 @@ def confirm_inferred_transaction(
     tx = Transaction.query.filter_by(id=transaction_id, user_id=user_id).first()
     if not tx or tx.inference_status != "inferred":
         raise ValueError("not_found_or_not_inferred")
-    
+
     tx.amount = amount
     tx.category = category
     tx.inference_status = "confirmed"
@@ -1101,7 +1101,7 @@ def log_inferred_practice(
             db.session.add(skill)
             db.session.flush()
         skill_id = skill.id
-    
+
     session = PracticeSession(
         user_id=user_id,
         skill_id=skill_id,
@@ -1143,11 +1143,11 @@ def log_inferred_work_session(
             task = ProjectTask.query.filter_by(project_id=project_id, status="open").first()
             if task:
                 task_id = task.id
-    
+
     if task_id is None:
         # Cannot log work session without a task; create as unlinked or skip
         return None
-    
+
     log = ProjectTaskLog(
         user_id=user_id,
         task_id=task_id,
@@ -1187,11 +1187,11 @@ def log_inferred_interaction(
         ).first()
         if person:
             person_id = person.id
-    
+
     if person_id is None:
         # Cannot log interaction without a person; maybe create one?
         return None
-    
+
     interaction = Interaction(
         user_id=user_id,
         person_id=person_id,

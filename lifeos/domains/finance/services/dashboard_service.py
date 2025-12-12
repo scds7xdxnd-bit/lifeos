@@ -20,7 +20,9 @@ from lifeos.domains.finance.services.trial_balance_service import (
 def get_dashboard(user_id: int) -> dict:
     # Balances per account
     accounts: List[Account] = (
-        Account.query.filter_by(user_id=user_id).order_by(Account.code.asc().nullsfirst(), Account.name.asc()).all()
+        Account.query.filter_by(user_id=user_id)
+        .order_by(Account.code.asc().nullsfirst(), Account.name.asc())
+        .all()
     )
     totals = calculate_trial_balance(user_id)
     balance_rows = [
@@ -34,7 +36,12 @@ def get_dashboard(user_id: int) -> dict:
     ]
 
     # Recent transactions
-    txns = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.occurred_at.desc()).limit(10).all()
+    txns = (
+        Transaction.query.filter_by(user_id=user_id)
+        .order_by(Transaction.occurred_at.desc())
+        .limit(10)
+        .all()
+    )
     recent_transactions = [
         {
             "id": t.id,
@@ -49,7 +56,9 @@ def get_dashboard(user_id: int) -> dict:
     # Upcoming schedule rows
     today = dt.date.today()
     rows = (
-        MoneyScheduleRow.query.filter(MoneyScheduleRow.user_id == user_id, MoneyScheduleRow.event_date >= today)
+        MoneyScheduleRow.query.filter(
+            MoneyScheduleRow.user_id == user_id, MoneyScheduleRow.event_date >= today
+        )
         .order_by(MoneyScheduleRow.event_date.asc())
         .limit(10)
         .all()
@@ -74,14 +83,17 @@ def get_dashboard(user_id: int) -> dict:
 
     # Forecast snapshot (7-day)
     balances = {
-        row.as_of: float(row.balance) for row in MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).all()
+        row.as_of: float(row.balance)
+        for row in MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).all()
     }
     forecast: List[dict] = []
     running = 0.0
     for offset in range(7):
         day = today + dt.timedelta(days=offset)
         running += balances.get(day, 0.0)
-        forecast.append({"date": day.isoformat(), "projected_balance": round(running, 2)})
+        forecast.append(
+            {"date": day.isoformat(), "projected_balance": round(running, 2)}
+        )
 
     return {
         "accounts": balance_rows,

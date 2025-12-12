@@ -22,7 +22,7 @@ from lifeos.domains.calendar.models.calendar_event import (
     CalendarEventInterpretation,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 class CalendarInterpreter:
@@ -79,7 +79,9 @@ class CalendarInterpreter:
         # Classify the event
         self.interpret_event(calendar_event)
 
-    def interpret_event(self, event: CalendarEvent) -> List[CalendarEventInterpretation]:
+    def interpret_event(
+        self, event: CalendarEvent
+    ) -> List[CalendarEventInterpretation]:
         """
         Classify a calendar event and create interpretation records.
 
@@ -193,7 +195,10 @@ class CalendarInterpreter:
             record_id=interpretation.record_id,
             status=STATUS_INFERRED,
             model_version=model_version,
-            context={"source": "calendar_interpreter", "record_id": interpretation.record_id},
+            context={
+                "source": "calendar_interpreter",
+                "record_id": interpretation.record_id,
+            },
         )
 
         return interpretation
@@ -228,7 +233,9 @@ class CalendarInterpreter:
         except Exception as exc:
             # Log but don't fail interpretation creation
             try:
-                current_app.logger.warning(f"Failed to create inferred {domain}.{record_type} record: {exc}")
+                current_app.logger.warning(
+                    f"Failed to create inferred {domain}.{record_type} record: {exc}"
+                )
             except RuntimeError:
                 pass
             return None

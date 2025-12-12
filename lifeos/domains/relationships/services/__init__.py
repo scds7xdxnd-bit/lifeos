@@ -18,7 +18,7 @@ from lifeos.domains.relationships.events import (
 from lifeos.domains.relationships.models.interaction_models import Interaction
 from lifeos.domains.relationships.models.person_models import Person
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def _latest_interaction_subquery(user_id: int):
@@ -117,7 +117,11 @@ def update_person(user_id: int, person_id: int, **fields) -> Optional[Person]:
             "person_id": person.id,
             "user_id": user_id,
             "fields": changed,
-            "updated_at": (person.updated_at.isoformat() if person.updated_at else datetime.utcnow().isoformat()),
+            "updated_at": (
+                person.updated_at.isoformat()
+                if person.updated_at
+                else datetime.utcnow().isoformat()
+            ),
         },
         user_id=user_id,
     )
@@ -182,14 +186,18 @@ def list_people(
         like = f"%{search}%"
         query = query.filter(Person.name.ilike(like))
     people: List[Person] = []
-    for person, last_date, last_method in query.order_by(Person.created_at.desc()).offset(offset).limit(limit).all():
+    for person, last_date, last_method in (
+        query.order_by(Person.created_at.desc()).offset(offset).limit(limit).all()
+    ):
         person.last_interaction_date = last_date
         person.last_interaction_method = last_method
         people.append(person)
     return people
 
 
-def compute_reconnect_candidates(user_id: int, limit: int = 20, cutoff_days: int = 30) -> List[dict]:
+def compute_reconnect_candidates(
+    user_id: int, limit: int = 20, cutoff_days: int = 30
+) -> List[dict]:
     cutoff_date = date.today() - timedelta(days=cutoff_days)
     subq = (
         db.session.query(
@@ -259,7 +267,9 @@ def log_interaction(
     return interaction
 
 
-def list_interactions(user_id: int, person_id: int, page: int = 1, per_page: int = 50) -> List[Interaction]:
+def list_interactions(
+    user_id: int, person_id: int, page: int = 1, per_page: int = 50
+) -> List[Interaction]:
     person = Person.query.filter_by(id=person_id, user_id=user_id).first()
     if not person:
         raise ValueError("not_found")
@@ -272,8 +282,12 @@ def list_interactions(user_id: int, person_id: int, page: int = 1, per_page: int
     )
 
 
-def edit_interaction(user_id: int, interaction_id: int, **fields) -> Optional[Interaction]:
-    interaction = Interaction.query.filter_by(id=interaction_id, user_id=user_id).first()
+def edit_interaction(
+    user_id: int, interaction_id: int, **fields
+) -> Optional[Interaction]:
+    interaction = Interaction.query.filter_by(
+        id=interaction_id, user_id=user_id
+    ).first()
     if not interaction:
         return None
     for key in ("date", "method", "notes", "sentiment"):
@@ -295,7 +309,9 @@ def edit_interaction(user_id: int, interaction_id: int, **fields) -> Optional[In
 
 
 def delete_interaction(user_id: int, interaction_id: int) -> bool:
-    interaction = Interaction.query.filter_by(id=interaction_id, user_id=user_id).first()
+    interaction = Interaction.query.filter_by(
+        id=interaction_id, user_id=user_id
+    ).first()
     if not interaction:
         return False
     db.session.delete(interaction)

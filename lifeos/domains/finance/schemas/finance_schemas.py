@@ -54,13 +54,17 @@ class AccountInlineCreate(BaseModel):
     """Request body for inline account creation."""
 
     name: str = Field(min_length=1, max_length=255, description="Account display name")
-    account_type: Literal["asset", "liability", "equity", "income", "expense"] = Field(description="Type of account")
+    account_type: Literal["asset", "liability", "equity", "income", "expense"] = Field(
+        description="Type of account"
+    )
     account_subtype: Optional[str] = Field(
         default=None,
         max_length=64,
         description="Optional subtype (e.g., 'cash', 'bank', 'loan')",
     )
-    category_id: Optional[int] = Field(default=None, description="Existing category ID to assign")
+    category_id: Optional[int] = Field(
+        default=None, description="Existing category ID to assign"
+    )
     category_name_new: Optional[str] = Field(
         default=None,
         max_length=128,

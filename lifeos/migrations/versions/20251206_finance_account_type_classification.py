@@ -24,22 +24,32 @@ def upgrade() -> None:
     # Add new columns to finance_account table
     op.add_column(
         "finance_account",
-        sa.Column("account_type", sa.String(16), nullable=False, server_default="asset"),
+        sa.Column(
+            "account_type", sa.String(16), nullable=False, server_default="asset"
+        ),
     )
-    op.add_column("finance_account", sa.Column("account_subtype", sa.String(64), nullable=True))
+    op.add_column(
+        "finance_account", sa.Column("account_subtype", sa.String(64), nullable=True)
+    )
     op.add_column(
         "finance_account",
         sa.Column("normalized_name", sa.String(255), nullable=False, server_default=""),
     )
     op.add_column(
         "finance_account",
-        sa.Column("created_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime, nullable=False, server_default=sa.func.now()
+        ),
     )
 
     # Create indexes for new columns
     op.create_index("ix_finance_account_type", "finance_account", ["account_type"])
-    op.create_index("ix_finance_account_user_type", "finance_account", ["user_id", "account_type"])
-    op.create_index("ix_finance_account_normalized_name", "finance_account", ["normalized_name"])
+    op.create_index(
+        "ix_finance_account_user_type", "finance_account", ["user_id", "account_type"]
+    )
+    op.create_index(
+        "ix_finance_account_normalized_name", "finance_account", ["normalized_name"]
+    )
     op.create_index(
         "ix_finance_account_user_normalized_name",
         "finance_account",
@@ -93,7 +103,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Drop indexes
-    op.drop_index("ix_finance_account_user_normalized_name", table_name="finance_account")
+    op.drop_index(
+        "ix_finance_account_user_normalized_name", table_name="finance_account"
+    )
     op.drop_index("ix_finance_account_normalized_name", table_name="finance_account")
     op.drop_index("ix_finance_account_user_type", table_name="finance_account")
     op.drop_index("ix_finance_account_type", table_name="finance_account")

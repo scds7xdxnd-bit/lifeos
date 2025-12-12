@@ -40,7 +40,11 @@ def test_health_meal_inference_payload():
         calendar_event_id="cal-1",
         confidence=0.76,
         status="inferred",
-        inferred={"meal_type": "lunch", "items": ["salad", "water"], "calories_est": 450},
+        inferred={
+            "meal_type": "lunch",
+            "items": ["salad", "water"],
+            "calories_est": 450,
+        },
     )
     payload = evt.to_payload()
     assert payload["event_name"] == "health.meal.inferred"
@@ -55,7 +59,11 @@ def test_health_workout_inference_payload():
         user_id=2,
         calendar_event_id=5,
         confidence=0.82,
-        inferred={"workout_type": "run", "duration_minutes": 30, "intensity": "moderate"},
+        inferred={
+            "workout_type": "run",
+            "duration_minutes": 30,
+            "intensity": "moderate",
+        },
     )
     payload = evt.to_payload()
     assert payload["event_name"] == "health.workout.inferred"
@@ -93,7 +101,11 @@ def test_projects_inference_payload():
         user_id=5,
         calendar_event_id=10,
         confidence=0.66,
-        inferred={"project_name": "Roadmap", "task_name": "Write RFC", "duration_minutes": 60},
+        inferred={
+            "project_name": "Roadmap",
+            "task_name": "Write RFC",
+            "duration_minutes": 60,
+        },
     )
     payload = evt.to_payload()
     assert payload["event_name"] == "projects.work_session.inferred"
@@ -106,7 +118,12 @@ def test_relationships_inference_payload():
         user_id=6,
         calendar_event_id=12,
         confidence=0.73,
-        inferred={"person_name": "Alex", "interaction_type": "call", "method": "phone", "sentiment": "positive"},
+        inferred={
+            "person_name": "Alex",
+            "interaction_type": "call",
+            "method": "phone",
+            "sentiment": "positive",
+        },
     )
     payload = evt.to_payload()
     assert payload["event_name"] == "relationships.interaction.inferred"

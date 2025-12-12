@@ -27,13 +27,27 @@ class _BaseInference(BaseModel):
 class TransactionInference(_BaseInference):
     """Structured transaction guess."""
 
-    amount: Optional[float] = Field(default=None, description="Guessed amount (major units).")
-    currency: Optional[str] = Field(default=None, description="ISO currency code if known (e.g., 'USD').")
-    description: Optional[str] = Field(default=None, description="Normalized description or memo.")
-    counterparty: Optional[str] = Field(default=None, description="Guessed counterparty/merchant.")
-    category: Optional[str] = Field(default=None, description="Suggested category/label for reporting.")
-    debit_account_id: Optional[int] = Field(default=None, description="Suggested debit account id.")
-    credit_account_id: Optional[int] = Field(default=None, description="Suggested credit account id.")
+    amount: Optional[float] = Field(
+        default=None, description="Guessed amount (major units)."
+    )
+    currency: Optional[str] = Field(
+        default=None, description="ISO currency code if known (e.g., 'USD')."
+    )
+    description: Optional[str] = Field(
+        default=None, description="Normalized description or memo."
+    )
+    counterparty: Optional[str] = Field(
+        default=None, description="Guessed counterparty/merchant."
+    )
+    category: Optional[str] = Field(
+        default=None, description="Suggested category/label for reporting."
+    )
+    debit_account_id: Optional[int] = Field(
+        default=None, description="Suggested debit account id."
+    )
+    credit_account_id: Optional[int] = Field(
+        default=None, description="Suggested credit account id."
+    )
     suggested_account_ids: Optional[List[int]] = Field(
         default=None,
         description="Ranked account candidates (IDs) for simplified posting flows.",
@@ -41,9 +55,15 @@ class TransactionInference(_BaseInference):
 
 
 class MealInference(_BaseInference):
-    meal_type: Optional[str] = Field(default=None, description="Breakfast/lunch/dinner/snack.")
-    items: Optional[List[str]] = Field(default=None, description="Free-text meal items or ingredients.")
-    calories_est: Optional[float] = Field(default=None, description="Estimated calories (kcal).")
+    meal_type: Optional[str] = Field(
+        default=None, description="Breakfast/lunch/dinner/snack."
+    )
+    items: Optional[List[str]] = Field(
+        default=None, description="Free-text meal items or ingredients."
+    )
+    calories_est: Optional[float] = Field(
+        default=None, description="Estimated calories (kcal)."
+    )
     macros: Optional[Dict[str, float]] = Field(
         default=None,
         description="Macro estimates keyed by protein/fat/carbs (grams).",
@@ -51,40 +71,82 @@ class MealInference(_BaseInference):
 
 
 class WorkoutInference(_BaseInference):
-    workout_type: Optional[str] = Field(default=None, description="Type (run, ride, lift, yoga, etc.).")
-    duration_minutes: Optional[int] = Field(default=None, description="Duration in minutes.")
-    intensity: Optional[str] = Field(default=None, description="Intensity bucket (easy/moderate/hard) or RPE string.")
-    calories_est: Optional[float] = Field(default=None, description="Estimated calories (kcal).")
+    workout_type: Optional[str] = Field(
+        default=None, description="Type (run, ride, lift, yoga, etc.)."
+    )
+    duration_minutes: Optional[int] = Field(
+        default=None, description="Duration in minutes."
+    )
+    intensity: Optional[str] = Field(
+        default=None, description="Intensity bucket (easy/moderate/hard) or RPE string."
+    )
+    calories_est: Optional[float] = Field(
+        default=None, description="Estimated calories (kcal)."
+    )
 
 
 class HabitInference(_BaseInference):
-    habit_name: Optional[str] = Field(default=None, description="Guessed habit name/title.")
-    value: Optional[float] = Field(default=None, description="Numeric measurement for the habit (if applicable).")
-    unit: Optional[str] = Field(default=None, description="Unit for value (e.g., minutes, pages, km).")
-    note: Optional[str] = Field(default=None, description="Free-text note extracted from the source event.")
-    logged_date: Optional[str] = Field(default=None, description="ISO date when the habit should be logged.")
+    habit_name: Optional[str] = Field(
+        default=None, description="Guessed habit name/title."
+    )
+    value: Optional[float] = Field(
+        default=None, description="Numeric measurement for the habit (if applicable)."
+    )
+    unit: Optional[str] = Field(
+        default=None, description="Unit for value (e.g., minutes, pages, km)."
+    )
+    note: Optional[str] = Field(
+        default=None, description="Free-text note extracted from the source event."
+    )
+    logged_date: Optional[str] = Field(
+        default=None, description="ISO date when the habit should be logged."
+    )
 
 
 class PracticeInference(_BaseInference):
-    skill_name: Optional[str] = Field(default=None, description="Guessed skill/practice area.")
-    duration_minutes: Optional[int] = Field(default=None, description="Duration in minutes.")
-    intensity: Optional[int] = Field(default=None, description="Optional intensity/effort score (1-10).")
+    skill_name: Optional[str] = Field(
+        default=None, description="Guessed skill/practice area."
+    )
+    duration_minutes: Optional[int] = Field(
+        default=None, description="Duration in minutes."
+    )
+    intensity: Optional[int] = Field(
+        default=None, description="Optional intensity/effort score (1-10)."
+    )
     notes: Optional[str] = Field(default=None, description="Free-text practice notes.")
 
 
 class WorkSessionInference(_BaseInference):
-    project_name: Optional[str] = Field(default=None, description="Guessed project name.")
-    task_name: Optional[str] = Field(default=None, description="Guessed task or work item.")
-    duration_minutes: Optional[int] = Field(default=None, description="Duration in minutes.")
-    note: Optional[str] = Field(default=None, description="Notes or summary for the session.")
+    project_name: Optional[str] = Field(
+        default=None, description="Guessed project name."
+    )
+    task_name: Optional[str] = Field(
+        default=None, description="Guessed task or work item."
+    )
+    duration_minutes: Optional[int] = Field(
+        default=None, description="Duration in minutes."
+    )
+    note: Optional[str] = Field(
+        default=None, description="Notes or summary for the session."
+    )
 
 
 class InteractionInference(_BaseInference):
-    person_name: Optional[str] = Field(default=None, description="Guessed contact/person involved.")
-    interaction_type: Optional[str] = Field(default=None, description="Type (call, meeting, message, etc.).")
-    method: Optional[str] = Field(default=None, description="Channel (phone, video, email, sms).")
-    sentiment: Optional[str] = Field(default=None, description="Optional sentiment bucket.")
-    notes: Optional[str] = Field(default=None, description="Notes or summary for the interaction.")
+    person_name: Optional[str] = Field(
+        default=None, description="Guessed contact/person involved."
+    )
+    interaction_type: Optional[str] = Field(
+        default=None, description="Type (call, meeting, message, etc.)."
+    )
+    method: Optional[str] = Field(
+        default=None, description="Channel (phone, video, email, sms)."
+    )
+    sentiment: Optional[str] = Field(
+        default=None, description="Optional sentiment bucket."
+    )
+    notes: Optional[str] = Field(
+        default=None, description="Notes or summary for the interaction."
+    )
 
 
 class InferenceEventBase(BaseModel):
@@ -92,17 +154,23 @@ class InferenceEventBase(BaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    event_name: str = Field(description="Fully-qualified event name, e.g., finance.transaction.inferred.")
+    event_name: str = Field(
+        description="Fully-qualified event name, e.g., finance.transaction.inferred."
+    )
     user_id: Union[int, str] = Field(description="User/tenant identifier.")
-    status: Literal["inferred", "confirmed", "rejected", "ambiguous", "ignored"] = Field(
-        default="inferred",
-        description="Lifecycle status for the inference.",
+    status: Literal["inferred", "confirmed", "rejected", "ambiguous", "ignored"] = (
+        Field(
+            default="inferred",
+            description="Lifecycle status for the inference.",
+        )
     )
     payload_version: Union[str, int] = Field(
         default="v1",
         description="Schema payload version; bump when fields change (semantic or integer).",
     )
-    model_version: Optional[str] = Field(default=None, description="Emitting model artifact/version hash.")
+    model_version: Optional[str] = Field(
+        default=None, description="Emitting model artifact/version hash."
+    )
     is_false_positive: Optional[bool] = Field(
         default=None,
         description="True when the model predicted a class/entity that was later rejected or corrected.",
@@ -153,10 +221,14 @@ class FinanceTransactionInferenceEvent(InferenceEventBase):
 class HealthMealInferenceEvent(InferenceEventBase):
     event_name: Literal["health.meal.inferred"] = "health.meal.inferred"
     calendar_event_id: Union[int, str] = Field(description="Source calendar event id.")
-    nutrition_id: Optional[int] = Field(default=None, description="Created nutrition log id (if persisted).")
+    nutrition_id: Optional[int] = Field(
+        default=None, description="Created nutrition log id (if persisted)."
+    )
     inferred: MealInference = Field(
         default_factory=MealInference,
-        validation_alias=AliasChoices("inferred", "inferred_structure", "inferred_labels"),
+        validation_alias=AliasChoices(
+            "inferred", "inferred_structure", "inferred_labels"
+        ),
         serialization_alias="inferred_structure",
         description="Meal classification and estimates.",
     )
@@ -165,10 +237,14 @@ class HealthMealInferenceEvent(InferenceEventBase):
 class HealthWorkoutInferenceEvent(InferenceEventBase):
     event_name: Literal["health.workout.inferred"] = "health.workout.inferred"
     calendar_event_id: Union[int, str] = Field(description="Source calendar event id.")
-    workout_id: Optional[int] = Field(default=None, description="Created workout id (if persisted).")
+    workout_id: Optional[int] = Field(
+        default=None, description="Created workout id (if persisted)."
+    )
     inferred: WorkoutInference = Field(
         default_factory=WorkoutInference,
-        validation_alias=AliasChoices("inferred", "inferred_structure", "inferred_labels"),
+        validation_alias=AliasChoices(
+            "inferred", "inferred_structure", "inferred_labels"
+        ),
         serialization_alias="inferred_structure",
         description="Workout classification and estimates.",
     )
@@ -177,11 +253,17 @@ class HealthWorkoutInferenceEvent(InferenceEventBase):
 class HabitsHabitInferenceEvent(InferenceEventBase):
     event_name: Literal["habits.habit.inferred"] = "habits.habit.inferred"
     calendar_event_id: Union[int, str] = Field(description="Source calendar event id.")
-    habit_id: Optional[int] = Field(default=None, description="Created habit id (if persisted).")
-    log_id: Optional[int] = Field(default=None, description="Created habit log id (if persisted).")
+    habit_id: Optional[int] = Field(
+        default=None, description="Created habit id (if persisted)."
+    )
+    log_id: Optional[int] = Field(
+        default=None, description="Created habit log id (if persisted)."
+    )
     inferred: HabitInference = Field(
         default_factory=HabitInference,
-        validation_alias=AliasChoices("inferred", "inferred_structure", "inferred_labels"),
+        validation_alias=AliasChoices(
+            "inferred", "inferred_structure", "inferred_labels"
+        ),
         serialization_alias="inferred_structure",
         description="Habit classification and measured value.",
     )
@@ -190,38 +272,62 @@ class HabitsHabitInferenceEvent(InferenceEventBase):
 class SkillsPracticeInferenceEvent(InferenceEventBase):
     event_name: Literal["skills.practice.inferred"] = "skills.practice.inferred"
     calendar_event_id: Union[int, str] = Field(description="Source calendar event id.")
-    skill_id: Optional[int] = Field(default=None, description="Created skill id (if persisted).")
-    session_id: Optional[int] = Field(default=None, description="Created practice session id (if persisted).")
+    skill_id: Optional[int] = Field(
+        default=None, description="Created skill id (if persisted)."
+    )
+    session_id: Optional[int] = Field(
+        default=None, description="Created practice session id (if persisted)."
+    )
     inferred: PracticeInference = Field(
         default_factory=PracticeInference,
-        validation_alias=AliasChoices("inferred", "inferred_structure", "inferred_labels"),
+        validation_alias=AliasChoices(
+            "inferred", "inferred_structure", "inferred_labels"
+        ),
         serialization_alias="inferred_structure",
         description="Practice classification and duration.",
     )
 
 
 class ProjectsWorkSessionInferenceEvent(InferenceEventBase):
-    event_name: Literal["projects.work_session.inferred"] = "projects.work_session.inferred"
+    event_name: Literal["projects.work_session.inferred"] = (
+        "projects.work_session.inferred"
+    )
     calendar_event_id: Union[int, str] = Field(description="Source calendar event id.")
-    project_id: Optional[int] = Field(default=None, description="Mapped project id (if known).")
-    task_id: Optional[int] = Field(default=None, description="Mapped task id (if known).")
-    log_id: Optional[int] = Field(default=None, description="Created work session log id (if persisted).")
+    project_id: Optional[int] = Field(
+        default=None, description="Mapped project id (if known)."
+    )
+    task_id: Optional[int] = Field(
+        default=None, description="Mapped task id (if known)."
+    )
+    log_id: Optional[int] = Field(
+        default=None, description="Created work session log id (if persisted)."
+    )
     inferred: WorkSessionInference = Field(
         default_factory=WorkSessionInference,
-        validation_alias=AliasChoices("inferred", "inferred_structure", "inferred_labels"),
+        validation_alias=AliasChoices(
+            "inferred", "inferred_structure", "inferred_labels"
+        ),
         serialization_alias="inferred_structure",
         description="Work session classification and duration.",
     )
 
 
 class RelationshipsInteractionInferenceEvent(InferenceEventBase):
-    event_name: Literal["relationships.interaction.inferred"] = "relationships.interaction.inferred"
+    event_name: Literal["relationships.interaction.inferred"] = (
+        "relationships.interaction.inferred"
+    )
     calendar_event_id: Union[int, str] = Field(description="Source calendar event id.")
-    interaction_id: Optional[int] = Field(default=None, description="Created interaction id (if persisted).")
-    person_id: Optional[int] = Field(default=None, description="Mapped person id (if known).")
+    interaction_id: Optional[int] = Field(
+        default=None, description="Created interaction id (if persisted)."
+    )
+    person_id: Optional[int] = Field(
+        default=None, description="Mapped person id (if known)."
+    )
     inferred: InteractionInference = Field(
         default_factory=InteractionInference,
-        validation_alias=AliasChoices("inferred", "inferred_structure", "inferred_labels"),
+        validation_alias=AliasChoices(
+            "inferred", "inferred_structure", "inferred_labels"
+        ),
         serialization_alias="inferred_structure",
         description="Interaction classification and notes.",
     )

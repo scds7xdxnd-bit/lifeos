@@ -8,7 +8,7 @@ from lifeos.core.auth.auth_service import issue_tokens
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.domains.journal.models import JournalEntry
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 from lifeos.domains.journal.events import JOURNAL_ENTRY_CREATED
 from lifeos.extensions import db
 
@@ -52,7 +52,9 @@ def test_create_journal_entry_success(app, client):
         entry = JournalEntry.query.get(entry_id)
         assert entry is not None
         assert entry.body == "Great day"
-        outbox = OutboxMessage.query.filter_by(event_type=JOURNAL_ENTRY_CREATED, user_id=user.id).first()
+        outbox = OutboxMessage.query.filter_by(
+            event_type=JOURNAL_ENTRY_CREATED, user_id=user.id
+        ).first()
         assert outbox is not None
         assert outbox.payload["entry_id"] == entry.id
 

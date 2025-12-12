@@ -45,5 +45,7 @@ def test_cross_domain_sleep_spend_insight(app):
             {"amount": 150, "category": "electronics"},
             user_id=user.id,
         )
-        insight = InsightRecord.query.filter_by(user_id=user.id, kind="finance_sleep_spend").first()
+        insight = InsightRecord.query.filter_by(
+            user_id=user.id, kind="finance_sleep_spend"
+        ).first()
         assert insight is not None

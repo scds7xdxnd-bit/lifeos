@@ -25,7 +25,9 @@ from lifeos.extensions import db
 
 def _auth_headers(app, user_id: int):
     with app.app_context():
-        token = create_access_token(identity=str(user_id), additional_claims={"roles": ["finance:write"]})
+        token = create_access_token(
+            identity=str(user_id), additional_claims={"roles": ["finance:write"]}
+        )
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -61,8 +63,14 @@ def _seed_finance(app):
             occurred_at=datetime.utcnow(),
         )
         db.session.add(txn)
-        db.session.add(MoneyScheduleRow(user_id=user.id, account_id=acct.id, event_date=date.today(), amount=25))
-        db.session.add(MoneyScheduleDailyBalance(user_id=user.id, as_of=date.today(), balance=25))
+        db.session.add(
+            MoneyScheduleRow(
+                user_id=user.id, account_id=acct.id, event_date=date.today(), amount=25
+            )
+        )
+        db.session.add(
+            MoneyScheduleDailyBalance(user_id=user.id, as_of=date.today(), balance=25)
+        )
         tracker = ReceivableTracker(
             user_id=user.id,
             counterparty="Client",
@@ -71,7 +79,11 @@ def _seed_finance(app):
         )
         db.session.add(tracker)
         db.session.flush()
-        db.session.add(ReceivableManualEntry(tracker_id=tracker.id, entry_date=date.today(), amount=50))
+        db.session.add(
+            ReceivableManualEntry(
+                tracker_id=tracker.id, entry_date=date.today(), amount=50
+            )
+        )
         db.session.commit()
         return user
 

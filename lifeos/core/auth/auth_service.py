@@ -30,7 +30,7 @@ from lifeos.core.auth.schemas import (
 )
 from lifeos.core.users.models import User
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def authenticate_user(email: str, password: str) -> Optional[User]:
@@ -46,7 +46,9 @@ def authenticate_user(email: str, password: str) -> Optional[User]:
 def issue_tokens(user: User) -> dict[str, str]:
     """Create access and refresh tokens for a user."""
     identity = str(user.id)
-    access_token = create_access_token(identity=identity, additional_claims={"roles": user.role_codes})
+    access_token = create_access_token(
+        identity=identity, additional_claims={"roles": user.role_codes}
+    )
     refresh_token = create_refresh_token(identity=identity)
 
     # Persist refresh jti for revocation checks
@@ -200,7 +202,12 @@ def reset_password(payload: ResetPasswordRequest) -> bool:
     hashed = _hash_token(payload.token)
     token = PasswordResetToken.query.filter_by(jti=hashed).with_for_update().first()
     now = datetime.utcnow()
-    if not token or token.used_at or token.expires_at < now or token.attempts >= RESET_TOKEN_MAX_ATTEMPTS:
+    if (
+        not token
+        or token.used_at
+        or token.expires_at < now
+        or token.attempts >= RESET_TOKEN_MAX_ATTEMPTS
+    ):
         if token:
             token.attempts += 1
             db.session.commit()
@@ -251,4 +258,6 @@ def _assign_default_role(user: User) -> None:
 
 
 def _revoke_user_sessions(user_id: int) -> None:
-    SessionToken.query.filter_by(user_id=user_id, revoked=False).update({"revoked": True}, synchronize_session=False)
+    SessionToken.query.filter_by(user_id=user_id, revoked=False).update(
+        {"revoked": True}, synchronize_session=False
+    )

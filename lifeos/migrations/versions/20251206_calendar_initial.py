@@ -30,7 +30,9 @@ def upgrade() -> None:
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("start_time", sa.DateTime(), nullable=False),
         sa.Column("end_time", sa.DateTime(), nullable=True),
-        sa.Column("all_day", sa.Boolean(), server_default=sa.text("FALSE"), nullable=False),
+        sa.Column(
+            "all_day", sa.Boolean(), server_default=sa.text("FALSE"), nullable=False
+        ),
         sa.Column("location", sa.String(length=512), nullable=True),
         sa.Column(
             "source",
@@ -42,7 +44,9 @@ def upgrade() -> None:
         sa.Column("external_id", sa.String(length=255), nullable=True),
         sa.Column("recurrence_rule", sa.String(length=255), nullable=True),
         sa.Column("color", sa.String(length=16), nullable=True),
-        sa.Column("is_private", sa.Boolean(), server_default=sa.text("FALSE"), nullable=False),
+        sa.Column(
+            "is_private", sa.Boolean(), server_default=sa.text("FALSE"), nullable=False
+        ),
         sa.Column("tags", sa.JSON(), nullable=True),
         sa.Column("metadata", sa.JSON(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
@@ -118,7 +122,9 @@ def upgrade() -> None:
         ),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(["calendar_event_id"], ["calendar_event.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["calendar_event_id"], ["calendar_event.id"], ondelete="CASCADE"
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["user.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -142,8 +148,12 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Drop calendar tables."""
     op.drop_index("ix_interpretation_event", table_name="calendar_event_interpretation")
-    op.drop_index("ix_interpretation_user_domain", table_name="calendar_event_interpretation")
-    op.drop_index("ix_interpretation_user_status", table_name="calendar_event_interpretation")
+    op.drop_index(
+        "ix_interpretation_user_domain", table_name="calendar_event_interpretation"
+    )
+    op.drop_index(
+        "ix_interpretation_user_status", table_name="calendar_event_interpretation"
+    )
     op.drop_table("calendar_event_interpretation")
 
     op.drop_index("ux_calendar_event_user_external", table_name="calendar_event")

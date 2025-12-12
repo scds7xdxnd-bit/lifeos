@@ -17,7 +17,9 @@ class SkillMetric(db.Model):
     __tablename__ = "skill_metric"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    skill_id: Mapped[int] = mapped_column(db.ForeignKey("skill.id"), index=True, nullable=False)
+    skill_id: Mapped[int] = mapped_column(
+        db.ForeignKey("skill.id"), index=True, nullable=False
+    )
     name: Mapped[str] = mapped_column(db.String(128), nullable=False)
     value: Mapped[float] = mapped_column(db.Numeric(10, 2), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)

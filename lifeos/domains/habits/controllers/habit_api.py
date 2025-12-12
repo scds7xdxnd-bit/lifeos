@@ -54,7 +54,9 @@ def create_habit():
         data = HabitCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -109,7 +111,9 @@ def update_habit(habit_id: int):
         data = HabitUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -154,12 +158,16 @@ def create_log(habit_id: int):
         data = HabitLogCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())
     try:
-        log = habit_services.log_habit_completion(user_id, habit_id, **data.model_dump())
+        log = habit_services.log_habit_completion(
+            user_id, habit_id, **data.model_dump()
+        )
     except ValueError as exc:
         code = str(exc)
         if code == "not_found":
@@ -190,7 +198,9 @@ def update_log(log_id: int):
         data = HabitLogUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            jsonify(
+                {"ok": False, "error": "validation_error", "details": exc.errors()}
+            ),
             400,
         )
     user_id = int(get_jwt_identity())

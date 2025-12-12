@@ -18,7 +18,9 @@ from lifeos.domains.finance.models.accounting_models import Account, AccountCate
 def auth_user(app):
     """Create a test user for auth-protected endpoints."""
     with app.app_context():
-        user = User(email="finance-tester@example.com", password_hash=hash_password("secret"))
+        user = User(
+            email="finance-tester@example.com", password_hash=hash_password("secret")
+        )
         db.session.add(user)
         db.session.commit()
         return user
@@ -28,7 +30,9 @@ def auth_user(app):
 def auth_headers(app, auth_user):
     """JWT headers with finance role for API calls."""
     with app.app_context():
-        token = create_access_token(identity=str(auth_user.id), additional_claims={"roles": ["finance:write"]})
+        token = create_access_token(
+            identity=str(auth_user.id), additional_claims={"roles": ["finance:write"]}
+        )
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -81,7 +85,9 @@ class TestAccountSearchEndpoint:
 
     def test_search_with_valid_query(self, client, auth_headers, setup_test_data):
         """Test searching accounts with valid query."""
-        response = client.get("/api/finance/accounts/search?q=savings&limit=20", headers=auth_headers)
+        response = client.get(
+            "/api/finance/accounts/search?q=savings&limit=20", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.get_json()
@@ -105,14 +111,18 @@ class TestAccountSearchEndpoint:
 
     def test_search_query_too_long(self, client, auth_headers):
         """Test search with oversized query returns error."""
-        response = client.get(f"/api/finance/accounts/search?q={'x' * 101}", headers=auth_headers)
+        response = client.get(
+            f"/api/finance/accounts/search?q={'x' * 101}", headers=auth_headers
+        )
         assert response.status_code == 400
         data = response.get_json()
         assert data["ok"] is False
 
     def test_search_respects_limit(self, client, auth_headers, setup_test_data):
         """Test that search respects limit parameter."""
-        response = client.get("/api/finance/accounts/search?q=a&limit=1", headers=auth_headers)
+        response = client.get(
+            "/api/finance/accounts/search?q=a&limit=1", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.get_json()
@@ -202,7 +212,9 @@ class TestCreateAccountInlineEndpoint:
         assert data["ok"] is False
         assert data["error"] == "invalid_account_type"
 
-    def test_create_account_invalid_subtype(self, client, auth_headers, ensure_category):
+    def test_create_account_invalid_subtype(
+        self, client, auth_headers, ensure_category
+    ):
         """Test creating account with invalid subtype."""
         response = client.post(
             "/api/finance/accounts/inline",
@@ -249,7 +261,9 @@ class TestCreateAccountInlineEndpoint:
         data = response.get_json()
         assert data["ok"] is False
 
-    def test_create_account_optional_subtype(self, client, auth_headers, ensure_category):
+    def test_create_account_optional_subtype(
+        self, client, auth_headers, ensure_category
+    ):
         """Test creating account without subtype."""
         response = client.post(
             "/api/finance/accounts/inline",

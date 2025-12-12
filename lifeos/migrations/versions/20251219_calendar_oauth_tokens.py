@@ -35,11 +35,15 @@ def upgrade():
         sa.Column("error_message", sa.String(512), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(["user_id"], ["user.id"], name="fk_calendar_oauth_token_user"),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["user.id"], name="fk_calendar_oauth_token_user"
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("user_id", "provider", name="uq_user_provider"),
     )
-    op.create_index("ix_calendar_oauth_token_user_id", "calendar_oauth_token", ["user_id"])
+    op.create_index(
+        "ix_calendar_oauth_token_user_id", "calendar_oauth_token", ["user_id"]
+    )
 
 
 def downgrade():

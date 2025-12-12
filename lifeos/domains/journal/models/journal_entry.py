@@ -18,7 +18,9 @@ class JournalEntry(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        db.ForeignKey("user.id"), index=True, nullable=False
+    )
     title: Mapped[str | None] = mapped_column(db.String(255))
     body: Mapped[str] = mapped_column(db.Text, nullable=False)
     mood: Mapped[int | None] = mapped_column(db.Integer)
@@ -28,4 +30,6 @@ class JournalEntry(db.Model):
     sentiment_score: Mapped[float | None] = mapped_column(db.Numeric(5, 2))
     emotion_label: Mapped[str | None] = mapped_column(db.String(64))
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow, onupdate=datetime.utcnow
+    )

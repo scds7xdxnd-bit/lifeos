@@ -44,7 +44,9 @@ def load_legacy_models(model_dir: str) -> Dict[str, Any]:
     return models
 
 
-def predict_account_with_legacy(description: str, models: Dict[str, Any]) -> Optional[RankerResult]:
+def predict_account_with_legacy(
+    description: str, models: Dict[str, Any]
+) -> Optional[RankerResult]:
     """Placeholder: adapt legacy models if available (returns None when not usable)."""
     # Without the original pipeline wiring, we simply return None to fall back to current flow.
     if not models:

@@ -32,7 +32,9 @@ def test_require_roles_allows_with_claims(app, client):
 
     app.register_blueprint(bp)
     with app.app_context():
-        token = create_access_token(identity="1", additional_claims={"roles": ["admin"]})
+        token = create_access_token(
+            identity="1", additional_claims={"roles": ["admin"]}
+        )
     resp = client.get("/protected2", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     assert resp.get_json()["ok"] is True

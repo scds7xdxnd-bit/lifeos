@@ -18,7 +18,7 @@ from lifeos.domains.finance.models.schedule_models import (
     MoneyScheduleRow,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def _validate_account(user_id: int, account_id: int) -> None:
@@ -104,7 +104,11 @@ def delete_schedule_row(user_id: int, row_id: int) -> bool:
 
 
 def list_schedule_rows(user_id: int) -> List[MoneyScheduleRow]:
-    return MoneyScheduleRow.query.filter_by(user_id=user_id).order_by(MoneyScheduleRow.event_date.asc()).all()
+    return (
+        MoneyScheduleRow.query.filter_by(user_id=user_id)
+        .order_by(MoneyScheduleRow.event_date.asc())
+        .all()
+    )
 
 
 def recompute_daily_balances(user_id: int) -> Dict[str, float]:
@@ -115,7 +119,11 @@ def recompute_daily_balances(user_id: int) -> Dict[str, float]:
         totals[str(row.event_date)] += float(row.amount)
     MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).delete()
     for date_str, amount in totals.items():
-        db.session.add(MoneyScheduleDailyBalance(user_id=user_id, as_of=date.fromisoformat(date_str), balance=amount))
+        db.session.add(
+            MoneyScheduleDailyBalance(
+                user_id=user_id, as_of=date.fromisoformat(date_str), balance=amount
+            )
+        )
     db.session.commit()
     enqueue_outbox(
         FINANCE_SCHEDULE_RECOMPUTED,

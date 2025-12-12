@@ -12,14 +12,18 @@ from lifeos.extensions import db
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
 class User(db.Model, TimestampMixin, UserMixin):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(db.String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(
+        db.String(255), unique=True, nullable=False, index=True
+    )
     password_hash: Mapped[str] = mapped_column(db.String(255), nullable=False)
     full_name: Mapped[str | None] = mapped_column(db.String(255))
     timezone: Mapped[str | None] = mapped_column(db.String(64))

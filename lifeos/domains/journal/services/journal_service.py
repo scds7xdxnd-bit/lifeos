@@ -15,7 +15,7 @@ from lifeos.domains.journal.events import (
 )
 from lifeos.domains.journal.models import JournalEntry
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 MOOD_MIN = -5
 MOOD_MAX = 5

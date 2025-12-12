@@ -35,7 +35,9 @@ def upgrade():
         sa.Column("notes", sa.Text()),
         sa.Column("birthday", sa.Date()),
         sa.Column("first_met_date", sa.Date()),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -78,11 +80,15 @@ def upgrade():
             nullable=False,
             index=True,
         ),
-        sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.current_date()),
+        sa.Column(
+            "date", sa.Date(), nullable=False, server_default=sa.func.current_date()
+        ),
         sa.Column("method", sa.String(length=64)),
         sa.Column("notes", sa.Text()),
         sa.Column("sentiment", sa.String(length=32)),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
     )
     op.create_index(
         "ix_relationships_interaction_user_date",
@@ -101,9 +107,17 @@ def downgrade():
         "ix_relationships_interaction_person_date",
         table_name="relationships_interaction",
     )
-    op.drop_index("ix_relationships_interaction_user_date", table_name="relationships_interaction")
+    op.drop_index(
+        "ix_relationships_interaction_user_date", table_name="relationships_interaction"
+    )
     op.drop_table("relationships_interaction")
-    op.drop_index("ix_relationships_person_user_type", table_name="relationships_person")
-    op.drop_index("ix_relationships_person_user_importance", table_name="relationships_person")
-    op.drop_index("ux_relationships_person_user_name", table_name="relationships_person")
+    op.drop_index(
+        "ix_relationships_person_user_type", table_name="relationships_person"
+    )
+    op.drop_index(
+        "ix_relationships_person_user_importance", table_name="relationships_person"
+    )
+    op.drop_index(
+        "ux_relationships_person_user_name", table_name="relationships_person"
+    )
     op.drop_table("relationships_person")

@@ -19,7 +19,9 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for relationships API tests."""
     with app.app_context():
-        user = User(email="relationships-api@example.com", password_hash=hash_password("secret"))
+        user = User(
+            email="relationships-api@example.com", password_hash=hash_password("secret")
+        )
         db.session.add(user)
         db.session.commit()
         return user
@@ -118,7 +120,9 @@ class TestPeopleAPI:
             "tags": ["college", "tech"],
             "notes": "Met at hackathon",
         }
-        resp = client.post("/api/relationships/people", json=payload, headers=csrf_headers)
+        resp = client.post(
+            "/api/relationships/people", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 201
         data = resp.get_json()
         assert data["ok"] is True
@@ -128,7 +132,9 @@ class TestPeopleAPI:
     def test_create_person_minimal(self, client, csrf_headers):
         """Create person with minimal data."""
         payload = {"name": "Minimal Person"}
-        resp = client.post("/api/relationships/people", json=payload, headers=csrf_headers)
+        resp = client.post(
+            "/api/relationships/people", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 201
         data = resp.get_json()
         assert data["ok"] is True
@@ -136,7 +142,9 @@ class TestPeopleAPI:
     def test_create_person_empty_name_fails(self, client, csrf_headers):
         """Creating person with empty name fails."""
         payload = {"name": ""}
-        resp = client.post("/api/relationships/people", json=payload, headers=csrf_headers)
+        resp = client.post(
+            "/api/relationships/people", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 400
 
     def test_create_person_duplicate_fails(self, app, client, test_user, csrf_headers):
@@ -145,7 +153,9 @@ class TestPeopleAPI:
             create_person(test_user.id, name="Duplicate Person")
 
         payload = {"name": "Duplicate Person"}
-        resp = client.post("/api/relationships/people", json=payload, headers=csrf_headers)
+        resp = client.post(
+            "/api/relationships/people", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 409
         data = resp.get_json()
         assert data["error"] == "duplicate"
@@ -162,7 +172,9 @@ class TestPeopleAPI:
             person = create_person(test_user.id, name="Get Person")
             person_id = person.id
 
-        resp = client.get(f"/api/relationships/people/{person_id}", headers=auth_headers)
+        resp = client.get(
+            f"/api/relationships/people/{person_id}", headers=auth_headers
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -186,7 +198,9 @@ class TestPeopleAPI:
             "importance_level": 5,
             "notes": "Updated notes",
         }
-        resp = client.patch(f"/api/relationships/people/{person_id}", json=payload, headers=csrf_headers)
+        resp = client.patch(
+            f"/api/relationships/people/{person_id}", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -195,7 +209,9 @@ class TestPeopleAPI:
     def test_update_person_not_found(self, client, csrf_headers):
         """Update non-existent person returns 404."""
         payload = {"notes": "Updated"}
-        resp = client.patch("/api/relationships/people/99999", json=payload, headers=csrf_headers)
+        resp = client.patch(
+            "/api/relationships/people/99999", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 404
 
     def test_delete_person(self, app, client, test_user, csrf_headers):
@@ -204,7 +220,9 @@ class TestPeopleAPI:
             person = create_person(test_user.id, name="To Delete")
             person_id = person.id
 
-        resp = client.delete(f"/api/relationships/people/{person_id}", headers=csrf_headers)
+        resp = client.delete(
+            f"/api/relationships/people/{person_id}", headers=csrf_headers
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -227,7 +245,9 @@ class TestInteractionsAPI:
             person = create_person(test_user.id, name="Empty Interactions Person")
             person_id = person.id
 
-        resp = client.get(f"/api/relationships/people/{person_id}/interactions", headers=auth_headers)
+        resp = client.get(
+            f"/api/relationships/people/{person_id}/interactions", headers=auth_headers
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -237,7 +257,9 @@ class TestInteractionsAPI:
         """List interactions with existing data."""
         with app.app_context():
             person = create_person(test_user.id, name="Interaction Person")
-            log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
+            log_interaction(
+                test_user.id, person.id, date_value=date.today(), method="call"
+            )
             log_interaction(
                 test_user.id,
                 person.id,
@@ -246,17 +268,23 @@ class TestInteractionsAPI:
             )
             person_id = person.id
 
-        resp = client.get(f"/api/relationships/people/{person_id}/interactions", headers=auth_headers)
+        resp = client.get(
+            f"/api/relationships/people/{person_id}/interactions", headers=auth_headers
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert len(data["interactions"]) == 2
 
     def test_list_interactions_person_not_found(self, client, auth_headers):
         """List interactions for non-existent person fails."""
-        resp = client.get("/api/relationships/people/99999/interactions", headers=auth_headers)
+        resp = client.get(
+            "/api/relationships/people/99999/interactions", headers=auth_headers
+        )
         assert resp.status_code == 404
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - rejects date strings")
+    @pytest.mark.xfail(
+        reason="Pydantic schema Optional[date] validation bug - rejects date strings"
+    )
     def test_log_interaction_success(self, app, client, test_user, csrf_headers):
         """Log an interaction successfully."""
         with app.app_context():
@@ -279,7 +307,9 @@ class TestInteractionsAPI:
         assert data["ok"] is True
         assert data["interaction"]["method"] == "meeting"
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - rejects date strings")
+    @pytest.mark.xfail(
+        reason="Pydantic schema Optional[date] validation bug - rejects date strings"
+    )
     def test_log_interaction_minimal(self, app, client, test_user, csrf_headers):
         """Log interaction with minimal data."""
         with app.app_context():
@@ -294,7 +324,9 @@ class TestInteractionsAPI:
         )
         assert resp.status_code == 201
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - fails before person lookup")
+    @pytest.mark.xfail(
+        reason="Pydantic schema Optional[date] validation bug - fails before person lookup"
+    )
     def test_log_interaction_person_not_found(self, client, csrf_headers):
         """Logging interaction for non-existent person fails."""
         payload = {"date": date.today().isoformat(), "method": "call"}
@@ -309,7 +341,9 @@ class TestInteractionsAPI:
         """Update an existing interaction."""
         with app.app_context():
             person = create_person(test_user.id, name="Update Interaction Person")
-            interaction = log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
+            interaction = log_interaction(
+                test_user.id, person.id, date_value=date.today(), method="call"
+            )
             interaction_id = interaction.id
 
         payload = {"notes": "Updated notes", "sentiment": "neutral"}
@@ -326,24 +360,32 @@ class TestInteractionsAPI:
     def test_update_interaction_not_found(self, client, csrf_headers):
         """Update non-existent interaction returns 404."""
         payload = {"notes": "Updated"}
-        resp = client.patch("/api/relationships/interactions/99999", json=payload, headers=csrf_headers)
+        resp = client.patch(
+            "/api/relationships/interactions/99999", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 404
 
     def test_delete_interaction(self, app, client, test_user, csrf_headers):
         """Delete an interaction."""
         with app.app_context():
             person = create_person(test_user.id, name="Delete Interaction Person")
-            interaction = log_interaction(test_user.id, person.id, date_value=date.today())
+            interaction = log_interaction(
+                test_user.id, person.id, date_value=date.today()
+            )
             interaction_id = interaction.id
 
-        resp = client.delete(f"/api/relationships/interactions/{interaction_id}", headers=csrf_headers)
+        resp = client.delete(
+            f"/api/relationships/interactions/{interaction_id}", headers=csrf_headers
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
 
     def test_delete_interaction_not_found(self, client, csrf_headers):
         """Delete non-existent interaction returns 404."""
-        resp = client.delete("/api/relationships/interactions/99999", headers=csrf_headers)
+        resp = client.delete(
+            "/api/relationships/interactions/99999", headers=csrf_headers
+        )
         assert resp.status_code == 404
 
 
@@ -383,7 +425,9 @@ class TestReconnectAPI:
                 date_value=date.today() - timedelta(days=5),
             )
 
-        resp = client.get("/api/relationships/reconnect?cutoff_days=30", headers=auth_headers)
+        resp = client.get(
+            "/api/relationships/reconnect?cutoff_days=30", headers=auth_headers
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -445,7 +489,9 @@ class TestRelationshipsAPIUserIsolation:
             create_person(test_user.id, name="Test User Person")
 
             # Create another user with person
-            other_user = User(email="other-rel-api@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-rel-api@example.com", password_hash=hash_password("secret")
+            )
             db.session.add(other_user)
             db.session.commit()
             create_person(other_user.id, name="Other User Person")
@@ -456,7 +502,9 @@ class TestRelationshipsAPIUserIsolation:
         assert len(data["people"]) == 1
         assert data["people"][0]["name"] == "Test User Person"
 
-    def test_cannot_access_other_user_person(self, app, client, test_user, auth_headers):
+    def test_cannot_access_other_user_person(
+        self, app, client, test_user, auth_headers
+    ):
         """Cannot access another user's person detail."""
         with app.app_context():
             other_user = User(
@@ -468,10 +516,14 @@ class TestRelationshipsAPIUserIsolation:
             person = create_person(other_user.id, name="Private Person")
             person_id = person.id
 
-        resp = client.get(f"/api/relationships/people/{person_id}", headers=auth_headers)
+        resp = client.get(
+            f"/api/relationships/people/{person_id}", headers=auth_headers
+        )
         assert resp.status_code == 404
 
-    def test_cannot_update_other_user_person(self, app, client, test_user, csrf_headers):
+    def test_cannot_update_other_user_person(
+        self, app, client, test_user, csrf_headers
+    ):
         """Cannot update another user's person."""
         with app.app_context():
             other_user = User(
@@ -484,11 +536,17 @@ class TestRelationshipsAPIUserIsolation:
             person_id = person.id
 
         payload = {"notes": "Hacked!"}
-        resp = client.patch(f"/api/relationships/people/{person_id}", json=payload, headers=csrf_headers)
+        resp = client.patch(
+            f"/api/relationships/people/{person_id}", json=payload, headers=csrf_headers
+        )
         assert resp.status_code == 404
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - fails before user isolation check")
-    def test_cannot_log_interaction_other_user_person(self, app, client, test_user, csrf_headers):
+    @pytest.mark.xfail(
+        reason="Pydantic schema Optional[date] validation bug - fails before user isolation check"
+    )
+    def test_cannot_log_interaction_other_user_person(
+        self, app, client, test_user, csrf_headers
+    ):
         """Cannot log interaction for another user's person."""
         with app.app_context():
             other_user = User(
