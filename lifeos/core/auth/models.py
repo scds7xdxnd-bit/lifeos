@@ -11,9 +11,7 @@ from lifeos.extensions import db
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Role(db.Model, TimestampMixin):
@@ -35,18 +33,14 @@ class Permission(db.Model, TimestampMixin):
     code: Mapped[str] = mapped_column(db.String(128), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(db.String(255), default="")
 
-    roles: Mapped[list[Role]] = relationship(
-        "Role", secondary="role_permission", back_populates="permissions"
-    )
+    roles: Mapped[list[Role]] = relationship("Role", secondary="role_permission", back_populates="permissions")
 
 
 class RolePermission(db.Model):
     __tablename__ = "role_permission"
 
     role_id: Mapped[int] = mapped_column(db.ForeignKey("role.id"), primary_key=True)
-    permission_id: Mapped[int] = mapped_column(
-        db.ForeignKey("permission.id"), primary_key=True
-    )
+    permission_id: Mapped[int] = mapped_column(db.ForeignKey("permission.id"), primary_key=True)
 
 
 class UserRole(db.Model):

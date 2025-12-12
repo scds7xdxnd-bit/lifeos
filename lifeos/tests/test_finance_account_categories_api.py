@@ -20,9 +20,7 @@ def _prime_csrf(client) -> str:
 
 def _auth_headers(app, user_id: int, with_csrf: bool = False):
     with app.app_context():
-        token = create_access_token(
-            identity=str(user_id), additional_claims={"roles": ["finance:write"]}
-        )
+        token = create_access_token(identity=str(user_id), additional_claims={"roles": ["finance:write"]})
     headers = {"Authorization": f"Bearer {token}"}
     if with_csrf:
         headers["X-CSRF-Token"] = "test-csrf-token"

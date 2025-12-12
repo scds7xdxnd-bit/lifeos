@@ -27,9 +27,7 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for health tests."""
     with app.app_context():
-        user = User(
-            email="health-tester@example.com", password_hash=hash_password("secret")
-        )
+        user = User(email="health-tester@example.com", password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         yield user
@@ -82,25 +80,19 @@ class TestBiometricsService:
             create_biometric_entry(test_user.id, date_value=date.today(), weight=75.0)
 
             with pytest.raises(ValueError, match="duplicate"):
-                create_biometric_entry(
-                    test_user.id, date_value=date.today(), weight=76.0
-                )
+                create_biometric_entry(test_user.id, date_value=date.today(), weight=76.0)
 
     def test_create_biometric_entry_invalid_energy_level(self, app, test_user):
         """Energy level must be 1-5."""
         with app.app_context():
             with pytest.raises(ValueError, match="validation_error"):
-                create_biometric_entry(
-                    test_user.id, date_value=date.today(), energy_level=10
-                )
+                create_biometric_entry(test_user.id, date_value=date.today(), energy_level=10)
 
     def test_create_biometric_entry_invalid_stress_level(self, app, test_user):
         """Stress level must be 1-5."""
         with app.app_context():
             with pytest.raises(ValueError, match="validation_error"):
-                create_biometric_entry(
-                    test_user.id, date_value=date.today(), stress_level=0
-                )
+                create_biometric_entry(test_user.id, date_value=date.today(), stress_level=0)
 
     def test_list_biometrics_pagination(self, app, test_user):
         """List biometrics with pagination."""

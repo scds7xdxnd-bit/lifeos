@@ -14,9 +14,7 @@ class Biometric(db.Model):
     __table_args__ = (db.Index("ix_health_biometric_user_date", "user_id", "date"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     date: Mapped[date] = mapped_column(default=date.today, nullable=False)
     weight: Mapped[float | None] = mapped_column(db.Numeric(10, 2))
     body_fat_pct: Mapped[float | None] = mapped_column(db.Numeric(5, 2))
@@ -35,9 +33,7 @@ class Workout(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     date: Mapped[date] = mapped_column(default=date.today, nullable=False)
     workout_type: Mapped[str] = mapped_column(db.String(64), nullable=False)
     duration_minutes: Mapped[int] = mapped_column(db.Integer, nullable=False, default=0)
@@ -51,9 +47,7 @@ class Workout(db.Model):
     calendar_event_id: Mapped[int | None] = mapped_column(
         db.ForeignKey("calendar_event.id", ondelete="SET NULL"), nullable=True
     )
-    confidence_score: Mapped[float | None] = mapped_column(
-        db.Numeric(3, 2), nullable=True
-    )
+    confidence_score: Mapped[float | None] = mapped_column(db.Numeric(3, 2), nullable=True)
     inference_status: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
 
 
@@ -65,9 +59,7 @@ class NutritionLog(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     date: Mapped[date] = mapped_column(default=date.today, nullable=False)
     meal_type: Mapped[str] = mapped_column(db.String(32), nullable=False)
     items: Mapped[str] = mapped_column(db.Text, nullable=False)
@@ -80,9 +72,7 @@ class NutritionLog(db.Model):
     calendar_event_id: Mapped[int | None] = mapped_column(
         db.ForeignKey("calendar_event.id", ondelete="SET NULL"), nullable=True
     )
-    confidence_score: Mapped[float | None] = mapped_column(
-        db.Numeric(3, 2), nullable=True
-    )
+    confidence_score: Mapped[float | None] = mapped_column(db.Numeric(3, 2), nullable=True)
     inference_status: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
 
 

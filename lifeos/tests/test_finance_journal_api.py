@@ -49,9 +49,7 @@ def _seed_accounts(user_id: int):
     db.session.add_all([asset, revenue])
     db.session.commit()
     debit_account = create_account(user_id, "Cash", "asset", category_id=asset.id)
-    credit_account = create_account(
-        user_id, "Revenue", "income", category_id=revenue.id
-    )
+    credit_account = create_account(user_id, "Revenue", "income", category_id=revenue.id)
     return debit_account, credit_account
 
 

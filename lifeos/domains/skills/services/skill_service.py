@@ -96,11 +96,7 @@ def update_skill(user_id: int, skill_id: int, **fields) -> Optional[Skill]:
             "skill_id": skill.id,
             "user_id": user_id,
             "fields": changed_fields,
-            "updated_at": (
-                skill.updated_at.isoformat()
-                if skill.updated_at
-                else datetime.utcnow().isoformat()
-            ),
+            "updated_at": (skill.updated_at.isoformat() if skill.updated_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )
@@ -162,9 +158,7 @@ def log_practice_session(
     return session
 
 
-def update_practice_session(
-    user_id: int, session_id: int, **fields
-) -> Optional[PracticeSession]:
+def update_practice_session(user_id: int, session_id: int, **fields) -> Optional[PracticeSession]:
     session = PracticeSession.query.filter_by(id=session_id, user_id=user_id).first()
     if not session:
         return None
@@ -184,9 +178,7 @@ def delete_practice_session(user_id: int, session_id: int) -> bool:
     return True
 
 
-def get_skill_summary(
-    user_id: int, skill_id: int, recent_limit: int = 10
-) -> Optional[dict]:
+def get_skill_summary(user_id: int, skill_id: int, recent_limit: int = 10) -> Optional[dict]:
     skill = Skill.query.filter_by(id=skill_id, user_id=user_id).first()
     if not skill:
         return None
@@ -210,23 +202,13 @@ def get_skill_summary(
     }
 
 
-def list_skills_with_aggregates(
-    user_id: int, limit: int = 50, offset: int = 0
-) -> List[dict]:
-    skills = (
-        Skill.query.filter_by(user_id=user_id)
-        .order_by(Skill.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+def list_skills_with_aggregates(user_id: int, limit: int = 50, offset: int = 0) -> List[dict]:
+    skills = Skill.query.filter_by(user_id=user_id).order_by(Skill.created_at.desc()).offset(offset).limit(limit).all()
     skill_ids = [s.id for s in skills]
     aggregates = _aggregate_sessions(user_id, skill_ids)
 
     recent_sessions = (
-        PracticeSession.query.filter(
-            PracticeSession.skill_id.in_(skill_ids), PracticeSession.user_id == user_id
-        )
+        PracticeSession.query.filter(PracticeSession.skill_id.in_(skill_ids), PracticeSession.user_id == user_id)
         .order_by(PracticeSession.practiced_at.desc())
         .limit(len(skill_ids) * 5 if skill_ids else 0)
         .all()
@@ -301,9 +283,7 @@ def _aggregate_sessions(user_id: int, skill_ids: List[int]) -> Dict[int, dict]:
             )
             aggregates[row.skill_id][key] = int(row.count or 0)
         for sid in skill_ids:
-            aggregates.setdefault(
-                sid, {"total_minutes": 0, "session_count": 0, "last_practiced_at": None}
-            )
+            aggregates.setdefault(sid, {"total_minutes": 0, "session_count": 0, "last_practiced_at": None})
             aggregates[sid].setdefault(key, 0)
     return aggregates
 

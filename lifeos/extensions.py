@@ -16,9 +16,7 @@ migrate = Migrate()
 jwt = JWTManager()
 login_manager = LoginManager()
 bcrypt = Bcrypt()
-limiter = Limiter(
-    key_func=get_remote_address, enabled=True, default_limits=["200 per hour"]
-)
+limiter = Limiter(key_func=get_remote_address, enabled=True, default_limits=["200 per hour"])
 
 
 def init_extensions(app) -> None:

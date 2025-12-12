@@ -111,9 +111,7 @@ def _collect_logged_events() -> Set[Tuple[str, str, int]]:
                 continue
             event_arg = node.args[0]
             if isinstance(event_arg, ast.Constant) and isinstance(event_arg.value, str):
-                logged.add(
-                    (event_arg.value, str(path.relative_to(REPO_ROOT)), node.lineno)
-                )
+                logged.add((event_arg.value, str(path.relative_to(REPO_ROOT)), node.lineno))
     return logged
 
 
@@ -131,9 +129,7 @@ def _load_catalog_event_types() -> Set[str]:
     catalog_events: Set[str] = set()
     for events_file in _event_catalog_files():
         namespace: dict = {}
-        exec(
-            events_file.read_text(), namespace
-        )  # nosec B102: safe, event modules only declare constants
+        exec(events_file.read_text(), namespace)  # nosec B102: safe, event modules only declare constants
         catalog = namespace.get("EVENT_CATALOG") or {}
         catalog_events.update(catalog.keys())
     return catalog_events
@@ -211,11 +207,7 @@ def _services_importing_controllers() -> Set[str]:
     for path in LIFEOS_ROOT.rglob("services/*.py"):
         tree = ast.parse(path.read_text())
         for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.ImportFrom)
-                and node.module
-                and ".controllers." in node.module
-            ):
+            if isinstance(node, ast.ImportFrom) and node.module and ".controllers." in node.module:
                 violating.add(str(path.relative_to(REPO_ROOT)))
                 break
             if isinstance(node, ast.Import):
@@ -236,10 +228,7 @@ def _is_two_phase_migration(path: Path) -> bool:
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id == "TWO_PHASE":
-                    if (
-                        isinstance(node.value, ast.Constant)
-                        and node.value.value is True
-                    ):
+                    if isinstance(node.value, ast.Constant) and node.value.value is True:
                         return True
     return False
 
@@ -252,11 +241,7 @@ def _destructive_ops_in_upgrade(path: Path, banned_ops: Iterable[str]) -> Set[st
             for inner in ast.walk(node):
                 if isinstance(inner, ast.Call):
                     func = inner.func
-                    if (
-                        isinstance(func, ast.Attribute)
-                        and isinstance(func.value, ast.Name)
-                        and func.value.id == "op"
-                    ):
+                    if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name) and func.value.id == "op":
                         if func.attr in banned_ops:
                             banned_hits.add(func.attr)
     return banned_hits

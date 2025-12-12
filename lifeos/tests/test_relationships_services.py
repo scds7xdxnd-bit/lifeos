@@ -129,9 +129,7 @@ class TestPersonService:
         with app.app_context():
             person = create_person(test_user.id, name="Tag Person", tags=["friend"])
 
-            updated = update_person(
-                test_user.id, person.id, tags=["friend", "colleague"]
-            )
+            updated = update_person(test_user.id, person.id, tags=["friend", "colleague"])
 
             assert updated.tags == ["friend", "colleague"]
 
@@ -187,9 +185,7 @@ class TestPersonListService:
 
             assert len(people) == 3
 
-    @pytest.mark.xfail(
-        reason="SQLite JSON contains() filter does not work correctly with array fields"
-    )
+    @pytest.mark.xfail(reason="SQLite JSON contains() filter does not work correctly with array fields")
     def test_list_people_by_tag(self, app, test_user):
         """Filter people by tag."""
         with app.app_context():
@@ -268,9 +264,7 @@ class TestInteractionService:
         with app.app_context():
             person = create_person(test_user.id, name="Minimal Interaction Person")
 
-            interaction = log_interaction(
-                test_user.id, person.id, date_value=date.today()
-            )
+            interaction = log_interaction(test_user.id, person.id, date_value=date.today())
 
             assert interaction.id is not None
             assert interaction.method is None
@@ -286,9 +280,7 @@ class TestInteractionService:
         """List interactions for a person."""
         with app.app_context():
             person = create_person(test_user.id, name="List Interactions Person")
-            log_interaction(
-                test_user.id, person.id, date_value=date.today(), method="call"
-            )
+            log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
             log_interaction(
                 test_user.id,
                 person.id,
@@ -316,9 +308,7 @@ class TestInteractionService:
         """Edit an existing interaction."""
         with app.app_context():
             person = create_person(test_user.id, name="Edit Interaction Person")
-            interaction = log_interaction(
-                test_user.id, person.id, date_value=date.today(), method="call"
-            )
+            interaction = log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
 
             updated = edit_interaction(
                 test_user.id,
@@ -341,9 +331,7 @@ class TestInteractionService:
         """Delete an interaction."""
         with app.app_context():
             person = create_person(test_user.id, name="Delete Interaction Person")
-            interaction = log_interaction(
-                test_user.id, person.id, date_value=date.today()
-            )
+            interaction = log_interaction(test_user.id, person.id, date_value=date.today())
             interaction_id = interaction.id
 
             deleted = delete_interaction(test_user.id, interaction_id)
@@ -389,9 +377,7 @@ class TestReconnectCandidates:
             assert len(candidates) == 1
             assert candidates[0]["person"].name == "Old Contact"
 
-    def test_compute_reconnect_candidates_recent_interaction_excluded(
-        self, app, test_user
-    ):
+    def test_compute_reconnect_candidates_recent_interaction_excluded(self, app, test_user):
         """People with recent interactions should not be candidates."""
         with app.app_context():
             person = create_person(test_user.id, name="Recent Contact")
@@ -411,9 +397,7 @@ class TestReconnectCandidates:
             for i in range(10):
                 create_person(test_user.id, name=f"Contact {i}")
 
-            candidates = compute_reconnect_candidates(
-                test_user.id, limit=5, cutoff_days=30
-            )
+            candidates = compute_reconnect_candidates(test_user.id, limit=5, cutoff_days=30)
 
             assert len(candidates) == 5
 
@@ -424,15 +408,9 @@ class TestReconnectCandidates:
             p2 = create_person(test_user.id, name="Old")
             p3 = create_person(test_user.id, name="Medium Old")
 
-            log_interaction(
-                test_user.id, p1.id, date_value=date.today() - timedelta(days=90)
-            )
-            log_interaction(
-                test_user.id, p2.id, date_value=date.today() - timedelta(days=60)
-            )
-            log_interaction(
-                test_user.id, p3.id, date_value=date.today() - timedelta(days=45)
-            )
+            log_interaction(test_user.id, p1.id, date_value=date.today() - timedelta(days=90))
+            log_interaction(test_user.id, p2.id, date_value=date.today() - timedelta(days=60))
+            log_interaction(test_user.id, p3.id, date_value=date.today() - timedelta(days=45))
 
             candidates = compute_reconnect_candidates(test_user.id, cutoff_days=30)
 
@@ -535,9 +513,7 @@ class TestRelationshipUserIsolation:
             create_person(test_user.id, name="User A Person")
 
             # Create another user with person
-            other_user = User(
-                email="other-rel@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-rel@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             create_person(other_user.id, name="User B Person")
@@ -552,9 +528,7 @@ class TestRelationshipUserIsolation:
         """Users can only log interactions for their own people."""
         with app.app_context():
             # Create another user's person
-            other_user = User(
-                email="other-int@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-int@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             other_person = create_person(other_user.id, name="Other User's Person")
@@ -566,9 +540,7 @@ class TestRelationshipUserIsolation:
     def test_get_person_isolated(self, app, test_user):
         """Cannot get another user's person."""
         with app.app_context():
-            other_user = User(
-                email="other-get@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-get@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             other_person = create_person(other_user.id, name="Private Person")
@@ -579,9 +551,7 @@ class TestRelationshipUserIsolation:
     def test_delete_person_isolated(self, app, test_user):
         """Cannot delete another user's person."""
         with app.app_context():
-            other_user = User(
-                email="other-del@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-del@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             other_person = create_person(other_user.id, name="Protected Person")

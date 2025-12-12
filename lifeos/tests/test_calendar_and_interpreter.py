@@ -36,9 +36,7 @@ from lifeos.extensions import db
 def auth_user(app):
     """Create a test user for auth-protected endpoints."""
     with app.app_context():
-        user = User(
-            email="calendar-tester@example.com", password_hash=hash_password("secret")
-        )
+        user = User(email="calendar-tester@example.com", password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         return user
@@ -48,9 +46,7 @@ def auth_user(app):
 def auth_headers(app, auth_user):
     """JWT headers for API calls."""
     with app.app_context():
-        token = create_access_token(
-            identity=str(auth_user.id), additional_claims={"roles": ["calendar:write"]}
-        )
+        token = create_access_token(identity=str(auth_user.id), additional_claims={"roles": ["calendar:write"]})
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -72,12 +68,7 @@ class TestClassifyEvent:
 
         assert len(results) > 0
         workout_result = next(
-            (
-                r
-                for r in results
-                if r["domain"] == DOMAIN_HEALTH
-                and r["record_type"] == RECORD_TYPE_WORKOUT
-            ),
+            (r for r in results if r["domain"] == DOMAIN_HEALTH and r["record_type"] == RECORD_TYPE_WORKOUT),
             None,
         )
         assert workout_result is not None
@@ -95,12 +86,7 @@ class TestClassifyEvent:
 
         assert len(results) > 0
         rel_result = next(
-            (
-                r
-                for r in results
-                if r["domain"] == DOMAIN_RELATIONSHIPS
-                and r["record_type"] == RECORD_TYPE_INTERACTION
-            ),
+            (r for r in results if r["domain"] == DOMAIN_RELATIONSHIPS and r["record_type"] == RECORD_TYPE_INTERACTION),
             None,
         )
         assert rel_result is not None
@@ -118,12 +104,7 @@ class TestClassifyEvent:
 
         assert len(results) > 0
         finance_result = next(
-            (
-                r
-                for r in results
-                if r["domain"] == DOMAIN_FINANCE
-                and r["record_type"] == RECORD_TYPE_TRANSACTION
-            ),
+            (r for r in results if r["domain"] == DOMAIN_FINANCE and r["record_type"] == RECORD_TYPE_TRANSACTION),
             None,
         )
         assert finance_result is not None
@@ -140,12 +121,7 @@ class TestClassifyEvent:
 
         assert len(results) > 0
         skill_result = next(
-            (
-                r
-                for r in results
-                if r["domain"] == DOMAIN_SKILLS
-                and r["record_type"] == RECORD_TYPE_PRACTICE
-            ),
+            (r for r in results if r["domain"] == DOMAIN_SKILLS and r["record_type"] == RECORD_TYPE_PRACTICE),
             None,
         )
         assert skill_result is not None

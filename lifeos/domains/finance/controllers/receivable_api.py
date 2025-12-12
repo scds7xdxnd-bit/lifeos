@@ -26,9 +26,7 @@ def list_receivables():
     user_id = int(get_jwt_identity())
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 50))
-    trackers, total = receivable_service.list_receivables(
-        user_id, page=page, per_page=per_page
-    )
+    trackers, total = receivable_service.list_receivables(user_id, page=page, per_page=per_page)
     pages = math.ceil(total / per_page) if per_page else 1
     return jsonify(
         {
@@ -51,9 +49,7 @@ def create_receivable_endpoint():
         data = ReceivableCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -88,9 +84,7 @@ def update_receivable(tracker_id: int):
         data = ReceivableUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -123,9 +117,7 @@ def list_receivable_entries(tracker_id: int):
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 50))
     try:
-        entries, total = receivable_service.list_receivable_entries(
-            user_id, tracker_id, page=page, per_page=per_page
-        )
+        entries, total = receivable_service.list_receivable_entries(user_id, tracker_id, page=page, per_page=per_page)
     except ValueError as exc:
         if str(exc) == "not_found":
             return jsonify({"ok": False, "error": "not_found"}), 404
@@ -152,9 +144,7 @@ def add_receivable_entry(tracker_id: int):
         data = ReceivableEntryCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())

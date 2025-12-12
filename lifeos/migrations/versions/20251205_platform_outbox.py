@@ -40,9 +40,7 @@ def upgrade():
             index=True,
         ),
         sa.Column("last_error", sa.Text()),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_index(
         "ix_platform_outbox_user_available_at",

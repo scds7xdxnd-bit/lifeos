@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
+from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.events import (
     CALENDAR_EVENT_CREATED,
     CALENDAR_EVENT_DELETED,
@@ -12,7 +13,6 @@ from lifeos.domains.calendar.events import (
     CALENDAR_INTERPRETATION_CONFIRMED,
     CALENDAR_INTERPRETATION_REJECTED,
 )
-from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.models.calendar_event import (
     CalendarEvent,
     CalendarEventInterpretation,
@@ -229,12 +229,7 @@ def list_calendar_events(
     if source:
         query = query.filter(CalendarEvent.source == source)
 
-    return (
-        query.order_by(CalendarEvent.start_time.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEvent.start_time.desc()).offset(offset).limit(limit).all()
 
 
 def get_pending_interpretations(
@@ -254,12 +249,7 @@ def get_pending_interpretations(
     if domain:
         query = query.filter(CalendarEventInterpretation.domain == domain)
 
-    return (
-        query.order_by(CalendarEventInterpretation.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEventInterpretation.created_at.desc()).offset(offset).limit(limit).all()
 
 
 def update_interpretation_status(
@@ -276,9 +266,7 @@ def update_interpretation_status(
     if status not in {"confirmed", "rejected", "ignored", "ambiguous"}:
         raise ValueError("invalid_status")
 
-    interpretation = CalendarEventInterpretation.query.filter_by(
-        id=interpretation_id, user_id=user_id
-    ).first()
+    interpretation = CalendarEventInterpretation.query.filter_by(id=interpretation_id, user_id=user_id).first()
     if not interpretation:
         raise ValueError("not_found")
 

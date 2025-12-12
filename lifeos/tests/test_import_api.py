@@ -18,9 +18,7 @@ from lifeos.extensions import db
 
 def _auth_headers(app, user_id: int):
     with app.app_context():
-        token = create_access_token(
-            identity=str(user_id), additional_claims={"roles": ["finance:write"]}
-        )
+        token = create_access_token(identity=str(user_id), additional_claims={"roles": ["finance:write"]})
     return {"Authorization": f"Bearer {token}"}
 
 

@@ -18,9 +18,7 @@ from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 _PROJECT_STATUSES = {"active", "archived", "completed"}
 
 
-def create_project(
-    user_id: int, *, name: str, description: str | None = None, target_date=None
-) -> Project:
+def create_project(user_id: int, *, name: str, description: str | None = None, target_date=None) -> Project:
     existing = Project.query.filter_by(user_id=user_id, name=name).first()
     if existing:
         raise ValueError("duplicate")
@@ -40,9 +38,7 @@ def create_project(
             "user_id": user_id,
             "name": project.name,
             "status": project.status,
-            "target_date": (
-                project.target_date.isoformat() if project.target_date else None
-            ),
+            "target_date": (project.target_date.isoformat() if project.target_date else None),
             "created_at": project.created_at.isoformat(),
         },
         user_id=user_id,
@@ -69,11 +65,7 @@ def update_project(user_id: int, project_id: int, **fields) -> Project | None:
             "project_id": project.id,
             "user_id": user_id,
             "fields": changed,
-            "updated_at": (
-                project.updated_at.isoformat()
-                if project.updated_at
-                else datetime.utcnow().isoformat()
-            ),
+            "updated_at": (project.updated_at.isoformat() if project.updated_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )

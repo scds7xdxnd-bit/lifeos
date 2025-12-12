@@ -98,11 +98,7 @@ def update_habit(user_id: int, habit_id: int, **fields) -> Optional[Habit]:
             "habit_id": habit.id,
             "user_id": user_id,
             "fields": changed,
-            "updated_at": (
-                habit.updated_at.isoformat()
-                if habit.updated_at
-                else datetime.utcnow().isoformat()
-            ),
+            "updated_at": (habit.updated_at.isoformat() if habit.updated_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )
@@ -187,15 +183,11 @@ def log_habit_completion(
 
 
 # Backwards-compatible alias used in tests
-def log_habit(
-    habit_id: int, logged_date: Optional[date] = None, value: float | None = None
-) -> HabitLog:
+def log_habit(habit_id: int, logged_date: Optional[date] = None, value: float | None = None) -> HabitLog:
     habit = Habit.query.get(habit_id)
     if not habit:
         raise ValueError("not_found")
-    return log_habit_completion(
-        habit.user_id, habit_id, logged_date=logged_date, value=value
-    )
+    return log_habit_completion(habit.user_id, habit_id, logged_date=logged_date, value=value)
 
 
 def update_habit_log(user_id: int, log_id: int, **fields) -> Optional[HabitLog]:
@@ -220,10 +212,7 @@ def delete_habit_log(user_id: int, log_id: int) -> bool:
 
 def get_today_habits(user_id: int, today: date) -> List[dict]:
     habits = Habit.query.filter_by(user_id=user_id, is_active=True).all()
-    log_map = {
-        log.habit_id: log
-        for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()
-    }
+    log_map = {log.habit_id: log for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()}
     payload = []
     for habit in habits:
         log = log_map.get(habit.id)
@@ -237,9 +226,7 @@ def get_today_habits(user_id: int, today: date) -> List[dict]:
     return payload
 
 
-def get_habit_history(
-    user_id: int, habit_id: int, start: date, end: date
-) -> List[HabitLog]:
+def get_habit_history(user_id: int, habit_id: int, start: date, end: date) -> List[HabitLog]:
     return (
         HabitLog.query.filter_by(user_id=user_id, habit_id=habit_id)
         .filter(HabitLog.logged_date >= start, HabitLog.logged_date <= end)
@@ -277,9 +264,7 @@ def compute_habit_stats(user_id: int, habit_id: int, window_days: int = 30) -> d
 
 def compute_streak(habit: Habit) -> int:
     logs = (
-        HabitLog.query.filter_by(habit_id=habit.id, user_id=habit.user_id)
-        .order_by(HabitLog.logged_date.desc())
-        .all()
+        HabitLog.query.filter_by(habit_id=habit.id, user_id=habit.user_id).order_by(HabitLog.logged_date.desc()).all()
     )
     current, _ = _streaks(logs)
     return current
@@ -320,10 +305,7 @@ def list_habits(user_id: int) -> List[dict]:
         for row in log_counts
     }
     today = date.today()
-    today_logs = {
-        log.habit_id: log
-        for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()
-    }
+    today_logs = {log.habit_id: log for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()}
 
     payload = []
     for habit in habits:

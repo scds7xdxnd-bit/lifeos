@@ -282,9 +282,7 @@ def test_update_habit_partial(app, client, user_with_tokens):
     habit_id = resp.get_json()["habit_id"]
 
     # Partial update - only description
-    resp = client.patch(
-        f"/api/habits/{habit_id}", json={"description": "New"}, headers=headers
-    )
+    resp = client.patch(f"/api/habits/{habit_id}", json={"description": "New"}, headers=headers)
     assert resp.status_code == 200
 
     resp = client.get(f"/api/habits/{habit_id}", headers=headers)
@@ -385,9 +383,7 @@ def test_create_log_success(app, client, user_with_tokens):
         "value": 1,
         "note": "Completed today!",
     }
-    resp = client.post(
-        f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers
-    )
+    resp = client.post(f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers)
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["ok"] is True
@@ -419,9 +415,7 @@ def test_create_log_inactive_habit_succeeds(app, client, user_with_tokens):
 
     # Logging to inactive habit is allowed by design
     log_payload = {"logged_date": date.today().isoformat(), "value": 1}
-    resp = client.post(
-        f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers
-    )
+    resp = client.post(f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers)
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["ok"] is True
@@ -445,16 +439,12 @@ def test_update_log_success(app, client, user_with_tokens):
         "value": 1,
         "note": "Original",
     }
-    resp = client.post(
-        f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers
-    )
+    resp = client.post(f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers)
     log_id = resp.get_json()["log"]["id"]
 
     # Update log
     update_payload = {"note": "Updated note", "value": 2}
-    resp = client.patch(
-        f"/api/habits/logs/{log_id}", json=update_payload, headers=headers
-    )
+    resp = client.patch(f"/api/habits/logs/{log_id}", json=update_payload, headers=headers)
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["ok"] is True
@@ -483,9 +473,7 @@ def test_delete_log_success(app, client, user_with_tokens):
     habit_id = resp.get_json()["habit_id"]
 
     log_payload = {"logged_date": date.today().isoformat(), "value": 1}
-    resp = client.post(
-        f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers
-    )
+    resp = client.post(f"/api/habits/{habit_id}/logs", json=log_payload, headers=headers)
     log_id = resp.get_json()["log"]["id"]
 
     # Delete log

@@ -378,9 +378,7 @@ class TestGetSuggestedAccounts:
         """Test getting suggestions returns existing accounts."""
         with app.app_context():
             data = setup_accounts_for_suggestions
-            results = get_suggested_accounts(
-                data["user_id"], "salary", limit=10, include_ml=False
-            )
+            results = get_suggested_accounts(data["user_id"], "salary", limit=10, include_ml=False)
 
             assert len(results) >= 1
             assert results[0]["is_existing"] is True

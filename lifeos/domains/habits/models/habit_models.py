@@ -17,23 +17,17 @@ class Habit(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     name: Mapped[str] = mapped_column(db.String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(db.Text)
     domain_link: Mapped[str | None] = mapped_column(db.String(64))
-    schedule_type: Mapped[str] = mapped_column(
-        db.String(32), nullable=False, default="daily"
-    )
+    schedule_type: Mapped[str] = mapped_column(db.String(32), nullable=False, default="daily")
     target_count: Mapped[int | None] = mapped_column(nullable=True)
     time_of_day: Mapped[str | None] = mapped_column(db.String(32))
     difficulty: Mapped[str | None] = mapped_column(db.String(32))
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
     logs: Mapped[list["HabitLog"]] = relationship(
         "HabitLog",
@@ -50,9 +44,7 @@ class HabitLog(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     habit_id: Mapped[int] = mapped_column(
         db.ForeignKey("habits_habit.id", ondelete="CASCADE"),
         index=True,

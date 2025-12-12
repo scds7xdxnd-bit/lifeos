@@ -14,8 +14,8 @@ from lifeos.core.interpreter.constants import (
     MINIMUM_CONFIDENCE_THRESHOLD,
     STATUS_INFERRED,
 )
-from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.core.interpreter.domain_adapters import get_adapter
+from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.events import CALENDAR_INTERPRETATION_CREATED
 from lifeos.domains.calendar.models.calendar_event import (
     CalendarEvent,
@@ -79,9 +79,7 @@ class CalendarInterpreter:
         # Classify the event
         self.interpret_event(calendar_event)
 
-    def interpret_event(
-        self, event: CalendarEvent
-    ) -> List[CalendarEventInterpretation]:
+    def interpret_event(self, event: CalendarEvent) -> List[CalendarEventInterpretation]:
         """
         Classify a calendar event and create interpretation records.
 
@@ -233,9 +231,7 @@ class CalendarInterpreter:
         except Exception as exc:
             # Log but don't fail interpretation creation
             try:
-                current_app.logger.warning(
-                    f"Failed to create inferred {domain}.{record_type} record: {exc}"
-                )
+                current_app.logger.warning(f"Failed to create inferred {domain}.{record_type} record: {exc}")
             except RuntimeError:
                 pass
             return None

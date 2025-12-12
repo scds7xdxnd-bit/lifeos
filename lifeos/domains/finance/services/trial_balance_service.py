@@ -22,13 +22,9 @@ def _end_of_day(d: dt.date) -> dt.datetime:
     return dt.datetime.combine(d, dt.time.max)
 
 
-def calculate_trial_balance(
-    user_id: int, as_of: dt.date | None = None
-) -> Dict[int, Dict[str, float]]:
+def calculate_trial_balance(user_id: int, as_of: dt.date | None = None) -> Dict[int, Dict[str, float]]:
     """Return debit/credit totals per account up to as_of (inclusive)."""
-    totals: Dict[int, Dict[str, float]] = defaultdict(
-        lambda: {"debit": 0.0, "credit": 0.0}
-    )
+    totals: Dict[int, Dict[str, float]] = defaultdict(lambda: {"debit": 0.0, "credit": 0.0})
     query = (
         db.session.query(
             JournalLine.account_id,
@@ -47,13 +43,9 @@ def calculate_trial_balance(
     return totals
 
 
-def period_balance(
-    user_id: int, start_date: dt.date, end_date: dt.date
-) -> Dict[int, Dict[str, float]]:
+def period_balance(user_id: int, start_date: dt.date, end_date: dt.date) -> Dict[int, Dict[str, float]]:
     """Return debit/credit totals per account within date range inclusive."""
-    totals: Dict[int, Dict[str, float]] = defaultdict(
-        lambda: {"debit": 0.0, "credit": 0.0}
-    )
+    totals: Dict[int, Dict[str, float]] = defaultdict(lambda: {"debit": 0.0, "credit": 0.0})
     query = (
         db.session.query(
             JournalLine.account_id,
@@ -78,9 +70,7 @@ def monthly_rollup(user_id: int) -> Dict[str, Dict[str, float]]:
     if dialect == "sqlite":
         month_expr = func.strftime("%Y-%m", JournalEntry.posted_at)
     else:
-        month_expr = func.to_char(
-            JournalEntry.posted_at, sa.literal_column("'YYYY-MM'")
-        )
+        month_expr = func.to_char(JournalEntry.posted_at, sa.literal_column("'YYYY-MM'"))
     query = (
         db.session.query(
             month_expr.label("ym"),
@@ -98,14 +88,10 @@ def monthly_rollup(user_id: int) -> Dict[str, Dict[str, float]]:
     return rollup
 
 
-def net_balance_for_account(
-    account: Account, totals: Dict[int, Dict[str, float]]
-) -> float:
+def net_balance_for_account(account: Account, totals: Dict[int, Dict[str, float]]) -> float:
     """Compute net balance respecting account normal balance."""
     total = totals.get(account.id, {"debit": 0.0, "credit": 0.0})
-    normal = (
-        account.category.normal_balance if account.category else "debit"
-    ) or "debit"
+    normal = (account.category.normal_balance if account.category else "debit") or "debit"
     if normal == "credit":
         return float(total["credit"] - total["debit"])
     return float(total["debit"] - total["credit"])
@@ -140,9 +126,7 @@ def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
                 "base_type": acct.account_type,
                 "category_id": acct.category.id if acct.category else None,
                 "category_name": acct.category.name if acct.category else None,
-                "normal_balance": (
-                    acct.category.normal_balance if acct.category else "debit"
-                ),
+                "normal_balance": (acct.category.normal_balance if acct.category else "debit"),
                 "debit": row_total["debit"],
                 "credit": row_total["credit"],
                 "net": net_val,
@@ -157,11 +141,7 @@ def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
     category_rows: List[dict] = []
     for (base_type, category_id), agg in category_totals.items():
         category_obj = next(
-            (
-                acct.category
-                for acct in accounts
-                if acct.category_id == category_id and acct.account_type == base_type
-            ),
+            (acct.category for acct in accounts if acct.category_id == category_id and acct.account_type == base_type),
             None,
         )
         category_rows.append(
@@ -169,9 +149,7 @@ def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
                 "base_type": base_type,
                 "category_id": category_id,
                 "category_name": category_obj.name if category_obj else "Uncategorized",
-                "normal_balance": (
-                    category_obj.normal_balance if category_obj else "debit"
-                ),
+                "normal_balance": (category_obj.normal_balance if category_obj else "debit"),
                 "debit": agg["debit"],
                 "credit": agg["credit"],
                 "net": agg["net"],

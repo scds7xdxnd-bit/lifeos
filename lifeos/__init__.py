@@ -88,15 +88,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
             sqlite3.register_converter(
                 "DATETIME",
-                lambda val: (
-                    val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
-                ),
+                lambda val: (val.decode() if isinstance(val, (bytes, bytearray)) else str(val)),
             )
             sqlite3.register_converter(
                 "TIMESTAMP",
-                lambda val: (
-                    val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
-                ),
+                lambda val: (val.decode() if isinstance(val, (bytes, bytearray)) else str(val)),
             )
         except Exception:
             # If sqlite3 is unavailable or converters cannot be registered, continue with detect_types disabled.
@@ -157,6 +153,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
 def _register_blueprints(app: Flask) -> None:
     """Lazy import and register all controllers."""
+    from lifeos.core.admin.controllers import admin_debug_bp
     from lifeos.core.auth.controllers import auth_bp  # local import to avoid circulars
     from lifeos.core.insights.controllers import insights_api_bp
     from lifeos.core.insights.pages import insights_pages_bp
@@ -190,7 +187,6 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.domains.relationships.controllers.rel_pages import rel_pages_bp
     from lifeos.domains.skills.controllers.skill_api import skill_api_bp
     from lifeos.domains.skills.controllers.skill_pages import skill_pages_bp
-    from lifeos.core.admin.controllers import admin_debug_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(user_api_bp, url_prefix="/api/users")

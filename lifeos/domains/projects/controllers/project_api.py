@@ -40,14 +40,10 @@ def list_projects():
     params, err = _parse_query(ProjectListFilter)
     if err:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": err.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": err.errors()}),
             400,
         )
-    items, total = services.list_projects(
-        user_id, status=params.status, page=params.page, per_page=params.per_page
-    )
+    items, total = services.list_projects(user_id, status=params.status, page=params.page, per_page=params.per_page)
     pages = math.ceil(total / params.per_page) if params.per_page else 1
     return jsonify(
         {
@@ -69,9 +65,7 @@ def create_project():
         data = ProjectCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -108,9 +102,7 @@ def update_project(project_id: int):
         data = ProjectUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -167,9 +159,7 @@ def list_tasks(project_id: int):
     params, err = _parse_query(TaskListFilter)
     if err:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": err.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": err.errors()}),
             400,
         )
     items, total = services.list_tasks(
@@ -201,9 +191,7 @@ def create_task(project_id: int):
         data = TaskCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -242,9 +230,7 @@ def update_task(task_id: int):
         data = TaskUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -290,9 +276,7 @@ def list_task_logs(task_id: int):
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 100))
     try:
-        items, total = services.list_task_logs(
-            user_id, task_id, page=page, per_page=per_page
-        )
+        items, total = services.list_task_logs(user_id, task_id, page=page, per_page=per_page)
     except ValueError as exc:
         if str(exc) == "not_found":
             return jsonify({"ok": False, "error": "not_found"}), 404
@@ -318,9 +302,7 @@ def log_task(task_id: int):
         data = TaskLogCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())

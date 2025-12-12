@@ -33,9 +33,7 @@ class CalendarEvent(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
 
     # Event content
     title: Mapped[str] = mapped_column(db.String(255), nullable=False)
@@ -66,12 +64,8 @@ class CalendarEvent(db.Model):
     metadata_: Mapped[dict] = mapped_column("metadata", db.JSON, default=dict)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     interpretations: Mapped[list["CalendarEventInterpretation"]] = relationship(
@@ -110,9 +104,7 @@ class CalendarEventInterpretation(db.Model):
         index=True,
         nullable=False,
     )
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
 
     # Classification result
     domain: Mapped[str] = mapped_column(db.String(32), nullable=False)
@@ -124,31 +116,21 @@ class CalendarEventInterpretation(db.Model):
     record_id: Mapped[int | None] = mapped_column(nullable=True)
 
     # Classification confidence
-    confidence_score: Mapped[float] = mapped_column(
-        db.Numeric(3, 2), nullable=False, default=0.0
-    )
+    confidence_score: Mapped[float] = mapped_column(db.Numeric(3, 2), nullable=False, default=0.0)
 
     # Review status
-    status: Mapped[str] = mapped_column(
-        db.String(16), nullable=False, default="inferred"
-    )
+    status: Mapped[str] = mapped_column(db.String(16), nullable=False, default="inferred")
     # Values: 'inferred', 'confirmed', 'rejected', 'ignored'
 
     # Classification details
     classification_data: Mapped[dict] = mapped_column(db.JSON, default=dict)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    calendar_event: Mapped[CalendarEvent] = relationship(
-        "CalendarEvent", back_populates="interpretations"
-    )
+    calendar_event: Mapped[CalendarEvent] = relationship("CalendarEvent", back_populates="interpretations")
 
 
 __all__ = ["CalendarEvent", "CalendarEventInterpretation"]

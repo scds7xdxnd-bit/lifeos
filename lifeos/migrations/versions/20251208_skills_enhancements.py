@@ -31,13 +31,9 @@ def upgrade():
 
     # skill table additions (direct add; SQLite supports ADD COLUMN)
     if not _has_column("skill", "category"):
-        op.add_column(
-            "skill", sa.Column("category", sa.String(length=128), nullable=True)
-        )
+        op.add_column("skill", sa.Column("category", sa.String(length=128), nullable=True))
     if not _has_column("skill", "difficulty"):
-        op.add_column(
-            "skill", sa.Column("difficulty", sa.String(length=32), nullable=True)
-        )
+        op.add_column("skill", sa.Column("difficulty", sa.String(length=32), nullable=True))
     if not _has_column("skill", "target_level"):
         op.add_column("skill", sa.Column("target_level", sa.Integer(), nullable=True))
     if not _has_column("skill", "current_level"):
@@ -52,9 +48,7 @@ def upgrade():
     if not _has_column("skill", "updated_at"):
         op.add_column(
             "skill",
-            sa.Column(
-                "updated_at", sa.DateTime(), nullable=True, server_default=sa.func.now()
-            ),
+            sa.Column("updated_at", sa.DateTime(), nullable=True, server_default=sa.func.now()),
         )
     if not _has_index("skill", "ux_skill_user_name"):
         op.create_index("ux_skill_user_name", "skill", ["user_id", "name"], unique=True)
@@ -63,9 +57,7 @@ def upgrade():
 
     # practice session additions (avoid FK constraint on SQLite)
     if not _has_column("skill_practice_session", "user_id"):
-        op.add_column(
-            "skill_practice_session", sa.Column("user_id", sa.Integer(), nullable=True)
-        )
+        op.add_column("skill_practice_session", sa.Column("user_id", sa.Integer(), nullable=True))
     if not _has_column("skill_practice_session", "intensity"):
         op.add_column(
             "skill_practice_session",
@@ -74,9 +66,7 @@ def upgrade():
     if not _has_column("skill_practice_session", "created_at"):
         op.add_column(
             "skill_practice_session",
-            sa.Column(
-                "created_at", sa.DateTime(), nullable=True, server_default=sa.func.now()
-            ),
+            sa.Column("created_at", sa.DateTime(), nullable=True, server_default=sa.func.now()),
         )
     if not _has_index("skill_practice_session", "ix_skill_session_user_practiced_at"):
         op.create_index(
@@ -115,13 +105,9 @@ def downgrade():
 
     op.execute("UPDATE skill_practice_session SET user_id = NULL")
     if _has_index("skill_practice_session", "ix_skill_session_skill_practiced_at"):
-        op.drop_index(
-            "ix_skill_session_skill_practiced_at", table_name="skill_practice_session"
-        )
+        op.drop_index("ix_skill_session_skill_practiced_at", table_name="skill_practice_session")
     if _has_index("skill_practice_session", "ix_skill_session_user_practiced_at"):
-        op.drop_index(
-            "ix_skill_session_user_practiced_at", table_name="skill_practice_session"
-        )
+        op.drop_index("ix_skill_session_user_practiced_at", table_name="skill_practice_session")
     if _has_column("skill_practice_session", "created_at"):
         op.drop_column("skill_practice_session", "created_at")
     if _has_column("skill_practice_session", "intensity"):

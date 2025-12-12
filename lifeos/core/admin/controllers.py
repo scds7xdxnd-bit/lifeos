@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+
 from flask import Blueprint, abort, current_app, jsonify
 from flask_jwt_extended import jwt_required
 

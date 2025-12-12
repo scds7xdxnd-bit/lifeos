@@ -27,9 +27,7 @@ class RegisterRequest(BaseModel):
     @classmethod
     def validate_password(cls, v: str) -> str:
         if not _PASSWORD_REGEX.match(v):
-            raise ValueError(
-                "password must be at least 8 chars and include letters and numbers"
-            )
+            raise ValueError("password must be at least 8 chars and include letters and numbers")
         return v
 
     @field_validator("timezone")
@@ -68,7 +66,5 @@ class ResetPasswordRequest(BaseModel):
     @classmethod
     def validate_password(cls, v: str) -> str:
         if not _PASSWORD_REGEX.match(v):
-            raise ValueError(
-                "password must be at least 8 chars and include letters and numbers"
-            )
+            raise ValueError("password must be at least 8 chars and include letters and numbers")
         return v

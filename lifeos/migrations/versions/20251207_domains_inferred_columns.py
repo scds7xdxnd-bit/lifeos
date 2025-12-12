@@ -79,21 +79,15 @@ def _add_inferred_columns(table_name: str) -> None:
     # Add calendar_event_id column (FK)
     # Note: SQLite doesn't support adding FK constraints after table creation
     if not _has_column(table_name, "calendar_event_id"):
-        op.add_column(
-            table_name, sa.Column("calendar_event_id", sa.Integer(), nullable=True)
-        )
+        op.add_column(table_name, sa.Column("calendar_event_id", sa.Integer(), nullable=True))
 
     # Add confidence_score column
     if not _has_column(table_name, "confidence_score"):
-        op.add_column(
-            table_name, sa.Column("confidence_score", sa.Float(), nullable=True)
-        )
+        op.add_column(table_name, sa.Column("confidence_score", sa.Float(), nullable=True))
 
     # Add inference_status column
     if not _has_column(table_name, "inference_status"):
-        op.add_column(
-            table_name, sa.Column("inference_status", sa.String(16), nullable=True)
-        )
+        op.add_column(table_name, sa.Column("inference_status", sa.String(16), nullable=True))
 
 
 def _create_inference_index(table_name: str) -> None:

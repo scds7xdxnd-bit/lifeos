@@ -72,9 +72,7 @@ class InsightTelemetry:
             self.false_positives += false_positive
             self.false_negatives += false_negative
 
-    def record_event(
-        self, event_type: str, has_insights: bool, latency_ms: float
-    ) -> None:
+    def record_event(self, event_type: str, has_insights: bool, latency_ms: float) -> None:
         """Record metrics for an ingested event."""
         with self._lock:
             self.events_processed += 1
@@ -116,19 +114,13 @@ class InsightTelemetry:
         """Return a read-only snapshot of telemetry counters."""
         with self._lock:
             avg_latency_ms = (
-                sum(self.per_event_latency_ms) / len(self.per_event_latency_ms)
-                if self.per_event_latency_ms
-                else 0.0
+                sum(self.per_event_latency_ms) / len(self.per_event_latency_ms) if self.per_event_latency_ms else 0.0
             )
             per_rule_avg_latency_ms = {
                 rule: (sum(latencies) / len(latencies)) if latencies else 0.0
                 for rule, latencies in self.per_rule_latency_ms.items()
             }
-            coverage = (
-                (self.events_with_insights / self.events_processed)
-                if self.events_processed
-                else 0.0
-            )
+            coverage = (self.events_with_insights / self.events_processed) if self.events_processed else 0.0
             return InsightTelemetrySnapshot(
                 events_processed=self.events_processed,
                 events_with_insights=self.events_with_insights,

@@ -19,9 +19,7 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for project API tests."""
     with app.app_context():
-        user = User(
-            email="projects-api@example.com", password_hash=hash_password("secret")
-        )
+        user = User(email="projects-api@example.com", password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         return user
@@ -75,9 +73,7 @@ class TestProjectsAPI:
         assert len(data["items"]) == 2
         assert data["total"] == 2
 
-    def test_list_projects_with_status_filter(
-        self, app, client, test_user, auth_headers
-    ):
+    def test_list_projects_with_status_filter(self, app, client, test_user, auth_headers):
         """List projects with status filter."""
         with app.app_context():
             create_project(test_user.id, name="Active Project")
@@ -157,9 +153,7 @@ class TestProjectsAPI:
             project_id = project.id
 
         payload = {"description": "Updated description", "status": "active"}
-        resp = client.patch(
-            f"/api/projects/{project_id}", json=payload, headers=csrf_headers
-        )
+        resp = client.patch(f"/api/projects/{project_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -255,9 +249,7 @@ class TestTasksAPI:
             "priority": 1,
             "notes": "Important task",
         }
-        resp = client.post(
-            f"/api/projects/{project_id}/tasks", json=payload, headers=csrf_headers
-        )
+        resp = client.post(f"/api/projects/{project_id}/tasks", json=payload, headers=csrf_headers)
         assert resp.status_code == 201
         data = resp.get_json()
         assert data["ok"] is True
@@ -267,9 +259,7 @@ class TestTasksAPI:
     def test_create_task_project_not_found(self, client, csrf_headers):
         """Creating task for non-existent project fails."""
         payload = {"title": "Orphan Task"}
-        resp = client.post(
-            "/api/projects/99999/tasks", json=payload, headers=csrf_headers
-        )
+        resp = client.post("/api/projects/99999/tasks", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
     def test_get_task(self, app, client, test_user, auth_headers):
@@ -298,9 +288,7 @@ class TestTasksAPI:
             task_id = task.id
 
         payload = {"title": "Updated Task", "status": "in_progress", "priority": 2}
-        resp = client.patch(
-            f"/api/projects/tasks/{task_id}", json=payload, headers=csrf_headers
-        )
+        resp = client.patch(f"/api/projects/tasks/{task_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -310,9 +298,7 @@ class TestTasksAPI:
     def test_update_task_not_found(self, client, csrf_headers):
         """Update non-existent task returns 404."""
         payload = {"title": "Updated"}
-        resp = client.patch(
-            "/api/projects/tasks/99999", json=payload, headers=csrf_headers
-        )
+        resp = client.patch("/api/projects/tasks/99999", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
     def test_complete_task(self, app, client, test_user, csrf_headers):
@@ -322,9 +308,7 @@ class TestTasksAPI:
             task = create_task(test_user.id, project.id, title="To Complete")
             task_id = task.id
 
-        resp = client.post(
-            f"/api/projects/tasks/{task_id}/complete", headers=csrf_headers
-        )
+        resp = client.post(f"/api/projects/tasks/{task_id}/complete", headers=csrf_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -345,17 +329,13 @@ class TestTaskLogsAPI:
             task_id = task.id
 
         payload = {"note": "Made progress", "status_snapshot": "in_progress"}
-        resp = client.post(
-            f"/api/projects/tasks/{task_id}/logs", json=payload, headers=csrf_headers
-        )
+        resp = client.post(f"/api/projects/tasks/{task_id}/logs", json=payload, headers=csrf_headers)
         assert resp.status_code == 201
         data = resp.get_json()
         assert data["ok"] is True
         assert data["log"]["note"] == "Made progress"
 
-    @pytest.mark.xfail(
-        reason="Outbox event payload has date object that cannot be JSON serialized"
-    )
+    @pytest.mark.xfail(reason="Outbox event payload has date object that cannot be JSON serialized")
     def test_list_task_logs(self, app, client, test_user, auth_headers):
         """List activity logs for a task."""
         with app.app_context():
@@ -405,9 +385,7 @@ class TestProjectsPaginationAPI:
                 create_task(test_user.id, project.id, title=f"Paginated Task {i}")
             project_id = project.id
 
-        resp = client.get(
-            f"/api/projects/{project_id}/tasks?page=1&per_page=10", headers=auth_headers
-        )
+        resp = client.get(f"/api/projects/{project_id}/tasks?page=1&per_page=10", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert len(data["items"]) == 10
@@ -441,9 +419,7 @@ class TestProjectsAPIUserIsolation:
         assert len(data["items"]) == 1
         assert data["items"][0]["name"] == "Test User Project"
 
-    def test_cannot_access_other_user_project(
-        self, app, client, test_user, auth_headers
-    ):
+    def test_cannot_access_other_user_project(self, app, client, test_user, auth_headers):
         """Cannot access another user's project detail."""
         with app.app_context():
             other_user = User(
@@ -458,9 +434,7 @@ class TestProjectsAPIUserIsolation:
         resp = client.get(f"/api/projects/{project_id}", headers=auth_headers)
         assert resp.status_code == 404
 
-    def test_cannot_update_other_user_project(
-        self, app, client, test_user, csrf_headers
-    ):
+    def test_cannot_update_other_user_project(self, app, client, test_user, csrf_headers):
         """Cannot update another user's project."""
         with app.app_context():
             other_user = User(
@@ -473,14 +447,10 @@ class TestProjectsAPIUserIsolation:
             project_id = project.id
 
         payload = {"description": "Hacked!"}
-        resp = client.patch(
-            f"/api/projects/{project_id}", json=payload, headers=csrf_headers
-        )
+        resp = client.patch(f"/api/projects/{project_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
-    def test_cannot_create_task_in_other_user_project(
-        self, app, client, test_user, csrf_headers
-    ):
+    def test_cannot_create_task_in_other_user_project(self, app, client, test_user, csrf_headers):
         """Cannot create task in another user's project."""
         with app.app_context():
             other_user = User(
@@ -493,7 +463,5 @@ class TestProjectsAPIUserIsolation:
             project_id = project.id
 
         payload = {"title": "Sneaky Task"}
-        resp = client.post(
-            f"/api/projects/{project_id}/tasks", json=payload, headers=csrf_headers
-        )
+        resp = client.post(f"/api/projects/{project_id}/tasks", json=payload, headers=csrf_headers)
         assert resp.status_code == 404

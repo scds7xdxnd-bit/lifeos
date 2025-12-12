@@ -316,11 +316,7 @@ def classify_event(
 
             # Boost for location keywords
             location_keywords = rules.get("location_keywords")
-            if (
-                location_keywords
-                and location
-                and location_keywords.search(location.lower())
-            ):
+            if location_keywords and location and location_keywords.search(location.lower()):
                 confidence = min(confidence + 0.1, 1.0)
 
             # Extract person name for relationships

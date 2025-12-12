@@ -19,9 +19,7 @@ TWO_PHASE = True
 
 
 def upgrade():
-    op.add_column(
-        "journal_entry", sa.Column("body", sa.Text(), nullable=False, server_default="")
-    )
+    op.add_column("journal_entry", sa.Column("body", sa.Text(), nullable=False, server_default=""))
     op.add_column(
         "journal_entry",
         sa.Column("tags", sa.JSON(), nullable=False, server_default=sa.text("'[]'")),
@@ -43,9 +41,7 @@ def upgrade():
     op.add_column("journal_entry", sa.Column("emotion_label", sa.String(length=64)))
     op.add_column(
         "journal_entry",
-        sa.Column(
-            "updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.add_column("journal_entry", sa.Column("mood_int", sa.Integer()))
 
@@ -64,15 +60,9 @@ def upgrade():
         """
     )
 
-    op.create_index(
-        "ix_journal_entry_user_entry_date", "journal_entry", ["user_id", "entry_date"]
-    )
-    op.create_index(
-        "ix_journal_entry_user_created_at", "journal_entry", ["user_id", "created_at"]
-    )
-    op.create_index(
-        "ix_journal_entry_user_mood", "journal_entry", ["user_id", "mood_int"]
-    )
+    op.create_index("ix_journal_entry_user_entry_date", "journal_entry", ["user_id", "entry_date"])
+    op.create_index("ix_journal_entry_user_created_at", "journal_entry", ["user_id", "created_at"])
+    op.create_index("ix_journal_entry_user_mood", "journal_entry", ["user_id", "mood_int"])
 
 
 def downgrade():

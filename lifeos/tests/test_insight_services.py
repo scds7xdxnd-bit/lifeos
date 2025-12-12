@@ -141,9 +141,7 @@ def test_recent_events_filters_by_user_type_and_time_window(app):
         )
         db.session.commit()
 
-        results = recent_events(
-            user.id, ["finance.transaction.created"], days=7, limit=5
-        )
+        results = recent_events(user.id, ["finance.transaction.created"], days=7, limit=5)
 
         assert [evt.id for evt in results] == [matching_latest.id, matching_recent.id]
 

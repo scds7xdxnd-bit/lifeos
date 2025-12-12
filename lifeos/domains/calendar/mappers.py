@@ -32,9 +32,7 @@ def calendar_event_to_response(event: CalendarEvent) -> CalendarEventResponse:
         created_at=event.created_at,
         updated_at=event.updated_at,
         interpretations=(
-            [interpretation_to_response(i) for i in event.interpretations]
-            if event.interpretations
-            else None
+            [interpretation_to_response(i) for i in event.interpretations] if event.interpretations else None
         ),
     )
 

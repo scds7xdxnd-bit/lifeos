@@ -74,9 +74,7 @@ def main(email: str, password: str, full_name: str) -> None:
     with app.app_context():
         seed_roles_and_permissions()
         user = seed_admin_user(email, password, full_name)
-        click.echo(
-            f"Seeded admin user {user.email} with roles {[r.name for r in user.roles]}"
-        )
+        click.echo(f"Seeded admin user {user.email} with roles {[r.name for r in user.roles]}")
 
 
 if __name__ == "__main__":

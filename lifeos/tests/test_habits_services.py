@@ -32,9 +32,7 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for habits tests."""
     with app.app_context():
-        user = User(
-            email="habits-tester@example.com", password_hash=hash_password("secret")
-        )
+        user = User(email="habits-tester@example.com", password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         yield user
@@ -84,9 +82,7 @@ class TestHabitService:
     def test_create_habit_with_legacy_params(self, app, test_user):
         """Create habit with legacy cadence/target params."""
         with app.app_context():
-            habit = create_habit(
-                test_user.id, name="Meditate", cadence="weekly", target=3
-            )
+            habit = create_habit(test_user.id, name="Meditate", cadence="weekly", target=3)
 
             assert habit.schedule_type == "weekly"
             assert habit.target_count == 3
@@ -238,9 +234,7 @@ class TestHabitLogService:
             habit = create_habit(test_user.id, name="Update Log Habit")
             log = log_habit_completion(test_user.id, habit.id, value=1.0)
 
-            updated = update_habit_log(
-                test_user.id, log.id, value=2.0, note="Updated note"
-            )
+            updated = update_habit_log(test_user.id, log.id, value=2.0, note="Updated note")
 
             assert updated is not None
             assert float(updated.value) == 2.0
@@ -284,9 +278,7 @@ class TestStreakCalculation:
 
             # Log for 5 consecutive days
             for i in range(5):
-                log_habit_completion(
-                    test_user.id, habit.id, logged_date=today - timedelta(days=i)
-                )
+                log_habit_completion(test_user.id, habit.id, logged_date=today - timedelta(days=i))
 
             streak = compute_streak(db.session.get(Habit, habit.id))
             assert streak == 5
@@ -299,13 +291,9 @@ class TestStreakCalculation:
 
             # Log today and yesterday
             log_habit_completion(test_user.id, habit.id, logged_date=today)
-            log_habit_completion(
-                test_user.id, habit.id, logged_date=today - timedelta(days=1)
-            )
+            log_habit_completion(test_user.id, habit.id, logged_date=today - timedelta(days=1))
             # Skip a day (day 2), then log day 3
-            log_habit_completion(
-                test_user.id, habit.id, logged_date=today - timedelta(days=3)
-            )
+            log_habit_completion(test_user.id, habit.id, logged_date=today - timedelta(days=3))
 
             streak = compute_streak(db.session.get(Habit, habit.id))
             # The _streaks algorithm may count the isolated log as part of current streak
@@ -360,14 +348,10 @@ class TestHabitHistory:
 
             # Log for 20 days
             for i in range(20):
-                log_habit_completion(
-                    test_user.id, habit.id, logged_date=today - timedelta(days=i)
-                )
+                log_habit_completion(test_user.id, habit.id, logged_date=today - timedelta(days=i))
 
             # Get last 7 days
-            history = get_habit_history(
-                test_user.id, habit.id, start=today - timedelta(days=7), end=today
-            )
+            history = get_habit_history(test_user.id, habit.id, start=today - timedelta(days=7), end=today)
 
             assert len(history) == 8  # 7 days inclusive
 
@@ -387,12 +371,8 @@ class TestHabitHistory:
             # Should only include active habits
             assert len(today_habits) == 2
 
-            habit1_status = next(
-                h for h in today_habits if h["habit"].name == "Today Habit 1"
-            )
-            habit2_status = next(
-                h for h in today_habits if h["habit"].name == "Today Habit 2"
-            )
+            habit1_status = next(h for h in today_habits if h["habit"].name == "Today Habit 1")
+            habit2_status = next(h for h in today_habits if h["habit"].name == "Today Habit 2")
 
             assert habit1_status["logged"] is True
             assert habit2_status["logged"] is False
@@ -411,9 +391,7 @@ class TestHabitDetail:
             today = date.today()
 
             for i in range(5):
-                log_habit_completion(
-                    test_user.id, habit.id, logged_date=today - timedelta(days=i)
-                )
+                log_habit_completion(test_user.id, habit.id, logged_date=today - timedelta(days=i))
 
             detail = get_habit_detail(test_user.id, habit.id)
 
@@ -443,9 +421,7 @@ class TestListHabits:
 
             # Log some completions
             log_habit_completion(test_user.id, habit1.id)
-            log_habit_completion(
-                test_user.id, habit1.id, logged_date=date.today() - timedelta(days=1)
-            )
+            log_habit_completion(test_user.id, habit1.id, logged_date=date.today() - timedelta(days=1))
 
             habits = list_habits(test_user.id)
 
@@ -486,9 +462,7 @@ class TestHabitEventEmission:
 
             create_habit(test_user.id, name="Event Habit")
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.created"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.created").count()
 
             assert final_count == initial_count + 1
 
@@ -505,9 +479,7 @@ class TestHabitEventEmission:
 
             update_habit(test_user.id, habit.id, description="Updated")
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.updated"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.updated").count()
 
             assert final_count == initial_count + 1
 
@@ -543,9 +515,7 @@ class TestHabitEventEmission:
 
             delete_habit(test_user.id, habit.id)
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.deleted"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.deleted").count()
 
             assert final_count == initial_count + 1
 
@@ -562,9 +532,7 @@ class TestHabitEventEmission:
 
             log_habit_completion(test_user.id, habit.id)
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="habits.habit.logged"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="habits.habit.logged").count()
 
             assert final_count == initial_count + 1
 
@@ -582,9 +550,7 @@ class TestHabitUserIsolation:
             create_habit(test_user.id, name="User A Habit")
 
             # Create another user with habit
-            other_user = User(
-                email="other-habits@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-habits@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             create_habit(other_user.id, name="User B Habit")
@@ -599,9 +565,7 @@ class TestHabitUserIsolation:
         """Users can only log their own habits."""
         with app.app_context():
             # Create another user's habit
-            other_user = User(
-                email="other-log@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-log@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             other_habit = create_habit(other_user.id, name="Other Habit")
@@ -613,9 +577,7 @@ class TestHabitUserIsolation:
     def test_get_habit_detail_isolated(self, app, test_user):
         """Cannot get another user's habit detail."""
         with app.app_context():
-            other_user = User(
-                email="other-detail@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-detail@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             other_habit = create_habit(other_user.id, name="Private Habit")

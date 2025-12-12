@@ -191,9 +191,7 @@ def test_list_journal_search_text(app, client, user_with_tokens):
         json={"title": "Python", "body": "Learning Flask"},
         headers=headers,
     )
-    client.post(
-        "/api/journal", json={"title": "Random", "body": "Nothing"}, headers=headers
-    )
+    client.post("/api/journal", json={"title": "Random", "body": "Nothing"}, headers=headers)
 
     resp = client.get("/api/journal?search_text=Python", headers=headers)
     body = resp.get_json()
@@ -235,9 +233,7 @@ def test_list_journal_isolation(app, client, user_with_tokens, other_user_tokens
 
     # User 1 creates entry
     headers1 = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
-    client.post(
-        "/api/journal", json={"title": "Private", "body": "Secret"}, headers=headers1
-    )
+    client.post("/api/journal", json={"title": "Private", "body": "Secret"}, headers=headers1)
 
     # User 2 sees nothing
     headers2 = _auth_headers(other_user_tokens["tokens"]["access_token"], csrf_token)
@@ -284,17 +280,13 @@ def test_get_entry_not_found(app, client, user_with_tokens):
     assert body["error"] == "not_found"
 
 
-def test_get_entry_other_user_not_visible(
-    app, client, user_with_tokens, other_user_tokens
-):
+def test_get_entry_other_user_not_visible(app, client, user_with_tokens, other_user_tokens):
     """Should not retrieve other user's entry."""
     csrf_token = _prime_csrf(client)
 
     # User 1 creates entry
     headers1 = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
-    resp = client.post(
-        "/api/journal", json={"title": "Private", "body": "Secret"}, headers=headers1
-    )
+    resp = client.post("/api/journal", json={"title": "Private", "body": "Secret"}, headers=headers1)
     entry_id = resp.get_json()["entry"]["id"]
 
     # User 2 cannot access
@@ -397,9 +389,7 @@ def test_update_entry_success(app, client, user_with_tokens):
 
     # Update
     update_payload = {"title": "Updated", "body": "Updated body", "mood": 5}
-    resp = client.patch(
-        f"/api/journal/{entry_id}", json=update_payload, headers=headers
-    )
+    resp = client.patch(f"/api/journal/{entry_id}", json=update_payload, headers=headers)
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["ok"] is True
@@ -441,16 +431,12 @@ def test_update_entry_other_user(app, client, user_with_tokens, other_user_token
 
     # User 1 creates entry
     headers1 = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
-    resp = client.post(
-        "/api/journal", json={"title": "Mine", "body": "Content"}, headers=headers1
-    )
+    resp = client.post("/api/journal", json={"title": "Mine", "body": "Content"}, headers=headers1)
     entry_id = resp.get_json()["entry"]["id"]
 
     # User 2 cannot update
     headers2 = _auth_headers(other_user_tokens["tokens"]["access_token"], csrf_token)
-    resp = client.patch(
-        f"/api/journal/{entry_id}", json={"title": "Hacked"}, headers=headers2
-    )
+    resp = client.patch(f"/api/journal/{entry_id}", json={"title": "Hacked"}, headers=headers2)
     assert resp.status_code == 404
 
 
@@ -462,9 +448,7 @@ def test_delete_entry_success(app, client, user_with_tokens):
     csrf_token = _prime_csrf(client)
     headers = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
 
-    resp = client.post(
-        "/api/journal", json={"title": "Delete Me", "body": "Content"}, headers=headers
-    )
+    resp = client.post("/api/journal", json={"title": "Delete Me", "body": "Content"}, headers=headers)
     entry_id = resp.get_json()["entry"]["id"]
 
     resp = client.delete(f"/api/journal/{entry_id}", headers=headers)
@@ -492,9 +476,7 @@ def test_delete_entry_other_user(app, client, user_with_tokens, other_user_token
 
     # User 1 creates entry
     headers1 = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
-    resp = client.post(
-        "/api/journal", json={"title": "Protected", "body": "Content"}, headers=headers1
-    )
+    resp = client.post("/api/journal", json={"title": "Protected", "body": "Content"}, headers=headers1)
     entry_id = resp.get_json()["entry"]["id"]
 
     # User 2 cannot delete
@@ -519,9 +501,7 @@ def test_list_journal_requires_auth(app, client):
 def test_create_entry_requires_csrf(app, client, user_with_tokens):
     """CSRF validation is disabled in testing mode, so request succeeds."""
     headers = {"Authorization": f"Bearer {user_with_tokens['tokens']['access_token']}"}
-    resp = client.post(
-        "/api/journal", json={"title": "No CSRF", "body": "Content"}, headers=headers
-    )
+    resp = client.post("/api/journal", json={"title": "No CSRF", "body": "Content"}, headers=headers)
     # CSRF is not enforced in test mode
     assert resp.status_code == 201
 
@@ -530,18 +510,12 @@ def test_update_entry_requires_csrf(app, client, user_with_tokens):
     """CSRF validation is disabled in testing mode, so request succeeds."""
     csrf_token = _prime_csrf(client)
     headers = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
-    resp = client.post(
-        "/api/journal", json={"title": "Test", "body": "Content"}, headers=headers
-    )
+    resp = client.post("/api/journal", json={"title": "Test", "body": "Content"}, headers=headers)
     entry_id = resp.get_json()["entry"]["id"]
 
     # CSRF is not enforced in test mode
-    headers_no_csrf = {
-        "Authorization": f"Bearer {user_with_tokens['tokens']['access_token']}"
-    }
-    resp = client.patch(
-        f"/api/journal/{entry_id}", json={"title": "New"}, headers=headers_no_csrf
-    )
+    headers_no_csrf = {"Authorization": f"Bearer {user_with_tokens['tokens']['access_token']}"}
+    resp = client.patch(f"/api/journal/{entry_id}", json={"title": "New"}, headers=headers_no_csrf)
     assert resp.status_code == 200
 
 
@@ -549,14 +523,10 @@ def test_delete_entry_requires_csrf(app, client, user_with_tokens):
     """CSRF validation is disabled in testing mode, so request succeeds."""
     csrf_token = _prime_csrf(client)
     headers = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
-    resp = client.post(
-        "/api/journal", json={"title": "Test", "body": "Content"}, headers=headers
-    )
+    resp = client.post("/api/journal", json={"title": "Test", "body": "Content"}, headers=headers)
     entry_id = resp.get_json()["entry"]["id"]
 
     # CSRF is not enforced in test mode
-    headers_no_csrf = {
-        "Authorization": f"Bearer {user_with_tokens['tokens']['access_token']}"
-    }
+    headers_no_csrf = {"Authorization": f"Bearer {user_with_tokens['tokens']['access_token']}"}
     resp = client.delete(f"/api/journal/{entry_id}", headers=headers_no_csrf)
     assert resp.status_code == 200

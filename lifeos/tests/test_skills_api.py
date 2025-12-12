@@ -21,9 +21,7 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for skills API tests."""
     with app.app_context():
-        user = User(
-            email="skills-api@example.com", password_hash=hash_password("secret")
-        )
+        user = User(email="skills-api@example.com", password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         return user
@@ -148,9 +146,7 @@ class TestSkillsAPI:
             skill_id = skill.id
 
         payload = {"description": "React.js frontend development", "current_level": 3}
-        resp = client.patch(
-            f"/api/skills/{skill_id}", json=payload, headers=csrf_headers
-        )
+        resp = client.patch(f"/api/skills/{skill_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -195,9 +191,7 @@ class TestPracticeSessionAPI:
             "intensity": 4,
             "notes": "Learned about directives",
         }
-        resp = client.post(
-            f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers
-        )
+        resp = client.post(f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -211,17 +205,13 @@ class TestPracticeSessionAPI:
 
         past_time = (datetime.utcnow() - timedelta(days=1)).isoformat()
         payload = {"duration_minutes": 45, "practiced_at": past_time}
-        resp = client.post(
-            f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers
-        )
+        resp = client.post(f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers)
         assert resp.status_code == 200
 
     def test_log_practice_skill_not_found(self, client, csrf_headers):
         """Logging practice for non-existent skill fails."""
         payload = {"duration_minutes": 30}
-        resp = client.post(
-            "/api/skills/99999/practice", json=payload, headers=csrf_headers
-        )
+        resp = client.post("/api/skills/99999/practice", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
         data = resp.get_json()
         assert data["error"] == "not_found"
@@ -233,9 +223,7 @@ class TestPracticeSessionAPI:
             skill_id = skill.id
 
         payload = {"duration_minutes": 0}
-        resp = client.post(
-            f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers
-        )
+        resp = client.post(f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers)
         assert resp.status_code == 400
 
     def test_update_practice_session(self, app, client, test_user, csrf_headers):
@@ -246,9 +234,7 @@ class TestPracticeSessionAPI:
             session_id = session.id
 
         payload = {"duration_minutes": 45, "notes": "Extended session"}
-        resp = client.patch(
-            f"/api/skills/practice/{session_id}", json=payload, headers=csrf_headers
-        )
+        resp = client.patch(f"/api/skills/practice/{session_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -257,9 +243,7 @@ class TestPracticeSessionAPI:
     def test_update_practice_not_found(self, client, csrf_headers):
         """Update non-existent practice session returns 404."""
         payload = {"duration_minutes": 60}
-        resp = client.patch(
-            "/api/skills/practice/99999", json=payload, headers=csrf_headers
-        )
+        resp = client.patch("/api/skills/practice/99999", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
     def test_delete_practice_session(self, app, client, test_user, csrf_headers):
@@ -286,9 +270,7 @@ class TestPracticeSessionAPI:
 class TestSkillAggregatesAPI:
     """Tests for skills listing with practice aggregates."""
 
-    def test_list_skills_includes_aggregates(
-        self, app, client, test_user, auth_headers
-    ):
+    def test_list_skills_includes_aggregates(self, app, client, test_user, auth_headers):
         """Skills list includes practice aggregates."""
         with app.app_context():
             skill = create_skill(test_user.id, name="Elixir")
@@ -337,9 +319,7 @@ class TestSkillAPIUserIsolation:
             create_skill(test_user.id, name="Test User Skill")
 
             # Create another user with skill
-            other_user = User(
-                email="other-api@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-api@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             create_skill(other_user.id, name="Other User Skill")
@@ -353,9 +333,7 @@ class TestSkillAPIUserIsolation:
     def test_cannot_access_other_user_skill(self, app, client, test_user, auth_headers):
         """Cannot access another user's skill detail."""
         with app.app_context():
-            other_user = User(
-                email="other-api2@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-api2@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             skill = create_skill(other_user.id, name="Private Skill")
@@ -367,26 +345,20 @@ class TestSkillAPIUserIsolation:
     def test_cannot_update_other_user_skill(self, app, client, test_user, csrf_headers):
         """Cannot update another user's skill."""
         with app.app_context():
-            other_user = User(
-                email="other-api3@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-api3@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             skill = create_skill(other_user.id, name="Protected Skill")
             skill_id = skill.id
 
         payload = {"description": "Hacked!"}
-        resp = client.patch(
-            f"/api/skills/{skill_id}", json=payload, headers=csrf_headers
-        )
+        resp = client.patch(f"/api/skills/{skill_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
     def test_cannot_delete_other_user_skill(self, app, client, test_user, csrf_headers):
         """Cannot delete another user's skill."""
         with app.app_context():
-            other_user = User(
-                email="other-api4@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other-api4@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             skill = create_skill(other_user.id, name="Untouchable Skill")

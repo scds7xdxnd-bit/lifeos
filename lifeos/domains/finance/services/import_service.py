@@ -64,9 +64,7 @@ def parse_csv(file_obj) -> List[ImportRow]:
                 posted_at = datetime.fromisoformat(posted_at_raw)
             except ValueError:
                 raise ValueError("validation_error")
-        rows.append(
-            ImportRow(desc, amount, debit_account_id, credit_account_id, posted_at)
-        )
+        rows.append(ImportRow(desc, amount, debit_account_id, credit_account_id, posted_at))
         if idx > 1000:
             break
     if not rows:

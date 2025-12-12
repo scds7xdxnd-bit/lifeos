@@ -1,10 +1,10 @@
 from lifeos.core.insights.ml.embeddings import embed_text
 from lifeos.core.insights.ml.event_schemas import (
+    INFERENCE_EVENT_MODELS,
     FinanceTransactionInferenceEvent,
     HabitsHabitInferenceEvent,
     HealthMealInferenceEvent,
     HealthWorkoutInferenceEvent,
-    INFERENCE_EVENT_MODELS,
     InteractionInference,
     MealInference,
     PracticeInference,
@@ -12,8 +12,8 @@ from lifeos.core.insights.ml.event_schemas import (
     RelationshipsInteractionInferenceEvent,
     SkillsPracticeInferenceEvent,
     TransactionInference,
-    WorkSessionInference,
     WorkoutInference,
+    WorkSessionInference,
 )
 from lifeos.core.insights.ml.feature_extractors import extract_event_features
 from lifeos.core.insights.ml.ranking import cosine_similarity, rank_candidates

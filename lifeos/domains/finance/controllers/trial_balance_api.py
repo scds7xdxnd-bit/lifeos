@@ -23,9 +23,7 @@ def trial_balance():
         data = TrialBalanceFilter.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -47,15 +45,11 @@ def period_balance():
         data = PeriodBalanceFilter.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
-    totals = trial_balance_service.period_balance(
-        user_id, start_date=data.start, end_date=data.end
-    )
+    totals = trial_balance_service.period_balance(user_id, start_date=data.start, end_date=data.end)
     return jsonify({"ok": True, "totals": totals})
 
 

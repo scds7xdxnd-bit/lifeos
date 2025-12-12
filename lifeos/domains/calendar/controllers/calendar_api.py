@@ -197,9 +197,7 @@ def create_event():
                         "id": event.id,
                         "title": event.title,
                         "start_time": event.start_time.isoformat(),
-                        "end_time": (
-                            event.end_time.isoformat() if event.end_time else None
-                        ),
+                        "end_time": (event.end_time.isoformat() if event.end_time else None),
                         "created_at": event.created_at.isoformat(),
                     },
                 }

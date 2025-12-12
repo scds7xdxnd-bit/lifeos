@@ -58,9 +58,7 @@ def claim_ready_messages(
     return messages
 
 
-def _apply_failure_backoff(
-    message: OutboxMessage, exc: Exception, config: DispatchConfig
-) -> None:
+def _apply_failure_backoff(message: OutboxMessage, exc: Exception, config: DispatchConfig) -> None:
     attempts = message.attempts or 1
     delay_seconds = _compute_backoff_seconds(attempts, config)
     next_available = datetime.utcnow() + timedelta(seconds=delay_seconds)

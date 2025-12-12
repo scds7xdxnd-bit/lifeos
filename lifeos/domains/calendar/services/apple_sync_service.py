@@ -78,9 +78,7 @@ def save_apple_credentials(
     # Store apple_id in refresh_token field (not sensitive)
     # Store app_password in access_token field (encrypted at rest in production)
 
-    token = CalendarOAuthToken.query.filter_by(
-        user_id=user_id, provider="apple"
-    ).first()
+    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="apple").first()
 
     if token:
         token.access_token = app_password
@@ -193,10 +191,7 @@ def get_calendars(apple_id: str, app_password: str) -> List[Dict[str, str]]:
 
             # Check if it's a calendar
             resourcetype = prop.find("{DAV:}resourcetype")
-            if (
-                resourcetype is None
-                or resourcetype.find("{urn:ietf:params:xml:ns:caldav}calendar") is None
-            ):
+            if resourcetype is None or resourcetype.find("{urn:ietf:params:xml:ns:caldav}calendar") is None:
                 continue
 
             name = prop.findtext("{DAV:}displayname", "Untitled")
@@ -265,11 +260,7 @@ def fetch_calendar_events(
     </C:calendar-query>"""
 
     try:
-        url = (
-            f"{ICLOUD_CALDAV_URL}{calendar_href}"
-            if calendar_href.startswith("/")
-            else calendar_href
-        )
+        url = f"{ICLOUD_CALDAV_URL}{calendar_href}" if calendar_href.startswith("/") else calendar_href
 
         resp = requests.request(
             "REPORT",
@@ -287,9 +278,7 @@ def fetch_calendar_events(
         for response in root.findall(".//{DAV:}response"):
             href = response.findtext("{DAV:}href", "")
             etag = response.findtext(".//{DAV:}getetag", "")
-            calendar_data = response.findtext(
-                ".//{urn:ietf:params:xml:ns:caldav}calendar-data", ""
-            )
+            calendar_data = response.findtext(".//{urn:ietf:params:xml:ns:caldav}calendar-data", "")
 
             if not calendar_data:
                 continue
@@ -351,9 +340,7 @@ def _parse_icalendar(ical_data: str, href: str, etag: str) -> Optional[Dict[str,
         elif prop_name == "LOCATION":
             event["location"] = value
         elif prop_name == "DTSTART":
-            event["start_time"], event["all_day"] = _parse_ical_datetime(
-                value, prop_part
-            )
+            event["start_time"], event["all_day"] = _parse_ical_datetime(value, prop_part)
         elif prop_name == "DTEND":
             event["end_time"], _ = _parse_ical_datetime(value, prop_part)
 
@@ -392,9 +379,7 @@ def disconnect_apple_calendar(user_id: int) -> bool:
     Returns:
         True if disconnected, False if no connection existed
     """
-    token = CalendarOAuthToken.query.filter_by(
-        user_id=user_id, provider="apple"
-    ).first()
+    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="apple").first()
 
     if not token:
         return False
@@ -414,9 +399,7 @@ def sync_apple_calendar(user_id: int) -> Dict[str, int]:
     Returns:
         Dict with counts: {"created": N, "updated": N, "deleted": N}
     """
-    token = CalendarOAuthToken.query.filter_by(
-        user_id=user_id, provider="apple", is_active=True
-    ).first()
+    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="apple", is_active=True).first()
 
     if not token:
         raise AppleCalendarError("No valid Apple Calendar connection")
@@ -454,9 +437,7 @@ def sync_apple_calendar(user_id: int) -> Dict[str, int]:
                     existing.title = event_data.get("title", existing.title)
                     existing.description = event_data.get("description")
                     existing.location = event_data.get("location")
-                    existing.start_time = event_data.get(
-                        "start_time", existing.start_time
-                    )
+                    existing.start_time = event_data.get("start_time", existing.start_time)
                     existing.end_time = event_data.get("end_time")
                     existing.all_day = event_data.get("all_day", False)
                     existing.updated_at = datetime.utcnow()
@@ -501,9 +482,7 @@ def get_apple_sync_status(user_id: int) -> Dict[str, Any]:
     Returns:
         Status dict with connection info
     """
-    token = CalendarOAuthToken.query.filter_by(
-        user_id=user_id, provider="apple"
-    ).first()
+    token = CalendarOAuthToken.query.filter_by(user_id=user_id, provider="apple").first()
 
     if not token:
         return {

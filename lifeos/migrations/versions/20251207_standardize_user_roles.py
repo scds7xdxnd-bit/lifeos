@@ -76,9 +76,7 @@ def upgrade() -> None:
     # Step 1: Create any missing roles
     for role_name, role_description in STANDARD_DOMAIN_ROLES:
         # Check if role exists
-        result = session.execute(
-            sa.select(role_table.c.id).where(role_table.c.name == role_name)
-        ).fetchone()
+        result = session.execute(sa.select(role_table.c.id).where(role_table.c.name == role_name)).fetchone()
 
         if not result:
             # Create the role
@@ -95,9 +93,7 @@ def upgrade() -> None:
     users = session.execute(sa.select(user_table.c.id)).fetchall()
     roles = {}
     for role_name, _ in STANDARD_DOMAIN_ROLES:
-        result = session.execute(
-            sa.select(role_table.c.id).where(role_table.c.name == role_name)
-        ).fetchone()
+        result = session.execute(sa.select(role_table.c.id).where(role_table.c.name == role_name)).fetchone()
         if result:
             roles[role_name] = result[0]
 
@@ -149,14 +145,10 @@ def downgrade() -> None:
 
     # Get role IDs for the standard domain roles
     role_names = [name for name, _ in STANDARD_DOMAIN_ROLES]
-    role_ids = session.execute(
-        sa.select(role_table.c.id).where(role_table.c.name.in_(role_names))
-    ).fetchall()
+    role_ids = session.execute(sa.select(role_table.c.id).where(role_table.c.name.in_(role_names))).fetchall()
 
     # Remove user-role associations for these roles
     for (role_id,) in role_ids:
-        session.execute(
-            user_role_table.delete().where(user_role_table.c.role_id == role_id)
-        )
+        session.execute(user_role_table.delete().where(user_role_table.c.role_id == role_id))
 
     session.commit()

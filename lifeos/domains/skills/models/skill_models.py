@@ -21,9 +21,7 @@ class Skill(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     name: Mapped[str] = mapped_column(db.String(255), nullable=False)
     category: Mapped[str | None] = mapped_column(db.String(128))
     difficulty: Mapped[str | None] = mapped_column(db.String(32))
@@ -32,9 +30,7 @@ class Skill(db.Model):
     description: Mapped[str | None] = mapped_column(db.Text)
     tags: Mapped[list] = mapped_column(db.JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
     sessions: Mapped[list["PracticeSession"]] = relationship(
         "PracticeSession",
@@ -57,12 +53,8 @@ class PracticeSession(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int | None] = mapped_column(
-        db.ForeignKey("user.id"), index=True, nullable=True
-    )
-    skill_id: Mapped[int] = mapped_column(
-        db.ForeignKey("skill.id", ondelete="CASCADE"), index=True, nullable=False
-    )
+    user_id: Mapped[int | None] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=True)
+    skill_id: Mapped[int] = mapped_column(db.ForeignKey("skill.id", ondelete="CASCADE"), index=True, nullable=False)
     duration_minutes: Mapped[int] = mapped_column(default=0)
     intensity: Mapped[int | None] = mapped_column()
     notes: Mapped[str | None] = mapped_column(db.Text)
@@ -74,9 +66,7 @@ class PracticeSession(db.Model):
     calendar_event_id: Mapped[int | None] = mapped_column(
         db.ForeignKey("calendar_event.id", ondelete="SET NULL"), nullable=True
     )
-    confidence_score: Mapped[float | None] = mapped_column(
-        db.Numeric(3, 2), nullable=True
-    )
+    confidence_score: Mapped[float | None] = mapped_column(db.Numeric(3, 2), nullable=True)
     inference_status: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
 
     skill: Mapped[Skill] = relationship("Skill", back_populates="sessions")

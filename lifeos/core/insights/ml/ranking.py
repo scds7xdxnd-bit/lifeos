@@ -16,9 +16,7 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
-def rank_candidates(
-    query_vec: List[float], candidates: List[Tuple[Any, List[float]]]
-) -> List[Any]:
+def rank_candidates(query_vec: List[float], candidates: List[Tuple[Any, List[float]]]) -> List[Any]:
     """Rank any candidate items by similarity to a query vector."""
     scored = []
     for item, vec in candidates:

@@ -22,9 +22,7 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for health API tests."""
     with app.app_context():
-        user = User(
-            email="health-api@example.com", password_hash=hash_password("secret")
-        )
+        user = User(email="health-api@example.com", password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         return user
@@ -69,9 +67,7 @@ class TestBiometricsAPI:
         """List biometrics with existing data."""
         with app.app_context():
             create_biometric_entry(test_user.id, date_value=date.today(), weight=75.0)
-            create_biometric_entry(
-                test_user.id, date_value=date.today() - timedelta(days=1), weight=74.5
-            )
+            create_biometric_entry(test_user.id, date_value=date.today() - timedelta(days=1), weight=74.5)
 
         resp = client.get("/api/health/biometrics", headers=auth_headers)
         assert resp.status_code == 200
@@ -80,9 +76,7 @@ class TestBiometricsAPI:
         assert len(data["items"]) == 2
         assert data["total"] == 2
 
-    def test_list_biometrics_with_date_filter(
-        self, app, client, test_user, auth_headers
-    ):
+    def test_list_biometrics_with_date_filter(self, app, client, test_user, auth_headers):
         """List biometrics with date range filter."""
         with app.app_context():
             for i in range(10):
@@ -119,9 +113,7 @@ class TestBiometricsAPI:
         assert data["ok"] is True
         assert data["biometric"]["weight"] == 75.5
 
-    def test_create_biometric_duplicate_fails(
-        self, app, client, test_user, csrf_headers
-    ):
+    def test_create_biometric_duplicate_fails(self, app, client, test_user, csrf_headers):
         """Creating duplicate biometric for same date fails."""
         with app.app_context():
             create_biometric_entry(test_user.id, date_value=date.today(), weight=75.0)
@@ -193,9 +185,7 @@ class TestWorkoutsAPI:
         assert data["workout"]["workout_type"] == "cycling"
         assert data["workout"]["duration_minutes"] == 60
 
-    @pytest.mark.xfail(
-        reason="Controller has JSON serialization bug for pydantic ValidationError"
-    )
+    @pytest.mark.xfail(reason="Controller has JSON serialization bug for pydantic ValidationError")
     def test_create_workout_invalid_intensity(self, client, csrf_headers):
         """Invalid intensity fails validation."""
         payload = {
@@ -219,9 +209,7 @@ class TestWorkoutsAPI:
                     intensity="medium",
                 )
 
-        resp = client.get(
-            "/api/health/workouts?page=1&per_page=10", headers=auth_headers
-        )
+        resp = client.get("/api/health/workouts?page=1&per_page=10", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert len(data["items"]) == 10
@@ -275,9 +263,7 @@ class TestNutritionAPI:
         assert data["ok"] is True
         assert data["nutrition"]["meal_type"] == "breakfast"
 
-    @pytest.mark.xfail(
-        reason="Controller has JSON serialization bug for pydantic ValidationError"
-    )
+    @pytest.mark.xfail(reason="Controller has JSON serialization bug for pydantic ValidationError")
     def test_create_nutrition_invalid_meal_type(self, client, csrf_headers):
         """Invalid meal type fails validation."""
         payload = {
@@ -318,9 +304,7 @@ class TestHealthSummaryAPI:
         """Get daily summary with health data."""
         with app.app_context():
             today = date.today()
-            create_biometric_entry(
-                test_user.id, date_value=today, weight=75.0, energy_level=4
-            )
+            create_biometric_entry(test_user.id, date_value=today, weight=75.0, energy_level=4)
             create_workout(
                 test_user.id,
                 date_value=today,
@@ -350,10 +334,7 @@ class TestHealthSummaryAPI:
         data = resp.get_json()
         assert data["ok"] is True
         # Date may be returned in HTTP date format or ISO format
-        assert (
-            past_date.isoformat() in data["summary"]["date"]
-            or str(past_date.year) in data["summary"]["date"]
-        )
+        assert past_date.isoformat() in data["summary"]["date"] or str(past_date.year) in data["summary"]["date"]
 
     def test_weekly_summary(self, app, client, test_user, auth_headers):
         """Get weekly summary."""
@@ -375,17 +356,13 @@ class TestHealthUserIsolation:
         """Users can only see their own biometrics."""
         with app.app_context():
             # Create another user with biometrics
-            other_user = User(
-                email="other@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             create_biometric_entry(other_user.id, date_value=date.today(), weight=80.0)
 
             # Create biometric for test user
-            create_biometric_entry(
-                test_user.id, date_value=date.today() - timedelta(days=1), weight=75.0
-            )
+            create_biometric_entry(test_user.id, date_value=date.today() - timedelta(days=1), weight=75.0)
 
         resp = client.get("/api/health/biometrics", headers=auth_headers)
         assert resp.status_code == 200
@@ -397,9 +374,7 @@ class TestHealthUserIsolation:
         """Users can only see their own workouts."""
         with app.app_context():
             # Create another user with workout
-            other_user = User(
-                email="other2@example.com", password_hash=hash_password("secret")
-            )
+            other_user = User(email="other2@example.com", password_hash=hash_password("secret"))
             db.session.add(other_user)
             db.session.commit()
             create_workout(

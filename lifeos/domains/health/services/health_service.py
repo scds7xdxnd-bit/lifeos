@@ -62,11 +62,7 @@ def create_biometric_entry(
             "user_id": user_id,
             "date": biometric.date.isoformat(),
             "weight": float(biometric.weight) if biometric.weight is not None else None,
-            "body_fat_pct": (
-                float(biometric.body_fat_pct)
-                if biometric.body_fat_pct is not None
-                else None
-            ),
+            "body_fat_pct": (float(biometric.body_fat_pct) if biometric.body_fat_pct is not None else None),
             "resting_hr": biometric.resting_hr,
             "energy_level": biometric.energy_level,
             "stress_level": biometric.stress_level,
@@ -128,11 +124,7 @@ def create_workout(
             "workout_type": workout.workout_type,
             "duration_minutes": workout.duration_minutes,
             "intensity": workout.intensity,
-            "calories_est": (
-                float(workout.calories_est)
-                if workout.calories_est is not None
-                else None
-            ),
+            "calories_est": (float(workout.calories_est) if workout.calories_est is not None else None),
         },
         user_id=user_id,
     )
@@ -187,9 +179,7 @@ def create_nutrition_log(
             "user_id": user_id,
             "date": log.date.isoformat(),
             "meal_type": log.meal_type,
-            "calories_est": (
-                float(log.calories_est) if log.calories_est is not None else None
-            ),
+            "calories_est": (float(log.calories_est) if log.calories_est is not None else None),
             "quality_score": log.quality_score,
         },
         user_id=user_id,
@@ -222,18 +212,14 @@ def get_daily_summary(user_id: int, summary_date: date) -> dict:
     )
     biometric = biometrics[0] if biometrics else None
     workouts = Workout.query.filter_by(user_id=user_id, date=summary_date).all()
-    nutrition_logs = NutritionLog.query.filter_by(
-        user_id=user_id, date=summary_date
-    ).all()
+    nutrition_logs = NutritionLog.query.filter_by(user_id=user_id, date=summary_date).all()
 
     workout_total = sum(w.duration_minutes for w in workouts)
     workout_by_type: dict[str, int] = {}
     for w in workouts:
         workout_by_type[w.workout_type] = workout_by_type.get(w.workout_type, 0) + 1
 
-    nutrition_calories = sum(
-        float(n.calories_est) for n in nutrition_logs if n.calories_est is not None
-    )
+    nutrition_calories = sum(float(n.calories_est) for n in nutrition_logs if n.calories_est is not None)
 
     return {
         "date": summary_date,
@@ -268,15 +254,9 @@ def get_weekly_summary(user_id: int, week_start: date) -> dict:
         latest_by_date.setdefault(b.date, b)
 
     weights = [float(b.weight) for b in latest_by_date.values() if b.weight is not None]
-    resting = [
-        b.resting_hr for b in latest_by_date.values() if b.resting_hr is not None
-    ]
-    energy = [
-        b.energy_level for b in latest_by_date.values() if b.energy_level is not None
-    ]
-    stress = [
-        b.stress_level for b in latest_by_date.values() if b.stress_level is not None
-    ]
+    resting = [b.resting_hr for b in latest_by_date.values() if b.resting_hr is not None]
+    energy = [b.energy_level for b in latest_by_date.values() if b.energy_level is not None]
+    stress = [b.stress_level for b in latest_by_date.values() if b.stress_level is not None]
 
     workouts = Workout.query.filter(
         Workout.user_id == user_id, Workout.date >= week_start, Workout.date <= week_end
@@ -293,9 +273,7 @@ def get_weekly_summary(user_id: int, week_start: date) -> dict:
         workout_by_type[w.workout_type] = workout_by_type.get(w.workout_type, 0) + 1
         total_workout_duration += w.duration_minutes
 
-    nutrition_calories = sum(
-        float(n.calories_est) for n in nutrition_logs if n.calories_est is not None
-    )
+    nutrition_calories = sum(float(n.calories_est) for n in nutrition_logs if n.calories_est is not None)
 
     def _avg(vals: list[float | int]) -> float | None:
         return round(sum(vals) / len(vals), 2) if vals else None

@@ -18,11 +18,7 @@ def test_demo_login_returns_success_not_server_error(app, client):
         db.session.add(user)
         db.session.commit()
 
-    resp = client.post(
-        "/auth/login", json={"email": "demo@lifeos.test", "password": "demo12345"}
-    )
-    assert (
-        resp.status_code == 200
-    )  # currently 500 due to EmailStr validation in serialize_user
+    resp = client.post("/auth/login", json={"email": "demo@lifeos.test", "password": "demo12345"})
+    assert resp.status_code == 200  # currently 500 due to EmailStr validation in serialize_user
     body = resp.get_json()
     assert body["ok"] is True

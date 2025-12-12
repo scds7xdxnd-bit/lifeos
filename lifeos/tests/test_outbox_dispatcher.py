@@ -15,9 +15,7 @@ from lifeos.lifeos_platform.worker.config import DispatchConfig
 # Expect the dispatcher module to exist; failing import should flag missing implementation.
 try:
     dispatcher = importlib.import_module("lifeos.lifeos_platform.worker.dispatcher")
-except (
-    ImportError
-) as exc:  # pragma: no cover - intentional hard failure to enforce presence
+except ImportError as exc:  # pragma: no cover - intentional hard failure to enforce presence
     raise AssertionError(
         "Missing outbox dispatcher implementation at lifeos.lifeos_platform.worker.dispatcher"
     ) from exc

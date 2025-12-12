@@ -37,9 +37,7 @@ def create_skill_endpoint():
         data = SkillCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -81,9 +79,7 @@ def update_skill_endpoint(skill_id: int):
         data = SkillUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -117,9 +113,7 @@ def log_practice_endpoint(skill_id: int):
         data = PracticeSessionCreate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())
@@ -142,9 +136,7 @@ def update_practice_endpoint(session_id: int):
         data = PracticeSessionUpdate.model_validate(payload)
     except ValidationError as exc:
         return (
-            jsonify(
-                {"ok": False, "error": "validation_error", "details": exc.errors()}
-            ),
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
             400,
         )
     user_id = int(get_jwt_identity())

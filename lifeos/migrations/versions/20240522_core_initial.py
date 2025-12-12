@@ -22,12 +22,8 @@ def upgrade():
         "permission",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("code", sa.String(length=128), nullable=False, unique=True),
-        sa.Column(
-            "description", sa.String(length=255), nullable=False, server_default=""
-        ),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("description", sa.String(length=255), nullable=False, server_default=""),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -40,12 +36,8 @@ def upgrade():
         "role",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("name", sa.String(length=64), nullable=False, unique=True),
-        sa.Column(
-            "description", sa.String(length=255), nullable=False, server_default=""
-        ),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("description", sa.String(length=255), nullable=False, server_default=""),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -57,16 +49,12 @@ def upgrade():
     op.create_table(
         "user",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column(
-            "email", sa.String(length=255), nullable=False, unique=True, index=True
-        ),
+        sa.Column("email", sa.String(length=255), nullable=False, unique=True, index=True),
         sa.Column("password_hash", sa.String(length=255), nullable=False),
         sa.Column("full_name", sa.String(length=255)),
         sa.Column("timezone", sa.String(length=64)),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -80,9 +68,7 @@ def upgrade():
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("jti", sa.String(length=64), nullable=False, unique=True),
         sa.Column("created_by", sa.Integer(), sa.ForeignKey("user.id")),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -104,9 +90,7 @@ def upgrade():
         sa.Column("jti", sa.String(length=64), nullable=False, unique=True),
         sa.Column("revoked", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("expires_at", sa.DateTime()),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -127,9 +111,7 @@ def upgrade():
         ),
         sa.Column("key", sa.String(length=128), nullable=False),
         sa.Column("value", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -159,9 +141,7 @@ def upgrade():
         sa.Column("event_type", sa.String(length=128), nullable=False, index=True),
         sa.Column("payload", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), index=True),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "finance_account_category",
@@ -207,9 +187,7 @@ def upgrade():
             index=True,
         ),
         sa.Column("description", sa.Text()),
-        sa.Column(
-            "posted_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("posted_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "finance_journal_line",
@@ -244,12 +222,8 @@ def upgrade():
         ),
         sa.Column("amount", sa.Numeric(18, 2), nullable=False),
         sa.Column("description", sa.Text()),
-        sa.Column(
-            "occurred_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
-        sa.Column(
-            "journal_entry_id", sa.Integer(), sa.ForeignKey("finance_journal_entry.id")
-        ),
+        sa.Column("occurred_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column("journal_entry_id", sa.Integer(), sa.ForeignKey("finance_journal_entry.id")),
         sa.Column("counterparty", sa.String(length=255)),
         sa.Column("category", sa.String(length=128)),
     )
@@ -264,9 +238,7 @@ def upgrade():
             index=True,
         ),
         sa.Column("month", sa.String(length=7), nullable=False),
-        sa.Column(
-            "auto_rollup", sa.Boolean(), nullable=False, server_default=sa.true()
-        ),
+        sa.Column("auto_rollup", sa.Boolean(), nullable=False, server_default=sa.true()),
     )
     op.create_table(
         "finance_money_schedule_row",
@@ -324,12 +296,8 @@ def upgrade():
             nullable=False,
             index=True,
         ),
-        sa.Column(
-            "base_row_id", sa.Integer(), sa.ForeignKey("finance_money_schedule_row.id")
-        ),
-        sa.Column(
-            "delta_amount", sa.Numeric(18, 2), nullable=False, server_default="0"
-        ),
+        sa.Column("base_row_id", sa.Integer(), sa.ForeignKey("finance_money_schedule_row.id")),
+        sa.Column("delta_amount", sa.Numeric(18, 2), nullable=False, server_default="0"),
     )
     op.create_table(
         "finance_receivable_tracker",
@@ -403,13 +371,9 @@ def upgrade():
             index=True,
         ),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column(
-            "cadence", sa.String(length=32), nullable=False, server_default="daily"
-        ),
+        sa.Column("cadence", sa.String(length=32), nullable=False, server_default="daily"),
         sa.Column("target", sa.Integer(), nullable=False, server_default="1"),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "habit_log",
@@ -435,12 +399,8 @@ def upgrade():
             index=True,
         ),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column(
-            "level", sa.String(length=32), nullable=False, server_default="beginner"
-        ),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("level", sa.String(length=32), nullable=False, server_default="beginner"),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "skill_practice_session",
@@ -454,9 +414,7 @@ def upgrade():
         ),
         sa.Column("duration_minutes", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("notes", sa.Text()),
-        sa.Column(
-            "practiced_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("practiced_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "skill_metric",
@@ -470,9 +428,7 @@ def upgrade():
         ),
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column("value", sa.Numeric(10, 2), nullable=False),
-        sa.Column(
-            "recorded_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("recorded_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "health_biometric",
@@ -486,9 +442,7 @@ def upgrade():
         ),
         sa.Column("metric", sa.String(length=64), nullable=False),
         sa.Column("value", sa.Numeric(10, 2), nullable=False),
-        sa.Column(
-            "recorded_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("recorded_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "health_workout",
@@ -503,9 +457,7 @@ def upgrade():
         sa.Column("activity", sa.String(length=128), nullable=False),
         sa.Column("duration_minutes", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("calories", sa.Numeric(10, 2)),
-        sa.Column(
-            "performed_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("performed_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "health_nutrition_log",
@@ -522,9 +474,7 @@ def upgrade():
         sa.Column("protein", sa.Numeric(10, 2)),
         sa.Column("carbs", sa.Numeric(10, 2)),
         sa.Column("fat", sa.Numeric(10, 2)),
-        sa.Column(
-            "logged_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("logged_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "journal_entry",
@@ -539,9 +489,7 @@ def upgrade():
         sa.Column("title", sa.String(length=255)),
         sa.Column("content", sa.Text()),
         sa.Column("mood", sa.String(length=32)),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "journal_tag",
@@ -556,9 +504,7 @@ def upgrade():
             sa.ForeignKey("journal_entry.id"),
             primary_key=True,
         ),
-        sa.Column(
-            "tag_id", sa.Integer(), sa.ForeignKey("journal_tag.id"), primary_key=True
-        ),
+        sa.Column("tag_id", sa.Integer(), sa.ForeignKey("journal_tag.id"), primary_key=True),
     )
     op.create_table(
         "relationship_contact",
@@ -585,9 +531,7 @@ def upgrade():
             nullable=False,
             index=True,
         ),
-        sa.Column(
-            "occurred_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("occurred_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column("notes", sa.Text()),
         sa.Column("sentiment", sa.String(length=32)),
     )
@@ -602,12 +546,8 @@ def upgrade():
             index=True,
         ),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column(
-            "status", sa.String(length=32), nullable=False, server_default="active"
-        ),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("status", sa.String(length=32), nullable=False, server_default="active"),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "project_task",
@@ -620,13 +560,9 @@ def upgrade():
             index=True,
         ),
         sa.Column("title", sa.String(length=255), nullable=False),
-        sa.Column(
-            "status", sa.String(length=32), nullable=False, server_default="open"
-        ),
+        sa.Column("status", sa.String(length=32), nullable=False, server_default="open"),
         sa.Column("due_date", sa.Date()),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         "project_task_log",
@@ -639,9 +575,7 @@ def upgrade():
             index=True,
         ),
         sa.Column("note", sa.Text()),
-        sa.Column(
-            "logged_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("logged_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
 
 

@@ -41,9 +41,7 @@ def upgrade():
         sa.Column("time_of_day", sa.String(length=32)),
         sa.Column("difficulty", sa.String(length=32)),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column(
             "updated_at",
             sa.DateTime(),
@@ -52,12 +50,8 @@ def upgrade():
             onupdate=sa.func.now(),
         ),
     )
-    op.create_index(
-        "ux_habits_habit_user_name", "habits_habit", ["user_id", "name"], unique=True
-    )
-    op.create_index(
-        "ix_habits_habit_user_domain_link", "habits_habit", ["user_id", "domain_link"]
-    )
+    op.create_index("ux_habits_habit_user_name", "habits_habit", ["user_id", "name"], unique=True)
+    op.create_index("ix_habits_habit_user_domain_link", "habits_habit", ["user_id", "domain_link"])
 
     op.create_table(
         "habits_habit_log",
@@ -84,13 +78,9 @@ def upgrade():
             nullable=False,
             server_default=sa.func.current_date(),
         ),
-        sa.Column(
-            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    op.create_index(
-        "ix_habits_log_user_logged_date", "habits_habit_log", ["user_id", "logged_date"]
-    )
+    op.create_index("ix_habits_log_user_logged_date", "habits_habit_log", ["user_id", "logged_date"])
     op.create_index(
         "ix_habits_log_habit_logged_date",
         "habits_habit_log",

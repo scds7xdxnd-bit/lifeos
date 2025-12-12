@@ -67,9 +67,7 @@ def test_inference_emitter_updates_telemetry_with_error_flags(app):
         assert snapshot.false_positives == 1
         assert snapshot.per_domain_false_positives.get("health") == 1
         assert snapshot.per_model_false_positives.get("calendar-interpreter-v1") == 1
-        flagged = fetch_flagged_inference_events(
-            domain="health", model_version="calendar-interpreter-v1", limit=10
-        )
+        flagged = fetch_flagged_inference_events(domain="health", model_version="calendar-interpreter-v1", limit=10)
         assert flagged, "expected flagged inference events for retraining"
         assert flagged[0]["is_false_positive"] is True
         assert flagged[0]["payload"]["inferred_structure"]["workout_type"] == "run"

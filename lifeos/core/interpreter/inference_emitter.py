@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Tuple
 
-from lifeos.core.insights.telemetry import insight_telemetry
 from lifeos.core.insights.ml.event_schemas import INFERENCE_EVENT_MODELS
+from lifeos.core.insights.telemetry import insight_telemetry
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 # Default model version for rule-based calendar interpreter outputs.

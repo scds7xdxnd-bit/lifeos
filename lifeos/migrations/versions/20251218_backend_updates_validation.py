@@ -75,9 +75,7 @@ def upgrade() -> None:
         if not _has_column("finance_account", "normalized_name"):
             op.add_column(
                 "finance_account",
-                sa.Column(
-                    "normalized_name", sa.String(255), nullable=False, server_default=""
-                ),
+                sa.Column("normalized_name", sa.String(255), nullable=False, server_default=""),
             )
             # Backfill: normalize existing account names
             op.execute(
@@ -92,16 +90,12 @@ def upgrade() -> None:
         if not _has_column("finance_account", "created_at"):
             op.add_column(
                 "finance_account",
-                sa.Column(
-                    "created_at", sa.DateTime(), nullable=True, server_default=None
-                ),
+                sa.Column("created_at", sa.DateTime(), nullable=True, server_default=None),
             )
 
         # Create indexes for finance_account if not exist
         if not _has_index("finance_account", "ix_finance_account_type"):
-            op.create_index(
-                "ix_finance_account_type", "finance_account", ["account_type"]
-            )
+            op.create_index("ix_finance_account_type", "finance_account", ["account_type"])
 
         if not _has_index("finance_account", "ix_finance_account_user_type"):
             op.create_index(
@@ -140,13 +134,9 @@ def upgrade() -> None:
                 index=True,
             ),
             sa.Column("description", sa.Text(), nullable=True),
-            sa.Column(
-                "posted_at", sa.DateTime(), server_default=sa.func.now(), nullable=False
-            ),
+            sa.Column("posted_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         )
-    if not _has_index(
-        "finance_journal_entry", "ix_finance_journal_entry_user_posted_at"
-    ):
+    if not _has_index("finance_journal_entry", "ix_finance_journal_entry_user_posted_at"):
         op.create_index(
             "ix_finance_journal_entry_user_posted_at",
             "finance_journal_entry",
@@ -240,9 +230,7 @@ def upgrade() -> None:
             sa.Column("amount", sa.Numeric(18, 2), nullable=False),
             sa.Column("memo", sa.Text(), nullable=True),
         )
-    if not _has_index(
-        "finance_money_schedule_row", "ix_finance_money_schedule_row_user_event_date"
-    ):
+    if not _has_index("finance_money_schedule_row", "ix_finance_money_schedule_row_user_event_date"):
         op.create_index(
             "ix_finance_money_schedule_row_user_event_date",
             "finance_money_schedule_row",
@@ -305,9 +293,7 @@ def upgrade() -> None:
                 sa.ForeignKey("finance_money_schedule_row.id"),
                 nullable=True,
             ),
-            sa.Column(
-                "delta_amount", sa.Numeric(18, 2), nullable=False, server_default="0"
-            ),
+            sa.Column("delta_amount", sa.Numeric(18, 2), nullable=False, server_default="0"),
         )
 
     # =========================================================================
@@ -326,9 +312,7 @@ def upgrade() -> None:
                 index=True,
             ),
             sa.Column("month", sa.String(7), nullable=False),
-            sa.Column(
-                "auto_rollup", sa.Boolean(), nullable=False, server_default="true"
-            ),
+            sa.Column("auto_rollup", sa.Boolean(), nullable=False, server_default="true"),
         )
 
     # =========================================================================
@@ -423,12 +407,8 @@ def upgrade() -> None:
             sa.Column("body", sa.Text(), nullable=False),
             sa.Column("mood", sa.Integer(), nullable=True),
             sa.Column("tags", sa.JSON(), nullable=False, server_default="[]"),
-            sa.Column(
-                "entry_date", sa.Date(), nullable=False, server_default=sa.func.now()
-            ),
-            sa.Column(
-                "is_private", sa.Boolean(), nullable=False, server_default="true"
-            ),
+            sa.Column("entry_date", sa.Date(), nullable=False, server_default=sa.func.now()),
+            sa.Column("is_private", sa.Boolean(), nullable=False, server_default="true"),
             sa.Column("sentiment_score", sa.Numeric(5, 2), nullable=True),
             sa.Column("emotion_label", sa.String(64), nullable=True),
             sa.Column(
@@ -457,9 +437,7 @@ def upgrade() -> None:
             ["user_id", "created_at"],
         )
     if not _has_index("journal_entry", "ix_journal_entry_user_mood"):
-        op.create_index(
-            "ix_journal_entry_user_mood", "journal_entry", ["user_id", "mood"]
-        )
+        op.create_index("ix_journal_entry_user_mood", "journal_entry", ["user_id", "mood"])
 
     # =========================================================================
     # HABITS DOMAIN: Habit and Log Tables
@@ -479,9 +457,7 @@ def upgrade() -> None:
             sa.Column("name", sa.String(255), nullable=False),
             sa.Column("description", sa.Text(), nullable=True),
             sa.Column("domain_link", sa.String(64), nullable=True),
-            sa.Column(
-                "schedule_type", sa.String(32), nullable=False, server_default="daily"
-            ),
+            sa.Column("schedule_type", sa.String(32), nullable=False, server_default="daily"),
             sa.Column("target_count", sa.Integer(), nullable=True),
             sa.Column("time_of_day", sa.String(32), nullable=True),
             sa.Column("difficulty", sa.String(32), nullable=True),
@@ -533,9 +509,7 @@ def upgrade() -> None:
             ),
             sa.Column("value", sa.Numeric(10, 2), nullable=True),
             sa.Column("note", sa.Text(), nullable=True),
-            sa.Column(
-                "logged_date", sa.Date(), nullable=False, server_default=sa.func.now()
-            ),
+            sa.Column("logged_date", sa.Date(), nullable=False, server_default=sa.func.now()),
             sa.Column(
                 "created_at",
                 sa.DateTime(),
@@ -586,9 +560,7 @@ def upgrade() -> None:
             ),
         )
     if not _has_index("health_biometric", "ix_health_biometric_user_date"):
-        op.create_index(
-            "ix_health_biometric_user_date", "health_biometric", ["user_id", "date"]
-        )
+        op.create_index("ix_health_biometric_user_date", "health_biometric", ["user_id", "date"])
 
     if not _has_table("health_workout"):
         op.create_table(
@@ -603,9 +575,7 @@ def upgrade() -> None:
             ),
             sa.Column("date", sa.Date(), nullable=False, server_default=sa.func.now()),
             sa.Column("workout_type", sa.String(64), nullable=False),
-            sa.Column(
-                "duration_minutes", sa.Integer(), nullable=False, server_default="0"
-            ),
+            sa.Column("duration_minutes", sa.Integer(), nullable=False, server_default="0"),
             sa.Column("intensity", sa.String(16), nullable=False),
             sa.Column("calories_est", sa.Numeric(10, 2), nullable=True),
             sa.Column("notes", sa.Text(), nullable=True),
@@ -617,9 +587,7 @@ def upgrade() -> None:
             ),
         )
     if not _has_index("health_workout", "ix_health_workout_user_date"):
-        op.create_index(
-            "ix_health_workout_user_date", "health_workout", ["user_id", "date"]
-        )
+        op.create_index("ix_health_workout_user_date", "health_workout", ["user_id", "date"])
 
     if not _has_table("health_nutrition_log"):
         op.create_table(
@@ -709,9 +677,7 @@ def upgrade() -> None:
                 nullable=False,
                 index=True,
             ),
-            sa.Column(
-                "duration_minutes", sa.Integer(), nullable=False, server_default="0"
-            ),
+            sa.Column("duration_minutes", sa.Integer(), nullable=False, server_default="0"),
             sa.Column("intensity", sa.Integer(), nullable=True),
             sa.Column("notes", sa.Text(), nullable=True),
             sa.Column(
@@ -799,9 +765,7 @@ def upgrade() -> None:
     if not _has_index("project", "ix_project_user_status"):
         op.create_index("ix_project_user_status", "project", ["user_id", "status"])
     if not _has_index("project", "ix_project_user_target_date"):
-        op.create_index(
-            "ix_project_user_target_date", "project", ["user_id", "target_date"]
-        )
+        op.create_index("ix_project_user_target_date", "project", ["user_id", "target_date"])
 
     if not _has_table("project_task"):
         op.create_table(
@@ -846,9 +810,7 @@ def upgrade() -> None:
             ["user_id", "project_id", "status"],
         )
     if not _has_index("project_task", "ix_project_task_user_due_date"):
-        op.create_index(
-            "ix_project_task_user_due_date", "project_task", ["user_id", "due_date"]
-        )
+        op.create_index("ix_project_task_user_due_date", "project_task", ["user_id", "due_date"])
     if not _has_index("project_task", "ix_project_task_user_project_due_date"):
         op.create_index(
             "ix_project_task_user_project_due_date",
@@ -875,9 +837,7 @@ def upgrade() -> None:
                 index=True,
             ),
             sa.Column("note", sa.Text(), nullable=True),
-            sa.Column(
-                "logged_at", sa.DateTime(), server_default=sa.func.now(), nullable=False
-            ),
+            sa.Column("logged_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
             sa.Column("status_snapshot", sa.String(32), nullable=True),
             sa.Column(
                 "created_at",
@@ -941,9 +901,7 @@ def upgrade() -> None:
             ["user_id", "name"],
             unique=True,
         )
-    if not _has_index(
-        "relationships_person", "ix_relationships_person_user_importance"
-    ):
+    if not _has_index("relationships_person", "ix_relationships_person_user_importance"):
         op.create_index(
             "ix_relationships_person_user_importance",
             "relationships_person",
@@ -985,17 +943,13 @@ def upgrade() -> None:
                 nullable=False,
             ),
         )
-    if not _has_index(
-        "relationships_interaction", "ix_relationships_interaction_user_date"
-    ):
+    if not _has_index("relationships_interaction", "ix_relationships_interaction_user_date"):
         op.create_index(
             "ix_relationships_interaction_user_date",
             "relationships_interaction",
             ["user_id", "date"],
         )
-    if not _has_index(
-        "relationships_interaction", "ix_relationships_interaction_person_date"
-    ):
+    if not _has_index("relationships_interaction", "ix_relationships_interaction_person_date"):
         op.create_index(
             "ix_relationships_interaction_person_date",
             "relationships_interaction",

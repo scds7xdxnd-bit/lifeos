@@ -372,9 +372,7 @@ def update_account_category_endpoint(account_id: int):
             return jsonify({"ok": False, "error": code}), 404
         return jsonify({"ok": False, "error": "validation_error"}), 400
 
-    return jsonify(
-        {"ok": True, "account": {"id": account.id, "category_id": account.category_id}}
-    )
+    return jsonify({"ok": True, "account": {"id": account.id, "category_id": account.category_id}})
 
 
 @finance_api_bp.post("/journal")

@@ -57,9 +57,7 @@ def _seed_accounts(user_id: int):
     db.session.add_all([asset, revenue])
     db.session.commit()
     debit_account = create_account(user_id, "Cash", "asset", category_id=asset.id)
-    credit_account = create_account(
-        user_id, "Revenue", "income", category_id=revenue.id
-    )
+    credit_account = create_account(user_id, "Revenue", "income", category_id=revenue.id)
     return debit_account, credit_account
 
 
@@ -111,9 +109,7 @@ def test_post_journal_entry_smoke_logged_in(app, client):
         entry = JournalEntry.query.get(entry_id)
         assert entry is not None
         assert len(entry.lines) == 2
-        outbox = OutboxMessage.query.filter_by(
-            event_type=FINANCE_JOURNAL_POSTED, user_id=user.id
-        ).first()
+        outbox = OutboxMessage.query.filter_by(event_type=FINANCE_JOURNAL_POSTED, user_id=user.id).first()
         assert outbox is not None
         assert outbox.status == "pending"
         assert outbox.payload["entry_id"] == entry.id
@@ -152,16 +148,11 @@ def test_unbalanced_entry_rejected(app, client):
 
     with app.app_context():
         assert JournalEntry.query.count() == 0
-        assert (
-            OutboxMessage.query.filter_by(event_type=FINANCE_JOURNAL_POSTED).count()
-            == 0
-        )
+        assert OutboxMessage.query.filter_by(event_type=FINANCE_JOURNAL_POSTED).count() == 0
 
 
 def test_journal_page_exposes_telemetry_hook_when_configured(app, client, monkeypatch):
-    monkeypatch.setenv(
-        "LIFEOS_TELEMETRY_ENDPOINT", "https://telemetry.example.com/beacon"
-    )
+    monkeypatch.setenv("LIFEOS_TELEMETRY_ENDPOINT", "https://telemetry.example.com/beacon")
     resp = client.get("/finance/journal")
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)
