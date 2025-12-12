@@ -107,7 +107,10 @@ class DevelopmentConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
+    # Use file-backed SQLite so Alembic migrations and app share the same DB.
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "TEST_DATABASE_URL", "sqlite:///instance/test.db"
+    )
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False

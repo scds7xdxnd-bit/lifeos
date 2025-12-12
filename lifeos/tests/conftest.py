@@ -1,8 +1,12 @@
 import sys
 from pathlib import Path
 
+import os
+
 import pytest
 import sqlalchemy as sa
+from alembic import command
+from alembic.config import Config as AlembicConfig
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -46,39 +50,35 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "smoke: Quick smoke tests for CI")
 
 
+def _alembic_config() -> AlembicConfig:
+    cfg = AlembicConfig(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", "lifeos/migrations")
+    cfg.set_main_option("lifeos_env", "testing")
+    db_url = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    if not db_url:
+        db_url = "sqlite:///instance/test.db"
+    if db_url:
+        cfg.set_main_option("sqlalchemy.url", db_url)
+    return cfg
+
+
+@pytest.fixture(scope="session", autouse=True)
+def migrated_db():
+    """Apply migrations once per session to mirror production schema."""
+    cfg = _alembic_config()
+    command.upgrade(cfg, "head")
+    yield
+    try:
+        command.downgrade(cfg, "base")
+    except Exception:
+        # Downgrade is optional for local/CI runs; ignore failures to avoid hiding test results.
+        pass
+
+
 @pytest.fixture()
-def app():
+def app(migrated_db):
     app = create_app("testing")
     with app.app_context():
-        # Ensure a clean schema even if a persistent test DB is reused.
-        db.drop_all()
-        db.session.execute(sa.text("DROP TABLE IF EXISTS journal_entry_tag"))
-        db.session.commit()
-        # ensure all models are imported so metadata is populated before create_all
-        _ = (
-            auth_models,
-            user_models,
-            event_models,
-            accounting_models,
-            schedule_models,
-            receivable_models,
-            habit,
-            skill,
-            practice_session,
-            skill_metric,
-            biometrics,
-            workout,
-            nutrition,
-            journal_entry,
-            contact,
-            interaction,
-            project,
-            task,
-            task_log,
-            outbox_models,
-            calendar_models,
-        )
-        db.create_all()
         # Seed a default user for FK-dependent tests
         if not User.query.filter_by(email="test@example.com").first():
             db.session.add(User(email="test@example.com", password_hash="test"))
@@ -89,16 +89,6 @@ def app():
             db.session.commit()
         yield app
         db.session.remove()
-        # Manually drop legacy junction table before dropping known models to avoid
-        # dependency ordering issues on Postgres CI.
-        if db.engine.dialect.name == "postgresql":
-            db.session.execute(
-                sa.text("DROP TABLE IF EXISTS journal_entry_tag CASCADE")
-            )
-        else:
-            db.session.execute(sa.text("DROP TABLE IF EXISTS journal_entry_tag"))
-        db.session.commit()
-        db.drop_all()
 
 
 @pytest.fixture()
