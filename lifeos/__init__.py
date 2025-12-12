@@ -155,7 +155,9 @@ def _register_blueprints(app: Flask) -> None:
     """Lazy import and register all controllers."""
     from lifeos.core.admin.controllers import admin_debug_bp
     from lifeos.core.auth.controllers import auth_bp  # local import to avoid circulars
+    from lifeos.core.auth.api_v1 import api_v1_auth_bp
     from lifeos.core.insights.controllers import insights_api_bp
+    from lifeos.core.insights.api_v1 import api_v1_insights_bp
     from lifeos.core.insights.pages import insights_pages_bp
     from lifeos.core.users.controllers import user_api_bp, user_pages_bp
     from lifeos.domains.calendar.controllers.calendar_api import calendar_api_bp
@@ -189,6 +191,7 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.domains.skills.controllers.skill_pages import skill_pages_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(api_v1_auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(user_api_bp, url_prefix="/api/users")
     app.register_blueprint(user_pages_bp, url_prefix="/users")
 
@@ -214,6 +217,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(project_api_bp, url_prefix="/api/projects")
     app.register_blueprint(project_pages_bp, url_prefix="/projects")
     app.register_blueprint(insights_api_bp, url_prefix="/api/insights")
+    app.register_blueprint(api_v1_insights_bp, url_prefix="/api/v1/insights")
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
     app.register_blueprint(calendar_pages_bp, url_prefix="/calendar")

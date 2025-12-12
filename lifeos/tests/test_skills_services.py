@@ -7,6 +7,8 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+from uuid import uuid4
+
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
 from lifeos.domains.skills.models.skill_models import PracticeSession, Skill
@@ -27,9 +29,10 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for skills tests."""
     with app.app_context():
-        user = User(email="skills-tester@example.com", password_hash=hash_password("secret"))
+        unique_email = f"skills-tester+{uuid4().hex}@example.com"
+        user = User(email=unique_email, password_hash=hash_password("secret"))
         db.session.add(user)
-        db.session.commit()
+        db.session.flush()
         yield user
 
 

@@ -1,6 +1,7 @@
 """Tests for Relationships domain API endpoints."""
 
 from datetime import date, timedelta
+from uuid import uuid4
 
 import pytest
 from flask_jwt_extended import create_access_token
@@ -19,7 +20,8 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for relationships API tests."""
     with app.app_context():
-        user = User(email="relationships-api@example.com", password_hash=hash_password("secret"))
+        unique_email = f"relationships-api+{uuid4().hex}@example.com"
+        user = User(email=unique_email, password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         return user

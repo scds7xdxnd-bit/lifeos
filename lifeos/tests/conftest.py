@@ -1,7 +1,7 @@
-import sys
-from pathlib import Path
-
 import os
+import sys
+import uuid
+from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
@@ -12,6 +12,13 @@ from alembic.config import Config as AlembicConfig
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+RUN_ID = uuid.uuid4().hex
+DEFAULT_TEST_DB = ROOT / "instance" / f"test_{RUN_ID}.db"
+DEFAULT_TEST_DB_URL = f"sqlite:///{DEFAULT_TEST_DB}"
+DEFAULT_TEST_DB.parent.mkdir(parents=True, exist_ok=True)
+if not os.environ.get("TEST_DATABASE_URL") and not os.environ.get("DATABASE_URL"):
+    os.environ["TEST_DATABASE_URL"] = DEFAULT_TEST_DB_URL
 
 from lifeos import create_app
 from lifeos.extensions import db
@@ -53,11 +60,11 @@ def pytest_configure(config):
 
 def _alembic_config() -> AlembicConfig:
     cfg = AlembicConfig(str(ROOT / "alembic.ini"))
-    cfg.set_main_option("script_location", "lifeos/migrations")
+    cfg.set_main_option("script_location", str(ROOT / "lifeos" / "migrations"))
     cfg.set_main_option("lifeos_env", "testing")
     db_url = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
     if not db_url:
-        db_url = "sqlite:///instance/test.db"
+        db_url = DEFAULT_TEST_DB_URL
     if db_url:
         cfg.set_main_option("sqlalchemy.url", db_url)
     return cfg
@@ -74,6 +81,11 @@ def migrated_db():
     except Exception:
         # Downgrade is optional for local/CI runs; ignore failures to avoid hiding test results.
         pass
+    if os.environ.get("TEST_DATABASE_URL") == DEFAULT_TEST_DB_URL and DEFAULT_TEST_DB.exists():
+        try:
+            DEFAULT_TEST_DB.unlink()
+        except OSError:
+            pass
 
 
 @pytest.fixture()
@@ -89,9 +101,17 @@ def app(migrated_db):
     ctx.push()
 
     connection = db.engine.connect()
+    cleanup_trans = connection.begin()
+    # Hard-clean any leftover data in case a previous test left state behind.
+    connection.execute(sa.text("PRAGMA foreign_keys=OFF"))
+    for table in reversed(db.Model.metadata.sorted_tables):
+        connection.execute(table.delete())
+    connection.execute(sa.text("PRAGMA foreign_keys=ON"))
+    cleanup_trans.commit()
+
     transaction = connection.begin()
 
-    session_factory = scoped_session(sessionmaker(bind=connection))
+    session_factory = scoped_session(sessionmaker(bind=connection, expire_on_commit=False, autoflush=False))
     db.session = session_factory
     session = session_factory()
     session.begin_nested()
@@ -105,11 +125,11 @@ def app(migrated_db):
         # Seed a default user for FK-dependent tests
         if not session.query(User).filter_by(email="test@example.com").first():
             session.add(User(email="test@example.com", password_hash="test"))
-            session.commit()
+            session.flush()
         # Seed a default admin role so require_roles can find it
         if not session.query(Role).filter_by(name="admin").first():
             session.add(Role(name="admin", description="admin role for tests"))
-            session.commit()
+            session.flush()
 
         yield app
     finally:
