@@ -176,7 +176,7 @@ jobs:
       - name: Check migration consistency
         env:
           PYTHONPATH: ${{ github.workspace }}
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: "sqlite:///:memory:"
           FLASK_APP: lifeos.wsgi
         run: make check-migrations
       
