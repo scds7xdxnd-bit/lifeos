@@ -30,7 +30,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Inference Telemetry**: In-memory telemetry for insight/inference events (counts, latency, FP/FN flags per domain/model_version); admin-only debug endpoint in non-prod (`GET /admin/debug/insight-telemetry`) exposes bounded snapshots
 - **Event Catalog Completeness**: All domains updated to include inference events with payload_version/model_version and optional `is_false_positive`/`is_false_negative`; guardrail tests enforce catalog coverage
 - **Health Endpoints**: `/health` and `/api/v1/ping` for CI/CD smoketests
-- **Testing**: 521 tests passing, 85% coverage, all tests with proper markers (33 integration, 1 unit, 24 ml)
+- **Testing**: 539 tests passing, 10 xfailed, 38 warnings, 85% coverage; all tests carry markers (integration/unit/ml).
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -113,7 +113,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Pending (User Actions Required)**:
   - Configure staging/production secrets in GitHub (requires admin access)
   - Set up GitHub environment protection rules (requires admin access)
-  - Add `CODECOV_TOKEN` secret to GitHub
+- Add `CODECOV_TOKEN` secret to GitHub
   - Test pipelines end-to-end (push PR to trigger)
 
 ## 🔜 Immediate Next Steps (post-Phase 2)
@@ -671,12 +671,30 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 - On event: dispatcher calls `InsightService.derive(event)` synchronously (blocking)
 - If rule fires → `InsightRecord` persisted + added to queue for delivery
 - Delivery: async (post-v1); currently logs + renders in UI
+- API v1 feed: `/api/v1/insights/feed` returns paginated, user-scoped insights with filters (domain, severity, status, date range) using `InsightsFeedQuery`; status filtering is applied from insight data (`status`/`inference_status`) in-memory for DB portability.
 
 **Performance Tuning:**
 - Batch-friendly: rules query recent events (e.g., last 7 days) not full history
 - Caching: user prefs cached in Redis (with TTL); aggregate rollups computed nightly (scheduled tasks)
 - Early exit: rule checks feature flag first; expensive computations gated behind config
 - Telemetry: counts/latency/FP-FN exposed via admin-only debug endpoint (non-prod): `GET /admin/debug/insight-telemetry`; read-only, requires admin JWT; in-memory only
+
+# 10.1 Read Model Constitution (binding)
+- Purpose: answer queries the transactional model is not optimized for; never enforce business rules or accept user writes.
+- Source of truth: derived exclusively from events; controllers/services never write them; backfills via event replay only.
+- Taxonomy: Snapshots (current best-known state, idempotent, 1 row/user/key), Timeline (append-only, time-indexed, immutable), Aggregates (windowed, re-computable, explicit bounds).
+- Placement: future `lifeos/readmodels/<domain>/`; not inside domains; prevents leakage and clarifies ownership.
+- Contracts: each read model declares consumed events, replay start version, idempotency key, and rebuild strategy; if not rebuildable deterministically, it is invalid.
+- Storage: SQL/views/Redis/etc. allowed; schema contract must be documented independent of storage.
+- Forbidden: joining transactional tables in builders; controllers writing read models; read models emitting domain events; mutating confidence/inference status; permission logic in read models.
+
+# 10.2 Confidence Semantics (binding)
+- Confidence is historical, immutable: answers “how certain was the system at inference time?”
+- Layers: Interpreter confidence (`confidence_score`, set once); Inference status (`inferred|confirmed|rejected|ignored`, user actions only, does not change score); Insight confidence (derived reliability over time, contextual).
+- Immutability: `confidence_score`, `classification_data`, calendar_event links, FP/FN flags never mutate; `inferred_status` changes only via user actions/events.
+- FP/FN: FP = inferred then user rejected; FN = system missed, user created manually; flags are append-only and include `model_version` and `payload_version`.
+- Auto-confirm (future): explicit thresholds, domain-specific allowed, audit trail required; user override always wins; auto-confirm is routing only, not truth rewriting.
+- No confidence decay/post-hoc smoothing; temporal relevance handled by insights, not by mutating confidence.
 
 **Example Rule Flow:**
 ```
@@ -697,6 +715,7 @@ Event: finance.transaction.created {amount: $5000, category: "Groceries", ...}
 - Sessions: HTTP-only, SameSite=Lax (or Strict in prod)
 - RBAC: Role → Permissions via `role_permission` join; check at controller via `@require_permission("perm_name")`
 - Password storage: Bcrypt hashing via `Flask-Bcrypt`; salted, no plaintext in logs
+- API v1 auth: `/api/v1/auth/login` and `/api/v1/auth/refresh` return access/refresh + CSRF token + user; Bearer + CSRF headers supported; JWT_TOKEN_LOCATION includes headers/cookies
 
 **CSRF Protection:**
 - Enabled by default (`WTF_CSRF_ENABLED = true`)
