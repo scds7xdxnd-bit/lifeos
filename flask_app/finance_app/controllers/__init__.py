@@ -2,14 +2,15 @@
 
 # Keep imports inside the function to avoid circulars during app creation.
 def register_blueprints(app):
-    from routes import forecast_bp  # legacy module outside package
-    from blueprints.money_schedule import bp as money_schedule_bp
     from blueprints.accounting import accounting_bp
-    from blueprints.transactions import transactions_bp
-    from blueprints.auth import auth_bp
-    from blueprints.user import user_bp
     from blueprints.admin import admin_bp
+    from blueprints.auth import auth_bp
     from blueprints.journal import journal_bp
+    from blueprints.money_schedule import bp as money_schedule_bp
+    from blueprints.transactions import transactions_bp
+    from blueprints.user import user_bp
+    from routes import forecast_bp  # legacy module outside package
+
     from finance_app.controllers.core import core_bp
 
     core_bp.app = app

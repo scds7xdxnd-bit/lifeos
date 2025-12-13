@@ -15,7 +15,7 @@ def map_entry(entry: JournalEntry) -> dict:
         mood=entry.mood,
         tags=entry.tags or [],
         is_private=entry.is_private,
-        sentiment_score=float(entry.sentiment_score) if entry.sentiment_score is not None else None,
+        sentiment_score=(float(entry.sentiment_score) if entry.sentiment_score is not None else None),
         emotion_label=entry.emotion_label,
         created_at=entry.created_at.isoformat() if entry.created_at else "",
         updated_at=entry.updated_at.isoformat() if entry.updated_at else "",

@@ -6,9 +6,15 @@ import datetime as dt
 from collections import defaultdict
 from typing import Dict, List
 
+import sqlalchemy as sa
 from sqlalchemy import func
 
-from lifeos.domains.finance.models.accounting_models import Account, AccountCategory, JournalEntry, JournalLine
+from lifeos.domains.finance.models.accounting_models import (
+    Account,
+    AccountCategory,
+    JournalEntry,
+    JournalLine,
+)
 from lifeos.extensions import db
 
 
@@ -20,7 +26,11 @@ def calculate_trial_balance(user_id: int, as_of: dt.date | None = None) -> Dict[
     """Return debit/credit totals per account up to as_of (inclusive)."""
     totals: Dict[int, Dict[str, float]] = defaultdict(lambda: {"debit": 0.0, "credit": 0.0})
     query = (
-        db.session.query(JournalLine.account_id, func.sum(JournalLine.debit), func.sum(JournalLine.credit))
+        db.session.query(
+            JournalLine.account_id,
+            func.sum(JournalLine.debit),
+            func.sum(JournalLine.credit),
+        )
         .join(JournalEntry, JournalEntry.id == JournalLine.entry_id)
         .filter(JournalEntry.user_id == user_id)
     )
@@ -37,7 +47,11 @@ def period_balance(user_id: int, start_date: dt.date, end_date: dt.date) -> Dict
     """Return debit/credit totals per account within date range inclusive."""
     totals: Dict[int, Dict[str, float]] = defaultdict(lambda: {"debit": 0.0, "credit": 0.0})
     query = (
-        db.session.query(JournalLine.account_id, func.sum(JournalLine.debit), func.sum(JournalLine.credit))
+        db.session.query(
+            JournalLine.account_id,
+            func.sum(JournalLine.debit),
+            func.sum(JournalLine.credit),
+        )
         .join(JournalEntry, JournalEntry.id == JournalLine.entry_id)
         .filter(JournalEntry.user_id == user_id)
         .filter(JournalEntry.posted_at >= dt.datetime.combine(start_date, dt.time.min))
@@ -52,16 +66,21 @@ def period_balance(user_id: int, start_date: dt.date, end_date: dt.date) -> Dict
 
 def monthly_rollup(user_id: int) -> Dict[str, Dict[str, float]]:
     """Aggregate debits/credits by YYYY-MM for the user."""
+    dialect = db.session.bind.dialect.name if db.session.bind else "sqlite"
+    if dialect == "sqlite":
+        month_expr = func.strftime("%Y-%m", JournalEntry.posted_at)
+    else:
+        month_expr = func.to_char(JournalEntry.posted_at, sa.literal_column("'YYYY-MM'"))
     query = (
         db.session.query(
-            func.strftime("%Y-%m", JournalEntry.posted_at).label("ym"),
+            month_expr.label("ym"),
             func.sum(JournalLine.debit),
             func.sum(JournalLine.credit),
         )
         .join(JournalEntry, JournalEntry.id == JournalLine.entry_id)
         .filter(JournalEntry.user_id == user_id)
-        .group_by("ym")
-        .order_by("ym")
+        .group_by(month_expr)
+        .order_by(month_expr)
     )
     rollup: Dict[str, Dict[str, float]] = {}
     for ym, debit_sum, credit_sum in query.all():
@@ -83,11 +102,18 @@ def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
     accounts: List[Account] = (
         Account.query.join(AccountCategory, isouter=True)
         .filter(Account.user_id == user_id)
-        .order_by(Account.account_type.asc(), Account.category_id.asc().nullsfirst(), Account.code.asc().nullsfirst(), Account.name.asc())
+        .order_by(
+            Account.account_type.asc(),
+            Account.category_id.asc().nullsfirst(),
+            Account.code.asc().nullsfirst(),
+            Account.name.asc(),
+        )
         .all()
     )
     rows: List[dict] = []
-    category_totals: Dict[tuple[str, int | None], Dict[str, float]] = defaultdict(lambda: {"debit": 0.0, "credit": 0.0, "net": 0.0})
+    category_totals: Dict[tuple[str, int | None], Dict[str, float]] = defaultdict(
+        lambda: {"debit": 0.0, "credit": 0.0, "net": 0.0}
+    )
 
     for acct in accounts:
         row_total = totals.get(acct.id, {"debit": 0.0, "credit": 0.0})
@@ -100,7 +126,7 @@ def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
                 "base_type": acct.account_type,
                 "category_id": acct.category.id if acct.category else None,
                 "category_name": acct.category.name if acct.category else None,
-                "normal_balance": acct.category.normal_balance if acct.category else "debit",
+                "normal_balance": (acct.category.normal_balance if acct.category else "debit"),
                 "debit": row_total["debit"],
                 "credit": row_total["credit"],
                 "net": net_val,
@@ -114,13 +140,16 @@ def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
 
     category_rows: List[dict] = []
     for (base_type, category_id), agg in category_totals.items():
-        category_obj = next((acct.category for acct in accounts if acct.category_id == category_id and acct.account_type == base_type), None)
+        category_obj = next(
+            (acct.category for acct in accounts if acct.category_id == category_id and acct.account_type == base_type),
+            None,
+        )
         category_rows.append(
             {
                 "base_type": base_type,
                 "category_id": category_id,
                 "category_name": category_obj.name if category_obj else "Uncategorized",
-                "normal_balance": category_obj.normal_balance if category_obj else "debit",
+                "normal_balance": (category_obj.normal_balance if category_obj else "debit"),
                 "debit": agg["debit"],
                 "credit": agg["credit"],
                 "net": agg["net"],

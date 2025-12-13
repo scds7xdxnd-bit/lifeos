@@ -2,10 +2,10 @@ from __future__ import annotations
 
 """Training and inference pipelines."""
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import joblib
 import numpy as np
@@ -37,7 +37,7 @@ from .models.external_pairwise import ExternalPairwisePredictor
 from .models.gate_binary import train_binary_gate
 from .models.multilabel_heads import train_multi_label
 from .models.proportion_head import train_proportion_head
-from .preprocessing import PreprocessedData, build_parent_map, prepare_training_data
+from .preprocessing import build_parent_map, prepare_training_data
 from .utils import (
     ExternalPredictorLoader,
     PipelineConfig,

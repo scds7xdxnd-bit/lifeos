@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Dict
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
-
 from finance_app import db
-from finance_app.services.forecast import compute_daily_forecast, month_grid
 from finance_app.models.money_account import MoneyScheduleAccount as Account
 from finance_app.models.scheduled_transaction import ScheduledTransaction, TransactionStatus
+from finance_app.services.forecast import compute_daily_forecast, month_grid
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 forecast_bp = Blueprint(
     "forecast",

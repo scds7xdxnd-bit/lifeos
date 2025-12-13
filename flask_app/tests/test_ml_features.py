@@ -22,8 +22,8 @@ def test_compute_ml_line_features_enriches_tokens_and_dates():
 
 def test_compute_ml_line_features_adds_account_signals():
     from finance_app import create_app, db
-    from finance_app.models.user_models import User
     from finance_app.models.accounting_models import Account, AccountCategory
+    from finance_app.models.user_models import User
 
     app = create_app()
     app.config["TESTING"] = True

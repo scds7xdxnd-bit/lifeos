@@ -152,10 +152,20 @@
 
     entriesRefresh?.addEventListener('click', fetchEntries);
     window.addEventListener('journal:entry-posted', fetchEntries);
-    window.addEventListener('lifeos:auth-changed', () => { ensureAuth(); fetchEntries(); });
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      ensureAuth();
+      if (e.detail?.loggedIn) fetchEntries();
+    });
 
-    ensureAuth();
-    fetchEntries();
+    const start = () => {
+      ensureAuth();
+      fetchEntries();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>
 {% endblock %}

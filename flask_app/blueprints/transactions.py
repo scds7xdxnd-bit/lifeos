@@ -1,24 +1,15 @@
 import datetime
 import os
-from decimal import Decimal, ROUND_HALF_UP
-
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
-from werkzeug.utils import secure_filename
-from sqlalchemy import and_, distinct, or_
 
 from finance_app.extensions import db
 from finance_app.lib.auth import current_user
 from finance_app.lib.dates import _parse_date_tuple
 from finance_app.models.accounting_models import Account, JournalEntry, JournalLine, Transaction
-from finance_app.services.account_service import ensure_account
 from finance_app.services.transaction_import_service import import_csv_transactions
 from finance_app.services.transaction_service import delete_transaction_for_user
-from finance_app.services.journal_service import (
-    JournalBalanceError,
-    JournalLinePayload,
-    create_journal_entry,
-)
-
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from sqlalchemy import and_, distinct, or_
+from werkzeug.utils import secure_filename
 
 transactions_bp = Blueprint("transactions_bp", __name__)
 
@@ -172,7 +163,6 @@ def transactions():
         per_page = 100
 
     # Build account list for filters from transactions (extend later with journal lines)
-    from sqlalchemy import distinct
     accs = set()
     for row in db.session.query(distinct(Transaction.debit_account)).filter(Transaction.user_id == user.id).all():
         name = (row[0] or '').strip()
@@ -438,7 +428,6 @@ def transaction_list():
         per_page = 100
 
     # Build account list for filters from transactions (extend later with journal lines)
-    from sqlalchemy import distinct
     accs = set()
     for row in db.session.query(distinct(Transaction.debit_account)).filter(Transaction.user_id == user.id).all():
         name = (row[0] or '').strip()

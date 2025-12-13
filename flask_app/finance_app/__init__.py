@@ -1,13 +1,14 @@
 import os
 
 from flask import Flask, request
-from sqlalchemy import event
+from sqlalchemy import event, inspect
 from sqlalchemy.engine import Engine
-from sqlalchemy import inspect
 from sqlalchemy.engine.url import make_url
+from sqlalchemy.exc import OperationalError
 
 from finance_app.cli import register_cli
 from finance_app.controllers import register_blueprints
+from finance_app.extensions import db
 from finance_app.lib.auth import _get_csrf_token, current_user, require_csrf
 from finance_app.lib.dates import _parse_date_tuple
 from finance_app.services.account_service import (
@@ -19,13 +20,11 @@ from finance_app.services.account_service import (
     generate_account_code,
     start_background_assign_account_ids,
 )
-from sqlalchemy.exc import OperationalError
 from finance_app.services.ml_service import (
     _compute_ml_line_features,
     best_hint_suggestion,
     record_suggestion_hint,
 )
-from finance_app.extensions import db
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 INSTANCE_DIR = os.path.join(PROJECT_ROOT, "instance")
@@ -197,38 +196,37 @@ def create_app():
 
 
 # Import models so metadata is registered for Alembic and shell usage.
-from finance_app.models.user_models import User, UserProfile, UserPost, RateLimitBucket  # noqa: E402,F401
 from finance_app.models.accounting_models import (  # noqa: E402,F401
-    Transaction,
-    AccountSuggestionHint,
-    SuggestionFeedback,
-    AccountSuggestionLog,
-    AccountCategory,
     Account,
-    AccountOpeningBalance,
-    LoginSession,
-    TrialBalanceSetting,
+    AccountCategory,
     AccountMonthlyBalance,
-    ReceivableTracker,
-    ReceivableManualEntry,
-    LoanGroup,
-    LoanGroupLink,
+    AccountOpeningBalance,
+    AccountSuggestionHint,
+    AccountSuggestionLog,
     JournalEntry,
     JournalLine,
+    LoanGroup,
+    LoanGroupLink,
+    LoginSession,
+    ReceivableManualEntry,
+    ReceivableTracker,
+    SuggestionFeedback,
+    Transaction,
+    TrialBalanceSetting,
 )
 from finance_app.models.money_account import MoneyScheduleAccount  # noqa: E402,F401
 from finance_app.models.money_schedule import (  # noqa: E402,F401
-    MoneyScheduleRow,
-    Setting,
+    AccountSnapshot,
     MoneyScheduleAssetInclude,
     MoneyScheduleDailyBalance,
-    AccountSnapshot,
     MoneyScheduleRecurringEvent,
+    MoneyScheduleRow,
     MoneyScheduleScenario,
     MoneyScheduleScenarioRow,
+    Setting,
 )
 from finance_app.models.scheduled_transaction import ScheduledTransaction  # noqa: E402,F401
-
+from finance_app.models.user_models import RateLimitBucket, User, UserPost, UserProfile  # noqa: E402,F401
 
 __all__ = [
     "app",

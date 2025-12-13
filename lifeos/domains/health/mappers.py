@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lifeos.domains.health.models.health_models import Biometric, Workout, NutritionLog
+from lifeos.domains.health.models.health_models import Biometric, NutritionLog, Workout
 
 
 def map_biometric(b: Biometric) -> dict:

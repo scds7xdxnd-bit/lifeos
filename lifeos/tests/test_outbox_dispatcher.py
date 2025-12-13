@@ -9,14 +9,16 @@ from sqlalchemy.orm import Query
 pytestmark = pytest.mark.integration
 
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
-from lifeos.platform.worker.config import DispatchConfig
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.worker.config import DispatchConfig
 
 # Expect the dispatcher module to exist; failing import should flag missing implementation.
 try:
-    dispatcher = importlib.import_module("lifeos.platform.worker.dispatcher")
+    dispatcher = importlib.import_module("lifeos.lifeos_platform.worker.dispatcher")
 except ImportError as exc:  # pragma: no cover - intentional hard failure to enforce presence
-    raise AssertionError("Missing outbox dispatcher implementation at lifeos.platform.worker.dispatcher") from exc
+    raise AssertionError(
+        "Missing outbox dispatcher implementation at lifeos.lifeos_platform.worker.dispatcher"
+    ) from exc
 
 
 def _config(**overrides) -> DispatchConfig:
@@ -31,7 +33,12 @@ def _config(**overrides) -> DispatchConfig:
     return DispatchConfig(**defaults)
 
 
-def _enqueue(user_id: int = 1, event_type: str = "test.event", status: str = "pending", available_at: datetime | None = None) -> OutboxMessage:
+def _enqueue(
+    user_id: int = 1,
+    event_type: str = "test.event",
+    status: str = "pending",
+    available_at: datetime | None = None,
+) -> OutboxMessage:
     msg = OutboxMessage(
         user_id=user_id,
         event_type=event_type,

@@ -5,10 +5,18 @@ from __future__ import annotations
 from datetime import date
 from typing import List, Tuple
 
-from lifeos.domains.finance.events import FINANCE_RECEIVABLE_CREATED, FINANCE_RECEIVABLE_ENTRY_RECORDED
-from lifeos.domains.finance.models.receivable_models import LoanGroup, LoanGroupLink, ReceivableManualEntry, ReceivableTracker
+from lifeos.domains.finance.events import (
+    FINANCE_RECEIVABLE_CREATED,
+    FINANCE_RECEIVABLE_ENTRY_RECORDED,
+)
+from lifeos.domains.finance.models.receivable_models import (
+    LoanGroup,
+    LoanGroupLink,
+    ReceivableManualEntry,
+    ReceivableTracker,
+)
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def create_receivable(
@@ -32,7 +40,14 @@ def create_receivable(
     db.session.flush()
     enqueue_outbox(
         FINANCE_RECEIVABLE_CREATED,
-        {"tracker_id": tracker.id, "user_id": user_id, "principal": float(principal), "counterparty": counterparty},
+        {
+            "tracker_id": tracker.id,
+            "user_id": user_id,
+            "principal": float(principal),
+            "counterparty": counterparty,
+            "start_date": start_date.isoformat(),
+            "due_date": due_date.isoformat() if due_date else None,
+        },
         user_id=user_id,
     )
     db.session.commit()
@@ -70,7 +85,13 @@ def list_receivables(user_id: int, page: int = 1, per_page: int = 50) -> Tuple[L
     return items, total
 
 
-def record_receivable_entry(user_id: int, tracker_id: int, amount: float, entry_date: date, memo: str | None = None) -> ReceivableManualEntry:
+def record_receivable_entry(
+    user_id: int,
+    tracker_id: int,
+    amount: float,
+    entry_date: date,
+    memo: str | None = None,
+) -> ReceivableManualEntry:
     tracker = ReceivableTracker.query.filter_by(id=tracker_id, user_id=user_id).first()
     if not tracker:
         raise ValueError("not_found")
@@ -79,25 +100,38 @@ def record_receivable_entry(user_id: int, tracker_id: int, amount: float, entry_
     db.session.flush()
     enqueue_outbox(
         FINANCE_RECEIVABLE_ENTRY_RECORDED,
-        {"tracker_id": tracker_id, "amount": float(amount), "entry_date": entry_date.isoformat(), "user_id": user_id},
+        {
+            "tracker_id": tracker_id,
+            "amount": float(amount),
+            "entry_date": entry_date.isoformat(),
+            "user_id": user_id,
+        },
         user_id=user_id,
     )
     db.session.commit()
     return entry
 
 
-def list_receivable_entries(user_id: int, tracker_id: int, page: int = 1, per_page: int = 50) -> Tuple[List[ReceivableManualEntry], int]:
+def list_receivable_entries(
+    user_id: int, tracker_id: int, page: int = 1, per_page: int = 50
+) -> Tuple[List[ReceivableManualEntry], int]:
     tracker = ReceivableTracker.query.filter_by(id=tracker_id, user_id=user_id).first()
     if not tracker:
         raise ValueError("not_found")
-    query = ReceivableManualEntry.query.filter_by(tracker_id=tracker_id).order_by(ReceivableManualEntry.entry_date.desc())
+    query = ReceivableManualEntry.query.filter_by(tracker_id=tracker_id).order_by(
+        ReceivableManualEntry.entry_date.desc()
+    )
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
 def create_loan_group(user_id: int, name: str, description: str | None = None) -> LoanGroup:
-    group = LoanGroup(user_id=user_id, name=name.strip(), description=(description or "").strip() or None)
+    group = LoanGroup(
+        user_id=user_id,
+        name=name.strip(),
+        description=(description or "").strip() or None,
+    )
     db.session.add(group)
     db.session.commit()
     return group

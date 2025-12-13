@@ -15,19 +15,20 @@ from lifeos.core.interpreter.constants import (
     STATUS_INFERRED,
 )
 from lifeos.core.interpreter.domain_adapters import get_adapter
+from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.events import CALENDAR_INTERPRETATION_CREATED
 from lifeos.domains.calendar.models.calendar_event import (
     CalendarEvent,
     CalendarEventInterpretation,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 class CalendarInterpreter:
     """
     Subscribes to calendar events, classifies them, and creates inferred domain records.
-    
+
     The interpreter uses rule-based classification to analyze calendar event titles,
     descriptions, locations, and timing to determine which domain(s) the event
     may relate to. It creates CalendarEventInterpretation records for each
@@ -57,7 +58,7 @@ class CalendarInterpreter:
     def on_calendar_event(self, event: dict) -> None:
         """
         Handle calendar event creation/update.
-        
+
         Classifies the event and creates interpretations.
         """
         if not self.enabled:
@@ -81,7 +82,7 @@ class CalendarInterpreter:
     def interpret_event(self, event: CalendarEvent) -> List[CalendarEventInterpretation]:
         """
         Classify a calendar event and create interpretation records.
-        
+
         Returns list of created interpretations.
         """
         if not self.enabled:
@@ -132,9 +133,10 @@ class CalendarInterpreter:
     ) -> Optional[CalendarEventInterpretation]:
         """
         Create a CalendarEventInterpretation record.
-        
+
         Optionally creates an inferred record in the target domain if confidence is high.
         """
+        model_version = "calendar-interpreter-v1"
         interpretation = CalendarEventInterpretation(
             calendar_event_id=event.id,
             user_id=event.user_id,
@@ -158,6 +160,9 @@ class CalendarInterpreter:
                 "domain": domain,
                 "record_type": record_type,
                 "confidence_score": confidence_score,
+                "status": STATUS_INFERRED,
+                "payload_version": "v1",
+                "model_version": model_version,
                 "created_at": interpretation.created_at.isoformat(),
             },
             user_id=event.user_id,
@@ -177,6 +182,23 @@ class CalendarInterpreter:
             if record_id:
                 interpretation.record_id = record_id
 
+        # Emit inference event payload using typed schema
+        emit_inference_event(
+            domain=domain,
+            record_type=record_type,
+            user_id=event.user_id,
+            calendar_event_id=event.id,
+            confidence=confidence_score,
+            inferred_data=extracted_data,
+            record_id=interpretation.record_id,
+            status=STATUS_INFERRED,
+            model_version=model_version,
+            context={
+                "source": "calendar_interpreter",
+                "record_id": interpretation.record_id,
+            },
+        )
+
         return interpretation
 
     def _create_domain_record(
@@ -191,7 +213,7 @@ class CalendarInterpreter:
     ) -> Optional[int]:
         """
         Create an inferred record in the target domain via adapter.
-        
+
         Returns record ID or None if adapter not found or creation failed.
         """
         adapter = get_adapter(domain, record_type)
@@ -209,9 +231,7 @@ class CalendarInterpreter:
         except Exception as exc:
             # Log but don't fail interpretation creation
             try:
-                current_app.logger.warning(
-                    f"Failed to create inferred {domain}.{record_type} record: {exc}"
-                )
+                current_app.logger.warning(f"Failed to create inferred {domain}.{record_type} record: {exc}")
             except RuntimeError:
                 pass
             return None

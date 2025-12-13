@@ -1,5 +1,4 @@
 import torch
-
 from ml_journal_suggester.models.gate_binary import BinaryGate, train_binary_gate
 from ml_journal_suggester.models.multilabel_heads import MultiLabelHead, train_multi_label
 from ml_journal_suggester.models.proportion_head import AccountEmbedding, ProportionHead, train_proportion_head

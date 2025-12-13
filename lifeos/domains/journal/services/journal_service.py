@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime
 from typing import List, Optional, Tuple
 
-from sqlalchemy import func
+import sqlalchemy as sa
 
 from lifeos.domains.journal.events import (
     JOURNAL_ENTRY_CREATED,
@@ -14,7 +15,7 @@ from lifeos.domains.journal.events import (
 )
 from lifeos.domains.journal.models import JournalEntry
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 MOOD_MIN = -5
 MOOD_MAX = 5
@@ -59,7 +60,7 @@ def create_entry(
             "mood": entry.mood,
             "tags": entry.tags,
             "is_private": entry.is_private,
-            "created_at": entry.created_at.isoformat() if entry.created_at else datetime.utcnow().isoformat(),
+            "created_at": (entry.created_at.isoformat() if entry.created_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )
@@ -72,7 +73,16 @@ def update_entry(user_id: int, entry_id: int, **fields) -> Optional[JournalEntry
     if not entry:
         return None
     changed = {}
-    for key in ("title", "body", "entry_date", "mood", "tags", "is_private", "sentiment_score", "emotion_label"):
+    for key in (
+        "title",
+        "body",
+        "entry_date",
+        "mood",
+        "tags",
+        "is_private",
+        "sentiment_score",
+        "emotion_label",
+    ):
         if key in fields:
             val = fields[key]
             if key == "mood":
@@ -87,7 +97,7 @@ def update_entry(user_id: int, entry_id: int, **fields) -> Optional[JournalEntry
             "entry_id": entry.id,
             "user_id": user_id,
             "fields": changed,
-            "updated_at": entry.updated_at.isoformat() if entry.updated_at else datetime.utcnow().isoformat(),
+            "updated_at": (entry.updated_at.isoformat() if entry.updated_at else datetime.utcnow().isoformat()),
         },
         user_id=user_id,
     )
@@ -132,7 +142,13 @@ def list_entries(
     if mood is not None:
         query = query.filter(JournalEntry.mood == _validate_mood(mood))
     if tag:
-        query = query.filter(JournalEntry.tags.contains([tag]))
+        dialect = db.session.bind.dialect.name if db.session.bind else ""
+        if dialect == "postgresql":
+            # Explicit JSONB containment to avoid LIKE fallback.
+            json_literal = json.dumps([tag])
+            query = query.filter(sa.text("journal_entry.tags::jsonb @> :tag_literal")).params(tag_literal=json_literal)
+        else:
+            query = query.filter(JournalEntry.tags.contains([tag]))
     if search_text:
         like = f"%{search_text}%"
         query = query.filter(

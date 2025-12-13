@@ -2,7 +2,6 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-
 from finance_app import db
 from finance_app.models.accounting_models import Account, AccountCategory, JournalEntry, JournalLine, LoanGroup
 from finance_app.models.user_models import User

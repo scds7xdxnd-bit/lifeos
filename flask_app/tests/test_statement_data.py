@@ -7,17 +7,16 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-
 from finance_app import (
-    app,
-    db,
-    User,
-    TrialBalanceSetting,
-    AccountCategory,
     Account,
+    AccountCategory,
     AccountOpeningBalance,
     JournalEntry,
     JournalLine,
+    TrialBalanceSetting,
+    User,
+    app,
+    db,
 )
 
 os.environ.setdefault("AUTO_CREATE_SCHEMA", "true")

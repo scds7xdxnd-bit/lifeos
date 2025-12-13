@@ -29,19 +29,30 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
           cache-dependency-path: lifeos/requirements.txt
-      
+
       - name: Install lint tools
-        run: pip install ruff black isort flake8
-      
+        run: pip install ruff "black==25.12.0" isort flake8
+
+      - name: Show Black version
+        run: black --version
+
       - name: Run lint checks
         run: make lint
+
+      - name: Black diff on a single file (debug)
+        if: always()
+        run: |
+          pwd
+          ls
+          black --version
+          black --check lifeos/core/auth/models.py --diff | sed -n '1,80p'
 
   security:
     name: Security Scan
@@ -49,18 +60,18 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install security tools
         run: pip install bandit safety
-      
+
       - name: Run security scans
         run: make security
-      
+
       - name: Upload security reports
         uses: actions/upload-artifact@v4
         with:
@@ -79,20 +90,20 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: lifeos/requirements.txt
-      
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r lifeos/requirements.txt
           pip install pytest pytest-cov pytest-timeout
-      
+
       - name: Run unit tests
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -106,13 +117,13 @@ jobs:
             --cov-report=xml:coverage-unit.xml \
             --junitxml=test-results-unit.xml \
             -v
-      
+
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage-unit-py${{ matrix.python-version }}
           path: coverage-unit.xml
-      
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -150,28 +161,28 @@ jobs:
           - 6379:6379
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
           cache-dependency-path: lifeos/requirements.txt
-      
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r lifeos/requirements.txt
           pip install pytest pytest-cov pytest-timeout
-      
+
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://lifeos:lifeos@localhost/lifeos_test
-          FLASK_APP: lifeos.wsgi
+          APP_ENV: ci
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          cd lifeos && flask db upgrade head
-      
+          make run-migrations
+
       - name: Run integration tests
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -200,17 +211,17 @@ jobs:
       image_digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -220,7 +231,7 @@ jobs:
             type=ref,event=branch
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push
         id: build
         uses: docker/build-push-action@v5
@@ -244,21 +255,43 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image_tag }}
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: '${{ github.workspace }}/trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-        continue-on-error: true
-      
+
+      - name: Ensure Trivy SARIF exists
+        if: always()
+        run: |
+          if [ ! -f "${{ github.workspace }}/trivy-results.sarif" ]; then
+            cat > "${{ github.workspace }}/trivy-results.sarif" <<'EOF'
+            {
+              "version": "2.1.0",
+              "runs": [
+                {
+                  "tool": {
+                    "driver": {
+                      "name": "trivy",
+                      "informationUri": "https://github.com/aquasecurity/trivy",
+                      "version": "unknown"
+                    }
+                  },
+                  "results": []
+                }
+              ]
+            }
+          EOF
+          fi
+
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: '${{ github.workspace }}/trivy-results.sarif'
 
   deploy-staging:
     name: Deploy to Staging
@@ -271,7 +304,7 @@ jobs:
       url: https://staging.lifeos.example.com
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Deploy to staging
         run: |
           echo "🚀 Deploying to staging..."
@@ -286,7 +319,7 @@ jobs:
     needs: deploy-staging
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run smoke tests
         env:
           TARGET_URL: https://staging.lifeos.example.com

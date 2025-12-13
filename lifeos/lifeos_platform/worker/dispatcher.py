@@ -10,16 +10,16 @@ from typing import Callable, List, Optional
 from sqlalchemy.exc import SQLAlchemyError
 
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
-from lifeos.platform.outbox.services import (
-    EventBusAdapter,
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.services import (
     STATUS_FAILED,
     STATUS_PENDING,
     STATUS_RETRY,
     STATUS_SENDING,
     STATUS_SENT,
+    EventBusAdapter,
 )
-from lifeos.platform.worker.config import DispatchConfig
+from lifeos.lifeos_platform.worker.config import DispatchConfig
 
 logger = logging.getLogger(__name__)
 

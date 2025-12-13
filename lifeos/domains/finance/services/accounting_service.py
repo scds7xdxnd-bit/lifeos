@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
 import re
+from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, List, Optional, Tuple
 
 from lifeos.domains.finance.events import (
@@ -12,9 +12,15 @@ from lifeos.domains.finance.events import (
     FINANCE_ACCOUNT_CREATED,
     FINANCE_JOURNAL_POSTED,
 )
-from lifeos.domains.finance.models.accounting_models import Account, AccountCategory, JournalEntry, JournalLine
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.domains.finance.models.accounting_models import (
+    Account,
+    AccountCategory,
+    JournalEntry,
+    JournalLine,
+)
+from lifeos.domains.finance.services.suggestion_service import suggest_accounts
 from lifeos.extensions import db
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 MAX_DESCRIPTION_LENGTH = 512
 MAX_JOURNAL_LINES = 100
@@ -98,11 +104,7 @@ def _normalize_journal_lines(lines: List[dict]) -> Tuple[List[dict], Decimal, De
 
 
 def _validate_accounts(user_id: int, account_ids: List[int]) -> None:
-    accounts = (
-        Account.query.filter(Account.user_id == user_id)
-        .filter(Account.id.in_(account_ids))
-        .all()
-    )
+    accounts = Account.query.filter(Account.user_id == user_id).filter(Account.id.in_(account_ids)).all()
     if len(accounts) != len(set(account_ids)):
         raise ValueError("not_found")
     inactive = [acct.id for acct in accounts if not acct.is_active]
@@ -178,7 +180,14 @@ ACCOUNT_SUBTYPES_MAP = {
     "liability": ["loan", "credit_card", "payable", "other"],
     "equity": ["contributed", "retained_earnings", "other"],
     "income": ["salary", "investment", "business", "rental", "other"],
-    "expense": ["groceries", "utilities", "rent", "transportation", "entertainment", "other"],
+    "expense": [
+        "groceries",
+        "utilities",
+        "rent",
+        "transportation",
+        "entertainment",
+        "other",
+    ],
 }
 
 
@@ -207,91 +216,126 @@ def _generate_category_code(user_id: int | None, base_type: str, slug: str) -> s
 def search_accounts(user_id: int, query: str, limit: int = 20) -> List[Account]:
     """
     Search for existing active accounts by normalized name.
-    
+
     Matches:
     1. Prefix matches (normalized_name starts with query) - ordered first
     2. Substring matches - ordered second
     3. Results ordered by created_at DESC (newest first) within each category
-    
+
     Args:
         user_id: User ID to scope search
         query: Search query (will be normalized)
         limit: Maximum number of results (default 20)
-    
+
     Returns:
         List of matching Account objects
-    
+
     Raises:
-        ValueError("invalid_query") if query is empty or too long
+        ValueError("invalid_query") if query is too long
     """
     query = (query or "").strip()
-    
-    if not query or len(query) > 100:
+
+    if len(query) > 100:
         raise ValueError("invalid_query")
-    
+    if not query:
+        return []
+
     normalized_query = _normalize_name(query)
-    
+
     # Prefix matches (ordered first, newest first)
     prefix_matches = (
-        Account.query
-        .filter(Account.user_id == user_id)
-        .filter(Account.is_active == True)
+        Account.query.filter(Account.user_id == user_id)
+        .filter(Account.is_active.is_(True))
         .filter(Account.normalized_name.startswith(normalized_query))
         .order_by(Account.created_at.desc())
         .limit(limit)
         .all()
     )
-    
+
     if len(prefix_matches) >= limit:
         return prefix_matches[:limit]
-    
+
     # Substring matches (fill remaining slots)
     remaining = limit - len(prefix_matches)
     substring_matches = (
-        Account.query
-        .filter(Account.user_id == user_id)
-        .filter(Account.is_active == True)
+        Account.query.filter(Account.user_id == user_id)
+        .filter(Account.is_active.is_(True))
         .filter(Account.normalized_name.contains(normalized_query))
         .filter(~Account.normalized_name.startswith(normalized_query))
         .order_by(Account.created_at.desc())
         .limit(remaining)
         .all()
     )
-    
+
     return prefix_matches + substring_matches
 
 
-def get_suggested_accounts(
-    user_id: int,
-    query: str,
-    limit: int = 10,
-    include_ml: bool = True
-) -> List[dict]:
+def get_suggested_accounts(user_id: int, query: str, limit: int = 10, include_ml: bool = True) -> List[dict]:
     """Get suggested accounts combining existing search + optional ML suggestions."""
+    query = (query or "").strip()
+    # Derive a safe search limit: if caller asks for fewer than 3, search with that limit (never negative).
+    search_limit = limit if limit <= 2 else max(1, limit - 2)
+
     # Get existing accounts
     try:
-        existing = search_accounts(user_id, query, limit=limit - 2)
+        existing = search_accounts(user_id, query, limit=search_limit)
     except ValueError:
-        raise
-    
-    results = [
-        {
+        return []
+
+    def _serialize(acc: Account) -> dict:
+        return {
             "id": acc.id,
             "name": acc.name,
             "account_type": acc.account_type,
             "account_subtype": acc.account_subtype,
             "is_existing": True,
         }
-        for acc in existing
-    ]
-    
-    # TODO: Add ML suggestions if enabled (future enhancement)
-    # For now, just return existing accounts
-    
+
+    results = [_serialize(acc) for acc in existing]
+    if not include_ml:
+        return results[:limit]
+
+    # Use ML ranking to supplement results (keeping existing semantics for empty/invalid queries).
+    if len(results) >= limit:
+        return results[:limit]
+    if not query:
+        return results
+
+    ml_ranked_ids = suggest_accounts(user_id, query) or []
+    if not ml_ranked_ids:
+        return results[:limit]
+
+    already_added = {item["id"] for item in results}
+    # Fetch any accounts not already in the base search to merge by ML rank.
+    missing_ids = [acc_id for acc_id in ml_ranked_ids if acc_id not in already_added]
+    if missing_ids:
+        extra_accounts = (
+            Account.query.filter(Account.user_id == user_id)
+            .filter(Account.id.in_(missing_ids))
+            .filter(Account.is_active.is_(True))
+            .all()
+        )
+        account_map = {acc.id: acc for acc in extra_accounts}
+    else:
+        account_map = {}
+
+    for acc_id in ml_ranked_ids:
+        if len(results) >= limit:
+            break
+        if acc_id in already_added:
+            continue
+        account = account_map.get(acc_id)
+        if not account:
+            continue
+        results.append(_serialize(account))
+        already_added.add(acc_id)
+
     return results[:limit]
 
 
-def list_account_categories(user_id: int, base_type: str | None = None, include_system: bool = True) -> List[AccountCategory]:
+def list_account_categories(
+    user_id: int, base_type: str | None = None, include_system: bool = True
+) -> List[AccountCategory]:
     """List categories for a user plus optional system defaults."""
     query = AccountCategory.query
     if base_type:
@@ -312,7 +356,9 @@ def _get_category_for_user(user_id: int, category_id: int) -> AccountCategory:
     return category
 
 
-def create_custom_account_category(user_id: int, base_type: str, name: str, is_default: bool = False) -> AccountCategory:
+def create_custom_account_category(
+    user_id: int, base_type: str, name: str, is_default: bool = False
+) -> AccountCategory:
     if base_type not in VALID_ACCOUNT_TYPES:
         raise ValueError("invalid_base_type")
     clean_name, slug = _normalize_category_name(name)
@@ -320,8 +366,7 @@ def create_custom_account_category(user_id: int, base_type: str, name: str, is_d
         raise ValueError("invalid_name")
 
     existing = (
-        AccountCategory.query
-        .filter(AccountCategory.user_id == user_id)
+        AccountCategory.query.filter(AccountCategory.user_id == user_id)
         .filter(AccountCategory.base_type == base_type)
         .filter(AccountCategory.slug == slug)
         .first()
@@ -364,25 +409,23 @@ def get_or_create_default_category(user_id: int, base_type: str) -> AccountCateg
         raise ValueError("invalid_base_type")
 
     user_default = (
-        AccountCategory.query
-        .filter(AccountCategory.user_id == user_id)
+        AccountCategory.query.filter(AccountCategory.user_id == user_id)
         .filter(AccountCategory.base_type == base_type)
         .filter(AccountCategory.is_default == True)  # noqa: E712
         .first()
     )
     if user_default:
         return user_default
-    
+
     system_default = (
-        AccountCategory.query
-        .filter(AccountCategory.user_id.is_(None))
+        AccountCategory.query.filter(AccountCategory.user_id.is_(None))
         .filter(AccountCategory.base_type == base_type)
         .filter(AccountCategory.is_default == True)  # noqa: E712
         .first()
     )
     if system_default:
         return system_default
-    
+
     # As a fallback, create a user-scoped default to avoid failures
     return create_custom_account_category(user_id, base_type, f"Default {base_type.title()}", is_default=True)
 
@@ -414,10 +457,9 @@ def create_account(
     normalized_name = _normalize_name(name)
 
     existing = (
-        Account.query
-        .filter(Account.user_id == user_id)
+        Account.query.filter(Account.user_id == user_id)
         .filter(Account.normalized_name == normalized_name)
-        .filter(Account.is_active == True)
+        .filter(Account.is_active.is_(True))
         .first()
     )
     if existing:
@@ -513,19 +555,19 @@ def update_account_category(
 def get_account_subtypes(account_type: str) -> List[str]:
     """
     Get valid subtypes for a given account type.
-    
+
     Args:
         account_type: One of 'asset', 'liability', 'equity', 'income', 'expense'
-    
+
     Returns:
         List of valid subtypes
-    
+
     Raises:
         ValueError("invalid_account_type") if account_type is not valid
     """
     if account_type not in VALID_ACCOUNT_TYPES:
         raise ValueError("invalid_account_type")
-    
+
     return ACCOUNT_SUBTYPES_MAP.get(account_type, [])
 
 

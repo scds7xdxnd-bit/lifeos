@@ -382,7 +382,7 @@ class TestHealthEventEmission:
     def test_biometric_logged_event_emitted(self, app, test_user):
         """Biometric creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="health.biometric.logged"
@@ -399,7 +399,7 @@ class TestHealthEventEmission:
     def test_workout_logged_event_emitted(self, app, test_user):
         """Workout creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="health.workout.logged"
@@ -422,7 +422,7 @@ class TestHealthEventEmission:
     def test_nutrition_logged_event_emitted(self, app, test_user):
         """Nutrition log creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="health.nutrition.logged"

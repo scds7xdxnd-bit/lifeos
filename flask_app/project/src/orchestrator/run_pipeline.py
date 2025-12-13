@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from typing import Dict
 
-from ..models import evaluate, registry, train
 from ..common import settings
+from ..models import evaluate, registry, train
 
 
 def main() -> int:

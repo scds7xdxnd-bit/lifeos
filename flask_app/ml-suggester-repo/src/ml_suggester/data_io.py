@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 import re
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 BASE_REQUIRED = ["Date", "Affected Accounts", "Transaction Description"]
 

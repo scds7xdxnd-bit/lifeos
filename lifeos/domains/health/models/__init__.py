@@ -1,3 +1,3 @@
-from lifeos.domains.health.models.health_models import Biometric, Workout, NutritionLog
+from lifeos.domains.health.models.health_models import Biometric, NutritionLog, Workout
 
 __all__ = ["Biometric", "Workout", "NutritionLog"]

@@ -9,7 +9,11 @@ pytestmark = pytest.mark.integration
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
-from lifeos.domains.projects.models.project_models import Project, ProjectTask, ProjectTaskLog
+from lifeos.domains.projects.models.project_models import (
+    Project,
+    ProjectTask,
+    ProjectTaskLog,
+)
 from lifeos.domains.projects.services.project_service import (
     archive_project,
     complete_project,
@@ -307,9 +311,7 @@ class TestTaskService:
             open_items, open_total = list_tasks(test_user.id, project_id=project.id, status="open")
             assert open_total == 1
 
-            completed_items, completed_total = list_tasks(
-                test_user.id, project_id=project.id, status="completed"
-            )
+            completed_items, completed_total = list_tasks(test_user.id, project_id=project.id, status="completed")
             assert completed_total == 1
 
     def test_list_tasks_due_before_filter(self, app, test_user):
@@ -317,15 +319,23 @@ class TestTaskService:
         with app.app_context():
             project = create_project(test_user.id, name="Due Date Project")
             create_task(
-                test_user.id, project.id, title="Soon", due_date=date.today() + timedelta(days=1)
+                test_user.id,
+                project.id,
+                title="Soon",
+                due_date=date.today() + timedelta(days=1),
             )
             create_task(
-                test_user.id, project.id, title="Later", due_date=date.today() + timedelta(days=30)
+                test_user.id,
+                project.id,
+                title="Later",
+                due_date=date.today() + timedelta(days=30),
             )
             create_task(test_user.id, project.id, title="No Due Date")
 
             items, total = list_tasks(
-                test_user.id, project_id=project.id, due_before=date.today() + timedelta(days=7)
+                test_user.id,
+                project_id=project.id,
+                due_before=date.today() + timedelta(days=7),
             )
             assert total == 1
 
@@ -383,7 +393,7 @@ class TestProjectEventEmission:
     def test_project_created_event_emitted(self, app, test_user):
         """Project creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="projects.project.created"
@@ -400,7 +410,7 @@ class TestProjectEventEmission:
     def test_project_updated_event_emitted(self, app, test_user):
         """Project update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Update Event Project")
 
@@ -419,7 +429,7 @@ class TestProjectEventEmission:
     def test_project_archived_event_emitted(self, app, test_user):
         """Project archive should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Archive Event Project")
 
@@ -438,7 +448,7 @@ class TestProjectEventEmission:
     def test_project_completed_event_emitted(self, app, test_user):
         """Project completion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Complete Event Project")
 
@@ -457,7 +467,7 @@ class TestProjectEventEmission:
     def test_task_created_event_emitted(self, app, test_user):
         """Task creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Task Event Project")
 
@@ -487,7 +497,10 @@ class TestProjectUserIsolation:
             create_project(test_user.id, name="User A Project")
 
             # Create another user with project
-            other_user = User(email="other-projects@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-projects@example.com",
+                password_hash=hash_password("secret"),
+            )
             db.session.add(other_user)
             db.session.commit()
             create_project(other_user.id, name="User B Project")

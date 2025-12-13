@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime as _dt
 from typing import Tuple
 
-from sqlalchemy import and_, func as sa_func, or_
+from sqlalchemy import and_, or_
 
 from finance_app.extensions import db
 from finance_app.models.accounting_models import (

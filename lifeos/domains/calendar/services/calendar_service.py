@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
+from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.events import (
     CALENDAR_EVENT_CREATED,
     CALENDAR_EVENT_DELETED,
@@ -17,7 +18,7 @@ from lifeos.domains.calendar.models.calendar_event import (
     CalendarEventInterpretation,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def create_calendar_event(
@@ -37,7 +38,7 @@ def create_calendar_event(
 ) -> CalendarEvent:
     """
     Create a new calendar event.
-    
+
     Emits calendar.event.created event for interpreter processing.
     """
     title = (title or "").strip()
@@ -100,7 +101,7 @@ def update_calendar_event(
 ) -> CalendarEvent:
     """
     Update an existing calendar event.
-    
+
     Emits calendar.event.updated event for interpreter re-processing.
     """
     event = CalendarEvent.query.filter_by(id=event_id, user_id=user_id).first()
@@ -180,7 +181,7 @@ def update_calendar_event(
 def delete_calendar_event(user_id: int, event_id: int) -> None:
     """
     Delete a calendar event and its interpretations.
-    
+
     Emits calendar.event.deleted event.
     """
     event = CalendarEvent.query.filter_by(id=event_id, user_id=user_id).first()
@@ -216,7 +217,7 @@ def list_calendar_events(
 ) -> List[CalendarEvent]:
     """
     List calendar events with optional filters.
-    
+
     Returns events ordered by start_time descending.
     """
     query = CalendarEvent.query.filter(CalendarEvent.user_id == user_id)
@@ -228,12 +229,7 @@ def list_calendar_events(
     if source:
         query = query.filter(CalendarEvent.source == source)
 
-    return (
-        query.order_by(CalendarEvent.start_time.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEvent.start_time.desc()).offset(offset).limit(limit).all()
 
 
 def get_pending_interpretations(
@@ -253,12 +249,7 @@ def get_pending_interpretations(
     if domain:
         query = query.filter(CalendarEventInterpretation.domain == domain)
 
-    return (
-        query.order_by(CalendarEventInterpretation.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEventInterpretation.created_at.desc()).offset(offset).limit(limit).all()
 
 
 def update_interpretation_status(
@@ -268,19 +259,18 @@ def update_interpretation_status(
     record_id: Optional[int] = None,
 ) -> CalendarEventInterpretation:
     """
-    Update interpretation status (confirm, reject, ignore).
-    
+    Update interpretation status (confirm, reject, ignore, ambiguous).
+
     Emits appropriate event based on new status.
     """
-    if status not in {"confirmed", "rejected", "ignored"}:
+    if status not in {"confirmed", "rejected", "ignored", "ambiguous"}:
         raise ValueError("invalid_status")
 
-    interpretation = CalendarEventInterpretation.query.filter_by(
-        id=interpretation_id, user_id=user_id
-    ).first()
+    interpretation = CalendarEventInterpretation.query.filter_by(id=interpretation_id, user_id=user_id).first()
     if not interpretation:
         raise ValueError("not_found")
 
+    previous_record_id = interpretation.record_id
     interpretation.status = status
     if record_id is not None:
         interpretation.record_id = record_id
@@ -298,6 +288,8 @@ def update_interpretation_status(
                 "domain": interpretation.domain,
                 "record_type": interpretation.record_type,
                 "record_id": record_id,
+                "status": status,
+                "payload_version": "v1",
                 "confirmed_at": datetime.utcnow().isoformat(),
             },
             user_id=user_id,
@@ -311,10 +303,50 @@ def update_interpretation_status(
                 "user_id": user_id,
                 "domain": interpretation.domain,
                 "record_type": interpretation.record_type,
+                "status": status,
+                "payload_version": "v1",
                 "rejected_at": datetime.utcnow().isoformat(),
             },
             user_id=user_id,
         )
+    elif status == "ambiguous":
+        enqueue_outbox(
+            CALENDAR_INTERPRETATION_REJECTED,
+            {
+                "interpretation_id": interpretation.id,
+                "calendar_event_id": interpretation.calendar_event_id,
+                "user_id": user_id,
+                "domain": interpretation.domain,
+                "record_type": interpretation.record_type,
+                "status": status,
+                "payload_version": "v1",
+                "updated_at": datetime.utcnow().isoformat(),
+            },
+            user_id=user_id,
+        )
+
+    is_false_positive = status in {"rejected", "ambiguous"}
+    is_false_negative = False
+    if status == "confirmed" and record_id is not None:
+        if previous_record_id and record_id != previous_record_id:
+            is_false_negative = True  # model pointed to wrong entity; user corrected
+        elif previous_record_id is None:
+            is_false_negative = True  # model missed mapping; user supplied
+
+    emit_inference_event(
+        domain=interpretation.domain,
+        record_type=interpretation.record_type,
+        user_id=user_id,
+        calendar_event_id=interpretation.calendar_event_id,
+        confidence=float(interpretation.confidence_score),
+        inferred_data=interpretation.classification_data or {},
+        record_id=interpretation.record_id,
+        status=status,
+        model_version="calendar-interpreter-v1",
+        context={"source": "user_review", "interpretation_id": interpretation.id},
+        is_false_positive=is_false_positive,
+        is_false_negative=is_false_negative,
+    )
 
     db.session.commit()
     return interpretation

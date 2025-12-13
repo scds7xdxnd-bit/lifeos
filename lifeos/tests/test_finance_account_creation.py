@@ -18,7 +18,7 @@ from lifeos.domains.finance.services.accounting_service import (
     ACCOUNT_SUBTYPES_MAP,
 )
 from lifeos.domains.finance.events import FINANCE_ACCOUNT_CREATED
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 class TestNormalizeName:
@@ -164,11 +164,10 @@ class TestSearchAccounts:
             assert len(results) == 0
 
     def test_search_empty_query(self, app):
-        """Test that empty query raises ValueError."""
+        """Empty query should return no results without raising."""
         with app.app_context():
-            with pytest.raises(ValueError) as exc_info:
-                search_accounts(1, "")
-            assert str(exc_info.value) == "invalid_query"
+            results = search_accounts(1, "")
+            assert results == []
 
     def test_search_query_too_long(self, app):
         """Test that overly long query raises ValueError."""

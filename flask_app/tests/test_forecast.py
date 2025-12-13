@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
-from decimal import Decimal
 import os
 import shutil
 import tempfile
+from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
-
 from finance_app import create_app, db
-from finance_app.models.money_account import AccountType, MoneyScheduleAccount as Account
+from finance_app.models.money_account import AccountType
+from finance_app.models.money_account import MoneyScheduleAccount as Account
 from finance_app.models.scheduled_transaction import ScheduledTransaction, TransactionStatus
 from finance_app.services.forecast import compute_daily_forecast
 

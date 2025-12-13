@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import List, Tuple
 
-from sqlalchemy import func
-
 from lifeos.domains.health.events import (
     HEALTH_BIOMETRIC_LOGGED,
     HEALTH_NUTRITION_LOGGED,
@@ -14,7 +12,7 @@ from lifeos.domains.health.events import (
 )
 from lifeos.domains.health.models.health_models import Biometric, NutritionLog, Workout
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 _INTENSITY = {"low", "medium", "high"}
 _MEAL_TYPES = {"breakfast", "lunch", "dinner", "snack", "other"}
@@ -64,7 +62,7 @@ def create_biometric_entry(
             "user_id": user_id,
             "date": biometric.date.isoformat(),
             "weight": float(biometric.weight) if biometric.weight is not None else None,
-            "body_fat_pct": float(biometric.body_fat_pct) if biometric.body_fat_pct is not None else None,
+            "body_fat_pct": (float(biometric.body_fat_pct) if biometric.body_fat_pct is not None else None),
             "resting_hr": biometric.resting_hr,
             "energy_level": biometric.energy_level,
             "stress_level": biometric.stress_level,
@@ -76,7 +74,11 @@ def create_biometric_entry(
 
 
 def list_biometrics(
-    user_id: int, start_date: date | None = None, end_date: date | None = None, page: int = 1, per_page: int = 50
+    user_id: int,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = 1,
+    per_page: int = 50,
 ) -> tuple[list[Biometric], int]:
     query = Biometric.query.filter_by(user_id=user_id)
     if start_date:
@@ -122,7 +124,7 @@ def create_workout(
             "workout_type": workout.workout_type,
             "duration_minutes": workout.duration_minutes,
             "intensity": workout.intensity,
-            "calories_est": float(workout.calories_est) if workout.calories_est is not None else None,
+            "calories_est": (float(workout.calories_est) if workout.calories_est is not None else None),
         },
         user_id=user_id,
     )
@@ -131,7 +133,11 @@ def create_workout(
 
 
 def list_workouts(
-    user_id: int, start_date: date | None = None, end_date: date | None = None, page: int = 1, per_page: int = 50
+    user_id: int,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = 1,
+    per_page: int = 50,
 ) -> tuple[list[Workout], int]:
     query = Workout.query.filter_by(user_id=user_id)
     if start_date:
@@ -173,7 +179,7 @@ def create_nutrition_log(
             "user_id": user_id,
             "date": log.date.isoformat(),
             "meal_type": log.meal_type,
-            "calories_est": float(log.calories_est) if log.calories_est is not None else None,
+            "calories_est": (float(log.calories_est) if log.calories_est is not None else None),
             "quality_score": log.quality_score,
         },
         user_id=user_id,
@@ -183,7 +189,11 @@ def create_nutrition_log(
 
 
 def list_nutrition_logs(
-    user_id: int, start_date: date | None = None, end_date: date | None = None, page: int = 1, per_page: int = 50
+    user_id: int,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = 1,
+    per_page: int = 50,
 ) -> tuple[list[NutritionLog], int]:
     query = NutritionLog.query.filter_by(user_id=user_id)
     if start_date:
@@ -231,7 +241,11 @@ def get_daily_summary(user_id: int, summary_date: date) -> dict:
 def get_weekly_summary(user_id: int, week_start: date) -> dict:
     week_end = week_start + timedelta(days=6)
     biometrics = (
-        Biometric.query.filter(Biometric.user_id == user_id, Biometric.date >= week_start, Biometric.date <= week_end)
+        Biometric.query.filter(
+            Biometric.user_id == user_id,
+            Biometric.date >= week_start,
+            Biometric.date <= week_end,
+        )
         .order_by(Biometric.date.desc(), Biometric.created_at.desc())
         .all()
     )
@@ -244,14 +258,14 @@ def get_weekly_summary(user_id: int, week_start: date) -> dict:
     energy = [b.energy_level for b in latest_by_date.values() if b.energy_level is not None]
     stress = [b.stress_level for b in latest_by_date.values() if b.stress_level is not None]
 
-    workouts = (
-        Workout.query.filter(Workout.user_id == user_id, Workout.date >= week_start, Workout.date <= week_end).all()
-    )
-    nutrition_logs = (
-        NutritionLog.query.filter(
-            NutritionLog.user_id == user_id, NutritionLog.date >= week_start, NutritionLog.date <= week_end
-        ).all()
-    )
+    workouts = Workout.query.filter(
+        Workout.user_id == user_id, Workout.date >= week_start, Workout.date <= week_end
+    ).all()
+    nutrition_logs = NutritionLog.query.filter(
+        NutritionLog.user_id == user_id,
+        NutritionLog.date >= week_start,
+        NutritionLog.date <= week_end,
+    ).all()
 
     workout_by_type: dict[str, int] = {}
     total_workout_duration = 0

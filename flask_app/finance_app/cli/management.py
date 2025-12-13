@@ -28,8 +28,8 @@ from finance_app.services.account_service import assign_codes_for_user, ensure_a
 from finance_app.services.journal_service import (
     JournalBalanceError,
     JournalLinePayload,
-    create_journal_entry,
     _validate_balanced,
+    create_journal_entry,
 )
 
 
@@ -53,7 +53,7 @@ def _alembic_config(db_url: str | None = None) -> Config:
 @with_appcontext
 def migrate_to_journal_cli(user_id, dry_run, limit):
     """Create JournalEntry + JournalLine rows from existing simple Transaction rows."""
-    from decimal import Decimal, ROUND_HALF_UP
+    from decimal import ROUND_HALF_UP, Decimal
 
     q = Transaction.query
     if user_id is not None:

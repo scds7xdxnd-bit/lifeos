@@ -1,17 +1,14 @@
 """Core app routes (index, documents, ML suggestion endpoints, health)."""
 import datetime
 import os
-import secrets
 import time
-from collections import defaultdict
 
-from flask import Blueprint, redirect, render_template, request, session, url_for, flash
-from sqlalchemy import func
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from finance_app.extensions import db
 from finance_app.lib.auth import current_user
-from finance_app.models.accounting_models import Account, AccountCategory, AccountSuggestionLog, SuggestionFeedback, TrialBalanceSetting
-from finance_app.services.account_service import ensure_account
+from finance_app.models.accounting_models import (
+    TrialBalanceSetting,
+)
 from finance_app.services.ml_gateway_service import (
     call_ml_api,
     compute_suggestions,

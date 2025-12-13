@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import List
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from ..data.schema import ALLOWED_MERCHANT_TYPES
 

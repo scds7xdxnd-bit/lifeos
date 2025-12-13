@@ -82,6 +82,7 @@
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
       Array.from(form?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
+      if (reloadBtn) reloadBtn.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };
@@ -269,8 +270,15 @@
         emptyEl.style.display = 'block';
       }
     });
-    ensureAuth();
-    fetchReceivables();
+    const start = () => {
+      ensureAuth();
+      fetchReceivables();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>
 {% endblock %}

@@ -6,14 +6,19 @@ import tempfile
 from decimal import Decimal
 
 import pytest
-
-from finance_app import create_app, db, User
-from finance_app.models.accounting_models import Account, AccountCategory, JournalEntry, JournalLine, ReceivableManualEntry
+from finance_app import User, create_app, db
+from finance_app.models.accounting_models import (
+    Account,
+    AccountCategory,
+    JournalEntry,
+    JournalLine,
+    ReceivableManualEntry,
+)
 from finance_app.services.receivable_service import (
     link_receivable_lines,
     resolve_receivable_scope,
-    serialize_receivable_line,
     serialize_manual_receivable,
+    serialize_receivable_line,
 )
 
 os.environ.setdefault("AUTO_CREATE_SCHEMA", "true")

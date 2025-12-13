@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from jsonschema import Draft202012Validator
-
 from src.common import settings
 from src.service_online import contracts
 

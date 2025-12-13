@@ -17,7 +17,8 @@ echo "=== Checking Alembic Migration Consistency ==="
 # Check that there's exactly one head (no branches)
 echo "Checking for single migration head..."
 HEADS=$(cd lifeos && python -m flask --app wsgi:app db heads 2>/dev/null | grep -c "Rev:" || echo "0")
-if [ "$HEADS" -gt 1 ]; then
+HEADS_TRIMMED=$(echo "$HEADS" | tr -d '[:space:]')
+if [ "${HEADS_TRIMMED:-0}" -gt 1 ]; then
     echo "❌ ERROR: Multiple migration heads detected. Merge required."
     cd lifeos && python -m flask --app wsgi:app db heads
     exit 1

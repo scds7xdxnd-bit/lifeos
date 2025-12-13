@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
 from lifeos.core.utils.decorators import csrf_protected
+from lifeos.domains.habits import services as habit_services
 from lifeos.domains.habits.schemas.habit_schemas import (
     HabitCreate,
     HabitDetailResponse,
@@ -18,7 +17,6 @@ from lifeos.domains.habits.schemas.habit_schemas import (
     HabitSummaryResponse,
     HabitUpdate,
 )
-from lifeos.domains.habits import services as habit_services
 
 habit_api_bp = Blueprint("habit_api", __name__)
 
@@ -55,7 +53,10 @@ def create_habit():
     try:
         data = HabitCreate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     try:
         habit = habit_services.create_habit(user_id=user_id, **data.model_dump())
@@ -85,7 +86,16 @@ def habit_detail(habit_id: int):
         difficulty=habit.difficulty,
         is_active=habit.is_active,
         stats=detail["stats"],
-        logs=[HabitLogResponse(id=log.id, habit_id=log.habit_id, logged_date=log.logged_date, value=log.value, note=log.note) for log in detail["logs"]],
+        logs=[
+            HabitLogResponse(
+                id=log.id,
+                habit_id=log.habit_id,
+                logged_date=log.logged_date,
+                value=log.value,
+                note=log.note,
+            )
+            for log in detail["logs"]
+        ],
     )
     return jsonify({"ok": True, "habit": resp.model_dump()})
 
@@ -98,9 +108,16 @@ def update_habit(habit_id: int):
     try:
         data = HabitUpdate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
-    habit = habit_services.update_habit(user_id, habit_id, **{k: v for k, v in data.model_dump().items() if v is not None})
+    habit = habit_services.update_habit(
+        user_id,
+        habit_id,
+        **{k: v for k, v in data.model_dump().items() if v is not None},
+    )
     if not habit:
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True})
@@ -136,7 +153,10 @@ def create_log(habit_id: int):
     try:
         data = HabitLogCreate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     try:
         log = habit_services.log_habit_completion(user_id, habit_id, **data.model_dump())
@@ -147,7 +167,18 @@ def create_log(habit_id: int):
         if code == "inactive":
             return jsonify({"ok": False, "error": "inactive"}), 400
         return jsonify({"ok": False, "error": "validation_error"}), 400
-    return jsonify({"ok": True, "log": HabitLogResponse(id=log.id, habit_id=log.habit_id, logged_date=log.logged_date, value=log.value, note=log.note).model_dump()})
+    return jsonify(
+        {
+            "ok": True,
+            "log": HabitLogResponse(
+                id=log.id,
+                habit_id=log.habit_id,
+                logged_date=log.logged_date,
+                value=log.value,
+                note=log.note,
+            ).model_dump(),
+        }
+    )
 
 
 @habit_api_bp.patch("/logs/<int:log_id>")
@@ -158,9 +189,14 @@ def update_log(log_id: int):
     try:
         data = HabitLogUpdate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
-    log = habit_services.update_habit_log(user_id, log_id, **{k: v for k, v in data.model_dump().items() if v is not None})
+    log = habit_services.update_habit_log(
+        user_id, log_id, **{k: v for k, v in data.model_dump().items() if v is not None}
+    )
     if not log:
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True})

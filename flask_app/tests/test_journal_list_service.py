@@ -3,8 +3,7 @@ from __future__ import annotations
 import datetime as _dt
 
 import pytest
-
-from finance_app import create_app, db, User
+from finance_app import User, create_app, db
 from finance_app.models.accounting_models import Account, AccountCategory, JournalEntry, JournalLine
 from finance_app.services.journal_service import list_entries
 

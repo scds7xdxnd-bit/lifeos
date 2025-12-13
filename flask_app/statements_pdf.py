@@ -5,16 +5,14 @@ Design aligns with trial_balance_pdf (A4, header/footer, small fonts, zebra tabl
 from __future__ import annotations
 
 import datetime as _dt
-from pathlib import Path
 from collections import defaultdict
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Dict, List, Sequence, Set, Tuple
 
-from jinja2 import Environment, BaseLoader, select_autoescape
-
-from trial_balance_pdf import render_with_weasyprint  # reuse renderer
 from finance_app.services.exchange_rate_service import get_rate_to_krw
-
+from jinja2 import BaseLoader, Environment, select_autoescape
+from trial_balance_pdf import render_with_weasyprint  # reuse renderer
 
 BASE_CSS = """
   @page { size:A4; margin:18mm; @top-center { content: element(page-header) } @bottom-center { content: element(page-footer) } }

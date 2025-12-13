@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
 
 from flask import Flask, redirect, url_for
 from sqlalchemy.engine import processors
@@ -87,14 +87,32 @@ def create_app(config_name: Optional[str] = None) -> Flask:
             import sqlite3
 
             sqlite3.register_converter(
-                "DATETIME", lambda val: val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
+                "DATETIME",
+                lambda val: (val.decode() if isinstance(val, (bytes, bytearray)) else str(val)),
             )
             sqlite3.register_converter(
-                "TIMESTAMP", lambda val: val.decode() if isinstance(val, (bytes, bytearray)) else str(val)
+                "TIMESTAMP",
+                lambda val: (val.decode() if isinstance(val, (bytes, bytearray)) else str(val)),
             )
         except Exception:
             # If sqlite3 is unavailable or converters cannot be registered, continue with detect_types disabled.
             pass
+    else:
+        # Remove sqlite-specific connect_args that break Postgres/MySQL drivers in CI
+        engine_opts = app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
+        connect_args = engine_opts.get("connect_args") or {}
+        connect_args.pop("detect_types", None)
+        # Convert sqlite busy timeout to Postgres connect_timeout, otherwise drop it
+        if "timeout" in connect_args:
+            timeout_val = connect_args.pop("timeout")
+            is_postgres = db_uri.startswith("postgresql")
+            if is_postgres:
+                connect_args.setdefault("connect_timeout", timeout_val)
+        # If nothing remains, drop connect_args entirely
+        if not connect_args and "connect_args" in engine_opts:
+            engine_opts.pop("connect_args")
+        else:
+            engine_opts["connect_args"] = connect_args
 
     init_extensions(app)
     _register_blueprints(app)
@@ -107,6 +125,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
     # Register calendar interpreter subscriptions
     from lifeos.core.interpreter import calendar_interpreter
+
     calendar_interpreter.register_subscriptions()
     app.extensions["calendar_interpreter"] = calendar_interpreter
 
@@ -126,6 +145,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
     # Register CLI commands
     from lifeos.scripts.sync_calendars import register_commands
+
     register_commands(app)
 
     return app
@@ -133,37 +153,48 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
 def _register_blueprints(app: Flask) -> None:
     """Lazy import and register all controllers."""
-    from lifeos.core.auth.controllers import auth_bp  # local import to avoid circulars
-    from lifeos.core.users.controllers import user_api_bp, user_pages_bp
+    from lifeos.core.admin.controllers import admin_debug_bp
+    from lifeos.core.auth.admin_controllers import admin_auth_bp
+    from lifeos.core.auth.api_v1 import api_v1_auth_bp
+    from lifeos.core.auth.controllers import auth_bp, auth_pages_bp  # local import to avoid circulars
+    from lifeos.core.insights.api_v1 import api_v1_insights_bp
+    from lifeos.core.insights.controllers import insights_api_bp
     from lifeos.core.insights.pages import insights_pages_bp
+    from lifeos.core.users.controllers import user_api_bp, user_pages_bp
+    from lifeos.domains.calendar.controllers.calendar_api import calendar_api_bp
+    from lifeos.domains.calendar.controllers.calendar_pages import calendar_pages_bp
 
     # Domain controllers (API + pages). Each module exposes *_bp variables.
     from lifeos.domains.finance.controllers.accounting_api import finance_api_bp
-    from lifeos.domains.finance.controllers.journal_api import journal_api_bp as finance_journal_api_bp
-    from lifeos.domains.finance.controllers.trial_balance_api import trial_balance_api_bp
-    from lifeos.domains.finance.controllers.pages import finance_pages_bp
-    from lifeos.domains.finance.controllers.import_api import import_api_bp
-    from lifeos.domains.finance.controllers.receivable_api import receivable_api_bp
-    from lifeos.domains.finance.controllers.forecast_api import forecast_api_bp
-    from lifeos.domains.finance.controllers.schedule_api import schedule_api_bp
     from lifeos.domains.finance.controllers.dashboard_api import dashboard_api_bp
+    from lifeos.domains.finance.controllers.forecast_api import forecast_api_bp
+    from lifeos.domains.finance.controllers.import_api import import_api_bp
+    from lifeos.domains.finance.controllers.journal_api import (
+        journal_api_bp as finance_journal_api_bp,
+    )
+    from lifeos.domains.finance.controllers.pages import finance_pages_bp
+    from lifeos.domains.finance.controllers.receivable_api import receivable_api_bp
+    from lifeos.domains.finance.controllers.schedule_api import schedule_api_bp
+    from lifeos.domains.finance.controllers.trial_balance_api import (
+        trial_balance_api_bp,
+    )
     from lifeos.domains.habits.controllers.habit_api import habit_api_bp
     from lifeos.domains.habits.controllers.habit_pages import habit_pages_bp
-    from lifeos.domains.skills.controllers.skill_api import skill_api_bp
-    from lifeos.domains.skills.controllers.skill_pages import skill_pages_bp
     from lifeos.domains.health.controllers.health_api import health_api_bp
     from lifeos.domains.health.controllers.health_pages import health_pages_bp
     from lifeos.domains.journal.controllers.journal_api import journal_api_bp
     from lifeos.domains.journal.controllers.journal_pages import journal_pages_bp
-    from lifeos.domains.relationships.controllers.rel_api import rel_api_bp
-    from lifeos.domains.relationships.controllers.rel_pages import rel_pages_bp
     from lifeos.domains.projects.controllers.project_api import project_api_bp
     from lifeos.domains.projects.controllers.project_pages import project_pages_bp
-    from lifeos.core.insights.controllers import insights_api_bp
-    from lifeos.domains.calendar.controllers.calendar_api import calendar_api_bp
-    from lifeos.domains.calendar.controllers.calendar_pages import calendar_pages_bp
+    from lifeos.domains.relationships.controllers.rel_api import rel_api_bp
+    from lifeos.domains.relationships.controllers.rel_pages import rel_pages_bp
+    from lifeos.domains.skills.controllers.skill_api import skill_api_bp
+    from lifeos.domains.skills.controllers.skill_pages import skill_pages_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(auth_pages_bp, url_prefix="")
+    app.register_blueprint(api_v1_auth_bp, url_prefix="/api/v1/auth")
+    app.register_blueprint(admin_auth_bp, url_prefix="/admin/auth")
     app.register_blueprint(user_api_bp, url_prefix="/api/users")
     app.register_blueprint(user_pages_bp, url_prefix="/users")
 
@@ -189,9 +220,15 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(project_api_bp, url_prefix="/api/projects")
     app.register_blueprint(project_pages_bp, url_prefix="/projects")
     app.register_blueprint(insights_api_bp, url_prefix="/api/insights")
+    app.register_blueprint(api_v1_insights_bp, url_prefix="/api/v1/insights")
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
     app.register_blueprint(calendar_pages_bp, url_prefix="/calendar")
+
+    # Admin/debug endpoints: register only in non-production or when debugging.
+    env = (app.config.get("ENV") or "").lower()
+    if env != "production" or app.debug:
+        app.register_blueprint(admin_debug_bp)
 
 
 def _register_error_handlers(app: Flask) -> None:

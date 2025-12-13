@@ -1,0 +1,258 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<section class="auth-hero">
+  <div class="auth-hero__copy">
+    <p class="meta">Profile/Auth · Aligned with UI/UX Constitution §5 (Profile/Auth)</p>
+    <h2>Is my account safe and configured?</h2>
+    <p>Calmly access your calendar spine, finance overlays, and review queues. One clear primary action, no form walls.</p>
+    <ul class="auth-hero__list">
+      <li>✔️ Secure JWT + CSRF pairing handled for you.</li>
+      <li>✔️ Read-first dashboards; edit flows appear only after intent.</li>
+      <li>✔️ One dominant CTA so you always know the next step.</li>
+    </ul>
+    <p class="meta">Demo users: admin@example.com / admin12345 or demo@lifeos.test / demo12345</p>
+  </div>
+
+  <div class="auth-hero__card">
+    <h3>Access your account</h3>
+    <p class="meta">Choose an action below.</p>
+    <div class="auth-tabs" role="tablist">
+      <button type="button" class="auth-tab active" data-view="login">Login</button>
+      <button type="button" class="auth-tab" data-view="register">Register</button>
+      <button type="button" class="auth-tab" data-view="forgot-username">Forgot username</button>
+      <button type="button" class="auth-tab" data-view="forgot-password">Forgot password</button>
+      <button type="button" class="auth-tab" data-view="reset-password">Reset password</button>
+    </div>
+
+    <form id="lp-login-form" class="auth-view field-stack" data-view="login" autocomplete="on">
+      <div class="field">
+        <label for="lp-email">Email</label>
+        <input id="lp-email" name="email" type="email" placeholder="you@example.com" required>
+      </div>
+      <div class="field">
+        <label for="lp-password">Password</label>
+        <input id="lp-password" name="password" type="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn">Sign in</button>
+    </form>
+
+    <form id="lp-register-form" class="auth-view auth-hidden field-stack" data-view="register" autocomplete="on">
+      <div class="field">
+        <label for="lp-register-email">Email</label>
+        <input id="lp-register-email" name="email" type="email" placeholder="you@example.com" required>
+      </div>
+      <div class="field">
+        <label for="lp-register-password">Password</label>
+        <input id="lp-register-password" name="password" type="password" placeholder="At least 8 chars, letters & numbers" required>
+        <small>Min 8 characters, include letters and numbers.</small>
+      </div>
+      <div class="field">
+        <label for="lp-register-name">Full name (optional)</label>
+        <input id="lp-register-name" name="full_name" type="text" placeholder="Your name">
+      </div>
+      <div class="field">
+        <label for="lp-register-timezone">Timezone (optional)</label>
+        <input id="lp-register-timezone" name="timezone" type="text" placeholder="e.g., America/New_York">
+      </div>
+      <button type="submit" class="btn">Create account</button>
+    </form>
+
+    <form id="lp-forgot-username-form" class="auth-view auth-hidden field-stack" data-view="forgot-username">
+      <div class="field">
+        <label for="lp-forgot-username-email">Email</label>
+        <input id="lp-forgot-username-email" name="email" type="email" placeholder="you@example.com" required>
+      </div>
+      <small>We will send your username to the email if an account exists.</small>
+      <button type="submit" class="btn">Send reminder</button>
+    </form>
+
+    <form id="lp-forgot-password-form" class="auth-view auth-hidden field-stack" data-view="forgot-password">
+      <div class="field">
+        <label for="lp-forgot-password-email">Email</label>
+        <input id="lp-forgot-password-email" name="email" type="email" placeholder="you@example.com" required>
+      </div>
+      <small>We will email a password reset link if we find your account.</small>
+      <button type="submit" class="btn">Email reset link</button>
+    </form>
+
+    <form id="lp-reset-password-form" class="auth-view auth-hidden field-stack" data-view="reset-password">
+      <div class="field">
+        <label for="lp-reset-token">Reset token</label>
+        <input id="lp-reset-token" name="token" type="text" placeholder="Paste token from email" required>
+      </div>
+      <div class="field">
+        <label for="lp-reset-password">New password</label>
+        <input id="lp-reset-password" name="new_password" type="password" placeholder="New password" required>
+        <small>Use at least 8 characters with letters and numbers.</small>
+      </div>
+      <button type="submit" class="btn">Reset password</button>
+    </form>
+
+    <div id="lp-status" class="auth-status" aria-live="polite"></div>
+  </div>
+</section>
+
+<script>
+(() => {
+  const tabs = Array.from(document.querySelectorAll('.auth-tab'));
+  const views = Array.from(document.querySelectorAll('.auth-view'));
+  const statusEl = document.getElementById('lp-status');
+  const loginForm = document.getElementById('lp-login-form');
+  const registerForm = document.getElementById('lp-register-form');
+  const forgotUsernameForm = document.getElementById('lp-forgot-username-form');
+  const forgotPasswordForm = document.getElementById('lp-forgot-password-form');
+  const resetPasswordForm = document.getElementById('lp-reset-password-form');
+
+  const setStatus = (msg, tone = '') => {
+    if (!statusEl) return;
+    statusEl.textContent = msg || '';
+    if (tone) statusEl.dataset.tone = tone; else statusEl.removeAttribute('data-tone');
+  };
+
+  const selectView = (viewName) => {
+    views.forEach((v) => v.classList.toggle('auth-hidden', v.dataset.view !== viewName));
+    tabs.forEach((t) => t.classList.toggle('active', t.dataset.view === viewName));
+    setStatus('');
+  };
+
+  tabs.forEach((tab) => tab.addEventListener('click', () => selectView(tab.dataset.view)));
+
+  const postJson = (url, body) =>
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+
+  loginForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('lp-email').value.trim();
+    const password = document.getElementById('lp-password').value;
+    if (!email || !password) {
+      setStatus('Email and password are required.', 'error');
+      return;
+    }
+    setStatus('Signing in...');
+    try {
+      const res = await postJson('/auth/login', { email, password });
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && payload?.access_token) {
+        if (window.setTokens) {
+          window.setTokens({
+            access_token: payload.access_token,
+            refresh_token: payload.refresh_token,
+            csrf_token: payload.csrf_token,
+            user: payload.user,
+          });
+        }
+        setStatus('Welcome back.', 'success');
+        setTimeout(() => { window.location.href = '/'; }, 300);
+      } else {
+        const reason = payload?.error || res.status;
+        const copy = reason === 'invalid_credentials' ? 'Check your email or password.' : 'Unable to sign in right now.';
+        setStatus(copy, 'error');
+      }
+    } catch (err) {
+      setStatus('Network error. Try again.', 'error');
+    }
+  });
+
+  registerForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('Creating account...');
+    const data = Object.fromEntries(new FormData(registerForm).entries());
+    const payload = {
+      email: data.email,
+      password: data.password,
+      full_name: data.full_name || null,
+      timezone: data.timezone || null,
+    };
+    try {
+      const res = await postJson('/auth/register', payload);
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body && body.ok !== false) {
+        if (body.access_token && window.setTokens) {
+          window.setTokens({
+            access_token: body.access_token,
+            refresh_token: body.refresh_token,
+            csrf_token: body.csrf_token,
+            user: body.user,
+          });
+          setStatus('Account created and logged in.', 'success');
+          setTimeout(() => { window.location.href = '/'; }, 300);
+        } else {
+          setStatus('Account created. You can log in now.', 'success');
+          selectView('login');
+        }
+      } else {
+        const reason = body.error || res.status;
+        const copy = {
+          email_already_exists: 'Email already registered.',
+          bad_request: 'Check your inputs (password must include letters and numbers).',
+        }[reason] || 'Registration failed.';
+        setStatus(copy, 'error');
+      }
+    } catch (_) {
+      setStatus('Network error. Try again.', 'error');
+    }
+  });
+
+  forgotUsernameForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('Sending reminder...');
+    const data = Object.fromEntries(new FormData(forgotUsernameForm).entries());
+    try {
+      const res = await postJson('/auth/forgot-username', data);
+      if (res.ok) {
+        setStatus('If an account exists, you will receive an email shortly.', 'success');
+      } else {
+        setStatus('Unable to process that request right now.', 'error');
+      }
+    } catch (_) {
+      setStatus('Network error. Try again.', 'error');
+    }
+  });
+
+  forgotPasswordForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('Emailing reset link...');
+    const data = Object.fromEntries(new FormData(forgotPasswordForm).entries());
+    try {
+      const res = await postJson('/auth/forgot-password', data);
+      if (res.ok) {
+        setStatus('If an account exists, we sent a reset link.', 'success');
+      } else {
+        setStatus('Unable to send reset link.', 'error');
+      }
+    } catch (_) {
+      setStatus('Network error. Try again.', 'error');
+    }
+  });
+
+  resetPasswordForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(resetPasswordForm).entries());
+    if (!data.token || !data.new_password) {
+      setStatus('Token and new password are required.', 'error');
+      return;
+    }
+    setStatus('Updating password...');
+    try {
+      const res = await postJson('/auth/reset-password', data);
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && (payload.ok === undefined || payload.ok === true)) {
+        setStatus('Password reset. You can log in with your new password.', 'success');
+        selectView('login');
+      } else {
+        setStatus('Reset failed. Double-check your token and try again.', 'error');
+      }
+    } catch (_) {
+      setStatus('Network error. Try again.', 'error');
+    }
+  });
+
+  // Default view
+  selectView('login');
+})();
+</script>
+{% endblock %}

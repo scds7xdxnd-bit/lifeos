@@ -1,3 +1,5 @@
+> **Archived:** This document was used during CI setup and is no longer part of the active development workflow.  
+> Moved to `docs/archive/` on <2025-12-11> after CI pipeline stabilization.
 # DevOps Handoff: CI Pipeline Fix Required
 
 **Date**: 2024-12-07  

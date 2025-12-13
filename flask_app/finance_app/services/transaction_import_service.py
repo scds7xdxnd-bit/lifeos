@@ -2,8 +2,8 @@
 import csv
 import datetime
 import re
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, List, Tuple
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Dict, List
 
 from finance_app.extensions import db
 from finance_app.lib.dates import _parse_date_tuple

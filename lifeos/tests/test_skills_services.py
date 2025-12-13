@@ -7,6 +7,8 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+from uuid import uuid4
+
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
 from lifeos.domains.skills.models.skill_models import PracticeSession, Skill
@@ -27,9 +29,10 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for skills tests."""
     with app.app_context():
-        user = User(email="skills-tester@example.com", password_hash=hash_password("secret"))
+        unique_email = f"skills-tester+{uuid4().hex}@example.com"
+        user = User(email=unique_email, password_hash=hash_password("secret"))
         db.session.add(user)
-        db.session.commit()
+        db.session.flush()
         yield user
 
 
@@ -275,10 +278,16 @@ class TestSkillAggregation:
             now = datetime.utcnow()
             log_practice_session(test_user.id, skill.id, duration_minutes=30, practiced_at=now)
             log_practice_session(
-                test_user.id, skill.id, duration_minutes=45, practiced_at=now - timedelta(days=1)
+                test_user.id,
+                skill.id,
+                duration_minutes=45,
+                practiced_at=now - timedelta(days=1),
             )
             log_practice_session(
-                test_user.id, skill.id, duration_minutes=60, practiced_at=now - timedelta(days=2)
+                test_user.id,
+                skill.id,
+                duration_minutes=60,
+                practiced_at=now - timedelta(days=2),
             )
 
             summary = get_skill_summary(test_user.id, skill.id)
@@ -343,7 +352,7 @@ class TestSkillEventEmission:
     def test_skill_created_event_emitted(self, app, test_user):
         """Skill creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="skills.skill.created"
@@ -351,16 +360,14 @@ class TestSkillEventEmission:
 
             create_skill(test_user.id, name="Event Test Skill")
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="skills.skill.created"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="skills.skill.created").count()
 
             assert final_count == initial_count + 1
 
     def test_skill_updated_event_emitted(self, app, test_user):
         """Skill update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             skill = create_skill(test_user.id, name="Update Event Skill")
 
@@ -370,16 +377,14 @@ class TestSkillEventEmission:
 
             update_skill(test_user.id, skill.id, description="Updated")
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="skills.skill.updated"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="skills.skill.updated").count()
 
             assert final_count == initial_count + 1
 
     def test_skill_deleted_event_emitted(self, app, test_user):
         """Skill deletion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             skill = create_skill(test_user.id, name="Delete Event Skill")
 
@@ -389,16 +394,14 @@ class TestSkillEventEmission:
 
             delete_skill(test_user.id, skill.id)
 
-            final_count = OutboxMessage.query.filter_by(
-                user_id=test_user.id, event_type="skills.skill.deleted"
-            ).count()
+            final_count = OutboxMessage.query.filter_by(user_id=test_user.id, event_type="skills.skill.deleted").count()
 
             assert final_count == initial_count + 1
 
     def test_practice_logged_event_emitted(self, app, test_user):
         """Practice session logging should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             skill = create_skill(test_user.id, name="Practice Event Skill")
 
@@ -446,7 +449,10 @@ class TestSkillUserIsolation:
             skill = create_skill(test_user.id, name="Isolated Skill")
 
             # Create another user
-            other_user = User(email="other-practice@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-practice@example.com",
+                password_hash=hash_password("secret"),
+            )
             db.session.add(other_user)
             db.session.commit()
 

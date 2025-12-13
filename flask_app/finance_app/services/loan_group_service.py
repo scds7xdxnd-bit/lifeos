@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy import func
 
 from finance_app.extensions import db
-from finance_app.models.accounting_models import LoanGroup, LoanGroupLink, JournalLine, Account, JournalEntry
+from finance_app.models.accounting_models import Account, JournalEntry, JournalLine, LoanGroup, LoanGroupLink
 
 
 def create_group(user_id: int, name: str, direction: str, counterparty: str | None, currency: str, principal_amount, start_date, notes: str | None = None) -> LoanGroup:

@@ -9,8 +9,8 @@ Usage:
 import datetime as dt
 import math
 import sys
-from pathlib import Path
 from decimal import Decimal
+from pathlib import Path
 
 import click
 

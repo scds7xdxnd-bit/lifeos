@@ -248,8 +248,16 @@
         forecastEnd.textContent = '—';
       }
     });
-    ensureAuth();
-    hydrate();
+
+    const start = () => {
+      ensureAuth();
+      hydrate();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>
 {% endblock %}

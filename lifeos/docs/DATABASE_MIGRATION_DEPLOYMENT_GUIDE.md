@@ -1,8 +1,8 @@
 # LifeOS Database Migration Deployment Guide
 
-**Date:** 2025-12-18  
-**Status:** ✅ Ready for Frontend Integration  
-**Migration ID:** `20251218_backend_updates_validation`
+**Date:** 2025-12-21
+**Status:** ✅ Ready for Frontend Integration
+**Migration ID:** `20251221_auth_session_table`
 
 ---
 
@@ -10,28 +10,31 @@
 
 The backend has been successfully updated with comprehensive domain schema implementations. A new Alembic migration validates and ensures all schemas are correctly in place. This migration is:
 
-✅ **Additive-only** (no destructive changes)  
-✅ **Fully idempotent** (safe to apply multiple times)  
-✅ **Backwards compatible** (existing code continues to work)  
+✅ **Additive-only** (no destructive changes)
+✅ **Fully idempotent** (safe to apply multiple times)
+✅ **Backwards compatible** (existing code continues to work)
 ✅ **Ready for immediate deployment** (all 7 domains supported)
 
 ---
 
 ## What's New
 
-### Migration: `20251218_backend_updates_validation`
+### Migrations: `20251220_readmodels_bootstrap` + `20251221_auth_session_table`
 
-**File Location:** `/lifeos/migrations/versions/20251218_backend_updates_validation.py`
+**File Locations:**
+- `/lifeos/migrations/versions/20251220_readmodels_bootstrap.py`
+- `/lifeos/migrations/versions/20251221_auth_session_table.py`
 
 **What It Does:**
-- ✅ Validates Finance domain account type classification (account_type, account_subtype, normalized_name, created_at)
-- ✅ Ensures all 18 domain tables exist with correct schema
-- ✅ Creates 42+ performance indexes across all domains
-- ✅ Backfills data where needed (account name normalization)
-- ✅ Provides robust error handling for all operations
+- ✅ Adds read model replay metadata tables (`readmodel_state`, `readmodel_run`) for deterministic rebuild tracking
+- ✅ Adds `auth_session` table for session lifecycle/admin reset scaffold (additive, nullable `device_id`)
+- ✅ Preserves all prior domain schemas and indexes; no destructive changes
+- ✅ Idempotent, safe on Postgres and SQLite dev targets
 
-**Tables Ensured (18):**
-- **Finance (10):** journal_entry, journal_line, transaction, money_schedule_row, money_schedule_daily_balance, money_schedule_scenario, money_schedule_scenario_row, receivable_tracker, receivable_manual_entry, loan_group, loan_group_link, trial_balance_setting
+**Tables Ensured (additive):**
+- **Core/Auth:** `auth_session` (new, additive; unique session_id; lifecycle_state; optional device_id)
+- **Readmodels:** `readmodel_state`, `readmodel_run` (metadata only; supports truncate/replay safety)
+- **Finance (12):** journal_entry, journal_line, transaction, money_schedule_row, money_schedule_daily_balance, money_schedule_scenario, money_schedule_scenario_row, receivable_tracker, receivable_manual_entry, loan_group, loan_group_link, trial_balance_setting
 - **Journal (1):** journal_entry
 - **Habits (2):** habits_habit, habits_habit_log
 - **Health (3):** health_biometric, health_workout, health_nutrition_log
@@ -39,14 +42,10 @@ The backend has been successfully updated with comprehensive domain schema imple
 - **Projects (3):** project, project_task, project_task_log
 - **Relationships (2):** relationships_person, relationships_interaction
 
-**Indexes Ensured (42+):**
-- Finance: 10 composite/single-column indexes for search, grouping, temporal queries
-- Journal: 3 indexes for timeline and filtering
-- Habits: 4 indexes for tracking
-- Health: 3 indexes for biometrics/workouts/nutrition
-- Skills: 4 indexes for competency tracking
-- Projects: 8 indexes for project/task management
-- Relationships: 5 indexes for contact management
+**Indexes Ensured (additive):**
+- New: `ix_auth_session_user`, `ix_auth_session_user_state`, unique `uq_auth_session_session_id`
+- New: `ix_readmodel_state_domain`, `ix_readmodel_state_last_replayed_event`, `ix_readmodel_run_model`, `ix_readmodel_run_started_at`
+- Existing: all prior 40+ indexes across domains remain intact
 
 ---
 
@@ -60,7 +59,7 @@ cd /Users/ammarhakimi/Dev/finance_app_clean
 
 # 2. Check current migration status
 flask db current
-# Expected output: 20251216_drop_legacy_habits_relationships
+# Expected output: 20251221_auth_session_table
 
 # 3. Review the migration file
 cat lifeos/migrations/versions/20251218_backend_updates_validation.py
@@ -79,7 +78,7 @@ flask db upgrade
 
 # Verify migration was applied
 flask db current
-# Expected output: 20251218_backend_updates_validation
+# Expected output: 20251221_auth_session_table
 
 # Verify all tables exist
 flask shell
@@ -105,7 +104,7 @@ FLASK_ENV=production flask db upgrade
 
 # 3. Verify migration succeeded
 FLASK_ENV=production flask db current
-# Expected output: 20251218_backend_updates_validation
+# Expected output: 20251221_auth_session_table
 
 # 4. Check for any errors in logs
 tail -f logs/production.log | grep -i error
@@ -156,14 +155,14 @@ docker logs lifeos_web | tail -100 | grep -i error
 
 # 1. Verify current state
 flask db current
-# Should show: 20251218_backend_updates_validation
+# Should show: 20251221_auth_session_table
 
 # 2. Downgrade to previous migration
 flask db downgrade
 
 # 3. Verify rollback
 flask db current
-# Should show: 20251216_drop_legacy_habits_relationships
+# Should show: 20251220_readmodels_bootstrap
 
 # 4. Restore from backup if needed
 psql production_db < backup_20251218_pre_migration.sql
@@ -311,14 +310,14 @@ All supporting documentation has been created/updated:
 
 ✅ **Database Migration Ready for Deployment**
 
-**Status:** Complete and tested  
-**Type:** Additive (safe)  
-**Backwards Compatible:** Yes  
-**Idempotent:** Yes  
-**Performance Impact:** Positive (5-10x faster for indexed queries)  
+**Status:** Complete and tested
+**Type:** Additive (safe)
+**Backwards Compatible:** Yes
+**Idempotent:** Yes
+**Performance Impact:** Positive (5-10x faster for indexed queries)
 **Risk Level:** Low (no data loss, no destructive changes)
 
-**Next Phase:** Frontend Integration  
+**Next Phase:** Frontend Integration
 **Frontend Team:** You can now implement the UI based on the API reference documentation.
 
 ---
@@ -371,6 +370,6 @@ For questions or issues:
 
 ---
 
-**Database Engineer Signature:** ✅ Ready for Frontend Build  
-**Timestamp:** 2025-12-18  
+**Database Engineer Signature:** ✅ Ready for Frontend Build
+**Timestamp:** 2025-12-18
 **Migration Chain:** 17 migrations + 1 validation = Complete LifeOS Schema

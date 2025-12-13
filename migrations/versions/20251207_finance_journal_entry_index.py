@@ -8,7 +8,6 @@ Create Date: 2025-12-07
 from __future__ import annotations
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "20251207_finance_journal_entry_index"
@@ -26,4 +25,6 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ix_finance_journal_entry_user_posted_at", table_name="finance_journal_entry")
+    op.drop_index(
+        "ix_finance_journal_entry_user_posted_at", table_name="finance_journal_entry"
+    )

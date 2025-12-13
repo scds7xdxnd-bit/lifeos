@@ -1,16 +1,18 @@
 from __future__ import annotations
-from typing import Tuple, Optional
-import numpy as np
-from sklearn.model_selection import GroupShuffleSplit
+
 import warnings
+from typing import Tuple
+
+import numpy as np
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder, FunctionTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, top_k_accuracy_score
+from sklearn.metrics import top_k_accuracy_score
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import FunctionTransformer, LabelEncoder, OneHotEncoder
 from sklearn.utils.class_weight import compute_class_weight
+
 
 def select_description(X):
     # X is a pandas DataFrame

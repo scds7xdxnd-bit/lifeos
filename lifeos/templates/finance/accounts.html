@@ -14,7 +14,7 @@
           <option value="asset">Asset</option>
           <option value="liability">Liability</option>
           <option value="equity">Equity</option>
-          <option value="revenue">Revenue</option>
+          <option value="income">Income</option>
           <option value="expense">Expense</option>
         </select>
         <button type="button" class="btn btn-secondary" id="acct-reload">Reload</button>
@@ -89,7 +89,7 @@
             <option value="asset">Asset</option>
             <option value="liability">Liability</option>
             <option value="equity">Equity</option>
-            <option value="revenue">Revenue</option>
+            <option value="income">Income</option>
             <option value="expense">Expense</option>
           </select>
         </div>
@@ -151,19 +151,19 @@
     acctTypeFilter?.addEventListener('change', filterAccounts);
 
     // Categories rendering
-    const renderCategories = (categories = []) => {
-      catBody.innerHTML = '';
-      if (!categories.length) {
-        catBody.innerHTML = '<tr><td colspan="4">No categories found</td></tr>';
-        return;
-      }
-      // Sort by type, then name
-      const typeOrder = ['asset', 'liability', 'equity', 'revenue', 'expense'];
-      const sorted = [...categories].sort((a, b) => {
-        const ai = typeOrder.indexOf(a.base_type);
-        const bi = typeOrder.indexOf(b.base_type);
-        if (ai !== bi) return ai - bi;
-        return (a.name || '').localeCompare(b.name || '');
+      const renderCategories = (categories = []) => {
+        catBody.innerHTML = '';
+        if (!categories.length) {
+          catBody.innerHTML = '<tr><td colspan="4">No categories found</td></tr>';
+          return;
+        }
+        // Sort by type, then name
+        const typeOrder = ['asset', 'liability', 'equity', 'income', 'expense'];
+        const sorted = [...categories].sort((a, b) => {
+          const ai = typeOrder.indexOf(a.base_type);
+          const bi = typeOrder.indexOf(b.base_type);
+          if (ai !== bi) return ai - bi;
+          return (a.name || '').localeCompare(b.name || '');
       });
 
       sorted.forEach((cat) => {
@@ -243,8 +243,15 @@
       }
     });
 
-    ensureAuth();
-    fetchCategories();
+    const start = () => {
+      ensureAuth();
+      fetchCategories();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>
 {% endblock %}

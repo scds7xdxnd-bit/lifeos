@@ -12,7 +12,14 @@ def test_habit_streak(app):
     with app.app_context():
         habit = create_habit(user_id=1, name="Read", cadence="daily", target=1)
         today = date.today()
-        db.session.add(Habit(user_id=habit.user_id, name="Dummy", schedule_type="daily", target_count=1))  # ensure multiple rows don't interfere
+        db.session.add(
+            Habit(
+                user_id=habit.user_id,
+                name="Dummy",
+                schedule_type="daily",
+                target_count=1,
+            )
+        )  # ensure multiple rows don't interfere
         db.session.commit()
 
         log_habit(habit.id, today, 1)
