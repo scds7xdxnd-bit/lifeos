@@ -130,6 +130,7 @@
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
       [applyBtn, reloadBtn, periodBtn, monthlyBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      [asOfInput, startInput, endInput].forEach((inp) => { if (inp) inp.disabled = !authed; });
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };

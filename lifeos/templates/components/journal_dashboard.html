@@ -249,7 +249,31 @@
 
     filterApply?.addEventListener('click', fetchEntries);
     reloadBtn?.addEventListener('click', fetchEntries);
-    ensureAuth();
-    fetchEntries();
+    const resetLoggedOut = () => {
+      if (emptyEl) {
+        emptyEl.textContent = 'Log in to view entries.';
+        emptyEl.style.display = 'block';
+      }
+      if (listEl) listEl.innerHTML = '';
+      setStatus(createStatus, '');
+    };
+
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      if (ensureAuth() && e.detail?.loggedIn) {
+        fetchEntries();
+      } else {
+        resetLoggedOut();
+      }
+    });
+
+    const start = () => {
+      ensureAuth();
+      fetchEntries();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>

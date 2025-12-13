@@ -29,7 +29,7 @@
 body {
   font-family: var(--font-sans);
   margin: 0;
-  padding: 1.25rem;
+  padding: 0;
   background: var(--bg-primary);
   color: var(--text-strong);
   line-height: 1.5;
@@ -37,34 +37,40 @@ body {
 
 header {
   display: flex;
-  align-items: flex-start;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem 0.5rem;
+  background: linear-gradient(135deg, #f7f8fb 0%, #eef2f8 100%);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 }
 
-.app-header h1 {
-  margin: 0 0 4px;
+.nav-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.nav-brand {
+  display: grid;
+  gap: 2px;
+}
+
+.brand-mark {
+  font-weight: 800;
   letter-spacing: -0.02em;
+  font-size: 1.1rem;
 }
 
-.brand-nav {
-  flex: 1 1 600px;
-}
-
-nav a {
-  margin-right: 0.65rem;
-  color: var(--text-strong);
-  text-decoration: none;
-  padding: 6px 10px;
-  border-radius: var(--radius-s);
-  transition: background-color 0.12s ease, color 0.12s ease;
-}
-
-nav a:hover,
-nav a:focus-visible {
-  background: var(--bg-secondary);
-  color: var(--accent);
-  outline: none;
+.brand-sub {
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .top-nav {
@@ -72,6 +78,49 @@ nav a:focus-visible {
   flex-wrap: wrap;
   gap: 0.35rem;
   align-items: center;
+  justify-content: flex-start;
+}
+
+.top-nav a {
+  margin-right: 0;
+  color: var(--text-strong);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: var(--radius-s);
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.top-nav a:hover,
+.top-nav a:focus-visible {
+  background: var(--bg-secondary);
+  color: var(--accent);
+  outline: none;
+}
+
+.nav-link-strong {
+  font-weight: 700;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .nav-shell {
+    grid-template-columns: 1fr;
+  }
+  .nav-actions {
+    justify-content: flex-start;
+  }
+}
+
+.nav-demo-credentials {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding-left: 0.25rem;
 }
 
 .nav-group {
@@ -93,7 +142,7 @@ nav a:focus-visible {
 }
 
 .nav-group summary:hover,
-.nav-group[open] summary {
+.nav-group.open summary {
   background: var(--bg-secondary);
   color: var(--accent);
 }
@@ -112,7 +161,7 @@ nav a:focus-visible {
   z-index: 10;
 }
 
-.nav-group[open] .nav-group-menu {
+.nav-group.open .nav-group-menu {
   display: grid;
   gap: 4px;
 }
@@ -132,7 +181,8 @@ nav a:focus-visible {
 
 main {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 1rem auto 2rem;
+  padding: 0 1.25rem;
 }
 
 table {
@@ -178,13 +228,15 @@ tbody tr:hover {
   align-items: flex-start;
 }
 
-.auth-card {
+.auth-panel {
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-m);
-  padding: 0.85rem;
-  min-width: 280px;
+  padding: 1rem;
+  min-width: 320px;
   box-shadow: var(--shadow-card);
+  margin-left: auto;
+  max-width: 520px;
 }
 
 .auth-tabs {
@@ -214,6 +266,11 @@ tbody tr:hover {
 .auth-view {
   display: grid;
   gap: 0.5rem;
+}
+
+.field-stack {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .auth-hidden {
@@ -318,6 +375,17 @@ select:focus {
   background: #e5eaf2;
 }
 
+.btn-ghost {
+  background: transparent;
+  color: var(--text-strong);
+  border: 1px solid var(--border-subtle);
+  box-shadow: none;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-secondary);
+}
+
 .text-link {
   background: none;
   border: none;
@@ -360,6 +428,71 @@ select:focus {
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-s);
   background: #f9fafc;
+}
+
+/* Login page */
+.auth-hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.auth-hero__copy {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+.auth-hero__copy h2 {
+  margin: 0 0 0.35rem 0;
+  letter-spacing: -0.01em;
+}
+
+.auth-hero__copy p {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-muted);
+}
+
+.auth-hero__list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.auth-hero__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-s);
+  background: var(--bg-secondary);
+  color: var(--text-strong);
+}
+
+.auth-hero__card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.35rem;
+  box-shadow: var(--shadow-card);
+  max-width: 520px;
+  margin-left: auto;
+}
+
+.auth-hero__card h3 {
+  margin: 0 0 0.35rem 0;
+}
+
+.auth-hero__card p {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-muted);
 }
 
 /* Account Search Dropdown Component */

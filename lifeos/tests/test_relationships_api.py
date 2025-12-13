@@ -258,7 +258,6 @@ class TestInteractionsAPI:
         resp = client.get("/api/relationships/people/99999/interactions", headers=auth_headers)
         assert resp.status_code == 404
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - rejects date strings")
     def test_log_interaction_success(self, app, client, test_user, csrf_headers):
         """Log an interaction successfully."""
         with app.app_context():
@@ -281,7 +280,6 @@ class TestInteractionsAPI:
         assert data["ok"] is True
         assert data["interaction"]["method"] == "meeting"
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - rejects date strings")
     def test_log_interaction_minimal(self, app, client, test_user, csrf_headers):
         """Log interaction with minimal data."""
         with app.app_context():
@@ -296,7 +294,6 @@ class TestInteractionsAPI:
         )
         assert resp.status_code == 201
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - fails before person lookup")
     def test_log_interaction_person_not_found(self, client, csrf_headers):
         """Logging interaction for non-existent person fails."""
         payload = {"date": date.today().isoformat(), "method": "call"}
@@ -489,7 +486,6 @@ class TestRelationshipsAPIUserIsolation:
         resp = client.patch(f"/api/relationships/people/{person_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - fails before user isolation check")
     def test_cannot_log_interaction_other_user_person(self, app, client, test_user, csrf_headers):
         """Cannot log interaction for another user's person."""
         with app.app_context():

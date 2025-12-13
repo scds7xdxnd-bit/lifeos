@@ -13,9 +13,36 @@
     <form id="sched-form" style="display:grid; gap:0.5rem; margin-top:0.75rem;">
       <div class="field">
         <label for="sched-account">Account</label>
-        <select id="sched-account" name="account_id" required>
-          {% for acct in accounts %}<option value="{{ acct.id }}">{{ acct.name }}</option>{% endfor %}
-        </select>
+        <div class="account-search-wrapper" id="sched-account-wrapper" style="position: relative;">
+          <input
+            type="hidden"
+            id="sched-account-id"
+            name="account_id"
+            required
+          >
+          <input
+            type="text"
+            class="account-search-input"
+            id="sched-account-input"
+            placeholder="Search or create account..."
+            autocomplete="off"
+            style="width: 100%;"
+          >
+          <div
+            class="account-search-dropdown"
+            id="sched-account-dropdown"
+            role="listbox"
+            style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;"
+          >
+            <div id="sched-account-loading" style="display: none; padding: 0.5rem; color: #5b6470; text-align: center;">
+              <span>Searching...</span>
+            </div>
+            <div id="sched-account-results" style="max-height: 250px; overflow-y: auto;"></div>
+            <div id="sched-account-empty" style="padding: 0.5rem; color: #5b6470; text-align: center; display: none;">
+              No accounts found
+            </div>
+          </div>
+        </div>
       </div>
       <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
         <div class="field">
@@ -67,7 +94,7 @@
     <div id="forecast-status" class="auth-status" style="margin-top:0.25rem;"></div>
     <div style="overflow-x:auto; margin-top:0.5rem;">
       <table>
-        <thead><tr><th>Date</th><th>Projected balance</th></tr></thead>
+        <thead><tr><th>Date</th><th>Projected balance</th><th>Memo</th></tr></thead>
         <tbody id="forecast-body"></tbody>
       </table>
     </div>
@@ -81,6 +108,12 @@
     const statusEl = document.getElementById('sched-status');
     const loginHint = document.getElementById('sched-login-hint');
     const reloadBtn = document.getElementById('sched-reload');
+    const accountInput = document.getElementById('sched-account-input');
+    const accountIdInput = document.getElementById('sched-account-id');
+    const accountDropdown = document.getElementById('sched-account-dropdown');
+    const accountResults = document.getElementById('sched-account-results');
+    const accountEmpty = document.getElementById('sched-account-empty');
+    const accountLoading = document.getElementById('sched-account-loading');
     const listEl = document.getElementById('sched-body');
     const emptyEl = document.getElementById('sched-empty');
     const countEl = document.getElementById('sched-count');
@@ -106,15 +139,284 @@
 
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
+      if (authed && debouncedSearch && accountInput) {
+        accountInput.disabled = false;
+        debouncedSearch(accountInput.value);
+      }
       Array.from(form?.querySelectorAll('input, button, select') || []).forEach((node) => node.disabled = !authed);
       [forecastBtn, recomputeBtn, reloadBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      if (daysInput) daysInput.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };
 
+    const cleanLabel = (text) => String(text ?? '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+
+    const renderAccountResults = (query, results) => {
+      accountLoading.style.display = 'none';
+      accountResults.innerHTML = '';
+
+      // Filter to current user if user_id present
+      const userId = lifeosAuth.getTokens()?.user?.id || lifeosAuth.getTokens()?.user?.user_id;
+      const filtered = Array.isArray(results)
+        ? results.filter((r) => !r.user_id || !userId || Number(r.user_id) === Number(userId))
+        : [];
+
+      if (!filtered.length) {
+        accountEmpty.style.display = 'block';
+        accountResults.style.display = 'block';
+      } else {
+        accountEmpty.style.display = 'none';
+        accountResults.style.display = 'block';
+      }
+
+      filtered.forEach((result) => {
+        const row = document.createElement('div');
+        row.className = 'account-search-result';
+        row.role = 'option';
+        row.tabIndex = 0;
+        const displayName = window.lifeosAccountSearch?.formatResultDisplay?.(result) || result.name;
+        const highlight = window.lifeosAccountSearch?.highlightMatch?.(displayName, query) || displayName;
+        row.innerHTML = `
+          <div style="font-weight: 500;">${highlight}</div>
+          ${result.account_type ? `<div style="font-size: 0.85rem; color: #5b6470;">${result.account_type}${result.account_subtype ? ' • ' + result.account_subtype : ''}</div>` : ''}
+        `;
+        const selectAccount = () => {
+          accountIdInput.value = result.id;
+          accountInput.value = result.name;
+          accountDropdown.style.display = 'none';
+        };
+        row.addEventListener('click', selectAccount);
+        row.addEventListener('keydown', (e) => { if (e.key === 'Enter') selectAccount(); });
+        accountResults.appendChild(row);
+      });
+
+      // Create new account option
+      if (query && query.trim().length) {
+        const createRow = document.createElement('div');
+        createRow.className = 'account-search-create-new';
+        createRow.style.cssText = 'padding: 0.5rem 0.75rem; border-top: 1px solid #e0e5ec; cursor: pointer; color: #0b4f9c; background: #f7f8fa;';
+        createRow.textContent = '+ Create new account';
+        const openCreateModal = async () => {
+          await openInlineCreateModal(query.trim());
+        };
+        createRow.addEventListener('click', openCreateModal);
+        createRow.addEventListener('keydown', (e) => { if (e.key === 'Enter') openCreateModal(); });
+        accountResults.appendChild(createRow);
+      }
+    };
+
+    const openInlineCreateModal = async (prefillName) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 9998;
+      `;
+
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        z-index: 9999;
+      `;
+
+      modal.innerHTML = `
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #1f2430;">Create New Account</h3>
+          <p style="margin: 0; color: #5b6470; font-size: 0.9rem;">Configure "<strong>${prefillName}</strong>"</p>
+        </div>
+        <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+          ${['asset','liability','equity','income','expense'].map((t, i) => `
+            <label style="display:flex; align-items:flex-start; gap:0.75rem; cursor:pointer; padding:0.75rem; border-radius:8px; border:2px solid transparent;">
+              <input type="radio" name="account-type" value="${t}" ${i === 0 ? 'checked' : ''} style="margin-top:0.25rem;">
+              <span>
+                <div style="font-weight:600; color:#1f2430; text-transform:capitalize;">${t}</div>
+              </span>
+            </label>
+          `).join('')}
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display:block; margin-bottom:0.35rem; font-weight:600; font-size:0.9rem; color:#1f2430;">Subtype (optional)</label>
+          <select id="inline-subtype-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
+            <option value="">Loading subtypes…</option>
+          </select>
+          <small id="inline-subtype-hint" style="color: #5b6470; font-size: 0.8rem; display: block; margin-top: 0.25rem;"></small>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display:block; margin-bottom:0.35rem; font-weight:600; font-size:0.9rem; color:#1f2430;">Category (optional)</label>
+          <select id="inline-category-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
+            <option value="">Use default category</option>
+          </select>
+          <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
+            <input type="text" id="inline-category-new" placeholder="Or create new category..." style="flex: 1; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
+          </div>
+        </div>
+        <div style="display:flex; gap:0.75rem;">
+          <button type="button" class="create-account-submit" style="flex:1; padding:0.75rem; background:#0b4f9c; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Create Account</button>
+          <button type="button" class="create-account-cancel" style="flex:1; padding:0.75rem; background:#e0e5ec; color:#1f2430; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Cancel</button>
+        </div>
+        <div id="inline-create-error" style="margin-top: 0.5rem; color: #b3352f; font-size: 0.85rem;"></div>
+      `;
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(modal);
+
+      const categorySelect = modal.querySelector('#inline-category-select');
+      const categoryNewInput = modal.querySelector('#inline-category-new');
+      const subtypeSelect = modal.querySelector('#inline-subtype-select');
+      const subtypeHint = modal.querySelector('#inline-subtype-hint');
+      const typeRadios = modal.querySelectorAll('input[name="account-type"]');
+      const createBtn = modal.querySelector('.create-account-submit');
+      const cancelBtn = modal.querySelector('.create-account-cancel');
+      const errorEl = modal.querySelector('#inline-create-error');
+
+      const closeModal = () => {
+        overlay.remove();
+        modal.remove();
+      };
+
+      cancelBtn?.addEventListener('click', closeModal);
+      overlay.addEventListener('click', closeModal);
+
+      const populateSubtypes = async (baseType) => {
+        if (!subtypeSelect) return;
+        subtypeSelect.innerHTML = '<option value="">— None / other —</option>';
+        subtypeSelect.disabled = true;
+        if (subtypeHint) subtypeHint.textContent = 'Loading subtypes...';
+        try {
+          const subs = await window.lifeosAccountSubtypes?.getSubtypes?.(baseType);
+          if (Array.isArray(subs) && subs.length) {
+            subs.forEach((sub) => {
+              const opt = document.createElement('option');
+              opt.value = sub;
+              opt.textContent = sub.replace(/_/g, ' ');
+              subtypeSelect.appendChild(opt);
+            });
+            subtypeSelect.disabled = false;
+            if (subtypeHint) subtypeHint.textContent = `${subs.length} subtype option(s) for ${baseType}`;
+          } else if (subtypeHint) {
+            subtypeHint.textContent = 'No subtype suggestions.';
+          }
+        } catch (err) {
+          if (subtypeHint) subtypeHint.textContent = 'Unable to load subtypes.';
+        }
+      };
+
+      const populateCategories = async (baseType) => {
+        if (!categorySelect) return;
+        categorySelect.innerHTML = '<option value="">Use default category</option>';
+        try {
+          const categories = await window.lifeosAccountCategories?.getCategoriesByType?.(baseType);
+          if (Array.isArray(categories) && categories.length) {
+            categories.forEach((cat) => {
+              const opt = document.createElement('option');
+              opt.value = cat.id;
+              opt.textContent = cat.name;
+              categorySelect.appendChild(opt);
+            });
+          }
+        } catch (_) {
+          /* noop */
+        }
+      };
+
+      const getSelectedType = () => {
+        const checked = Array.from(typeRadios).find((r) => r.checked);
+        return checked?.value || 'asset';
+      };
+
+      const onTypeChange = () => {
+        const t = getSelectedType();
+        populateSubtypes(t);
+        populateCategories(t);
+      };
+
+      typeRadios.forEach((r) => r.addEventListener('change', onTypeChange));
+      onTypeChange();
+
+      createBtn?.addEventListener('click', async () => {
+        if (errorEl) errorEl.textContent = '';
+        const baseType = getSelectedType();
+        try {
+          const account = await window.lifeosAccountSearch?.createAccountInline?.(
+            prefillName,
+            baseType,
+            subtypeSelect?.value || null,
+            categorySelect?.value ? Number(categorySelect.value) : null,
+            categoryNewInput?.value || null
+          );
+          if (account) {
+            accountIdInput.value = account.id;
+            accountInput.value = account.name;
+            accountDropdown.style.display = 'none';
+            closeModal();
+          }
+        } catch (err) {
+          if (errorEl) errorEl.textContent = err?.message || 'Unable to create account.';
+        }
+      });
+    };
+
+    let debouncedSearch = null;
+
+    const initAccountSearch = (attempt = 0) => {
+      if (window.lifeosAccountSearch?.createDebouncedSearch) {
+        debouncedSearch = window.lifeosAccountSearch.createDebouncedSearch((results) => {
+          const q = accountInput.value;
+          renderAccountResults(q, results);
+        });
+        return;
+      }
+      if (attempt < 20) {
+        setTimeout(() => initAccountSearch(attempt + 1), 150);
+      } else {
+        console.warn('[Forecast] account search module unavailable');
+      }
+    };
+
+    const performSearch = () => {
+      if (!accountInput || !debouncedSearch) return;
+      accountDropdown.style.display = 'block';
+      accountLoading.style.display = 'block';
+      accountResults.innerHTML = '';
+      accountEmpty.style.display = 'none';
+      debouncedSearch(accountInput.value);
+    };
+
+    accountInput?.addEventListener('input', () => {
+      accountIdInput.value = '';
+      performSearch();
+    });
+
+    accountInput?.addEventListener('focus', () => {
+      performSearch();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('sched-account-wrapper')?.contains(e.target)) {
+        accountDropdown.style.display = 'none';
+      }
+    });
+
     const accountLabel = (accountId) => {
-      const opt = document.querySelector(`#sched-account option[value="${accountId}"]`);
-      return opt?.textContent || accountId || '';
+      const fromInput = cleanLabel(accountInput?.value || '');
+      if (fromInput) return fromInput;
+      const found = scheduleRows.find((r) => r.account_id === accountId && r.account_name);
+      if (found) return cleanLabel(found.account_name);
+      return cleanLabel(accountId) || '';
     };
 
     const renderRows = () => {
@@ -129,11 +431,11 @@
       items.forEach((row) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><input type="date" value="${row.event_date || ''}" data-field="event_date" data-id="${row.id}" style="width:130px;"></td>
-          <td>${row.account_name || accountLabel(row.account_id) || row.account_id}</td>
-          <td><input type="number" step="0.01" value="${row.amount ?? ''}" data-field="amount" data-id="${row.id}" style="width:120px;"></td>
-          <td><input type="text" value="${row.memo || ''}" data-field="memo" data-id="${row.id}" style="width:180px;"></td>
-          <td style="display:flex; gap:0.35rem;">
+          <td style="text-align:center;"><input type="date" value="${row.event_date || ''}" data-field="event_date" data-id="${row.id}" style="width:130px;"></td>
+          <td style="text-align:center;">${cleanLabel(row.account_name || accountLabel(row.account_id) || row.account_id)}</td>
+          <td style="text-align:center;"><input type="number" step="0.01" value="${row.amount ?? ''}" data-field="amount" data-id="${row.id}" style="width:120px;"></td>
+          <td style="text-align:center;"><input type="text" value="${row.memo || ''}" data-field="memo" data-id="${row.id}" style="width:180px;"></td>
+          <td style="text-align:center;">
             <button class="btn btn-secondary" data-action="update" data-id="${row.id}">Update</button>
             <button class="btn btn-secondary" data-action="delete" data-id="${row.id}">Delete</button>
           </td>
@@ -175,7 +477,7 @@
       if (res.ok && body.ok !== false) {
         (body.forecast || []).forEach((row) => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${row.date}</td><td>${Number(row.projected_balance ?? 0).toFixed(2)}</td>`;
+          tr.innerHTML = `<td>${row.date}</td><td>${Number(row.projected_balance ?? 0).toFixed(2)}</td><td>${row.memo || ''}</td>`;
           forecastBody.appendChild(tr);
         });
         setStatus(forecastStatus, '');
@@ -189,6 +491,7 @@
       e.preventDefault();
       if (!ensureAuth()) return setStatus(statusEl, 'Please log in.', 'error');
       const data = Object.fromEntries(new FormData(form).entries());
+      const accountDisplay = cleanLabel(accountInput?.value || '');
       const payload = {
         account_id: data.account_id ? Number(data.account_id) : null,
         event_date: data.event_date || null,
@@ -210,6 +513,7 @@
         scheduleRows.push({
           id: body.row_id,
           account_id: payload.account_id,
+          account_name: accountDisplay,
           event_date: payload.event_date,
           amount: payload.amount,
           memo: payload.memo || '',
@@ -284,6 +588,7 @@
     window.addEventListener('lifeos:auth-changed', (e) => {
       ensureAuth();
       if (e.detail?.loggedIn) {
+        if (debouncedSearch && accountInput) debouncedSearch(accountInput.value);
         fetchSchedule();
         fetchForecast();
       } else {
@@ -294,6 +599,11 @@
     });
     const start = () => {
       ensureAuth();
+      initAccountSearch();
+      // Kick an initial search once module is ready
+      setTimeout(() => {
+        if (debouncedSearch && accountInput) debouncedSearch('');
+      }, 250);
       fetchSchedule();
       fetchForecast();
     };

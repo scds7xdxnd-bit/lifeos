@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>LifeOS</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c5aa0'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial, sans-serif' font-size='28' fill='white'%3EL%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <script>
       const LIFEOS_TOKEN_KEY = "lifeos_tokens";
@@ -43,21 +44,24 @@
   </head>
   <body>
     <header class="app-header">
-      <div class="brand-nav">
-        <h1>LifeOS</h1>
+      <div class="nav-shell">
+        <div class="nav-brand">
+          <div class="brand-mark">LifeOS</div>
+          <div class="brand-sub">Calm accountability OS</div>
+        </div>
         <nav class="top-nav">
-          <a href="/calendar/" style="font-weight:600;">📅 Calendar</a>
-          <details class="nav-group">
-            <summary aria-label="Finance">Finance ▾</summary>
-            <div class="nav-group-menu">
-              <a href="/finance/">Dashboard</a>
-              <a href="/finance/journal">Journal</a>
-              <a href="/finance/trial-balance">Trial balance</a>
-              <a href="/finance/receivables">Receivables</a>
-              <a href="/finance/forecast">Forecast</a>
-              <a href="/finance/import">Import</a>
+          <a href="/calendar/" class="nav-link-strong">Calendar</a>
+          <div class="nav-group" id="nav-finance">
+            <a href="#" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false">Finance</a>
+            <div class="nav-group-menu" role="menu">
+              <a href="/finance/" role="menuitem">Dashboard</a>
+              <a href="/finance/journal" role="menuitem">Journal</a>
+              <a href="/finance/trial-balance" role="menuitem">Trial balance</a>
+              <a href="/finance/receivables" role="menuitem">Receivables</a>
+              <a href="/finance/forecast" role="menuitem">Forecast</a>
+              <a href="/finance/import" role="menuitem">Import</a>
             </div>
-          </details>
+          </div>
           <a href="/habits/">Habits</a>
           <a href="/skills/">Skills</a>
           <a href="/health/">Health</a>
@@ -66,120 +70,26 @@
           <a href="/projects/">Projects</a>
           <a href="/users/profile">Profile</a>
         </nav>
-        <div style="margin-top:0.25rem;font-size:0.9rem;color:#5b6470;">Demo: admin@example.com / admin12345 or demo@lifeos.test / demo12345</div>
-      </div>
-      <div id="auth-widget" class="auth-widget">
-        <div id="auth-logged-in" class="auth-logged auth-hidden" aria-live="polite">
-          <span id="auth-user-label"></span>
-          <button type="button" id="auth-logout-btn" class="btn btn-secondary">Logout</button>
-        </div>
-        <div id="auth-card" class="auth-card">
-          <div class="auth-tabs" role="tablist">
-            <button type="button" class="auth-tab active" data-view="login">Login</button>
-            <button type="button" class="auth-tab" data-view="register">Register</button>
-            <button type="button" class="auth-tab" data-view="forgot-username">Forgot username</button>
-            <button type="button" class="auth-tab" data-view="forgot-password">Forgot password</button>
-            <button type="button" class="auth-tab" data-view="reset-password">Reset password</button>
+        <div class="nav-actions">
+          <div id="auth-logged-in" class="auth-logged auth-hidden" aria-live="polite">
+            <span id="auth-user-label"></span>
+            <button type="button" id="auth-logout-btn" class="btn btn-secondary btn-ghost">Logout</button>
           </div>
-          <form id="auth-login-form" class="auth-view" data-view="login" autocomplete="on">
-            <div class="field">
-              <label for="auth-email">Email</label>
-              <input id="auth-email" name="email" type="email" placeholder="you@example.com" required>
-            </div>
-            <div class="field">
-              <label for="auth-password">Password</label>
-              <input id="auth-password" name="password" type="password" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="btn">Login</button>
-          </form>
-          <form id="auth-register-form" class="auth-view auth-hidden" data-view="register" autocomplete="on">
-            <div class="field">
-              <label for="auth-register-email">Email</label>
-              <input id="auth-register-email" name="email" type="email" placeholder="you@example.com" required>
-            </div>
-            <div class="field">
-              <label for="auth-register-password">Password</label>
-              <input id="auth-register-password" name="password" type="password" placeholder="At least 8 chars, letters & numbers" required>
-              <small>Min 8 characters, include letters and numbers.</small>
-            </div>
-            <div class="field">
-              <label for="auth-register-name">Full name (optional)</label>
-              <input id="auth-register-name" name="full_name" type="text" placeholder="Your name">
-            </div>
-            <div class="field">
-              <label for="auth-register-timezone">Timezone (optional)</label>
-              <input id="auth-register-timezone" name="timezone" type="text" placeholder="e.g., America/New_York">
-            </div>
-            <button type="submit" class="btn">Create account</button>
-          </form>
-          <form id="auth-forgot-username-form" class="auth-view auth-hidden" data-view="forgot-username">
-            <div class="field">
-              <label for="auth-forgot-username-email">Email</label>
-              <input id="auth-forgot-username-email" name="email" type="email" placeholder="you@example.com" required>
-            </div>
-            <small>We will send your username to the email if an account exists.</small>
-            <button type="submit" class="btn">Send reminder</button>
-          </form>
-          <form id="auth-forgot-password-form" class="auth-view auth-hidden" data-view="forgot-password">
-            <div class="field">
-              <label for="auth-forgot-password-email">Email</label>
-              <input id="auth-forgot-password-email" name="email" type="email" placeholder="you@example.com" required>
-            </div>
-            <small>We will email a password reset link if we find your account.</small>
-            <button type="submit" class="btn">Email reset link</button>
-          </form>
-          <form id="auth-reset-password-form" class="auth-view auth-hidden" data-view="reset-password">
-            <div class="field">
-              <label for="auth-reset-token">Reset token</label>
-              <input id="auth-reset-token" name="token" type="text" placeholder="Paste token from email" required>
-            </div>
-            <div class="field">
-              <label for="auth-reset-password">New password</label>
-              <input id="auth-reset-password" name="new_password" type="password" placeholder="New password" required>
-              <small>Use at least 8 characters with letters and numbers.</small>
-            </div>
-            <button type="submit" class="btn">Reset password</button>
-          </form>
-          <div id="auth-status" class="auth-status" aria-live="polite"></div>
+          <button type="button" class="btn btn-ghost" id="auth-login-link" onclick="window.location.href='/login'">Sign in</button>
         </div>
       </div>
+      <div class="nav-demo-credentials">Demo: admin@example.com / admin12345 or demo@lifeos.test / demo12345</div>
     </header>
     <main>
       {% block content %}{% endblock %}
     </main>
     <script>
-      const authTabs = Array.from(document.querySelectorAll('.auth-tab'));
-      const authViews = Array.from(document.querySelectorAll('.auth-view'));
-      const authStatus = document.getElementById('auth-status');
       const loggedInRow = document.getElementById('auth-logged-in');
       const authUserLabel = document.getElementById('auth-user-label');
-      const authCard = document.getElementById('auth-card');
+      const authLoginLink = document.getElementById('auth-login-link');
       const logoutBtn = document.getElementById('auth-logout-btn');
-      const loginForm = document.getElementById('auth-login-form');
-      const registerForm = document.getElementById('auth-register-form');
-      const forgotUsernameForm = document.getElementById('auth-forgot-username-form');
-      const forgotPasswordForm = document.getElementById('auth-forgot-password-form');
-      const resetPasswordForm = document.getElementById('auth-reset-password-form');
-
-      const setStatus = (message, tone = '') => {
-        if (!authStatus) return;
-        authStatus.textContent = message || '';
-        if (tone) {
-          authStatus.dataset.tone = tone;
-        } else {
-          authStatus.removeAttribute('data-tone');
-        }
-      };
-
-      const selectView = (viewName) => {
-        authViews.forEach((view) => {
-          view.classList.toggle('auth-hidden', view.dataset.view !== viewName);
-        });
-        authTabs.forEach((tab) => {
-          tab.classList.toggle('active', tab.dataset.view === viewName);
-        });
-        setStatus('');
-      };
+      const financeGroup = document.getElementById('nav-finance');
+      const financeToggle = financeGroup?.querySelector('.nav-group-toggle');
 
       const emitAuthChange = () => {
         const tokens = getTokens();
@@ -192,12 +102,12 @@
         const loggedIn = tokens && tokens.user && tokens.access_token;
         if (loggedIn) {
           loggedInRow?.classList.remove('auth-hidden');
-          authCard?.classList.add('auth-hidden');
-          if (authUserLabel) authUserLabel.textContent = `Logged in as ${tokens.user.email || ''}`;
+          authLoginLink?.classList.add('auth-hidden');
+          if (authUserLabel) authUserLabel.textContent = '';
         } else {
           loggedInRow?.classList.add('auth-hidden');
-          authCard?.classList.remove('auth-hidden');
-          selectView('login');
+          authLoginLink?.classList.remove('auth-hidden');
+          if (authUserLabel) authUserLabel.textContent = '';
         }
         emitAuthChange();
       };
@@ -233,145 +143,37 @@
           // Only clear tokens on 401 (unauthorized) - token is invalid/expired
           clearTokens();
           updateAuthUI();
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
         return res;
       };
 
-      authTabs.forEach((tab) => {
-        tab.addEventListener('click', () => selectView(tab.dataset.view));
-      });
-
-      const postJson = (url, body) =>
-        fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body || {}),
-        });
-
-      registerForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        setStatus('Creating account...');
-        const data = Object.fromEntries(new FormData(registerForm).entries());
-        lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'submitted' });
-        const payload = {
-          email: data.email,
-          password: data.password,
-          full_name: data.full_name || null,
-          timezone: data.timezone || null,
-        };
-        const res = await postJson('/auth/register', payload);
-        const body = await res.json().catch(() => ({}));
-        if (res.ok && body && body.ok !== false) {
-          if (body.access_token) {
-            setTokens({
-              access_token: body.access_token,
-              refresh_token: body.refresh_token,
-              csrf_token: body.csrf_token,
-              user: body.user,
-            });
-            setStatus('Account created and logged in.', 'success');
-            lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'succeeded', variant: 'auto_login' });
-            updateAuthUI();
-          } else {
-            setStatus('Account created. You can log in now.', 'success');
-            lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'succeeded', variant: 'no_tokens' });
-            selectView('login');
-          }
-        } else {
-          const reason = body.error || res.status;
-          const copy = {
-            email_already_exists: 'Email already registered.',
-            bad_request: 'Check your inputs (password must include letters and numbers).',
-          }[reason] || 'Registration failed.';
-          setStatus(copy, 'error');
-          lifeosTelemetry.track('auth.user.registered', { source: 'ui', stage: 'failed', reason });
-        }
-      });
-
-      loginForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        setStatus('Signing in...');
-        const data = Object.fromEntries(new FormData(loginForm).entries());
-        lifeosTelemetry.track('auth.user.login_submitted', { source: 'ui', email_present: !!data.email });
-        const res = await postJson('/auth/login', data);
-        const payload = await res.json().catch(() => ({}));
-        if (res.ok && payload && payload.access_token) {
-          setTokens({
-            access_token: payload.access_token,
-            refresh_token: payload.refresh_token,
-            csrf_token: payload.csrf_token,
-            user: payload.user,
-          });
-          setStatus('Logged in', 'success');
-          lifeosTelemetry.track('auth.user.login_succeeded', { source: 'ui' });
-          updateAuthUI();
-        } else {
-          const reason = payload.error || res.status;
-          setStatus('Login failed', 'error');
-          lifeosTelemetry.track('auth.user.login_failed', { source: 'ui', reason });
-        }
-      });
-
       logoutBtn?.addEventListener('click', () => {
         clearTokens();
-        setStatus('Logged out', 'info');
         lifeosTelemetry.track('auth.user.logout', { source: 'ui' });
         updateAuthUI();
+        window.location.href = '/login';
       });
 
-      forgotUsernameForm?.addEventListener('submit', async (e) => {
+      // Finance dropdown toggle with outside click close
+      const closeFinance = () => {
+        financeGroup?.classList.remove('open');
+        if (financeToggle) financeToggle.setAttribute('aria-expanded', 'false');
+      };
+      financeToggle?.addEventListener('click', (e) => {
         e.preventDefault();
-        setStatus('Sending username reminder...');
-        const data = Object.fromEntries(new FormData(forgotUsernameForm).entries());
-        lifeosTelemetry.track('auth.user.username_reminder_requested', { source: 'ui', stage: 'submitted' });
-        const res = await postJson('/auth/forgot-username', data);
-        if (res.ok) {
-          setStatus('If an account exists, you will receive an email shortly.', 'success');
-          lifeosTelemetry.track('auth.user.username_reminder_requested', { source: 'ui', stage: 'succeeded' });
-        } else {
-          setStatus('Unable to process that request right now.', 'error');
-          lifeosTelemetry.track('auth.user.username_reminder_requested', { source: 'ui', stage: 'failed', reason: res.status });
+        e.stopPropagation();
+        const isOpen = financeGroup.classList.toggle('open');
+        financeToggle.setAttribute('aria-expanded', String(isOpen));
+      });
+      document.addEventListener('click', (e) => {
+        if (!financeGroup?.contains(e.target)) {
+          closeFinance();
         }
       });
 
-      forgotPasswordForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        setStatus('Emailing reset link...');
-        const data = Object.fromEntries(new FormData(forgotPasswordForm).entries());
-        lifeosTelemetry.track('auth.user.password_reset_requested', { source: 'ui', stage: 'submitted' });
-        const res = await postJson('/auth/forgot-password', data);
-        if (res.ok) {
-          setStatus('If an account exists, we sent a reset link.', 'success');
-          lifeosTelemetry.track('auth.user.password_reset_requested', { source: 'ui', stage: 'succeeded' });
-        } else {
-          setStatus('Unable to send reset link.', 'error');
-          lifeosTelemetry.track('auth.user.password_reset_requested', { source: 'ui', stage: 'failed', reason: res.status });
-        }
-      });
-
-      resetPasswordForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = Object.fromEntries(new FormData(resetPasswordForm).entries());
-        if (!data.token || !data.new_password) {
-          setStatus('Token and new password are required.', 'error');
-          return;
-        }
-        setStatus('Updating password...');
-        lifeosTelemetry.track('auth.user.password_reset_completed', { source: 'ui', stage: 'submitted' });
-        const res = await postJson('/auth/reset-password', data);
-        const payload = await res.json().catch(() => ({}));
-        if (res.ok && (payload.ok === undefined || payload.ok === true)) {
-          setStatus('Password reset. You can log in with your new password.', 'success');
-          lifeosTelemetry.track('auth.user.password_reset_completed', { source: 'ui', stage: 'succeeded' });
-          selectView('login');
-        } else {
-          const reason = payload.error || res.status;
-          setStatus('Reset failed. Double-check your token and try again.', 'error');
-          lifeosTelemetry.track('auth.user.password_reset_completed', { source: 'ui', stage: 'failed', reason });
-        }
-      });
-
-      selectView('login');
       // Expose a promise that resolves after the initial server session check.
       // Page-level scripts can await this to avoid firing API calls with stale/invalid tokens.
       const authReady = Promise.resolve().then(() => ensureServerSession()).catch(() => {});

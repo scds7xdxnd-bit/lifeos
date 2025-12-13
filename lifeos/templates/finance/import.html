@@ -62,7 +62,8 @@
     const ensureAuth = () => {
       const tokens = lifeosAuth.getTokens();
       const authed = !!tokens.access_token;
-      [previewBtn, commitBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      [previewBtn, commitBtn, reloadBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      Array.from(form?.querySelectorAll('input, select, button') || []).forEach((node) => node.disabled = !authed);
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };

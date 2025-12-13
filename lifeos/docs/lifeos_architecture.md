@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-13 (v2.1 — CI/CD operational, Calendar-First complete; Phase 3b API v1 hardening)_
+_Last updated: 2025-12-14 (v2.2 — session lifecycle scaffold + admin reset stub; Phase 3 roadmap sharpened; login issue quarantined for Phase 3c)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2025-12-13)
+# 0. Implementation Status (as of 2025-12-14)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -116,12 +116,23 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - Add `CODECOV_TOKEN` secret to GitHub
   - Test pipelines end-to-end (push PR to trigger)
 
+## 🆕 Session Lifecycle Scaffold (Phase 3b½ — structure-only; login issue quarantined)
+- **Scope**: Add interface-only session lifecycle skeleton (session vs user vs future device identity), admin reset contract, and event shapes without changing current auth behavior.
+- **Allowed Implementation Now**: Minimal `admin_reset` path plus optional DB-level session reset script for ops; all other files remain interfaces/stubs until Phase 3c.
+- **Events (contracts only)**: `auth.session.created`, `auth.session.invalidated`, `auth.session.admin_reset` with payloads `{session_id, user_id, device_id? (stub), reason?}`; no emitters wired yet.
+- **Deferral Statement**: “This login issue is quarantined by design. A minimal reset exists; full resolution belongs to Phase 3c.” Use this to justify deferring behavioral fixes.
+- **Explicit Non-Goals (Phase 3c)**: No device fingerprinting, no token/cookie changes, no multi-device sync/offline behavior, no client/browser heuristics.
+
 ## 🔜 Immediate Next Steps (post-Phase 2)
 - DevOps: monitor first `lifeos-main.yml` run; configure GitHub Secrets (`CODECOV_TOKEN`, registry creds), and enforce branch protections/approvals on main/staging/prod; archive `docs/DEVOPS_HANDOFF_CI_FIX.md` after confirming green.
 - QA: verify coverage uploads (Codecov) and CI environment parity; maintain nightly monitoring (`lifeos-nightly.yml`); add remaining inferred-record integration tests.
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
-## ✅ Phase 3b API Hardening (Complete)
+## 🎯 Current Phase Focus
+- Active: Phase 3a — Cross-Domain Intelligence formalization/hardening (not invention); leverage existing events, interpreter, rules, and telemetry; tighten projections and confidence handling.
+- Deferred behind triggers: Phase 3b — Interface & Contract Hardening (reframed from mobile) and Phase 3c sub-phases (scaling/broker/multi-device); Phase 4 remains later.
+
+## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
 - Auth endpoints: `/api/v1/auth/login`, `/api/v1/auth/refresh` return access/refresh tokens, CSRF token, and user payload; Bearer + CSRF supported.
 - Insights feed: `/api/v1/insights/feed` with validated filters (domain, severity, date range, status) and consistent pagination metadata; user-scoped and includes source event metadata.
@@ -129,6 +140,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - Tests: suite green (539 passed, 10 xfailed, 38 warnings); xfails track known gaps outside these changes.
 
 ## ⚠️ Partially Implemented / Planned
+- **Session Lifecycle Scaffold**: Interface-only `core/auth/session_*`, `device.py`, `constants.py`, `admin_controllers.py`, and session event contracts. Only minimal `admin_reset` path + optional DB reset script may be implemented now; broader behavior deferred to Phase 3c.
 - **Broker Integration**: Stub in `lifeos/lifeos_platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
 - **Read Model Projections**: Not yet implemented; events flow to outbox but no materialized read-side views
 - **Autonomous Assistant**: Framework ready; rules/NLU inference deferred
@@ -146,7 +158,7 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 # 2. Domain Boundaries (authoritative)
 **8 fully-defined domains, each with controllers, services, models, events, and tasks:**
 
-- **Core**: auth (register, login, password-reset, username-reminder), users/prefs, roles/permissions, events, insights, **interpreter** (calendar classification), utils, app factory, extensions, worker runtime, outbox platform.
+- **Core**: auth (register, login, password-reset, username-reminder, session lifecycle scaffold + admin reset contract), users/prefs, roles/permissions, events, insights, **interpreter** (calendar classification), utils, app factory, extensions, worker runtime, outbox platform.
 - **Calendar** _(NEW)_: calendar events (title, description, start/end time, location, recurrence), external sync (Google/Apple), event interpretations, tagging, UI views. Primary input surface for life activity capture.
 - **Finance**: ledger (accounts + categories, journal entries/lines), transactions, schedules/forecasts, receivables/loans, trial balance, imports, ML account suggester. _Extended with inferred transaction support._
 - **Habits**: habit definitions, logs, streaks/metrics, habit-driven tasks (recurring schedules via money_schedule integration). _Extended with inferred habit log support._
@@ -175,13 +187,26 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 ```
 lifeos/
 ├── core/                           # Shared services, auth, events, interpreter
-│   ├── auth/                       # Login, register, JWT/session, roles/perms
+│   ├── auth/                       # Login, register, JWT/session, roles/perms (current repo)
 │   │   ├── controllers.py
+│   │   ├── api_v1.py
+│   │   ├── auth_service.py
+│   │   ├── csrf.py
+│   │   ├── password.py
 │   │   ├── models.py              # Role, Permission, RolePermission, UserRole, SessionToken, JWTBlocklist, PasswordResetToken
-│   │   ├── services.py
 │   │   ├── schemas.py
-│   │   ├── events.py              # auth.user.* events
-│   │   └── tasks.py               # background email tasks
+│   │   └── events.py              # auth.user.* events
+│   │
+│   │   ─ Planned (not yet in repo; structure-only until Phase 3c triggers) ─
+│   │   ├── admin_controllers.py   # Admin-only endpoint contract for session invalidation/reset (stub)
+│   │   ├── session_services.py    # Interfaces: SessionLifecycleService (create/invalidate/invalidate_all_for_user/admin_reset), SessionQueryService
+│   │   ├── session_repository.py  # Interface-only persistence contract; no business logic
+│   │   ├── session_read_models.py # Projection-only contracts; replayable; not for authorization
+│   │   ├── session_models.py      # Session identity boundaries; lifecycle states; metadata slots for future device_id
+│   │   ├── device.py              # Placeholder device identity contracts (DeviceId, DeviceFingerprint stub; no persistence)
+│   │   ├── session_events.py      # Contracts: auth.session.created/invalidated/admin_reset
+│   │   ├── constants.py           # Lifecycle states: active, invalidated, expired, admin_reset
+│   │   └── tasks.py               # Background email tasks + interface hook queue_session_admin_reset(user_id, reason)
 │   ├── users/                      # User model, preferences
 │   │   ├── models.py              # User, UserPreference
 │   │   ├── services.py
@@ -327,6 +352,14 @@ lifeos/
 │   │   └── __init__.py
 │   └── clients/                    # External service adapters
 │       └── __init__.py
+├── readmodels/                     # (Planned) event-derived projections, replayable
+│   ├── README.md                   # purpose, taxonomy, contracts
+│   ├── contracts.py                # read model contract definitions (consumed events, idempotency, type)
+│   ├── registry.py                 # declarative registry (no implementations)
+│   ├── runners/                    # replay orchestrator interfaces
+│   │   ├── replay_orchestrator.py
+│   │   └── replay_cli.py
+│   └── projections/                # per-domain projection namespaces (future)
 ├── migrations/                     # Single Alembic home
 │   ├── alembic.ini
 │   ├── env.py
@@ -429,6 +462,9 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
   - `auth.user.username_reminder_requested` → {user_id?, email}
   - `auth.user.password_reset_requested` → {user_id?, email, expires_at}
   - `auth.user.password_reset_completed` → {user_id, reset_id}
+  - `auth.session.created` (contract only) → {session_id, user_id, device_id? (stub), created_at}
+  - `auth.session.invalidated` (contract only) → {session_id, user_id, device_id? (stub), invalidated_at, reason?}
+  - `auth.session.admin_reset` (contract only) → {user_id, session_scope ('single'|'all'), session_id?, device_id? (stub), reason, initiated_by_admin_id?, reset_at}; payload frozen for audit/replay; no device fingerprinting implied; admin action carries no confidence score (explicit intent, not inference)
   - `finance.transaction.created` → {transaction_id, user_id, amount, description?, category?, counterparty?, occurred_at}
   - `finance.journal.posted` → {entry_id, user_id, debit_total, credit_total, line_count}
   - `finance.schedule.created` → {row_id, user_id, amount, account_id, event_date}
@@ -474,15 +510,94 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
   - All inference events carry `inferred_structure` metadata where available and are versioned; guardrails enforce presence.
 - Rule: any new event must be added to the emitting domain's `events.py` with payload versioning when changed.
 
+# 4.1 Auth & Session Structural Scaffold (Phase 3b½ — structure-only)
+**Purpose:** Separate user identity, session lifecycle, and future device identity so admins/devs can reset sessions without altering auth semantics; quarantine the login issue until Phase 3c while preserving replay/audit guarantees.
+
+**Scope (structure, no behavior change):**
+- Components: `session_models.py` (identity + lifecycle states), `session_services.py` (interfaces: create/invalidate/invalidate_all_for_user/admin_reset), `session_events.py` (contracts), `session_repository.py` (persistence contract), `session_read_models.py` (projection-only, replayable, never for authz), `device.py` (stub identity placeholder), `constants.py` (states: active, invalidated, expired, admin_reset), `admin_controllers.py` (admin-only endpoint contract), `tasks.queue_session_admin_reset` (interface hook only), `schemas.py` (session payload DTOs aligned with events; no device fingerprinting).
+- Documentation: `lifeos/core/events/event_catalog.md` must record the new `auth.session.*` contracts; no emitter code yet.
+- Component responsibilities: `session_models.py` defines session identity boundaries and lifecycle envelope; `session_services.py` owns lifecycle contracts compatible with replay; `session_events.py` fixes event shapes for auditability; `session_repository.py` remains pure data access; `session_read_models.py` are projection-only surfaces; `device.py` anchors deferred device identity without implying fingerprinting or sync.
+- Events: contract-only `auth.session.created`, `auth.session.invalidated`, `auth.session.admin_reset`; payloads include `{session_id, user_id, device_id? (stub), reason?}` with frozen audit semantics; admin_reset carries no confidence field (explicit human intent).
+- Read-model rule: session read models are replay-safe projections only; never used for authorization decisions.
+
+**What is allowed now (minimal):**
+- Implement the smallest viable `admin_reset` path plus an optional DB-level session reset script for ops. No other code paths change; emitters may remain unwired.
+- No token/cookie changes, no device fingerprinting, no browser heuristics, no UI work.
+- Deferral statement for contributors: “This login issue is quarantined by design. A minimal reset exists; full resolution belongs to Phase 3c.”
+- Note: session_* files listed above are planned structure-only and are not yet present in the repo; add them when Phase 3c (or approved interim hygiene work) begins.
+
+**Explicit non-goals until Phase 3c:**
+- No multi-device sync or coherence, no offline writes, no CRDT/conflict handling.
+- No device identity policy (user-declared vs cryptographic vs platform-provided) and no fingerprinting commitment.
+- No auth token format/cookie changes; no client/browser heuristics; no UI surfaces.
+- State space fixed to {active, invalidated, expired, admin_reset}; do not add enums until Phase 3c.
+
+**Extension points reserved for Phase 3c:**
+- Optional `device_id` FK on session records.
+- Projection hydrators for device-aware session dashboards.
+- Background cleanup/TTL task implementations.
+
+**Cross-team handoff (structure first):**
+- DB: prepare additive migration plan for `auth_session` (`session_id`, `user_id`, `lifecycle_state`, `created_at`, `invalidated_at`, optional `device_id` nullable stub). Do not alter existing auth tables or token semantics; keep device_id nullable.
+- Backend: land interface files and admin_reset contract only; avoid wiring emitters or token changes. Treat repository/read-model layers as contracts, not implementations.
+- QA: design contract-level tests for session lifecycle events and admin reset flows (replay and projection determinism). Do not simulate multi-device/offline or modify auth tokens.
+- Frontend: no UI work now; align on future admin-only endpoint contract when backend enables it.
+- ML: no action; note future device context may feed risk models; do not ship fingerprinting or behavioral models.
+- DevOps/Platform: plan observability hooks for new session events and ensure worker/outbox pipelines can handle them when wired; define admin-only access control for reset endpoints; keep migrations additive-only.
+- Cultural guardrail: prioritize structure-first; resist “just fix the login bug”; use the deferral statement until Phase 3c implementation.
+
+**Problem vs non-problem clarity:**
+- Solved now: clear separation of identities and lifecycle contracts enabling admin/dev-driven resets without new semantics.
+- Not solved now: device coherence, offline, sync/merge logic, or any change to current login/session behavior.
+
+**Admin Reset Design (structure-only, hygiene):**
+- Problem: stale or incompatible server-side session/auth state across browsers; known issue quarantined until Phase 3c.
+- Intent: provide a minimal, explicit admin/dev-only reset to recover state without altering auth semantics, device policy, or tokens; maintain replay/auditability.
+- Solution (structure):
+  - Boundary: `core/auth` owns the contract; exposed via `admin_controllers.py` (admin-only) invoking `SessionLifecycleService.admin_reset(user_id, scope, reason, initiated_by_admin_id?)`.
+  - Services: `SessionLifecycleService` defines `admin_reset` (idempotent; invalidates all sessions for user or targeted session_id); `SessionQueryService` may surface current session state for admin review (read-only).
+  - Repository: `session_repository.py` contract to mark sessions `admin_reset`/`invalidated`; pure data access; no heuristics.
+  - Events: `auth.session.admin_reset` contract (see catalog) emitted upon completion; no confidence field; explicit human action.
+  - Authorization: limited to admin/dev roles (conceptual); no end-user surface; enforced at controller layer with existing authz primitives.
+  - Read models: optional projection surfaces may reflect session states; never used for authz; replay-safe.
+
+**DB-level reset strategy (conceptual, additive-friendly):**
+- Scope: one user per invocation; no truncation; no cascading deletes.
+- Tables affected (conceptual): existing `session_token` rows (or future `auth_session` table when introduced) marked `invalidated_at=now`, `lifecycle_state='admin_reset'`; `jwt_blocklist` may be appended with relevant tokens if present; user row untouched.
+- Operations: idempotent by filtering on `user_id` and states ≠ already `admin_reset`/`invalidated`; repeated runs yield no further effect.
+- Audit/replay: emit `auth.session.admin_reset` after DB mutation; ensure outbox entry is durably written. Read models, if present, replay this event to converge.
+- Reversible in intent: does not delete user; only invalidates session state. Recovery is via normal login afterward.
+- Safety: additive-only migrations; no schema change required now. Future `auth_session` table remains planned (Phase 3c) and would follow same invalidation semantics.
+
+**Invariants after admin_reset:**
+- User identity remains intact; no deletion or mutation of `user`.
+- No silent data loss: sessions are marked/reset, not dropped; history/audit preserved.
+- Auth guarantees are not weakened: tokens are not broadened; reset removes access rather than loosening checks.
+- Replay deterministic: event + DB mutation order is consistent; read models converge by replaying `auth.session.admin_reset`.
+- Read models are advisory only and never used for authz; session checks remain server-side on canonical state.
+
+**Non-goals (intentional deferral to Phase 3c):**
+- No device identity or browser heuristics; `device_id` remains nullable stub.
+- No token/cookie format changes.
+- No multi-device coherence or offline semantics.
+- No user-facing UX changes; no automatic triggers; no broad session TTL redesign.
+
+**Backend handoff (do now vs defer):**
+- Implement now: `SessionLifecycleService.admin_reset` contract, admin-only controller entrypoint (stub), repository method to mark sessions invalidated/admin_reset, outbox emission of `auth.session.admin_reset`, and a minimal DB-level reset script/CLI for single-user scope. Ensure idempotency and audit logging.
+- Keep interface-only: session read models, device identity types, hydrators, background cleanup/TTL tasks.
+- Defer: any token/cookie changes, device FK migration (`auth_session`), UI surfaces, multi-device/offline logic, browser detection.
+- Do not “improve” by adding heuristics, auto-triggers, or client changes; this is hygiene only.
+
 ---
 
 # 5. Data Model Inventory (22 migrations, all additive)
-**Core (11 tables):**
+**Core (11 tables; +1 planned additive, not authored yet):**
 - `user`, `user_preference` (user identity & settings)
 - `role`, `permission`, `role_permission`, `user_role` (RBAC)
 - `session_token`, `jwt_blocklist`, `password_reset_token` (auth state)
 - `event_record` (audit log for all domain events)
 - `insight_record` (derived signals for UI)
+- _(Planned, Phase 3c)_: `auth_session` (immutable `session_id`, `user_id`, `lifecycle_state` in {active, invalidated, expired, admin_reset}, `created_at`, `invalidated_at`, optional `device_id` nullable stub). Migration is additive-only and deferred; do not alter existing auth tables.
 
 **Finance (14 tables):**
 - `finance_account_category`, `finance_account` (chart of accounts)
@@ -548,7 +663,9 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 **Auth Flows (special case):**
 - Register: Controller → service `create_user` → commit user row + `password_reset_token` → emit `auth.user.registered` to outbox
-- Login: Controller validates credentials → emit session token (no outbox event)
+- Login: Controller validates credentials → emit session token (no outbox event). Session events are contracts only until Phase 3c; current behavior unchanged.
+- Session lifecycle contract (structure-only): `SessionLifecycleService` (create, invalidate, invalidate_all_for_user, admin_reset) + `SessionQueryService`; `session_read_models` are replay-only and never used for authz; optional `device_id` is a stub (no fingerprinting).
+- Admin reset guardrails: Only minimal `admin_reset` path + optional DB-level session reset script may be implemented now to quarantine login issues. No token/cookie changes, no browser heuristics, no new device identity policy until Phase 3c.
 - Password Reset Request: Controller → service → commit `password_reset_token` row → emit `auth.user.password_reset_requested` to outbox
 - Password Reset Completion: Controller validates token → service → update user password → commit → emit `auth.user.password_reset_completed`
 - All auth flows rate-limited; non-enumerating responses (never reveal if email exists)
@@ -583,6 +700,7 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 # 8. Schema Evolution & Migrations
 - Single Alembic home: `lifeos/migrations`. Root `alembic.ini` targets it; `migrate.init_app` uses the absolute path.
 - Additive-first: new columns nullable/defaulted; new tables allowed. Destructive changes require two-phase (shadow + backfill + swap).
+- Placeholder (not authored yet): additive migration for `auth_session` table with optional `device_id` FK; queued for Phase 3c.
 - Migration ownership: domain team for domain tables; core team for shared tables.
 - Backfills live in scripts/management commands, not long Alembic steps.
 - Index rule: always index `user_id` plus primary query dimension (e.g., date/event_type). Enforced via models and migration `20251204_core_user_query_indexes.py`.
@@ -943,22 +1061,29 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - ✅ Acceptance criteria recorded in this doc (Section 0)
 - **Specification**: `lifeos/docs/CALENDAR_FIRST_ARCHITECTURE.md`
 
-**Phase 3a (Next) — Cross-Domain Intelligence (2026 Q1 kickoff):**
-- [ ] Correlate calendar + journal + domain events to surface insights (energy vs habits, finance stress vs health, calendar→finance/habits/health impacts).
-- [ ] Define/read projections for high-value queries (read models for insights, dashboards).
-- [ ] Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence auto-routed with audit trail.
+**Phase 3a (Current) — Cross-Domain Intelligence (formalization/hardening):**
+- [ ] Correlate calendar + journal + domain events to surface insights (energy vs habits, finance stress vs health, calendar→finance/habits/health impacts) using existing interpreter/events/rules.
+- [ ] Define/read projections for high-value queries as read-only, conservative surfaces (cached queries or denormalized tables); no full CQRS infra.
+- [ ] Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence routed with audit trail; **no autonomous action without explicit user confirmation in Phase 3a**.
 - [ ] Telemetry: insight generation metrics, coverage, false-positive/negative tracking.
 - [ ] ML enablement: keep model hooks behind services; log `model_version`/`payload_version`.
-- [ ] Backend tasks: harden event catalog completeness, add projection layer (materialized views or cached queries), extend insights rules to consume calendar/journal cross-signals.
+- [ ] Backend tasks: harden event catalog completeness; extend insights rules to consume calendar/journal cross-signals; replay-safe projections only.
 
-**Phase 3b (Option) — Mobile/API Hardening:**
+**Phase 3b (Option) — Interface & Contract Hardening:**
 - [ ] API versioning strategy (`/api/v1`, `/api/v2`)
-- [ ] Auth/session hardening for mobile clients; offline/sync design
+- [ ] Auth/session contract hardening for clients (without committing to native/offline)
+- [ ] Session lifecycle scaffold remains structure-only; keep behavior unchanged until Phase 3c
 
-**Phase 3c (Option) — Data Sync & Broker:**
-- [ ] Broker integration (RabbitMQ/Kafka replacing in-process bus)
-- [ ] Read-model projections (materialized views) for heavy queries
-- [ ] Multi-device sync/offline support
+**Phase 3c (Option) — Scaling Track (split by trigger):**
+- **Phase 3c-1 — Read & Throughput Scaling (trigger: slow dashboards/insight cost growth/background load):**
+  - [ ] Materialized views or cached projections for heavy queries
+  - [ ] Redis-backed query results where justified
+- **Phase 3c-2 — Event Transport Scaling (trigger: multiple workers/fan-out cost/retry-DLQ pressure):**
+  - [ ] Broker integration (RabbitMQ/Kafka) and outbox→broker bridge
+  - [ ] DLQ/throughput tuning
+- **Phase 3c-3 — Multi-Device & Session Realization (trigger: active multi-device use/offline conflicts/mobile clients):**
+  - [ ] Implement session lifecycle stack: wire events/repository/read models, optional `device_id` FK, TTL/cleanup tasks, admin reset flows
+  - [ ] Token/cookie redesign only with legal/security sign-off
 
 **Phase 4 (Later):**
 - [ ] Autonomous assistant; RL-based personalization
@@ -1100,6 +1225,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - ❌ No WebSocket/SSE (polling-based UI updates)
 - ❌ No mobile app (web-only)
 - ❌ No third-party integrations (Stripe, Plaid, etc.)
+- ⚠️ Session lifecycle scaffold only: admin_reset path minimal; no device identity policy, no session read models used for authz, no multi-device/offline coherence. Login issue quarantined until Phase 3c.
 - ⚠️ ML account suggester: basic TF-IDF ranker (not neural)
 - ⚠️ Insights: rule-based only (no ML anomaly detection)
 
@@ -1125,9 +1251,10 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.1 (Calendar-First Phase 2 Complete; CI/CD operational): 2025-12-10. Author: LifeOS Architect._
+_Constitution v2.2 (Session lifecycle scaffold + admin reset stub; Calendar-First Phase 2 Complete; CI/CD operational): 2025-12-14. Author: LifeOS Architect._
 
-**Sprint Summary (2025-12-10):**
+**Sprint Summary (2025-12-14):**
+- ✅ Session lifecycle scaffold added (interface-only); admin reset minimal path allowed; login issue quarantined to Phase 3c
 - ✅ Calendar-First Phase 2: All acceptance criteria verified by QA
 - ✅ CI/CD Infrastructure: Pipelines operational (PR/main/release/nightly), Codecov wired
 - ✅ Test Coverage: 521 tests passing, 85% coverage, 10 xfailed (documented bugs)

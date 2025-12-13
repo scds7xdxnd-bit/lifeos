@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CalendarEventCreate(BaseModel):
@@ -93,6 +93,33 @@ class CalendarEventListParams(BaseModel):
     source: Optional[str] = None
     limit: int = Field(default=50, ge=1, le=500)
     offset: int = Field(default=0, ge=0)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_dates(cls, values: dict):
+        """Accept naive/offset datetimes or date strings; tolerate trailing Z."""
+
+        def _parse(val):
+            if val is None:
+                return None
+            if isinstance(val, datetime):
+                return val
+            if isinstance(val, date):
+                return datetime.combine(val, time.min)
+            if isinstance(val, str):
+                raw = val.strip()
+                if raw.endswith("Z"):
+                    raw = raw[:-1] + "+00:00"
+                try:
+                    return datetime.fromisoformat(raw)
+                except Exception:
+                    return None
+            return None
+
+        values = dict(values or {})
+        values["start_date"] = _parse(values.get("start_date"))
+        values["end_date"] = _parse(values.get("end_date"))
+        return values
 
 
 class InterpretationListParams(BaseModel):

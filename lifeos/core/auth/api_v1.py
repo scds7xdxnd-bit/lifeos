@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from flask_jwt_extended import (
     create_access_token,
     get_jwt,
@@ -30,6 +30,8 @@ def _jsonable_errors(exc: ValidationError) -> list[dict]:
 @api_v1_auth_bp.post("/login")
 @limiter.limit("10/minute")
 def login_v1():
+    # Avoid carrying over any stale Flask session state into login.
+    session.clear()
     payload = request.get_json(silent=True) or {}
     try:
         data = LoginRequest.model_validate(payload)
