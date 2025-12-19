@@ -162,8 +162,8 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.core.insights.pages import insights_pages_bp
     from lifeos.core.users.controllers import user_api_bp, user_pages_bp
     from lifeos.domains.calendar.controllers.calendar_api import calendar_api_bp
-    from lifeos.domains.calendar.controllers.calendar_view_api import calendar_view_api_bp
     from lifeos.domains.calendar.controllers.calendar_pages import calendar_pages_bp
+    from lifeos.domains.calendar.controllers.calendar_view_api import calendar_view_api_bp
 
     # Domain controllers (API + pages). Each module exposes *_bp variables.
     from lifeos.domains.finance.controllers.accounting_api import finance_api_bp

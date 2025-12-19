@@ -24,14 +24,14 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Extract version from tag
         id: version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION"
-      
+
       - name: Validate semver format
         run: |
           VERSION=${{ steps.version.outputs.version }}
@@ -40,7 +40,7 @@ jobs:
             exit 1
           fi
           echo "✓ Valid semver: $VERSION"
-      
+
       - name: Check changelog
         run: |
           if [ ! -f CHANGELOG.md ]; then
@@ -74,27 +74,26 @@ jobs:
           - 6379:6379
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
           cache-dependency-path: lifeos/requirements.txt
-      
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r lifeos/requirements.txt
           pip install pytest pytest-cov pytest-timeout
-      
+
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://lifeos:lifeos@localhost/lifeos_test
-          FLASK_APP: lifeos.wsgi
           PYTHONPATH: ${{ github.workspace }}
-        run: cd lifeos && flask db upgrade head
-      
+        run: python -m flask --app lifeos.wsgi:app db upgrade head
+
       - name: Run full test suite
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -105,10 +104,10 @@ jobs:
           pytest lifeos/tests/ \
             --tb=short \
             --cov=lifeos \
-            --cov-report=xml:coverage-full.xml \
-            --junitxml=test-results-full.xml \
+            --cov-report=xml:${{ github.workspace }}/coverage-full.xml \
+            --junitxml=${{ github.workspace }}/test-results-full.xml \
             -v
-      
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
@@ -127,17 +126,17 @@ jobs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -149,7 +148,7 @@ jobs:
             type=semver,pattern={{major}}
             type=sha,prefix=
             type=raw,value=latest
-      
+
       - name: Build and push
         id: build
         uses: docker/build-push-action@v5
@@ -191,14 +190,14 @@ jobs:
       url: https://staging.lifeos.example.com
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Deploy to staging for verification
         run: |
           echo "🚀 Deploying release to staging for final verification..."
           echo "Version: ${{ needs.validate-tag.outputs.version }}"
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
           # Add deployment commands here
-      
+
       - name: Run smoke tests
         run: |
           echo "Running smoke tests on staging..."
@@ -227,26 +226,26 @@ jobs:
       url: https://lifeos.example.com
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Pre-deploy backup
         run: |
           echo "📦 Creating pre-deploy backup..."
           # Add backup commands (database, config, etc.)
-      
+
       - name: Run production migrations
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         run: |
           echo "🔄 Running database migrations..."
           # make run-migrations
-      
+
       - name: Deploy to production
         run: |
           echo "🚀 Deploying to production..."
           echo "Version: ${{ needs.validate-tag.outputs.version }}"
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
           # Add production deployment commands
-      
+
       - name: Verify deployment
         run: |
           echo "✓ Verifying production deployment..."
@@ -260,7 +259,7 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Create GitHub Release
         if: needs.deploy-production.result == 'success'
         uses: softprops/action-gh-release@v1
@@ -269,14 +268,14 @@ jobs:
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Notify success
         if: needs.deploy-production.result == 'success'
         run: |
           echo "✅ Production deployment successful!"
           echo "Version: ${{ github.ref_name }}"
           # Add Slack/email notification here
-      
+
       - name: Notify failure
         if: needs.deploy-production.result == 'failure'
         run: |

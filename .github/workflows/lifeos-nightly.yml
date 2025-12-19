@@ -55,13 +55,11 @@ jobs:
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://lifeos:lifeos@localhost/lifeos_test
-          FLASK_APP: lifeos.wsgi
           PYTHONPATH: ${{ github.workspace }}
-        working-directory: ${{ github.workspace }}
         run: |
           echo "FLASK_APP=${FLASK_APP}"
           echo "PYTHONPATH=${PYTHONPATH}"
-          flask --app lifeos.wsgi db upgrade head
+          python -m flask --app lifeos.wsgi:app db upgrade head
 
       - name: Run full test suite
         env:
@@ -74,9 +72,9 @@ jobs:
           pytest lifeos/tests/ \
             --tb=short \
             --cov=lifeos \
-            --cov-report=xml:coverage-nightly.xml \
-            --cov-report=html:htmlcov \
-            --junitxml=test-results-nightly.xml \
+            --cov-report=xml:${{ github.workspace }}/coverage-nightly.xml \
+            --cov-report=html:${{ github.workspace }}/htmlcov \
+            --junitxml=${{ github.workspace }}/test-results-nightly.xml \
             -v \
             --timeout=300
 
