@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-14 (v2.2 — session lifecycle scaffold + admin reset stub; Phase 3 roadmap sharpened; login issue quarantined for Phase 3c)_
+_Last updated: 2025-12-15 (v2.3 — tasks hub + auth UX refactor task; session scaffold remains; login issue quarantined for Phase 3c)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -13,7 +13,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Event System**: In-process event bus, event catalog per domain, event_record audit table
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
-- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with 23 additive migrations (head: `20251219_calendar_oauth_tokens`)
+- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251220_readmodels_bootstrap`)
 - **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live. Latest runs: PR workflow reported 24 passed / 10 xfailed / 497 errors (needs investigation on selective job), main workflow reported 515 passed / 6 deselected / 10 xfailed (green).
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
@@ -31,6 +31,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Event Catalog Completeness**: All domains updated to include inference events with payload_version/model_version and optional `is_false_positive`/`is_false_negative`; guardrail tests enforce catalog coverage
 - **Health Endpoints**: `/health` and `/api/v1/ping` for CI/CD smoketests
 - **Testing**: 539 tests passing, 10 xfailed, 38 warnings, 85% coverage; all tests carry markers (integration/unit/ml).
+- **Documentation Governance**: UI/UX Constitution is binding (`lifeos/docs/ui_ux_constitution.md`); Tasks Hub established at `lifeos/docs/tasks/` with `archive/` for completed cross-team handoffs (auth experience refactor active; calendar refactor archived).
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -187,261 +188,78 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 ```
 lifeos/
 ├── core/                           # Shared services, auth, events, interpreter
-│   ├── auth/                       # Login, register, JWT/session, roles/perms (current repo)
-│   │   ├── controllers.py
-│   │   ├── api_v1.py
-│   │   ├── auth_service.py
-│   │   ├── csrf.py
-│   │   ├── password.py
-│   │   ├── models.py              # Role, Permission, RolePermission, UserRole, SessionToken, JWTBlocklist, PasswordResetToken
-│   │   ├── schemas.py
-│   │   └── events.py              # auth.user.* events
-│   │
-│   │   ─ Planned (not yet in repo; structure-only until Phase 3c triggers) ─
-│   │   ├── admin_controllers.py   # Admin-only endpoint contract for session invalidation/reset (stub)
-│   │   ├── session_services.py    # Interfaces: SessionLifecycleService (create/invalidate/invalidate_all_for_user/admin_reset), SessionQueryService
-│   │   ├── session_repository.py  # Interface-only persistence contract; no business logic
-│   │   ├── session_read_models.py # Projection-only contracts; replayable; not for authorization
-│   │   ├── session_models.py      # Session identity boundaries; lifecycle states; metadata slots for future device_id
-│   │   ├── device.py              # Placeholder device identity contracts (DeviceId, DeviceFingerprint stub; no persistence)
-│   │   ├── session_events.py      # Contracts: auth.session.created/invalidated/admin_reset
-│   │   ├── constants.py           # Lifecycle states: active, invalidated, expired, admin_reset
-│   │   └── tasks.py               # Background email tasks + interface hook queue_session_admin_reset(user_id, reason)
-│   ├── users/                      # User model, preferences
-│   │   ├── models.py              # User, UserPreference
-│   │   ├── services.py
-│   │   └── events.py              # user.* events (future)
-│   ├── events/                     # Event bus & catalog
-│   │   ├── event_bus.py           # In-process bus (planned outbox+broker)
-│   │   ├── event_models.py        # EventRecord model (audit log)
-│   │   └── event_catalog.md       # Mirrored from domain events.py
-│   ├── interpreter/                # Calendar Interpreter (NEW)
-│   │   ├── __init__.py
-│   │   ├── calendar_interpreter.py # Main interpreter class; subscribes to calendar events
-│   │   ├── classification_rules.py # Rule definitions (keywords, patterns, time hints)
-│   │   ├── domain_adapters.py     # Service interface adapters for each domain
-│   │   └── constants.py           # Keywords, patterns, thresholds, confidence levels
-│   ├── insights/                   # Signal derivation engine
-│   │   ├── engine.py              # Rule evaluation pipeline
-│   │   ├── models.py              # InsightRecord (persistence)
-│   │   ├── rules/                 # Per-domain insight rules
-│   │   │   ├── finance_rules.py
-│   │   │   ├── health_rules.py
-│   │   │   ├── habits_rules.py
-│   │   │   ├── skills_rules.py
-│   │   │   ├── projects_rules.py
-│   │   │   ├── relationships_rules.py
-│   │   │   └── journal_rules.py
-│   │   ├── services.py            # Dispatch, derive, persist
-│   │   └── schemas.py
-│   └── utils/                      # Shared helpers
-│       ├── decorators.py          # @auth, @rate_limit, @feature_flag
-│       ├── validators.py
-│       ├── encoders.py            # JSON encoders
-│       └── exceptions.py           # LifeOSError base class
-├── domains/
-│   ├── finance/                    # Full ledger, transactions, forecasts
-│   │   ├── controllers/            # Flask routes for UI
-│   │   │   ├── accounts.py
-│   │   │   ├── journal.py
-│   │   │   ├── transactions.py
-│   │   │   └── ...
-│   │   ├── models/                 # SQLAlchemy + domain logic
-│   │   │   ├── account.py
-│   │   │   ├── journal_entry.py
-│   │   │   ├── journal_line.py
-│   │   │   ├── transaction.py
-│   │   │   ├── trial_balance.py
-│   │   │   ├── money_schedule.py
-│   │   │   ├── receivable.py
-│   │   │   ├── loan.py
-│   │   │   └── category.py
-│   │   ├── services/               # Business logic, event emission
-│   │   │   ├── ledger_service.py
-│   │   │   ├── transaction_service.py
-│   │   │   ├── forecast_service.py
-│   │   │   ├── trial_balance_service.py
-│   │   │   ├── import_service.py
-│   │   │   └── ml_ranker.py        # Account suggester integration
-│   │   ├── schemas/                # Pydantic DTOs
-│   │   │   ├── account.py
-│   │   │   ├── transaction.py
-│   │   │   └── ...
-│   │   ├── mappers.py              # DTO↔model converters
-│   │   ├── events.py               # finance.account.*, finance.transaction.*, finance.ml.* events
-│   │   ├── tasks.py                # @periodic_task for schedule recompute, receivables, etc.
-│   │   └── ml/                     # ML integration adapters
-│   │       ├── account_suggester.py # Uses joblib model; wraps ml_ranker
-│   │       └── version_registry.py
-│   ├── habits/                     # Habit tracking, streaks
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # habits.habit.*, habits.habit.logged
-│   │   ├── tasks.py                # Streak computation, rollup
-│   │   └── ml/ (stub)
-│   ├── health/                     # Biometrics, workouts, nutrition
-│   │   ├── controllers/
-│   │   ├── models/                 # health_biometric, health_workout, health_nutrition_log
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # health.biometric.*, health.workout.*, health.nutrition.*
-│   │   ├── tasks.py                # Daily summaries, energy/stress derivation
-│   │   └── ml/ (stub)
-│   ├── skills/                     # Practice, competency
-│   │   ├── controllers/
-│   │   ├── models/                 # skill, skill_practice_session, skill_metric
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # skills.practice.logged
-│   │   └── tasks.py                # Metric rollup
-│   ├── projects/                   # Project/task lifecycle
-│   │   ├── controllers/
-│   │   ├── models/                 # project, project_task, project_task_log
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # projects.project.*, projects.task.*
-│   │   └── tasks.py
-│   ├── relationships/              # People, interactions, reconnect
-│   │   ├── controllers/
-│   │   ├── models/                 # relationships_person, relationships_interaction
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # relationships.person.*, relationships.interaction.*
-│   │   └── tasks.py
-│   ├── journal/                    # Personal entries, mood, tags
-│   │   ├── controllers/
-│   │   ├── models/                 # journal_entry
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # journal.entry.*
-│   │   └── tasks.py
-│   └── calendar/                   # Calendar events (NEW - 8th domain)
-│       ├── __init__.py
-│       ├── controllers/
-│       │   ├── calendar_api.py    # JSON API endpoints
-│       │   └── calendar_pages.py  # HTML UI routes
-│       ├── models/
-│       │   └── calendar_event.py  # CalendarEvent, CalendarEventInterpretation
-│       ├── services/
-│       │   ├── calendar_service.py # CRUD, query, hooks to interpreter
-│       │   └── sync_service.py    # Google/Apple Calendar sync (future)
-│       ├── schemas/
-│       │   └── calendar_schemas.py # Pydantic DTOs
-│       ├── events.py               # calendar.event.* events
-│       ├── mappers.py
-│       └── tasks.py                # Periodic sync tasks (future)
-├── lifeos_platform/                # Async runtime, outbox, broker stubs
-│   ├── outbox/
-│   │   ├── models.py              # OutboxMessage (durable envelope)
-│   │   ├── services.py            # enqueue, dequeue_batch, mark_sent, dispatch_ready
-│   │   └── __init__.py
-│   ├── worker/                     # Dispatcher runtime
-│   │   ├── config.py              # DispatchConfig (env-driven)
-│   │   ├── dispatcher.py          # Main loop: claim→publish→mark_sent/failed
-│   │   ├── run.py                 # CLI entrypoint
-│   │   └── __init__.py            # Helper exports
-│   ├── broker/                     # Stub (post-v1: RabbitMQ/Kafka)
-│   │   └── __init__.py
-│   └── clients/                    # External service adapters
-│       └── __init__.py
-├── readmodels/                     # (Planned) event-derived projections, replayable
-│   ├── README.md                   # purpose, taxonomy, contracts
-│   ├── contracts.py                # read model contract definitions (consumed events, idempotency, type)
-│   ├── registry.py                 # declarative registry (no implementations)
-│   ├── runners/                    # replay orchestrator interfaces
-│   │   ├── replay_orchestrator.py
-│   │   └── replay_cli.py
-│   └── projections/                # per-domain projection namespaces (future)
-├── migrations/                     # Single Alembic home
-│   ├── alembic.ini
-│   ├── env.py
-│   └── versions/
-│       ├── 20240522_core_initial.py
-│       ├── 20251204_core_add_insight_record.py
-│       ├── 20251204_core_user_query_indexes.py
-│       ├── 20251205_platform_outbox.py
-│       ├── 20251205_skills_initial_schema.py
-│       ├── 20251206_core_password_reset_token.py
-│       ├── 20251206_finance_account_type_classification.py
-│       ├── 20251207_finance_journal_entry_index.py
-│       ├── 20251208_skills_enhancements.py
-│       ├── 20251209_habits_initial.py
-│       ├── 20251210_relationships_initial.py
-│       ├── 20251211_journal_enhancements.py
-│       ├── 20251212_health_rework.py
-│       ├── 20251213_health_relax_legacy_columns.py
-│       ├── 20251214_health_null_legacy_values.py
-│       ├── 20251215_projects_init.py
-│       ├── 20251216_drop_legacy_habits_relationships.py
-│       ├── 20251218_backend_updates_validation.py
-│       ├── 20251206_calendar_initial.py ← **Calendar domain tables**
-│       ├── 20251207_domains_inferred_columns.py ← **Inferred record columns on all domains**
-│       ├── 20251207_standardize_user_roles.py ← **RBAC standardization**
-│       ├── 20251206_finance_account_categories_update.py
-│       └── ... (22 total, additive only)
-├── templates/                      # Jinja2 templates (server-rendered)
-│   ├── layouts/
-│   │   ├── base.html              # Master template
-│   │   └── dashboard.html
-│   ├── components/
-│   │   ├── sidebar.html
-│   │   ├── forms.html
-│   │   └── alerts.html
+│   ├── admin/                      # Admin controllers
+│   ├── auth/                       # Auth (api_v1, auth_service, controllers, csrf, password, models, schemas, events)
+│   ├── events/                     # Event bus + event models/services
+│   ├── insights/                   # Engine, rules, telemetry, ML helpers, API controllers
+│   ├── interpreter/                # Calendar interpreter + inference emitter
+│   ├── users/                      # User models/preferences/services
+│   └── utils/                      # Decorators, pagination, strings, time, validation
+├── domains/                        # Domain modules
+│   ├── calendar/                   # Controllers, models, services, schemas, events, tasks, ml
 │   ├── finance/
-│   │   ├── accounts.html
-│   │   ├── journal.html
-│   │   ├── transactions.html
-│   │   └── forecast.html
-│   ├── habits/, health/, skills/, projects/, relationships/, journal/ (per-domain)
-│   └── insights/
-│       ├── signals.html            # Derived insights display
-│       └── assistant.html
-├── static/                         # CSS, JS (Alpine.js, htmx)
+│   ├── habits/
+│   ├── health/
+│   ├── journal/
+│   ├── projects/
+│   ├── relationships/
+│   └── skills/
+├── lifeos_platform/                # Async runtime, outbox, broker stubs, clients
+├── readmodels/                     # Read model scaffolding (contracts, registry, runners, projections)
+├── migrations/                     # Alembic home (env.py, script.py.mako, versions/, README.md)
+├── docs/                           # Architecture, runbooks, UI/UX constitution, tasks hub
+│   ├── lifeos_architecture.md
+│   ├── ui_ux_constitution.md
+│   ├── tasks/
+│   │   ├── README.md
+│   │   ├── auth_experience_refactor.md
+│   │   └── archive/
+│   │       └── calendar_subsystem_refactor.md
+│   ├── prompts/
+│   └── archive/
+├── templates/                      # Jinja2 templates
+│   ├── calendar/
+│   ├── components/
+│   ├── finance/
+│   ├── habits/
+│   ├── health/
+│   ├── insights/
+│   ├── journal/
+│   ├── layouts/
+│   ├── profile/
+│   ├── projects/
+│   ├── relationships/
+│   └── skills/
+├── static/                         # CSS/JS assets
 │   ├── css/
-│   │   └── tailwind.css           # Or Bootstrap
-│   ├── js/
-│   │   ├── app.js
-│   │   └── components/            # Alpine.js components
-│   └── assets/
+│   ├── images/
+│   └── js/
 ├── tests/                          # Pytest suite
-│   ├── conftest.py
-│   ├── test_architecture_constraints.py
-│   ├── test_auth_*.py
-│   ├── test_finance_*.py
-│   ├── test_habits_*.py
-│   ├── test_outbox_dispatcher.py
-│   ├── test_insight_services.py
-│   └── ... (one test file per feature/integration)
 ├── __init__.py                     # create_app factory
-├── extensions.py                   # Flask extensions (db, jwt, migrate, limiter, cache)
+├── cleaner.py
 ├── config.py                       # BaseConfig, DevelopmentConfig, ProductionConfig
-├── wsgi.py                         # Gunicorn entrypoint
-├── gunicorn.conf.py                # Gunicorn settings
-├── requirements.txt                # Python deps
-└── alembic.ini                     # Alembic config (points to migrations/)
+├── extensions.py                   # Flask extensions (db, jwt, migrate, limiter, cache)
+├── gunicorn.conf.py
+├── requirements.txt
+├── wsgi.py
+└── alembic.ini
 
 deploy/
-├── Dockerfile                      # Multi-stage: builder → prod image
-├── gunicorn.conf.py                # Prod server config
-├── entrypoint.sh                   # Startup with migrations
+├── Dockerfile
+├── gunicorn.conf.py
+├── entrypoint.sh
 ├── scripts/
-│   ├── deploy.sh                   # CI/CD integration
-│   └── ...
+│   └── deploy.sh
 ├── monitoring/
-│   └── prometheus.yml              # Metrics scrape config
+│   └── prometheus.yml
 └── README.md
 
 .env.example                        # All knobs documented
 docker-compose.yml                  # services: web, db (postgres), redis, worker, broker (stub), monitoring
 ```
+
+Planned (not yet in repo; Phase 3c or approved interim hygiene):
+- `lifeos/core/auth/admin_controllers.py`, `session_services.py`, `session_repository.py`, `session_read_models.py`, `session_models.py`, `device.py`, `session_events.py`, `constants.py`, `tasks.py`
 
 **Layering Rules:**
 - Controllers: HTTP validation, authz only; delegate to services
@@ -515,7 +333,7 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 **Scope (structure, no behavior change):**
 - Components: `session_models.py` (identity + lifecycle states), `session_services.py` (interfaces: create/invalidate/invalidate_all_for_user/admin_reset), `session_events.py` (contracts), `session_repository.py` (persistence contract), `session_read_models.py` (projection-only, replayable, never for authz), `device.py` (stub identity placeholder), `constants.py` (states: active, invalidated, expired, admin_reset), `admin_controllers.py` (admin-only endpoint contract), `tasks.queue_session_admin_reset` (interface hook only), `schemas.py` (session payload DTOs aligned with events; no device fingerprinting).
-- Documentation: `lifeos/core/events/event_catalog.md` must record the new `auth.session.*` contracts; no emitter code yet.
+- Documentation: event catalog remains in this document (Section 4); a standalone `lifeos/core/events/event_catalog.md` is planned but not yet in repo.
 - Component responsibilities: `session_models.py` defines session identity boundaries and lifecycle envelope; `session_services.py` owns lifecycle contracts compatible with replay; `session_events.py` fixes event shapes for auditability; `session_repository.py` remains pure data access; `session_read_models.py` are projection-only surfaces; `device.py` anchors deferred device identity without implying fingerprinting or sync.
 - Events: contract-only `auth.session.created`, `auth.session.invalidated`, `auth.session.admin_reset`; payloads include `{session_id, user_id, device_id? (stub), reason?}` with frozen audit semantics; admin_reset carries no confidence field (explicit human intent).
 - Read-model rule: session read models are replay-safe projections only; never used for authorization decisions.
@@ -590,7 +408,7 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 ---
 
-# 5. Data Model Inventory (22 migrations, all additive)
+# 5. Data Model Inventory (additive migrations)
 **Core (11 tables; +1 planned additive, not authored yet):**
 - `user`, `user_preference` (user identity & settings)
 - `role`, `permission`, `role_permission`, `user_role` (RBAC)
@@ -1251,15 +1069,14 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.2 (Session lifecycle scaffold + admin reset stub; Calendar-First Phase 2 Complete; CI/CD operational): 2025-12-14. Author: LifeOS Architect._
+_Constitution v2.3 (Tasks hub + Auth UX refactor task; session scaffold + admin reset stub; Calendar-First Phase 2 Complete): 2025-12-15. Author: LifeOS Architect._
 
-**Sprint Summary (2025-12-14):**
-- ✅ Session lifecycle scaffold added (interface-only); admin reset minimal path allowed; login issue quarantined to Phase 3c
+**Sprint Summary (2025-12-15):**
+- ✅ Tasks Hub added at `lifeos/docs/tasks/` with archive; calendar subsystem refactor archived
+- ✅ Auth Experience Refactor task published (Calm & Legible contract; cross-team handoff)
+- ✅ Session lifecycle scaffold remains interface-only; admin reset minimal path allowed; login issue quarantined to Phase 3c
+- ✅ UI/UX Constitution refreshed and binding
 - ✅ Calendar-First Phase 2: All acceptance criteria verified by QA
-- ✅ CI/CD Infrastructure: Pipelines operational (PR/main/release/nightly), Codecov wired
-- ✅ Test Coverage: 521 tests passing, 85% coverage, 10 xfailed (documented bugs)
-- ✅ Database: Single head at `20251219_calendar_oauth_tokens`
-- ✅ GitHub secrets (`CODECOV_TOKEN`, staging/prod), environment protection rules, registry credentials
 
 ---
 

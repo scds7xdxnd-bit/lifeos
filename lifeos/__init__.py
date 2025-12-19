@@ -162,6 +162,7 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.core.insights.pages import insights_pages_bp
     from lifeos.core.users.controllers import user_api_bp, user_pages_bp
     from lifeos.domains.calendar.controllers.calendar_api import calendar_api_bp
+    from lifeos.domains.calendar.controllers.calendar_view_api import calendar_view_api_bp
     from lifeos.domains.calendar.controllers.calendar_pages import calendar_pages_bp
 
     # Domain controllers (API + pages). Each module exposes *_bp variables.
@@ -223,6 +224,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(api_v1_insights_bp, url_prefix="/api/v1/insights")
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
+    app.register_blueprint(calendar_view_api_bp, url_prefix="/api/v1/calendar")
     app.register_blueprint(calendar_pages_bp, url_prefix="/calendar")
 
     # Admin/debug endpoints: register only in non-production or when debugging.

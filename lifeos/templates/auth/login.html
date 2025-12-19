@@ -1,39 +1,36 @@
 {% extends "layouts/base.html" %}
 {% block content %}
-<section class="auth-hero">
+<section class="auth-hero auth-hero--atmos">
   <div class="auth-hero__copy">
-    <p class="meta">Profile/Auth · Aligned with UI/UX Constitution §5 (Profile/Auth)</p>
-    <h2>Is my account safe and configured?</h2>
-    <p>Calmly access your calendar spine, finance overlays, and review queues. One clear primary action, no form walls.</p>
+    <p class="meta">LifeOS</p>
+    <h2>Your life, made legible.</h2>
+    <p>Private entry, steady cadence, nothing noisy.</p>
     <ul class="auth-hero__list">
-      <li>✔️ Secure JWT + CSRF pairing handled for you.</li>
-      <li>✔️ Read-first dashboards; edit flows appear only after intent.</li>
-      <li>✔️ One dominant CTA so you always know the next step.</li>
+      <li>Private by default.</li>
+      <li>Nothing changes without your intent.</li>
+      <li>Designed for long-term use.</li>
     </ul>
-    <p class="meta">Demo users: admin@example.com / admin12345 or demo@lifeos.test / demo12345</p>
   </div>
 
   <div class="auth-hero__card">
-    <h3>Access your account</h3>
-    <p class="meta">Choose an action below.</p>
-    <div class="auth-tabs" role="tablist">
-      <button type="button" class="auth-tab active" data-view="login">Login</button>
-      <button type="button" class="auth-tab" data-view="register">Register</button>
-      <button type="button" class="auth-tab" data-view="forgot-username">Forgot username</button>
-      <button type="button" class="auth-tab" data-view="forgot-password">Forgot password</button>
-      <button type="button" class="auth-tab" data-view="reset-password">Reset password</button>
-    </div>
+    <h3>Welcome back</h3>
+    <p class="meta">Continue into LifeOS.</p>
 
     <form id="lp-login-form" class="auth-view field-stack" data-view="login" autocomplete="on">
       <div class="field">
         <label for="lp-email">Email</label>
-        <input id="lp-email" name="email" type="email" placeholder="you@example.com" required>
+        <input id="lp-email" name="email" type="email" placeholder="Email" required>
       </div>
       <div class="field">
         <label for="lp-password">Password</label>
-        <input id="lp-password" name="password" type="password" placeholder="••••••••" required>
+        <input id="lp-password" name="password" type="password" placeholder="Password" required>
       </div>
-      <button type="submit" class="btn">Sign in</button>
+      <button type="submit" class="btn">Continue</button>
+      <div class="auth-link-row">
+        <button type="button" class="auth-link" id="lp-forgot-toggle">Forgot password?</button>
+        <span class="auth-link-sep" aria-hidden="true">·</span>
+        <button type="button" class="auth-link" id="lp-register-toggle">Register</button>
+      </div>
     </form>
 
     <form id="lp-register-form" class="auth-view auth-hidden field-stack" data-view="register" autocomplete="on">
@@ -54,38 +51,21 @@
         <label for="lp-register-timezone">Timezone (optional)</label>
         <input id="lp-register-timezone" name="timezone" type="text" placeholder="e.g., America/New_York">
       </div>
-      <button type="submit" class="btn">Create account</button>
-    </form>
-
-    <form id="lp-forgot-username-form" class="auth-view auth-hidden field-stack" data-view="forgot-username">
-      <div class="field">
-        <label for="lp-forgot-username-email">Email</label>
-        <input id="lp-forgot-username-email" name="email" type="email" placeholder="you@example.com" required>
+      <button type="submit" class="btn">Continue</button>
+      <div class="auth-link-row">
+        <button type="button" class="auth-link" id="lp-back-login-from-register">Back to login</button>
       </div>
-      <small>We will send your username to the email if an account exists.</small>
-      <button type="submit" class="btn">Send reminder</button>
     </form>
 
-    <form id="lp-forgot-password-form" class="auth-view auth-hidden field-stack" data-view="forgot-password">
+    <form id="lp-forgot-password-form" class="auth-view auth-hidden field-stack" data-view="forgot">
       <div class="field">
-        <label for="lp-forgot-password-email">Email</label>
+        <label for="lp-forgot-password-email">Email for reset link</label>
         <input id="lp-forgot-password-email" name="email" type="email" placeholder="you@example.com" required>
       </div>
-      <small>We will email a password reset link if we find your account.</small>
-      <button type="submit" class="btn">Email reset link</button>
-    </form>
-
-    <form id="lp-reset-password-form" class="auth-view auth-hidden field-stack" data-view="reset-password">
-      <div class="field">
-        <label for="lp-reset-token">Reset token</label>
-        <input id="lp-reset-token" name="token" type="text" placeholder="Paste token from email" required>
+      <button type="submit" class="btn">Send reset link</button>
+      <div class="auth-link-row">
+        <button type="button" class="auth-link" id="lp-back-login-from-forgot">Back to login</button>
       </div>
-      <div class="field">
-        <label for="lp-reset-password">New password</label>
-        <input id="lp-reset-password" name="new_password" type="password" placeholder="New password" required>
-        <small>Use at least 8 characters with letters and numbers.</small>
-      </div>
-      <button type="submit" class="btn">Reset password</button>
     </form>
 
     <div id="lp-status" class="auth-status" aria-live="polite"></div>
@@ -94,14 +74,15 @@
 
 <script>
 (() => {
-  const tabs = Array.from(document.querySelectorAll('.auth-tab'));
   const views = Array.from(document.querySelectorAll('.auth-view'));
   const statusEl = document.getElementById('lp-status');
   const loginForm = document.getElementById('lp-login-form');
   const registerForm = document.getElementById('lp-register-form');
-  const forgotUsernameForm = document.getElementById('lp-forgot-username-form');
   const forgotPasswordForm = document.getElementById('lp-forgot-password-form');
-  const resetPasswordForm = document.getElementById('lp-reset-password-form');
+  const forgotToggle = document.getElementById('lp-forgot-toggle');
+  const registerToggle = document.getElementById('lp-register-toggle');
+  const backFromRegister = document.getElementById('lp-back-login-from-register');
+  const backFromForgot = document.getElementById('lp-back-login-from-forgot');
 
   const setStatus = (msg, tone = '') => {
     if (!statusEl) return;
@@ -111,11 +92,8 @@
 
   const selectView = (viewName) => {
     views.forEach((v) => v.classList.toggle('auth-hidden', v.dataset.view !== viewName));
-    tabs.forEach((t) => t.classList.toggle('active', t.dataset.view === viewName));
     setStatus('');
   };
-
-  tabs.forEach((tab) => tab.addEventListener('click', () => selectView(tab.dataset.view)));
 
   const postJson = (url, body) =>
     fetch(url, {
@@ -146,7 +124,7 @@
           });
         }
         setStatus('Welcome back.', 'success');
-        setTimeout(() => { window.location.href = '/'; }, 300);
+        setTimeout(() => { window.location.href = '/calendar/'; }, 300);
       } else {
         const reason = payload?.error || res.status;
         const copy = reason === 'invalid_credentials' ? 'Check your email or password.' : 'Unable to sign in right now.';
@@ -179,7 +157,7 @@
             user: body.user,
           });
           setStatus('Account created and logged in.', 'success');
-          setTimeout(() => { window.location.href = '/'; }, 300);
+          setTimeout(() => { window.location.href = '/calendar/'; }, 300);
         } else {
           setStatus('Account created. You can log in now.', 'success');
           selectView('login');
@@ -191,22 +169,6 @@
           bad_request: 'Check your inputs (password must include letters and numbers).',
         }[reason] || 'Registration failed.';
         setStatus(copy, 'error');
-      }
-    } catch (_) {
-      setStatus('Network error. Try again.', 'error');
-    }
-  });
-
-  forgotUsernameForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    setStatus('Sending reminder...');
-    const data = Object.fromEntries(new FormData(forgotUsernameForm).entries());
-    try {
-      const res = await postJson('/auth/forgot-username', data);
-      if (res.ok) {
-        setStatus('If an account exists, you will receive an email shortly.', 'success');
-      } else {
-        setStatus('Unable to process that request right now.', 'error');
       }
     } catch (_) {
       setStatus('Network error. Try again.', 'error');
@@ -229,30 +191,12 @@
     }
   });
 
-  resetPasswordForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(resetPasswordForm).entries());
-    if (!data.token || !data.new_password) {
-      setStatus('Token and new password are required.', 'error');
-      return;
-    }
-    setStatus('Updating password...');
-    try {
-      const res = await postJson('/auth/reset-password', data);
-      const payload = await res.json().catch(() => ({}));
-      if (res.ok && (payload.ok === undefined || payload.ok === true)) {
-        setStatus('Password reset. You can log in with your new password.', 'success');
-        selectView('login');
-      } else {
-        setStatus('Reset failed. Double-check your token and try again.', 'error');
-      }
-    } catch (_) {
-      setStatus('Network error. Try again.', 'error');
-    }
-  });
-
   // Default view
   selectView('login');
+  forgotToggle?.addEventListener('click', () => selectView('forgot'));
+  registerToggle?.addEventListener('click', () => selectView('register'));
+  backFromRegister?.addEventListener('click', () => selectView('login'));
+  backFromForgot?.addEventListener('click', () => selectView('login'));
 })();
 </script>
 {% endblock %}

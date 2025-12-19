@@ -7,7 +7,7 @@
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
       <div>
         <h2 style="margin:0;">Calendar</h2>
-        <p style="margin:0; color:#5b6470;">What’s next and what needs confirmation. Events are analyzed into inferred records.</p>
+        <p style="margin:0; color:#5b6470;">Deterministic day/week/month views from backend-owned windows; ledger is anchored to today.</p>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
         <button type="button" class="btn btn-secondary" id="pending-badge-link" onclick="window.location.href='/calendar/review'">
@@ -37,12 +37,12 @@
 
   <!-- View Mode Toggle & Date Navigation -->
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
       <div style="display:flex; gap:0.25rem; background:#e0e5ec; border-radius:8px; padding:0.25rem;">
         <button type="button" class="cal-view-btn" data-view="day" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:transparent; color:#5b6470;">Day</button>
         <button type="button" class="cal-view-btn" data-view="week" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:transparent; color:#5b6470;">Week</button>
         <button type="button" class="cal-view-btn" data-view="month" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:transparent; color:#5b6470;">Month</button>
-        <button type="button" class="cal-view-btn active" data-view="list" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:#0b4f9c; color:white;">List</button>
+        <button type="button" class="cal-view-btn active" data-view="list" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:#0b4f9c; color:white;">Ledger</button>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
         <button type="button" class="btn btn-secondary" id="cal-nav-prev" style="padding:0.4rem 0.6rem;">←</button>
@@ -51,30 +51,6 @@
         <span id="cal-nav-label" style="font-weight:600; min-width:150px; text-align:center;"></span>
       </div>
     </div>
-    <details id="cal-filter-toggle" style="border:1px solid var(--border-subtle); border-radius:8px; padding:0.5rem; background: var(--bg-secondary);">
-      <summary style="cursor:pointer; font-weight:600; color: var(--text-strong);">Filters</summary>
-      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items:end; margin-top:0.5rem;">
-        <div class="field">
-          <label for="cal-start-date">From</label>
-          <input type="date" id="cal-start-date" class="input">
-        </div>
-        <div class="field">
-          <label for="cal-end-date">To</label>
-          <input type="date" id="cal-end-date" class="input">
-        </div>
-        <div class="field">
-          <label for="cal-source-filter">Source</label>
-          <select id="cal-source-filter" class="input">
-            <option value="">All sources</option>
-            <option value="manual">Manual</option>
-            <option value="sync_google">Google Calendar</option>
-            <option value="sync_apple">Apple Calendar</option>
-            <option value="api">API</option>
-          </select>
-        </div>
-        <button type="button" class="btn btn-secondary" id="cal-filter-apply">Apply Filter</button>
-      </div>
-    </details>
   </div>
 
   <!-- Day View -->
@@ -113,8 +89,12 @@
   <!-- List View (existing) -->
   <div id="cal-list-view" class="card cal-view-panel">
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
-      <h3 style="margin:0;">Events</h3>
-      <button type="button" class="btn btn-secondary" id="cal-reload">Refresh</button>
+      <h3 style="margin:0;">Event ledger</h3>
+      <div style="display:flex; gap:0.5rem;">
+        <button type="button" class="btn btn-secondary" id="ledger-load-newer">Load newer</button>
+        <button type="button" class="btn btn-secondary" id="ledger-load-older">Load older</button>
+        <button type="button" class="btn btn-secondary" id="cal-reload">Refresh</button>
+      </div>
     </div>
     <div id="cal-status" class="auth-status" style="margin-bottom:0.5rem;"></div>
     <div id="cal-events-list" style="display:grid; gap:0.5rem;"></div>
@@ -200,6 +180,13 @@
     return `${y}-${m}-${day}`;
   };
 
+  const parseLocalDateTime = (isoStr) => {
+    if (!isoStr) return null;
+    // Remove trailing Z/offset so we treat it as provided (naive) local time
+    const cleaned = isoStr.replace(/Z$/, '');
+    return new Date(cleaned);
+  };
+
   // Get auth headers with CSRF token from meta tag (session-bound)
   const getAuthHeaders = (extra = {}) => {
     const base = lifeosAuth.authHeaders(extra);
@@ -212,7 +199,15 @@
   // View state
   let currentView = 'list';
   let currentDate = new Date();
-  let allEvents = [];
+  let dayEvents = [];
+  let weekEvents = [];
+  let monthEvents = [];
+  let ledgerEvents = [];
+  let ledgerBackwardCursor = null;
+  let ledgerForwardCursor = null;
+  let dayWindow = null;
+  let weekWindow = null;
+  let monthWindow = null;
 
   // DOM elements - View panels
   const viewBtns = document.querySelectorAll('.cal-view-btn');
@@ -235,12 +230,8 @@
   const loginHint = document.getElementById('cal-login-hint');
   const createBtn = document.getElementById('cal-create-btn');
   const reloadBtn = document.getElementById('cal-reload');
-  const filterApplyBtn = document.getElementById('cal-filter-apply');
   const eventsListEl = document.getElementById('cal-events-list');
   const statusEl = document.getElementById('cal-status');
-  const startDateInput = document.getElementById('cal-start-date');
-  const endDateInput = document.getElementById('cal-end-date');
-  const sourceFilter = document.getElementById('cal-source-filter');
 
   // Stats
   const statToday = document.getElementById('stat-today');
@@ -266,18 +257,12 @@
   const detailClose = document.getElementById('cal-detail-close');
   const detailEdit = document.getElementById('cal-detail-edit');
   const detailDelete = document.getElementById('cal-detail-delete');
+  const ledgerLoadOlderBtn = document.getElementById('ledger-load-older');
+  const ledgerLoadNewerBtn = document.getElementById('ledger-load-newer');
 
   let currentEventId = null;
 
-  // Initialize date filters to current week
   const today = new Date();
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay());
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-
-  startDateInput.value = localDateKey(weekStart);
-  endDateInput.value = localDateKey(weekEnd);
 
   // ==================== View Mode Logic ====================
   const switchView = (viewName) => {
@@ -297,7 +282,13 @@
       panel.style.display = panel.id === `cal-${viewName}-view` ? 'block' : 'none';
     });
     updateNavLabel();
-    renderCurrentView();
+    refreshCurrentView();
+  };
+
+  const getWeekStart = (d) => {
+    const weekStart = new Date(d);
+    weekStart.setDate(d.getDate() - d.getDay());
+    return weekStart;
   };
 
   const updateNavLabel = () => {
@@ -305,15 +296,14 @@
     if (currentView === 'day') {
       navLabel.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     } else if (currentView === 'week') {
-      const weekStart = new Date(currentDate);
-      weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+      const weekStart = getWeekStart(currentDate);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       navLabel.textContent = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     } else if (currentView === 'month') {
       navLabel.textContent = currentDate.toLocaleDateString('en-US', opts);
     } else {
-      navLabel.textContent = '';
+      navLabel.textContent = 'Ledger';
     }
   };
 
@@ -326,17 +316,27 @@
       currentDate.setMonth(currentDate.getMonth() + direction);
     }
     updateNavLabel();
-    renderCurrentView();
+    refreshCurrentView();
   };
 
   const goToToday = () => {
     currentDate = new Date();
     updateNavLabel();
-    renderCurrentView();
+    refreshCurrentView();
   };
 
   // ==================== Day View Rendering ====================
   const renderDayView = () => {
+    const windowStart = dayWindow?.start ? parseLocalDateTime(dayWindow.start) : (() => {
+      const d = new Date(currentDate);
+      d.setHours(0,0,0,0);
+      return d;
+    })();
+    const windowEnd = dayWindow?.end ? parseLocalDateTime(dayWindow.end) : (() => {
+      const d = new Date(windowStart);
+      d.setDate(d.getDate() + 1);
+      return d;
+    })();
     const dateStr = localDateKey(currentDate);
     const dayTitle = document.getElementById('cal-day-title');
     dayTitle.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -355,9 +355,14 @@
     dayGrid.innerHTML = html;
 
     // Place events
-    const dayEvents = allEvents.filter(e => e.start_time.startsWith(dateStr));
-    dayEvents.forEach(event => {
-      const startTime = new Date(event.start_time);
+    const dayItems = dayEvents.filter(e => {
+      const start = parseLocalDateTime(e.start_time);
+      const end = parseLocalDateTime(e.end_time || e.start_time);
+      return start < windowEnd && end > windowStart;
+    });
+
+    dayItems.forEach(event => {
+      const startTime = parseLocalDateTime(event.start_time);
       const hour = startTime.getHours();
       const minutes = startTime.getMinutes();
       const slot = dayGrid.querySelector(`[data-hour="${hour}"][data-date="${dateStr}"]`);
@@ -407,12 +412,25 @@
     weekGrid.innerHTML = html;
 
     // Place events
-    allEvents.forEach(event => {
-      const startTime = new Date(event.start_time);
-      const dateStr = event.start_time.split('T')[0];
+    const windowStart = weekWindow?.start ? parseLocalDateTime(weekWindow.start) : (() => {
+      const w = getWeekStart(currentDate);
+      w.setHours(0,0,0,0);
+      return w;
+    })();
+    const windowEnd = weekWindow?.end ? parseLocalDateTime(weekWindow.end) : (() => {
+      const w = new Date(windowStart);
+      w.setDate(w.getDate() + 7);
+      return w;
+    })();
+
+    weekEvents.forEach(event => {
+      const startTime = parseLocalDateTime(event.start_time);
+      const endTime = parseLocalDateTime(event.end_time || event.start_time);
+      if (!(startTime < windowEnd && endTime > windowStart)) return;
       const hour = startTime.getHours();
+      const dateKey = localDateKey(startTime);
       if (hour >= 6 && hour < 22) {
-        const slot = weekGrid.querySelector(`[data-hour="${hour}"][data-date="${dateStr}"]`);
+        const slot = weekGrid.querySelector(`[data-hour="${hour}"][data-date="${dateKey}"]`);
         if (slot) {
           const eventEl = document.createElement('div');
           eventEl.style.cssText = `background:${event.color || '#0b4f9c'}; color:white; padding:0.15rem 0.25rem; border-radius:3px; font-size:0.7rem; cursor:pointer; margin:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;`;
@@ -453,7 +471,15 @@
       const dateObj = new Date(year, month, day);
       const dateStr = localDateKey(dateObj);
       const isToday = dateStr === todayStr;
-      const dayEvents = allEvents.filter(e => e.start_time.startsWith(dateStr));
+      const dayEvents = monthEvents.filter(e => {
+        const start = parseLocalDateTime(e.start_time);
+        const end = parseLocalDateTime(e.end_time || e.start_time);
+        const dayStart = new Date(dateObj);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayStart.getDate() + 1);
+        return start < dayEnd && end > dayStart;
+      });
 
       html += `<div style="min-height:80px; border:1px solid #e0e5ec; padding:0.25rem; ${isToday ? 'background:#e6f0ff;' : ''}" data-date="${dateStr}">
         <div style="font-weight:600; font-size:0.85rem; ${isToday ? 'color:#0b4f9c;' : ''}">${day}</div>
@@ -473,7 +499,7 @@
     if (currentView === 'day') renderDayView();
     else if (currentView === 'week') renderWeekView();
     else if (currentView === 'month') renderMonthView();
-    // List view is handled by renderEvents()
+    else renderLedger();
   };
 
   // Expose for month view onclick
@@ -495,7 +521,7 @@
 
   const ensureAuth = () => {
     const authed = !!lifeosAuth.getTokens().access_token;
-    [createBtn, reloadBtn, filterApplyBtn, startDateInput, endDateInput, sourceFilter].forEach(el => { if (el) el.disabled = !authed; });
+    [createBtn, reloadBtn, ledgerLoadOlderBtn, ledgerLoadNewerBtn].forEach(el => { if (el) el.disabled = !authed; });
     viewBtns.forEach(btn => { btn.disabled = !authed; });
     if (pendingLink) {
       pendingLink.setAttribute('aria-disabled', String(!authed));
@@ -508,7 +534,7 @@
 
   const formatDateTime = (isoStr) => {
     if (!isoStr) return '—';
-    const d = new Date(isoStr);
+    const d = parseLocalDateTime(isoStr);
     return d.toLocaleString('en-US', {
       weekday: 'short',
       month: 'short',
@@ -516,6 +542,12 @@
       hour: 'numeric',
       minute: '2-digit'
     });
+  };
+
+  const formatLedgerTime = (isoStr) => {
+    if (!isoStr) return '—';
+    const d = parseLocalDateTime(isoStr);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   };
 
   const formatDuration = (minutes) => {
@@ -526,50 +558,140 @@
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
-  // Fetch and render events
-    const fetchEvents = async () => {
-      if (!ensureAuth()) return;
-      setStatus(statusEl, 'Loading...');
+  const mergeLedgerEvents = (newEvents = []) => {
+    const byId = new Map();
+    ledgerEvents.forEach((e) => byId.set(e.id, e));
+    newEvents.forEach((e) => byId.set(e.id, e));
+    ledgerEvents = Array.from(byId.values()).sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+  };
 
-      const params = new URLSearchParams();
-      const toDateString = (val, endOfDay = false) => {
-        if (!val) return null;
-        const pattern = /^\d{4}-\d{2}-\d{2}$/;
-        if (!pattern.test(val)) return null;
-        return `${val}T${endOfDay ? '23:59:59' : '00:00:00'}`;
-      };
-      const startStr = toDateString(startDateInput.value, false);
-      const endStr = toDateString(endDateInput.value, true);
-      // Only set filters if they are valid and in correct order
-      const startDateObj = startStr ? new Date(startStr) : null;
-      const endDateObj = endStr ? new Date(endStr) : null;
-      const datesValid = (!startDateObj || !isNaN(startDateObj.getTime())) &&
-                         (!endDateObj || !isNaN(endDateObj.getTime())) &&
-                         (!startDateObj || !endDateObj || endDateObj >= startDateObj);
-      if (datesValid) {
-        if (startStr) params.set('start_date', startStr);
-        if (endStr) params.set('end_date', endStr);
-      }
-      if (sourceFilter.value) params.set('source', sourceFilter.value);
-      params.set('limit', '100');
+  const renderLedger = () => {
+    eventsListEl.innerHTML = '';
+    if (!ledgerEvents.length) {
+      eventsListEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#5b6470;">No events yet.</div>';
+      return;
+    }
+    ledgerEvents.forEach(event => {
+      const eventEl = document.createElement('div');
+      eventEl.style.cssText = 'display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem; border-radius:8px; cursor:pointer; transition:background 0.15s;';
+      eventEl.onmouseenter = () => eventEl.style.background = '#f7f8fa';
+      eventEl.onmouseleave = () => eventEl.style.background = '';
 
-      try {
-        const res = await fetch(`/api/calendar/events?${params}`, {
-        headers: getAuthHeaders(),
-      });
-      const data = await res.json();
+      const colorDot = event.color || '#0b4f9c';
+      const time = event.all_day ? 'All day' : parseLocalDateTime(event.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const duration = event.duration_minutes ? ` (${formatDuration(event.duration_minutes)})` : '';
+      const tags = (event.tags || []).map(t => `<span style="background:#e0e5ec; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.75rem;">${t}</span>`).join(' ');
 
-      if (res.ok && data.ok) {
-        allEvents = data.events || [];
-        renderEvents(allEvents);
-        updateStats(allEvents);
-        renderCurrentView(); // Update day/week/month views
-        setStatus(statusEl, '');
+      eventEl.innerHTML = `
+        <div style="width:4px; min-height:40px; background:${colorDot}; border-radius:2px;"></div>
+        <div style="flex:1;">
+          <div style="font-weight:600; color:#1f2430;">${event.title}${event.is_private ? ' 🔒' : ''}</div>
+          <div style="font-size:0.85rem; color:#5b6470;">${time}${duration}</div>
+          ${event.location ? `<div style="font-size:0.85rem; color:#5b6470;">📍 ${event.location}</div>` : ''}
+          ${tags ? `<div style="margin-top:0.25rem;">${tags}</div>` : ''}
+        </div>
+        <div style="font-size:0.75rem; color:#7a8599; text-transform:capitalize;">${event.source}</div>
+      `;
+
+      eventEl.addEventListener('click', () => showEventDetail(event.id));
+      eventsListEl.appendChild(eventEl);
+    });
+  };
+
+  const fetchLedger = async (direction = 'backward', cursor = null) => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading ledger...');
+    const anchor = localDateKey(new Date());
+    const params = new URLSearchParams({ anchor, direction, limit: '50' });
+    if (cursor) params.set('cursor', cursor);
+    const res = await fetch(`/api/v1/calendar/ledger?${params.toString()}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      mergeLedgerEvents(data.events || []);
+      if (direction === 'backward') {
+        ledgerBackwardCursor = data.next_cursor || null;
       } else {
-        setStatus(statusEl, data.error || 'Failed to load events', 'error');
+        ledgerForwardCursor = data.next_cursor || null;
       }
-    } catch (err) {
-      setStatus(statusEl, 'Network error', 'error');
+      ledgerLoadOlderBtn.disabled = !ledgerBackwardCursor;
+      ledgerLoadNewerBtn.disabled = !ledgerForwardCursor;
+      renderLedger();
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load ledger', 'error');
+    }
+  };
+
+  const loadLedgerFresh = () => {
+    ledgerEvents = [];
+    ledgerBackwardCursor = null;
+    ledgerForwardCursor = null;
+    if (ledgerLoadOlderBtn) ledgerLoadOlderBtn.disabled = true;
+    if (ledgerLoadNewerBtn) ledgerLoadNewerBtn.disabled = true;
+    renderLedger();
+    fetchLedger('backward', null).then(() => fetchLedger('forward', null));
+  };
+
+  // Fetch deterministic views from backend
+  const fetchDayView = async (dateObj) => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading day...');
+    const res = await fetch(`/api/v1/calendar/day?date=${localDateKey(dateObj)}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      dayEvents = data.events || [];
+      dayWindow = { start: data.window_start, end: data.window_end };
+      renderCurrentView();
+      updateStats(dayEvents);
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load day', 'error');
+    }
+  };
+
+  const fetchWeekView = async (startDate) => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading week...');
+    const res = await fetch(`/api/v1/calendar/week?start=${localDateKey(startDate)}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      weekEvents = data.events || [];
+      weekWindow = { start: data.window_start, end: data.window_end };
+      renderCurrentView();
+      updateStats(weekEvents);
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load week', 'error');
+    }
+  };
+
+  const fetchMonthView = async (dateObj) => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading month...');
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const res = await fetch(`/api/v1/calendar/month?year=${year}&month=${month}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      monthEvents = data.events || [];
+      monthWindow = { start: data.window_start, end: data.window_end, spillover: data.spillover_days || [] };
+      renderCurrentView();
+      updateStats(monthEvents);
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load month', 'error');
+    }
+  };
+
+  const refreshCurrentView = () => {
+    if (currentView === 'day') {
+      fetchDayView(currentDate);
+    } else if (currentView === 'week') {
+      fetchWeekView(getWeekStart(currentDate));
+    } else if (currentView === 'month') {
+      fetchMonthView(currentDate);
+    } else {
+      loadLedgerFresh();
     }
   };
 
@@ -596,56 +718,6 @@
     const todayEvents = events.filter(e => e.start_time.startsWith(todayStr));
     statToday.textContent = todayEvents.length;
     statWeek.textContent = events.length;
-  };
-
-  const renderEvents = (events) => {
-    eventsListEl.innerHTML = '';
-    if (!events.length) {
-      eventsListEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#5b6470;">No events found for this period.</div>';
-      return;
-    }
-
-    // Group by date
-    const grouped = {};
-    events.forEach(e => {
-      const dateKey = e.start_time.split('T')[0];
-      if (!grouped[dateKey]) grouped[dateKey] = [];
-      grouped[dateKey].push(e);
-    });
-
-    Object.keys(grouped).sort().forEach(dateKey => {
-      const dateHeader = document.createElement('div');
-      const dateObj = new Date(dateKey + 'T00:00:00');
-      dateHeader.style.cssText = 'font-weight:600; color:#1f2430; padding:0.5rem 0; border-bottom:1px solid #e0e5ec; margin-top:0.5rem;';
-      dateHeader.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-      eventsListEl.appendChild(dateHeader);
-
-      grouped[dateKey].forEach(event => {
-        const eventEl = document.createElement('div');
-        eventEl.style.cssText = 'display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem; border-radius:8px; cursor:pointer; transition:background 0.15s;';
-        eventEl.onmouseenter = () => eventEl.style.background = '#f7f8fa';
-        eventEl.onmouseleave = () => eventEl.style.background = '';
-
-        const colorDot = event.color || '#0b4f9c';
-        const time = event.all_day ? 'All day' : new Date(event.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const duration = event.duration_minutes ? ` (${formatDuration(event.duration_minutes)})` : '';
-        const tags = (event.tags || []).map(t => `<span style="background:#e0e5ec; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.75rem;">${t}</span>`).join(' ');
-
-        eventEl.innerHTML = `
-          <div style="width:4px; min-height:40px; background:${colorDot}; border-radius:2px;"></div>
-          <div style="flex:1;">
-            <div style="font-weight:600; color:#1f2430;">${event.title}${event.is_private ? ' 🔒' : ''}</div>
-            <div style="font-size:0.85rem; color:#5b6470;">${time}${duration}</div>
-            ${event.location ? `<div style="font-size:0.85rem; color:#5b6470;">📍 ${event.location}</div>` : ''}
-            ${tags ? `<div style="margin-top:0.25rem;">${tags}</div>` : ''}
-          </div>
-          <div style="font-size:0.75rem; color:#7a8599; text-transform:capitalize;">${event.source}</div>
-        `;
-
-        eventEl.addEventListener('click', () => showEventDetail(event.id));
-        eventsListEl.appendChild(eventEl);
-      });
-    });
   };
 
   // Event detail modal
@@ -787,7 +859,7 @@
 
       if (res.ok && data.ok) {
         closeDetailModal();
-        fetchEvents();
+        refreshCurrentView();
       } else {
         alert(data.error || 'Failed to delete');
       }
@@ -839,7 +911,7 @@
         setStatus(modalStatus, 'Saved!', 'success');
         setTimeout(() => {
           closeModal();
-          fetchEvents();
+          refreshCurrentView();
           fetchPendingCount();
         }, 500);
       } else {
@@ -859,16 +931,24 @@
   });
 
   // Event listeners
-  reloadBtn.addEventListener('click', () => { fetchEvents(); fetchPendingCount(); });
-    filterApplyBtn.addEventListener('click', fetchEvents);
+  reloadBtn.addEventListener('click', () => { refreshCurrentView(); fetchPendingCount(); });
+  ledgerLoadOlderBtn?.addEventListener('click', () => {
+    if (ledgerBackwardCursor) fetchLedger('backward', ledgerBackwardCursor);
+  });
+  ledgerLoadNewerBtn?.addEventListener('click', () => {
+    if (ledgerForwardCursor) fetchLedger('forward', ledgerForwardCursor);
+  });
 
   window.addEventListener('lifeos:auth-changed', (e) => {
     ensureAuth();
     if (e.detail?.loggedIn) {
-      fetchEvents();
+      refreshCurrentView();
       fetchPendingCount();
     } else {
-      allEvents = [];
+      dayEvents = [];
+      weekEvents = [];
+      monthEvents = [];
+      ledgerEvents = [];
       eventsListEl.innerHTML = '';
       statToday.textContent = '0';
       statWeek.textContent = '0';
@@ -896,15 +976,15 @@
   navToday.addEventListener('click', goToToday);
 
   // Reload buttons for each view
-  document.getElementById('cal-reload-day')?.addEventListener('click', () => { fetchEvents(); });
-  document.getElementById('cal-reload-week')?.addEventListener('click', () => { fetchEvents(); });
-  document.getElementById('cal-reload-month')?.addEventListener('click', () => { fetchEvents(); });
+  document.getElementById('cal-reload-day')?.addEventListener('click', () => { fetchDayView(currentDate); });
+  document.getElementById('cal-reload-week')?.addEventListener('click', () => { fetchWeekView(getWeekStart(currentDate)); });
+  document.getElementById('cal-reload-month')?.addEventListener('click', () => { fetchMonthView(currentDate); });
 
   // Initialize after auth session check to avoid firing with stale tokens
   const init = () => {
     ensureAuth();
     updateNavLabel();
-    fetchEvents();
+    refreshCurrentView();
     fetchPendingCount();
   };
   if (window.lifeosAuthReady?.then) {

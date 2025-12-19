@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from calendar import monthrange
+from datetime import date, datetime, time, timedelta
 from typing import List, Optional
+
+from sqlalchemy import and_, func, or_
 
 from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.events import (
@@ -13,6 +16,7 @@ from lifeos.domains.calendar.events import (
     CALENDAR_INTERPRETATION_CONFIRMED,
     CALENDAR_INTERPRETATION_REJECTED,
 )
+from lifeos.domains.calendar.mappers import calendar_event_to_response
 from lifeos.domains.calendar.models.calendar_event import (
     CalendarEvent,
     CalendarEventInterpretation,
@@ -350,3 +354,137 @@ def update_interpretation_status(
 
     db.session.commit()
     return interpretation
+
+
+# ==================== Deterministic View & Ledger ====================
+
+
+def _window_overlap_query(user_id: int, window_start: datetime, window_end: datetime):
+    """Return a base query for events overlapping the window."""
+    end_expr = func.coalesce(CalendarEvent.end_time, CalendarEvent.start_time)
+    return (
+        CalendarEvent.query.filter(CalendarEvent.user_id == user_id)
+        .filter(CalendarEvent.start_time < window_end)
+        .filter(end_expr > window_start)
+        .order_by(CalendarEvent.start_time.asc(), CalendarEvent.id.asc())
+    )
+
+
+def _window_bounds_for_day(target_date: date) -> tuple[datetime, datetime]:
+    start = datetime.combine(target_date, time.min)
+    end = start + timedelta(days=1)
+    return start, end
+
+
+def _window_bounds_for_week(start_date: date) -> tuple[datetime, datetime]:
+    start = datetime.combine(start_date, time.min)
+    end = start + timedelta(days=7)
+    return start, end
+
+
+def _window_bounds_for_month(year: int, month: int) -> tuple[datetime, datetime, list[date]]:
+    first_day = date(year, month, 1)
+    _, last_dom = monthrange(year, month)
+    last_day = date(year, month, last_dom)
+    # ISO week (Mon-Sun) for grid spillover
+    grid_start = first_day - timedelta(days=first_day.weekday())
+    grid_end = last_day + timedelta(days=(6 - last_day.weekday()))
+    window_start = datetime.combine(grid_start, time.min)
+    window_end = datetime.combine(grid_end + timedelta(days=1), time.min)
+    spillover_days: list[date] = []
+    cur = grid_start
+    while cur < first_day:
+        spillover_days.append(cur)
+        cur += timedelta(days=1)
+    cur = last_day + timedelta(days=1)
+    while cur <= grid_end:
+        spillover_days.append(cur)
+        cur += timedelta(days=1)
+    return window_start, window_end, spillover_days
+
+
+def get_day_view(user_id: int, target_date: date) -> dict:
+    window_start, window_end = _window_bounds_for_day(target_date)
+    events = _window_overlap_query(user_id, window_start, window_end).all()
+    return {
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }
+
+
+def get_week_view(user_id: int, start_date: date) -> dict:
+    window_start, window_end = _window_bounds_for_week(start_date)
+    events = _window_overlap_query(user_id, window_start, window_end).all()
+    return {
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }
+
+
+def get_month_view(user_id: int, year: int, month: int) -> dict:
+    window_start, window_end, spillover_days = _window_bounds_for_month(year, month)
+    events = _window_overlap_query(user_id, window_start, window_end).all()
+    return {
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "spillover_days": [d.isoformat() for d in spillover_days],
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }
+
+
+def get_ledger(
+    user_id: int,
+    anchor_date: date,
+    direction: str = "backward",
+    limit: int = 50,
+    cursor: Optional[str] = None,
+) -> dict:
+    """Chronological ledger anchored at a date, cursor-based."""
+    anchor_dt = datetime.combine(anchor_date, time.min)
+    pivot_time = anchor_dt
+    pivot_id = None
+    if cursor:
+        try:
+            ts_str, id_str = cursor.split("|", 1)
+            pivot_time = datetime.fromisoformat(ts_str)
+            pivot_id = int(id_str)
+        except Exception:
+            pivot_time = anchor_dt
+            pivot_id = None
+    elif direction == "backward":
+        # Include events on the anchor day when scanning backward.
+        pivot_time = anchor_dt + timedelta(days=1)
+
+    base_query = CalendarEvent.query.filter(CalendarEvent.user_id == user_id)
+
+    if direction == "forward":
+        cond = or_(
+            CalendarEvent.start_time > pivot_time,
+            and_(CalendarEvent.start_time == pivot_time, CalendarEvent.id > (pivot_id or 0)),
+        )
+        query = base_query.filter(cond).order_by(CalendarEvent.start_time.asc(), CalendarEvent.id.asc()).limit(limit)
+        events = query.all()
+        next_cursor = f"{events[-1].start_time.isoformat()}|{events[-1].id}" if events else None
+        prev_cursor = f"{events[0].start_time.isoformat()}|{events[0].id}" if events else None
+    else:
+        end_expr = func.coalesce(CalendarEvent.end_time, CalendarEvent.start_time)
+        cond = or_(
+            end_expr < pivot_time,
+            and_(end_expr == pivot_time, CalendarEvent.id < (pivot_id or 0)),
+        )
+        query = base_query.filter(cond).order_by(CalendarEvent.start_time.desc(), CalendarEvent.id.desc()).limit(limit)
+        events_desc = query.all()
+        events = list(reversed(events_desc))
+        next_cursor = f"{events[0].start_time.isoformat()}|{events[0].id}" if events else None
+        prev_cursor = f"{events[-1].start_time.isoformat()}|{events[-1].id}" if events else None
+
+    return {
+        "anchor": anchor_date.isoformat(),
+        "direction": direction,
+        "cursor": cursor,
+        "next_cursor": next_cursor,
+        "prev_cursor": prev_cursor,
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }

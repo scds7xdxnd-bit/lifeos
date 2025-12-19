@@ -12,6 +12,7 @@ x-common-env: &common-env
   ENABLE_ML: ${ENABLE_ML:-true}
   RATELIMIT_ENABLED: ${RATELIMIT_ENABLED:-true}
   SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+  CALENDAR_VIEW_API_V2: ${CALENDAR_VIEW_API_V2:-true}
 
 services:
   web:
