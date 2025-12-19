@@ -1,40 +1,65 @@
-# Auth Copy & Layout Rules (Calm & Legible)
+# Auth Copy & Layout Rules (Binding)
 
-Purpose: enforce the canonical “calm & legible” auth experience while keeping backend/security unchanged.
+## Purpose
+Provide enforceable copy and layout constraints for LifeOS authentication surfaces. This document is canonical for Auth UX decisions and must be followed even if backend exposes more data.
 
-## Panel Structure (UI contract)
-- Two panels only.
-- Left (Meaning): optional eyebrow “LifeOS”; one headline; one short orientation line (≤2 lines); exactly three standards (value statements). No buttons/forms/demo creds/technical terms.
-- Right (Action): only Login and Register modes; one primary CTA (“Continue”); recovery as a low-contrast inline link (“Forgot password”). No extra tabs/actions/demo creds.
-- Keep interaction density low; whitespace > controls; no persuasive/marketing tone.
+## Scope
+- Login
+- Registration
+- Password recovery/reset
 
-## Allowed Copy Snippets
-- Headlines: “Your life, made legible.” / “Everything is in place.” / “Welcome back.”
-- Support: “Private by default.” / “Nothing changes without your intent.” / “Designed for long-term use.”
+## Copy Rules
+### Intent
+- Assert safety and readiness; emphasize control, clarity, continuity.
+- Avoid selling or explaining mechanics.
 
-## Disallowed (user-facing)
-- Technical vocabulary: JWT, CSRF, tokens, encryption, cookies, sessions, backend/internal docs.
-- Meta copy about UX/mechanics.
-- Doubt-raising questions or marketing fluff.
+### Allowed Patterns (examples)
+- Headlines: "Your life, made legible." / "Everything is in place." / "Welcome back."
+- Support: "Private by default." / "Nothing changes without your intent." / "Designed for long-term use."
 
-## Backend Guidance
-- Do not change auth logic or security posture.
-- Keep recovery endpoints (forgot-username/forgot-password/reset-password) stable; responses remain generic (no existence leaks).
-- Avoid UI copy in responses; surface only neutral error codes (`bad_request`, `invalid_credentials`, `invalid_token`, `validation_error`).
-- No new auth mechanisms; no token/cookie/device changes.
+### Disallowed
+- Technical terms (JWT, CSRF, tokens, encryption).
+- Internal references (constitutions, protocols, system notes).
+- UX meta-commentary ("one clear primary action").
+- Doubt-raising questions ("Is your account safe?").
 
-## QA Checklist
-- Left panel: eyebrow (optional), 1 headline, 1 orientation sentence, exactly 3 standards, no controls.
-- Right panel: only Login/Register tabs, one primary CTA, recovery inline/secondary; no extra actions.
-- Copy free of technical terms/internal references.
-- Accessibility: focus order, labels, contrast between primary vs recovery link.
-- Functional regression: login, register, recovery flows unchanged; rate limits and CSRF behavior unchanged.
+## Layout Rules
+### Overall
+- Two-panel layout retained.
+- One dominant action per screen; recovery is visually secondary.
 
-## DevOps/Security
-- Verify no security mechanism details are exposed in UI/logs.
-- No change to cookies/JWT/CSRF settings; monitoring unchanged.
+### Left Panel (Meaning)
+Order (must follow):
+1) Optional eyebrow: "LifeOS"
+2) One dominant headline
+3) One short orientation sentence (<=2 lines)
+4) Exactly three standards (value statements, not features)
 
-## PR Checklist (Auth changes)
-- Cite alignment with this document.
-- Confirm no new technical terms in UI.
-- Confirm action layout meets panel rules; recovery is secondary.
+Must not include:
+- Buttons or forms
+- Demo credentials
+- Technical references
+- Internal documentation links
+
+### Right Panel (Action)
+- Only Login and Register as primary modes (max two tabs).
+- Single dominant CTA ("Continue").
+- Recovery flow as low-contrast inline link.
+- No side-by-side primary actions.
+- No demo credentials inline.
+
+## Component Rules
+- Tabs: max two; Auth only.
+- CTAs: one dominant per view; secondary actions are quiet links.
+- Recovery: inline, low contrast; never primary.
+- Status messages: calm, factual, non-technical.
+
+## Acceptance Criteria
+- Left panel contains only eyebrow/headline/orientation/three standards.
+- Right panel contains only Login/Register mode and one primary CTA.
+- No technical or internal references in user-visible copy.
+- Cognitive load reduced: <=2 primary choices visible.
+
+## Enforcement
+- All Auth PRs must cite: "Aligned with Auth Copy & Layout Rules."
+- QA must check for forbidden terms and layout violations.

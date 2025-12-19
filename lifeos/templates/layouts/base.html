@@ -46,13 +46,20 @@
     <header class="app-header">
       <div class="nav-shell">
         <div class="nav-brand">
-          <div class="brand-mark">LifeOS</div>
+          <a href="/calendar/" class="brand-mark" aria-label="LifeOS home">LifeOS</a>
           <div class="brand-sub">Calm accountability OS</div>
         </div>
-        <nav class="top-nav">
-          <a href="/calendar/" class="nav-link-strong">Calendar</a>
-          <div class="nav-group" id="nav-finance">
-            <a href="#" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false">Finance</a>
+        <div class="nav-actions">
+          <div id="auth-logged-in" class="auth-logged auth-hidden" aria-live="polite">
+            <span id="auth-user-label"></span>
+            <button type="button" id="auth-logout-btn" class="btn btn-secondary btn-ghost">Logout</button>
+          </div>
+          <button type="button" class="btn btn-ghost" id="auth-login-link" onclick="window.location.href='/login'">Sign in</button>
+        </div>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/calendar/" class="nav-link nav-link-strong" data-nav="/calendar">Calendar</a>
+          <div class="nav-group" id="nav-finance" data-nav-prefix="/finance">
+            <a href="/finance/" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" data-nav="/finance">Finance</a>
             <div class="nav-group-menu" role="menu">
               <a href="/finance/" role="menuitem">Dashboard</a>
               <a href="/finance/journal" role="menuitem">Journal</a>
@@ -62,21 +69,16 @@
               <a href="/finance/import" role="menuitem">Import</a>
             </div>
           </div>
-          <a href="/habits/">Habits</a>
-          <a href="/skills/">Skills</a>
-          <a href="/health/">Health</a>
-          <a href="/journal/">Journal</a>
-          <a href="/relationships/">Relationships</a>
-          <a href="/projects/">Projects</a>
-          <a href="/users/profile">Profile</a>
+          <a href="/insights" class="nav-link" data-nav="/insights">Insights</a>
+          <span class="nav-divider" aria-hidden="true"></span>
+          <a href="/habits/" class="nav-link" data-nav="/habits">Habits</a>
+          <a href="/skills/" class="nav-link" data-nav="/skills">Skills</a>
+          <a href="/health/" class="nav-link" data-nav="/health">Health</a>
+          <a href="/journal/" class="nav-link" data-nav="/journal">Journal</a>
+          <a href="/relationships/" class="nav-link" data-nav="/relationships">Relationships</a>
+          <a href="/projects/" class="nav-link" data-nav="/projects">Projects</a>
+          <a href="/users/profile" class="nav-link" data-nav="/users/profile">Profile</a>
         </nav>
-        <div class="nav-actions">
-          <div id="auth-logged-in" class="auth-logged auth-hidden" aria-live="polite">
-            <span id="auth-user-label"></span>
-            <button type="button" id="auth-logout-btn" class="btn btn-secondary btn-ghost">Logout</button>
-          </div>
-          <button type="button" class="btn btn-ghost" id="auth-login-link" onclick="window.location.href='/login'">Sign in</button>
-        </div>
       </div>
     </header>
     <main>
@@ -89,6 +91,27 @@
       const logoutBtn = document.getElementById('auth-logout-btn');
       const financeGroup = document.getElementById('nav-finance');
       const financeToggle = financeGroup?.querySelector('.nav-group-toggle');
+      const navLinks = document.querySelectorAll('.top-nav [data-nav]');
+
+      const normalizePath = (path) => {
+        const trimmed = (path || '').replace(/\/+$/, '');
+        return trimmed === '' ? '/' : trimmed;
+      };
+
+      const highlightActiveNav = () => {
+        const currentPath = normalizePath(window.location.pathname);
+        navLinks.forEach((link) => {
+          const target = normalizePath(link.dataset.nav);
+          if (!target || target === '#') return;
+          if (currentPath === target || currentPath.startsWith(`${target}/`)) {
+            link.classList.add('nav-link-active');
+            link.setAttribute('aria-current', 'page');
+          }
+        });
+        if (currentPath.startsWith('/finance')) {
+          financeGroup?.classList.add('nav-group-active');
+        }
+      };
 
       const emitAuthChange = () => {
         const tokens = getTokens();
@@ -177,6 +200,7 @@
       // Page-level scripts can await this to avoid firing API calls with stale/invalid tokens.
       const authReady = Promise.resolve().then(() => ensureServerSession()).catch(() => {});
       window.lifeosAuthReady = authReady;
+      highlightActiveNav();
       authReady.finally(() => window.dispatchEvent(new CustomEvent('lifeos:auth-ready')));
     </script>
     <!-- Finance domain scripts -->

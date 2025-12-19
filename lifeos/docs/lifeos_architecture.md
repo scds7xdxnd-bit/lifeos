@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-15 (v2.3 — tasks hub + auth UX refactor task; session scaffold remains; login issue quarantined for Phase 3c)_
+_Last updated: 2025-12-15 (v2.5 — Phase 2.5 semantic contract freeze complete; semantics docs published)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -31,7 +31,8 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Event Catalog Completeness**: All domains updated to include inference events with payload_version/model_version and optional `is_false_positive`/`is_false_negative`; guardrail tests enforce catalog coverage
 - **Health Endpoints**: `/health` and `/api/v1/ping` for CI/CD smoketests
 - **Testing**: 539 tests passing, 10 xfailed, 38 warnings, 85% coverage; all tests carry markers (integration/unit/ml).
-- **Documentation Governance**: UI/UX Constitution is binding (`lifeos/docs/ui_ux_constitution.md`); Tasks Hub established at `lifeos/docs/tasks/` with `archive/` for completed cross-team handoffs (auth experience refactor active; calendar refactor archived).
+- **Documentation Governance**: UI/UX Constitution is binding (`lifeos/docs/ui_ux_constitution.md`); Tasks Hub at `lifeos/docs/tasks/` with `archive/` for completed cross-team handoffs; semantics canon published under `lifeos/docs/semantics/`.
+- **Phase 2.5 Semantic Contract Freeze**: Complete; canonical references in `lifeos/docs/semantics/` are binding for Phase 3a and beyond.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -207,14 +208,24 @@ lifeos/
 ├── lifeos_platform/                # Async runtime, outbox, broker stubs, clients
 ├── readmodels/                     # Read model scaffolding (contracts, registry, runners, projections)
 ├── migrations/                     # Alembic home (env.py, script.py.mako, versions/, README.md)
-├── docs/                           # Architecture, runbooks, UI/UX constitution, tasks hub
+├── docs/                           # Architecture, runbooks, UI/UX constitution, semantics, tasks hub
 │   ├── lifeos_architecture.md
+│   ├── AUTH_COPY_LAYOUT_RULES.md
 │   ├── ui_ux_constitution.md
+│   ├── semantics/
+│   │   ├── DOMAIN_SEMANTIC_CONTRACTS.md
+│   │   ├── EVENT_SEMANTICS_FREEZE.md
+│   │   ├── INSIGHT_CONTRACTS.md
+│   │   └── CONFIDENCE_VOCABULARY.md
 │   ├── tasks/
 │   │   ├── README.md
-│   │   ├── auth_experience_refactor.md
 │   │   └── archive/
-│   │       └── calendar_subsystem_refactor.md
+│   │       ├── calendar_subsystem_refactor.md
+│   │       ├── calendar_subsystem_refactor_ops.md
+│   │       ├── calendar_event_creation_ux_handoff.md
+│   │       ├── auth_experience_refactor.md
+│   │       ├── ux_alignment_sprint_phase1.md
+│   │       └── phase_2_5_semantic_insight_contract_freeze.md
 │   ├── prompts/
 │   └── archive/
 ├── templates/                      # Jinja2 templates
@@ -1069,14 +1080,13 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.3 (Tasks hub + Auth UX refactor task; session scaffold + admin reset stub; Calendar-First Phase 2 Complete): 2025-12-15. Author: LifeOS Architect._
+_Constitution v2.5 (Phase 2.5 semantic contract freeze complete; semantics canon published; session scaffold + admin reset stub): 2025-12-15. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-15):**
-- ✅ Tasks Hub added at `lifeos/docs/tasks/` with archive; calendar subsystem refactor archived
-- ✅ Auth Experience Refactor task published (Calm & Legible contract; cross-team handoff)
+- ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
+- ✅ Phase 2.5 task archived; semantic/insight contract registries enforced by tests
+- ✅ Tasks Hub active with archived UX alignment and auth refactor tasks
 - ✅ Session lifecycle scaffold remains interface-only; admin reset minimal path allowed; login issue quarantined to Phase 3c
-- ✅ UI/UX Constitution refreshed and binding
-- ✅ Calendar-First Phase 2: All acceptance criteria verified by QA
 
 ---
 

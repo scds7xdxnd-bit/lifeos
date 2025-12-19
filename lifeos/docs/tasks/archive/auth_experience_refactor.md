@@ -1,5 +1,5 @@
 # Task: Auth Experience Refactor (Calm & Legible, Threshold-First)
-Status: Open · Owner: Architecture → Frontend/Design, Backend, QA, DevOps/Security, Documentation/Product
+Status: Completed (Archived) · Owner: Architecture → Frontend/Design, Backend, QA, DevOps/Security, Documentation/Product
 
 ## Purpose
 Refactor the authentication experience to align with LifeOS principles of calm, legibility, trust, and continuity. Remove engineer-speak and meta-commentary, enforce a threshold-style entry (not a control panel), and establish clear copy/interface boundaries.

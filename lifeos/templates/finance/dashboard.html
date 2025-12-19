@@ -5,12 +5,15 @@
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
       <div>
         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <h2 style="margin:0;">Finance Dashboard</h2>
+          <h2 style="margin:0;">Finance Overview</h2>
           {% set badge_domain = 'finance' %}{% include "components/inferred_badge.html" %}
         </div>
-        <p style="margin:0; color:#5b6470;">Balances, recent transactions, schedule, receivables, and 7-day forecast.</p>
+        <p style="margin:0; color:#5b6470;">Where do I stand right now, and what changed recently?</p>
       </div>
-      <button type="button" class="btn btn-secondary" id="dash-reload">Reload</button>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button type="button" class="btn" id="dash-review">Review transactions</button>
+        <button type="button" class="btn btn-secondary" id="dash-reload">Reload</button>
+      </div>
     </div>
     <div id="dash-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to view your finance dashboard.</div>
     <div id="dash-status" class="auth-status" style="margin-top:0.5rem;"></div>
@@ -30,21 +33,25 @@
         <div class="summary-label">Forecast (7d)</div>
         <div class="summary-value" id="dash-forecast-end">—</div>
         <div class="summary-sub" id="dash-forecast-start">Starting at —</div>
+        <div class="summary-sub" id="dash-forecast-change">Change: —</div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-      <h3 style="margin:0;">Account balances</h3>
-      <span style="font-size:0.9rem; color:#5b6470;" id="dash-accounts-meta"></span>
-    </div>
-    <div style="overflow-x:auto; margin-top:0.5rem;">
-      <table>
-        <thead><tr><th>Account</th><th>Code</th><th>Balance</th></tr></thead>
-        <tbody id="dash-accounts-body"></tbody>
-      </table>
-    </div>
+    <details>
+      <summary style="cursor:pointer; font-weight:600; color:#1f2432;">Review balances</summary>
+      <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
+        <h3 style="margin:0;">Account balances</h3>
+        <span style="font-size:0.9rem; color:#5b6470;" id="dash-accounts-meta"></span>
+      </div>
+      <div style="overflow-x:auto; margin-top:0.5rem;">
+        <table>
+          <thead><tr><th>Account</th><th>Code</th><th>Balance</th></tr></thead>
+          <tbody id="dash-accounts-body"></tbody>
+        </table>
+      </div>
+    </details>
   </div>
 
   <div class="card">
@@ -60,20 +67,24 @@
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0; margin-bottom:0.35rem;">Forecast (next 7 days)</h3>
-    <div id="dash-forecast-empty" style="color:#5b6470;">No forecast yet.</div>
-    <div style="overflow-x:auto; margin-top:0.25rem;">
-      <table>
-        <thead><tr><th>Date</th><th>Projected balance</th></tr></thead>
-        <tbody id="dash-forecast-body"></tbody>
-      </table>
-    </div>
+    <details>
+      <summary style="cursor:pointer; font-weight:600; color:#1f2432;">Review 7‑day forecast</summary>
+      <h3 style="margin-top:0.75rem; margin-bottom:0.35rem;">Forecast (next 7 days)</h3>
+      <div id="dash-forecast-empty" style="color:#5b6470;">No forecast yet.</div>
+      <div style="overflow-x:auto; margin-top:0.25rem;">
+        <table>
+          <thead><tr><th>Date</th><th>Projected balance</th></tr></thead>
+          <tbody id="dash-forecast-body"></tbody>
+        </table>
+      </div>
+    </details>
   </div>
 </div>
 
 <script>
   (() => {
     const statusEl = document.getElementById('dash-status');
+    const reviewBtn = document.getElementById('dash-review');
     const reloadBtn = document.getElementById('dash-reload');
     const loginHint = document.getElementById('dash-login-hint');
 
@@ -85,6 +96,7 @@
     const receivablesEl = document.getElementById('dash-receivables');
     const forecastEnd = document.getElementById('dash-forecast-end');
     const forecastStart = document.getElementById('dash-forecast-start');
+    const forecastChange = document.getElementById('dash-forecast-change');
 
     const txList = document.getElementById('dash-transactions');
     const txEmpty = document.getElementById('dash-transactions-empty');
@@ -103,6 +115,7 @@
 
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
+      reviewBtn.disabled = !authed;
       reloadBtn.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
       if (!authed) setStatus('');
@@ -196,11 +209,15 @@
         forecastEmpty.style.display = 'block';
         forecastStart.textContent = 'Starting at —';
         forecastEnd.textContent = '—';
+        forecastChange.textContent = 'Change: —';
         return;
       }
       forecastEmpty.style.display = 'none';
       forecastStart.textContent = `Starting at ${fmtMoney(items[0].projected_balance ?? 0)}`;
       forecastEnd.textContent = fmtMoney(items[items.length - 1].projected_balance ?? 0);
+      const delta = (items[items.length - 1].projected_balance ?? 0) - (items[0].projected_balance ?? 0);
+      const sign = delta > 0 ? '+' : '';
+      forecastChange.textContent = `Change: ${sign}${fmtMoney(delta)}`;
       items.forEach((row) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${fmtDate(row.date)}</td><td>${fmtMoney(row.projected_balance)}</td>`;
@@ -229,6 +246,9 @@
     };
 
     reloadBtn?.addEventListener('click', hydrate);
+    reviewBtn?.addEventListener('click', () => {
+      txList?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     window.addEventListener('lifeos:auth-changed', (e) => {
       ensureAuth();
       if (e.detail?.loggedIn) hydrate();
@@ -246,6 +266,7 @@
         receivablesEl.textContent = '—';
         forecastStart.textContent = 'Starting at —';
         forecastEnd.textContent = '—';
+        forecastChange.textContent = 'Change: —';
       }
     });
 

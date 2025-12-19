@@ -7,13 +7,13 @@
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
       <div>
         <h2 style="margin:0;">Calendar</h2>
-        <p style="margin:0; color:#5b6470;">Deterministic day/week/month views from backend-owned windows; ledger is anchored to today.</p>
+        <p style="margin:0; color:#5b6470;">What’s next and what needs confirmation.</p>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
-        <button type="button" class="btn btn-secondary" id="pending-badge-link" onclick="window.location.href='/calendar/review'">
+        <button type="button" class="btn" id="pending-badge-link" onclick="window.location.href='/calendar/review'">
           Review Pending <span id="pending-count" style="background:#0b4f9c; color:white; padding:0.1rem 0.4rem; border-radius:10px; font-size:0.8rem; margin-left:0.25rem;">0</span>
         </button>
-        <button type="button" class="btn" id="cal-create-btn">+ New Event</button>
+        <button type="button" class="btn btn-secondary" id="cal-create-btn">+ New Event</button>
       </div>
     </div>
     <div id="cal-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with to manage events.</div>
@@ -27,7 +27,7 @@
     </div>
     <div class="card" style="text-align:center;">
       <div style="font-size:2rem; font-weight:700; color:#1d7a36;" id="stat-week">0</div>
-      <div style="color:#5b6470; font-size:0.9rem;">This Week</div>
+      <div style="color:#5b6470; font-size:0.9rem;" id="stat-range-label">This Week</div>
     </div>
     <div class="card" style="text-align:center;">
       <div style="font-size:2rem; font-weight:700; color:#8b5cf6;" id="stat-inferred">0</div>
@@ -89,7 +89,7 @@
   <!-- List View (existing) -->
   <div id="cal-list-view" class="card cal-view-panel">
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
-      <h3 style="margin:0;">Event ledger</h3>
+      <h3 style="margin:0;">Event list</h3>
       <div style="display:flex; gap:0.5rem;">
         <button type="button" class="btn btn-secondary" id="ledger-load-newer">Load newer</button>
         <button type="button" class="btn btn-secondary" id="ledger-load-older">Load older</button>
@@ -111,14 +111,33 @@
       <label for="cal-event-title">Title *</label>
       <input type="text" id="cal-event-title" class="input" placeholder="e.g., Gym workout, Lunch with John" required maxlength="255">
     </div>
-    <div style="display:grid; gap:0.5rem; grid-template-columns: 1fr 1fr;">
-      <div class="field">
-        <label for="cal-event-start">Start *</label>
-        <input type="datetime-local" id="cal-event-start" class="input" required>
-      </div>
-      <div class="field">
-        <label for="cal-event-end">End</label>
-        <input type="datetime-local" id="cal-event-end" class="input">
+    <div class="field">
+      <label for="cal-event-date">When *</label>
+      <div id="cal-when-controls" style="display:grid; gap:0.5rem;">
+        <div style="display:grid; gap:0.5rem; grid-template-columns: 1.2fr 1fr;">
+          <input type="date" id="cal-event-date" class="input" required>
+          <input type="text" id="cal-event-start-time" class="input" placeholder="9:00 AM" list="cal-time-options" required>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <span style="color:#5b6470; font-size:0.85rem;">Ends</span>
+          <span id="cal-event-end-preview" style="font-weight:600;">—</span>
+          <button type="button" class="text-link" id="cal-event-end-toggle">Adjust end</button>
+        </div>
+        <div id="cal-event-end-controls" style="display:none; padding:0.5rem; background:#f7f8fa; border-radius:8px;">
+          <div style="display:grid; gap:0.5rem; grid-template-columns: 1.2fr 1fr;">
+            <input type="date" id="cal-event-end-date" class="input">
+            <input type="text" id="cal-event-end-time" class="input" placeholder="10:00 AM" list="cal-time-options">
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <span style="color:#5b6470; font-size:0.85rem;">Duration</span>
+          <div id="cal-event-duration" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+            <button type="button" class="cal-duration-btn" data-duration="15" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">15m</button>
+            <button type="button" class="cal-duration-btn" data-duration="30" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">30m</button>
+            <button type="button" class="cal-duration-btn" data-duration="45" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">45m</button>
+            <button type="button" class="cal-duration-btn" data-duration="60" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">1h</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="field" style="display:flex; align-items:center; gap:0.5rem;">
@@ -126,27 +145,43 @@
       <label for="cal-event-allday" style="margin:0; font-weight:normal;">All-day event</label>
     </div>
     <div class="field">
-      <label for="cal-event-location">Location</label>
-      <input type="text" id="cal-event-location" class="input" placeholder="e.g., Gym, Coffee Shop, Office" maxlength="512">
-    </div>
-    <div class="field">
-      <label for="cal-event-description">Description</label>
-      <textarea id="cal-event-description" class="input" rows="3" placeholder="Additional details..."></textarea>
-    </div>
-    <div class="field">
-      <label for="cal-event-tags">Tags (comma-separated)</label>
-      <input type="text" id="cal-event-tags" class="input" placeholder="e.g., work, meeting, fitness">
-    </div>
-    <div style="display:grid; gap:0.5rem; grid-template-columns: 1fr 1fr;">
-      <div class="field">
-        <label for="cal-event-color">Color</label>
-        <input type="color" id="cal-event-color" class="input" value="#0b4f9c" style="height:38px; padding:0.25rem;">
+      <button type="button" class="text-link" id="cal-event-advanced-toggle">More options</button>
+      <div id="cal-event-advanced" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#f7f8fa; border-radius:8px; gap:0.75rem;">
+        <div class="field">
+          <label for="cal-event-location">Location</label>
+          <input type="text" id="cal-event-location" class="input" placeholder="e.g., Gym, Coffee Shop, Office" maxlength="512">
+        </div>
+        <div class="field">
+          <label for="cal-event-description">Description</label>
+          <textarea id="cal-event-description" class="input" rows="3" placeholder="Additional details..."></textarea>
+        </div>
+        <div class="field">
+          <label for="cal-event-tags">Tags (comma-separated)</label>
+          <input type="text" id="cal-event-tags" class="input" placeholder="e.g., work, meeting, fitness">
+        </div>
+        <div class="field">
+          <label for="cal-event-color">Color</label>
+          <input type="hidden" id="cal-event-color" value="#0b4f9c">
+          <div id="cal-event-color-palette" style="display:grid; gap:0.5rem; grid-template-columns: repeat(5, 1fr);">
+            <button type="button" class="cal-color-swatch" data-color="#0b4f9c" aria-label="Deep blue" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#0b4f9c; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#1f6f8b" aria-label="Ocean" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#1f6f8b; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#2f855a" aria-label="Evergreen" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#2f855a; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#7a6a2f" aria-label="Olive" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#7a6a2f; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#a05a2c" aria-label="Amber" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#a05a2c; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#9b2c2c" aria-label="Brick" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#9b2c2c; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#6b4c7a" aria-label="Plum" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#6b4c7a; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#4b5563" aria-label="Slate" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#4b5563; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#5b6b7f" aria-label="Steel" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#5b6b7f; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#2f3e46" aria-label="Charcoal" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#2f3e46; cursor:pointer;"></button>
+          </div>
+        </div>
+        <div class="field" style="display:flex; align-items:center; gap:0.5rem;">
+          <input type="checkbox" id="cal-event-private" style="width:auto;">
+          <label for="cal-event-private" style="margin:0; font-weight:normal;">Private</label>
+        </div>
       </div>
-      <div class="field" style="display:flex; align-items:center; gap:0.5rem; padding-top:1.5rem;">
-        <input type="checkbox" id="cal-event-private" style="width:auto;">
-        <label for="cal-event-private" style="margin:0; font-weight:normal;">Private</label>
-      </div>
     </div>
+    <datalist id="cal-time-options"></datalist>
     <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
       <button type="submit" class="btn" style="flex:1;">Save Event</button>
       <button type="button" class="btn btn-secondary" id="cal-modal-cancel" style="flex:1;">Cancel</button>
@@ -185,6 +220,71 @@
     // Remove trailing Z/offset so we treat it as provided (naive) local time
     const cleaned = isoStr.replace(/Z$/, '');
     return new Date(cleaned);
+  };
+
+  const pad2 = (num) => String(num).padStart(2, '0');
+  const TIME_STEP_MINUTES = 15;
+  const DEFAULT_DURATION_MINUTES = 60;
+
+  const roundToNearestMinutes = (date, stepMinutes = TIME_STEP_MINUTES) => {
+    const ms = stepMinutes * 60 * 1000;
+    return new Date(Math.round(date.getTime() / ms) * ms);
+  };
+
+  const formatTime12h = (date) => date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const formatTimeFromParts = (hours, minutes) => formatTime12h(new Date(2000, 0, 1, hours, minutes));
+
+  const parseTimeInput = (value) => {
+    if (!value) return null;
+    const raw = value.trim().toLowerCase();
+    const normalized = raw.replace(/\./g, '');
+    const zhMatch = normalized.match(/^(上午|下午)\s*(\d{1,2})(?::(\d{2}))?$/);
+    if (zhMatch) {
+      let hours = parseInt(zhMatch[2], 10);
+      const minutes = parseInt(zhMatch[3] || '0', 10);
+      if (hours === 12) hours = 0;
+      if (zhMatch[1] === '下午') hours += 12;
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        return { hours, minutes };
+      }
+      return null;
+    }
+    const ampmMatch = normalized.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/);
+    if (ampmMatch) {
+      let hours = parseInt(ampmMatch[1], 10);
+      const minutes = parseInt(ampmMatch[2] || '0', 10);
+      if (hours === 12) hours = 0;
+      if (ampmMatch[3] === 'pm') hours += 12;
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        return { hours, minutes };
+      }
+      return null;
+    }
+    const twentyFourMatch = normalized.match(/^([01]?\d|2[0-3])(?::([0-5]\d))?$/);
+    if (twentyFourMatch) {
+      const hours = parseInt(twentyFourMatch[1], 10);
+      const minutes = parseInt(twentyFourMatch[2] || '0', 10);
+      return { hours, minutes };
+    }
+    return null;
+  };
+
+  const buildDateTimeString = (dateStr, timeParts) => {
+    if (!dateStr || !timeParts) return '';
+    return `${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}`;
+  };
+
+  const toLocalDate = (dateStr, timeParts) => new Date(`${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}:00`);
+
+  const formatDateLabel = (dateStr) => {
+    if (!dateStr) return '';
+    const dateObj = new Date(`${dateStr}T00:00`);
+    return dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
   // Get auth headers with CSRF token from meta tag (session-bound)
@@ -237,6 +337,7 @@
   const statToday = document.getElementById('stat-today');
   const statWeek = document.getElementById('stat-week');
   const statInferred = document.getElementById('stat-inferred');
+  const statRangeLabel = document.getElementById('stat-range-label');
   const pendingCount = document.getElementById('pending-count');
   const pendingLink = document.getElementById('pending-badge-link');
 
@@ -247,6 +348,21 @@
   const eventForm = document.getElementById('cal-event-form');
   const modalCancel = document.getElementById('cal-modal-cancel');
   const modalStatus = document.getElementById('cal-modal-status');
+  const eventDateInput = document.getElementById('cal-event-date');
+  const eventStartTimeInput = document.getElementById('cal-event-start-time');
+  const eventEndDateInput = document.getElementById('cal-event-end-date');
+  const eventEndTimeInput = document.getElementById('cal-event-end-time');
+  const eventEndPreview = document.getElementById('cal-event-end-preview');
+  const eventEndToggle = document.getElementById('cal-event-end-toggle');
+  const eventEndControls = document.getElementById('cal-event-end-controls');
+  const durationButtons = document.querySelectorAll('.cal-duration-btn');
+  const allDayToggle = document.getElementById('cal-event-allday');
+  const advancedToggle = document.getElementById('cal-event-advanced-toggle');
+  const advancedSection = document.getElementById('cal-event-advanced');
+  const colorInput = document.getElementById('cal-event-color');
+  const colorButtons = document.querySelectorAll('.cal-color-swatch');
+  const whenControls = document.getElementById('cal-when-controls');
+  const timeDatalist = document.getElementById('cal-time-options');
 
   // Detail modal
   const detailOverlay = document.getElementById('cal-detail-overlay');
@@ -261,6 +377,8 @@
   const ledgerLoadNewerBtn = document.getElementById('ledger-load-newer');
 
   let currentEventId = null;
+  let durationMinutes = DEFAULT_DURATION_MINUTES;
+  let endDateLocked = true;
 
   const today = new Date();
 
@@ -282,6 +400,7 @@
       panel.style.display = panel.id === `cal-${viewName}-view` ? 'block' : 'none';
     });
     updateNavLabel();
+    updateStatLabels();
     refreshCurrentView();
   };
 
@@ -304,6 +423,19 @@
       navLabel.textContent = currentDate.toLocaleDateString('en-US', opts);
     } else {
       navLabel.textContent = 'Ledger';
+    }
+  };
+
+  const updateStatLabels = () => {
+    if (!statRangeLabel) return;
+    if (currentView === 'day') {
+      statRangeLabel.textContent = 'Selected Day';
+    } else if (currentView === 'week') {
+      statRangeLabel.textContent = 'This Week';
+    } else if (currentView === 'month') {
+      statRangeLabel.textContent = 'This Month';
+    } else {
+      statRangeLabel.textContent = 'Events Loaded';
     }
   };
 
@@ -399,9 +531,10 @@
     }
 
     // Hour rows
-    for (let h = 6; h < 22; h++) {
+    for (let h = 0; h < 24; h++) {
       const hourLabel = h === 12 ? '12 PM' : h < 12 ? `${h} AM` : `${h - 12} PM`;
-      html += `<div style="padding:0.25rem; font-size:0.7rem; color:#5b6470; text-align:right; border-top:1px solid #f0f0f0;">${hourLabel}</div>`;
+      const displayLabel = h === 0 ? '12 AM' : hourLabel;
+      html += `<div style="padding:0.25rem; font-size:0.7rem; color:#5b6470; text-align:right; border-top:1px solid #f0f0f0;">${displayLabel}</div>`;
       for (let d = 0; d < 7; d++) {
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + d);
@@ -429,7 +562,7 @@
       if (!(startTime < windowEnd && endTime > windowStart)) return;
       const hour = startTime.getHours();
       const dateKey = localDateKey(startTime);
-      if (hour >= 6 && hour < 22) {
+      if (hour >= 0 && hour < 24) {
         const slot = weekGrid.querySelector(`[data-hour="${hour}"][data-date="${dateKey}"]`);
         if (slot) {
           const eventEl = document.createElement('div');
@@ -513,6 +646,128 @@
     if (tone) el.dataset.tone = tone; else el.removeAttribute('data-tone');
   };
 
+  const buildTimeOptions = () => {
+    if (!timeDatalist) return;
+    timeDatalist.innerHTML = '';
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += TIME_STEP_MINUTES) {
+        const label = formatTimeFromParts(h, m);
+        const option = document.createElement('option');
+        option.value = label;
+        timeDatalist.appendChild(option);
+      }
+    }
+  };
+
+  const setDurationButtonState = (btn, active) => {
+    btn.style.background = active ? '#0b4f9c' : '#f7f8fa';
+    btn.style.color = active ? '#ffffff' : '#4b5563';
+    btn.style.borderColor = active ? '#0b4f9c' : '#d7dde6';
+    btn.setAttribute('aria-pressed', String(active));
+  };
+
+  const syncDurationButtons = () => {
+    durationButtons.forEach(btn => {
+      const minutes = parseInt(btn.dataset.duration, 10);
+      setDurationButtonState(btn, minutes === durationMinutes);
+    });
+  };
+
+  const setColorSelection = (color) => {
+    if (!colorInput) return;
+    const palette = Array.from(colorButtons).map(btn => btn.dataset.color.toLowerCase());
+    const normalized = (color || '').toLowerCase();
+    const resolved = palette.includes(normalized) ? normalized : (palette[0] || '#0b4f9c');
+    colorInput.value = resolved;
+    colorButtons.forEach(btn => {
+      const selected = btn.dataset.color.toLowerCase() === resolved;
+      btn.setAttribute('aria-pressed', String(selected));
+      btn.style.boxShadow = selected ? '0 0 0 2px #ffffff, 0 0 0 4px #0b4f9c' : 'none';
+    });
+  };
+
+  const normalizeTimeInput = (input) => {
+    const parsed = parseTimeInput(input.value);
+    if (parsed) {
+      input.value = formatTimeFromParts(parsed.hours, parsed.minutes);
+    }
+    return parsed;
+  };
+
+  const getStartParts = () => {
+    const dateStr = eventDateInput?.value || '';
+    const timeParts = normalizeTimeInput(eventStartTimeInput);
+    if (!dateStr || !timeParts) return null;
+    return { dateStr, timeParts };
+  };
+
+  const getEndParts = () => {
+    const dateStr = eventEndDateInput?.value || '';
+    const timeParts = normalizeTimeInput(eventEndTimeInput);
+    if (!dateStr || !timeParts) return null;
+    return { dateStr, timeParts };
+  };
+
+  const updateEndPreview = () => {
+    const endParts = getEndParts();
+    const startDate = eventDateInput?.value || '';
+    if (!endParts || !eventEndPreview) {
+      if (eventEndPreview) eventEndPreview.textContent = '—';
+      return;
+    }
+    const timeLabel = formatTimeFromParts(endParts.timeParts.hours, endParts.timeParts.minutes);
+    const dateLabel = endParts.dateStr === startDate ? '' : `${formatDateLabel(endParts.dateStr)} · `;
+    eventEndPreview.textContent = `${dateLabel}${timeLabel}`;
+  };
+
+  const setEndFromStart = () => {
+    const startParts = getStartParts();
+    if (!startParts || !eventEndDateInput || !eventEndTimeInput) return;
+    const startDateTime = toLocalDate(startParts.dateStr, startParts.timeParts);
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+    if (endDateLocked) {
+      eventEndDateInput.value = localDateKey(endDateTime);
+      eventEndTimeInput.value = formatTimeFromParts(endDateTime.getHours(), endDateTime.getMinutes());
+    }
+    updateEndPreview();
+    syncDurationButtons();
+  };
+
+  const updateDurationFromEnd = () => {
+    const startParts = getStartParts();
+    const endParts = getEndParts();
+    if (!startParts || !endParts) return;
+    const startDateTime = toLocalDate(startParts.dateStr, startParts.timeParts);
+    const endDateTime = toLocalDate(endParts.dateStr, endParts.timeParts);
+    const diffMinutes = Math.round((endDateTime - startDateTime) / 60000);
+    if (diffMinutes > 0) {
+      durationMinutes = diffMinutes;
+    }
+    endDateLocked = endParts.dateStr === startParts.dateStr;
+    syncDurationButtons();
+    updateEndPreview();
+  };
+
+  const syncAllDayVisibility = () => {
+    if (!whenControls || !allDayToggle) return;
+    const isAllDay = allDayToggle.checked;
+    whenControls.style.display = isAllDay ? 'none' : 'grid';
+    if (eventEndToggle && eventEndControls) {
+      eventEndToggle.disabled = isAllDay;
+      if (isAllDay) {
+        eventEndControls.style.display = 'none';
+        eventEndToggle.textContent = 'Adjust end';
+      }
+    }
+    if (eventEndPreview) {
+      if (isAllDay) {
+        eventEndPreview.textContent = 'All day';
+      } else {
+        updateEndPreview();
+      }
+    }
+  };
+
   pendingLink?.addEventListener('click', (e) => {
     if (!lifeosAuth.getTokens().access_token) {
       e.preventDefault();
@@ -566,6 +821,7 @@
   };
 
   const renderLedger = () => {
+    updateStats(ledgerEvents);
     eventsListEl.innerHTML = '';
     if (!ledgerEvents.length) {
       eventsListEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#5b6470;">No events yet.</div>';
@@ -714,6 +970,7 @@
   };
 
   const updateStats = (events) => {
+    updateStatLabels();
     const todayStr = localDateKey(today);
     const todayEvents = events.filter(e => e.start_time.startsWith(todayStr));
     statToday.textContent = todayEvents.length;
@@ -797,14 +1054,42 @@
     const validId = isEdit && typeof eventData.id === 'number' ? eventData.id : '';
     document.getElementById('cal-event-id').value = validId;
     document.getElementById('cal-event-title').value = isEdit ? eventData.title : '';
-    document.getElementById('cal-event-start').value = isEdit ? eventData.start_time.slice(0, 16) : '';
-    document.getElementById('cal-event-end').value = isEdit && eventData.end_time ? eventData.end_time.slice(0, 16) : '';
-    document.getElementById('cal-event-allday').checked = isEdit ? eventData.all_day : false;
+    const startDateTime = isEdit ? parseLocalDateTime(eventData.start_time) : roundToNearestMinutes(new Date());
+    eventDateInput.value = localDateKey(startDateTime);
+    eventStartTimeInput.value = formatTime12h(startDateTime);
+
+    durationMinutes = DEFAULT_DURATION_MINUTES;
+    endDateLocked = true;
+
+    if (isEdit && eventData.end_time) {
+      const endDateTime = parseLocalDateTime(eventData.end_time);
+      const diffMinutes = Math.round((endDateTime - startDateTime) / 60000);
+      durationMinutes = diffMinutes > 0 ? diffMinutes : DEFAULT_DURATION_MINUTES;
+      endDateLocked = localDateKey(endDateTime) === localDateKey(startDateTime);
+      eventEndDateInput.value = localDateKey(endDateTime);
+      eventEndTimeInput.value = formatTime12h(endDateTime);
+    } else {
+      const endDateTime = new Date(startDateTime.getTime() + DEFAULT_DURATION_MINUTES * 60000);
+      eventEndDateInput.value = localDateKey(endDateTime);
+      eventEndTimeInput.value = formatTime12h(endDateTime);
+    }
+
+    allDayToggle.checked = isEdit ? eventData.all_day : false;
     document.getElementById('cal-event-location').value = isEdit ? eventData.location || '' : '';
     document.getElementById('cal-event-description').value = isEdit ? eventData.description || '' : '';
     document.getElementById('cal-event-tags').value = isEdit && eventData.tags ? eventData.tags.join(', ') : '';
-    document.getElementById('cal-event-color').value = isEdit && eventData.color ? eventData.color : '#0b4f9c';
+    setColorSelection(isEdit && eventData.color ? eventData.color : '#0b4f9c');
     document.getElementById('cal-event-private').checked = isEdit ? eventData.is_private : false;
+
+    eventEndControls.style.display = 'none';
+    eventEndToggle.textContent = 'Adjust end';
+    if (advancedSection && advancedToggle) {
+      advancedSection.style.display = 'none';
+      advancedToggle.textContent = 'More options';
+    }
+    syncDurationButtons();
+    updateEndPreview();
+    syncAllDayVisibility();
 
     setStatus(modalStatus, '');
     modalOverlay.style.display = 'block';
@@ -820,6 +1105,46 @@
   createBtn.addEventListener('click', () => openModal());
   modalCancel.addEventListener('click', closeModal);
   modalOverlay.addEventListener('click', closeModal);
+  eventDateInput.addEventListener('change', () => {
+    setEndFromStart();
+  });
+  eventStartTimeInput.addEventListener('change', () => {
+    normalizeTimeInput(eventStartTimeInput);
+    setEndFromStart();
+  });
+  eventEndDateInput.addEventListener('change', () => {
+    updateDurationFromEnd();
+  });
+  eventEndTimeInput.addEventListener('change', () => {
+    normalizeTimeInput(eventEndTimeInput);
+    updateDurationFromEnd();
+  });
+  eventEndToggle.addEventListener('click', () => {
+    const isOpen = eventEndControls.style.display !== 'none';
+    eventEndControls.style.display = isOpen ? 'none' : 'block';
+    eventEndToggle.textContent = isOpen ? 'Adjust end' : 'Hide end';
+  });
+  durationButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const minutes = parseInt(btn.dataset.duration, 10);
+      if (!Number.isNaN(minutes)) {
+        durationMinutes = minutes;
+        endDateLocked = true;
+        setEndFromStart();
+      }
+    });
+  });
+  colorButtons.forEach(btn => {
+    btn.addEventListener('click', () => setColorSelection(btn.dataset.color));
+  });
+  advancedToggle.addEventListener('click', () => {
+    const isOpen = advancedSection.style.display !== 'none';
+    advancedSection.style.display = isOpen ? 'none' : 'grid';
+    advancedToggle.textContent = isOpen ? 'More options' : 'Hide options';
+  });
+  allDayToggle.addEventListener('change', () => {
+    syncAllDayVisibility();
+  });
 
   detailEdit.addEventListener('click', async () => {
     if (!currentEventId) {
@@ -882,17 +1207,55 @@
     const tagsRaw = document.getElementById('cal-event-tags').value;
     const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
 
+    const allDay = allDayToggle.checked;
+    const startDate = eventDateInput.value;
+    const startParts = parseTimeInput(eventStartTimeInput.value);
+    if (!startDate || !startParts) {
+      setStatus(modalStatus, 'Enter a valid start time (e.g., 9:30 AM or 09:30)', 'error');
+      eventStartTimeInput.focus();
+      return;
+    }
+    eventStartTimeInput.value = formatTimeFromParts(startParts.hours, startParts.minutes);
+
+    const startTimeString = allDay
+      ? `${startDate}T00:00`
+      : buildDateTimeString(startDate, startParts);
+
+    let endTimeString = null;
+    if (!allDay) {
+      const endDate = eventEndDateInput.value || startDate;
+      const endParts = parseTimeInput(eventEndTimeInput.value);
+      if (!endDate || !endParts) {
+        setStatus(modalStatus, 'Enter a valid end time (e.g., 10:30 AM or 10:30)', 'error');
+        eventEndTimeInput.focus();
+        return;
+      }
+      eventEndTimeInput.value = formatTimeFromParts(endParts.hours, endParts.minutes);
+      endTimeString = buildDateTimeString(endDate, endParts);
+
+      const startDateTime = toLocalDate(startDate, startParts);
+      const endDateTime = toLocalDate(endDate, endParts);
+      if (endDateTime <= startDateTime) {
+        setStatus(modalStatus, 'End time must be after start time', 'error');
+        return;
+      }
+    }
+
     const payload = {
       title: document.getElementById('cal-event-title').value.trim(),
-      start_time: document.getElementById('cal-event-start').value,
-      end_time: document.getElementById('cal-event-end').value || null,
-      all_day: document.getElementById('cal-event-allday').checked,
+      start_time: startTimeString,
+      all_day: allDay,
       location: document.getElementById('cal-event-location').value.trim() || null,
       description: document.getElementById('cal-event-description').value.trim() || null,
       tags,
-      color: document.getElementById('cal-event-color').value,
+      color: colorInput?.value || '#0b4f9c',
       is_private: document.getElementById('cal-event-private').checked,
     };
+    if (allDay) {
+      payload.end_time = null;
+    } else {
+      payload.end_time = endTimeString;
+    }
 
     setStatus(modalStatus, 'Saving...');
 
@@ -982,8 +1345,10 @@
 
   // Initialize after auth session check to avoid firing with stale tokens
   const init = () => {
+    buildTimeOptions();
     ensureAuth();
     updateNavLabel();
+    updateStatLabels();
     refreshCurrentView();
     fetchPendingCount();
   };

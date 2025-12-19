@@ -1,22 +1,52 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 <div class="container" style="max-width:900px; margin:0 auto; padding:32px;">
-  <h2>Insights</h2>
-  <p id="insights-lede" style="color:#5b6470;">Personalized intelligence from your recent activity.</p>
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;">Review Queue</h2>
+        <p id="insights-lede" style="color:#5b6470; margin:0;">What should I review now?</p>
+      </div>
+      <button type="button" class="btn" id="insights-review-btn">Review next</button>
+    </div>
+    <div id="insights-status" class="auth-status" style="margin-top:0.5rem;"></div>
+  </div>
   <div id="insights-list" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;"></div>
-  <div id="insights-empty" style="color:#5b6470; display:none;">No insights yet. Use the app and check back.</div>
+  <div id="insights-empty" style="color:#5b6470; display:none;">Nothing to review right now.</div>
 </div>
 <script>
   (() => {
     const list = document.getElementById('insights-list');
     const empty = document.getElementById('insights-empty');
+    const reviewBtn = document.getElementById('insights-review-btn');
+    const statusEl = document.getElementById('insights-status');
+    const setStatus = (msg, tone = '') => {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      if (tone) statusEl.dataset.tone = tone; else statusEl.removeAttribute('data-tone');
+    };
+    const setLoggedOutState = () => {
+      list.innerHTML = '';
+      empty.style.display = 'none';
+      reviewBtn.disabled = true;
+      setStatus('Please sign in to view your review queue.', 'error');
+    };
+    const getAuthHeaders = (extra = {}) => {
+      const headers = lifeosAuth.authHeaders(extra);
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      if (csrf) headers['X-CSRF-Token'] = csrf;
+      return headers;
+    };
+    const isAuthed = () => !!lifeosAuth.getTokens().access_token;
     const render = (items) => {
       list.innerHTML = '';
       if (!items.length) {
         empty.style.display = 'block';
+        reviewBtn.disabled = true;
         return;
       }
       empty.style.display = 'none';
+      reviewBtn.disabled = false;
       items.forEach(ins => {
         const card = document.createElement('div');
         card.style.border = '1px solid #e0e5ec';
@@ -31,15 +61,51 @@
           <div style="margin-top:6px;">${ins.message}</div>
           <div style="margin-top:4px; font-size:0.8rem; color:#5b6470;">${new Date(ins.created_at).toLocaleString()}</div>
         `;
+        card.id = `insight-${ins.id}`;
         list.appendChild(card);
       });
     };
-    fetch('/api/insights', { headers: { 'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content || '' } })
-      .then(r => r.json())
-      .then(data => render(data.insights || []))
-      .catch(() => {
-        document.getElementById('insights-lede').textContent = 'Unable to load insights.';
-      });
+    reviewBtn?.addEventListener('click', () => {
+      const first = list.querySelector('div[id^="insight-"]');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    const loadInsights = () => {
+      if (!isAuthed()) {
+        setLoggedOutState();
+        return;
+      }
+      setStatus('');
+      fetch('/api/insights', { headers: getAuthHeaders() })
+        .then((res) => {
+          if (res.status === 401) {
+            setLoggedOutState();
+            return null;
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (!data) return;
+          render(data.insights || []);
+        })
+        .catch(() => {
+          setStatus('Unable to load items right now.', 'error');
+        });
+    };
+
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      if (e.detail?.loggedIn) {
+        loadInsights();
+      } else {
+        setLoggedOutState();
+      }
+    });
+
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(loadInsights);
+    } else {
+      loadInsights();
+    }
   })();
 </script>
 {% endblock %}
