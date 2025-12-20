@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-15 (v2.5 — Phase 2.5 semantic contract freeze complete; semantics docs published)_
+_Last updated: 2025-12-15 (v2.6 — Phase 3a complete; deterministic replay + governance hardened)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -33,6 +33,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Testing**: 539 tests passing, 10 xfailed, 38 warnings, 85% coverage; all tests carry markers (integration/unit/ml).
 - **Documentation Governance**: UI/UX Constitution is binding (`lifeos/docs/ui_ux_constitution.md`); Tasks Hub at `lifeos/docs/tasks/` with `archive/` for completed cross-team handoffs; semantics canon published under `lifeos/docs/semantics/`.
 - **Phase 2.5 Semantic Contract Freeze**: Complete; canonical references in `lifeos/docs/semantics/` are binding for Phase 3a and beyond.
+- **Phase 3a Cross-Domain Intelligence Hardening**: Complete; replay determinism, confidence routing, and governance tests enforced. Telemetry checks require admin `AUTH_TOKEN`.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -219,13 +220,15 @@ lifeos/
 │   │   └── CONFIDENCE_VOCABULARY.md
 │   ├── tasks/
 │   │   ├── README.md
+│   │   ├── calendar_event_creation_ux_ops.md
 │   │   └── archive/
 │   │       ├── calendar_subsystem_refactor.md
 │   │       ├── calendar_subsystem_refactor_ops.md
 │   │       ├── calendar_event_creation_ux_handoff.md
 │   │       ├── auth_experience_refactor.md
 │   │       ├── ux_alignment_sprint_phase1.md
-│   │       └── phase_2_5_semantic_insight_contract_freeze.md
+│   │       ├── phase_2_5_semantic_insight_contract_freeze.md
+│   │       └── phase_3a_cross_domain_intelligence_hardening.md
 │   ├── prompts/
 │   └── archive/
 ├── templates/                      # Jinja2 templates
@@ -1080,13 +1083,17 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.5 (Phase 2.5 semantic contract freeze complete; semantics canon published; session scaffold + admin reset stub): 2025-12-15. Author: LifeOS Architect._
+_Constitution v2.6 (Phase 3a complete; deterministic replay + governance hardened; session scaffold + admin reset stub): 2025-12-15. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-15):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
 - ✅ Phase 2.5 task archived; semantic/insight contract registries enforced by tests
 - ✅ Tasks Hub active with archived UX alignment and auth refactor tasks
 - ✅ Session lifecycle scaffold remains interface-only; admin reset minimal path allowed; login issue quarantined to Phase 3c
+
+**Phase Summary (2025-12-15):**
+- ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
+- ✅ QA sweep green; telemetry smoke check requires admin `AUTH_TOKEN`
 
 ---
 

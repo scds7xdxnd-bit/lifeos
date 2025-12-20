@@ -26,10 +26,10 @@ check() {
   local code
   code=$(curl -s -o /tmp/calendar_smoke.$$ -w "%{http_code}" -H "${auth_header[@]}" "${url}") || code="000"
   if [[ "${code}" != "200" ]]; then
-    echo "❌ ${label} failed (status ${code}) :: ${url}"
+    echo "ERROR: ${label} failed (status ${code}) :: ${url}"
     fail=1
   else
-    echo "✓ ${label} OK (status ${code})"
+    echo "OK: ${label} (status ${code})"
   fi
 }
 

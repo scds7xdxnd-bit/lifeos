@@ -1,4 +1,4 @@
-# Calendar Subsystem Refactor — DevOps Runbook
+# Calendar Subsystem Refactor - DevOps Runbook
 
 ## Purpose
 Support the deterministic calendar view/ledger rollout with ops tooling and guardrails without changing pipelines.

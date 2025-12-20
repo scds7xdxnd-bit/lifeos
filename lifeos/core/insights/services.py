@@ -10,6 +10,8 @@ from sqlalchemy import or_
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
+from lifeos.core.insights.routing import enforce_confidence_routing
+from lifeos.core.insights.telemetry import insight_telemetry
 from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.extensions import db
 
@@ -21,14 +23,27 @@ def persist_insights(
     """Save generated insights tied to the originating event."""
     saved: List[InsightRecord] = []
     for ins in insights:
+        insight_type = ins.get("type") or "generic"
+        context = dict(ins.get("context") or {})
+        confidence_band, routing = enforce_confidence_routing(
+            insight_type=insight_type,
+            event_type=event.event_type,
+            severity=ins.get("severity"),
+            context=context,
+        )
+        context.setdefault("confidence_band", confidence_band)
+        context.setdefault("routing", routing)
+        insight_telemetry.record_confidence(insight_type, confidence_band)
         rec = InsightRecord(
             user_id=event.user_id,
             event_id=event.id,
             event_type=event.event_type,
-            kind=ins.get("type") or "generic",
+            kind=insight_type,
             message=ins.get("message") or "",
             severity=ins.get("severity") or "info",
-            data=ins.get("context") or {},
+            confidence_band=confidence_band,
+            routing=routing,
+            data=context,
         )
         db.session.add(rec)
         saved.append(rec)

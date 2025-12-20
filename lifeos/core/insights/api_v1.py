@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from lifeos.core.insights.models import InsightRecord
 from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.core.insights.services import list_insights_feed
+from lifeos.readmodels.projections.review_queue import fetch_review_queue_projection
 
 api_v1_insights_bp = Blueprint("insights_api_v1", __name__)
 
@@ -49,3 +50,32 @@ def insights_feed_v1():
             "items": [_serialize(rec) for rec in items],
         }
     )
+
+
+@api_v1_insights_bp.get("/review")
+@jwt_required()
+def insights_review_queue_v1():
+    """Return review-only insights (confidence_band=needs_review)."""
+    user_id = int(get_jwt_identity())
+    try:
+        limit = int(request.args.get("limit", 50))
+        offset = int(request.args.get("offset", 0))
+    except ValueError:
+        return jsonify({"ok": False, "error": "validation_error"}), 400
+
+    limit = max(1, min(limit, 200))
+    offset = max(0, offset)
+    items = fetch_review_queue_projection(user_id, limit=limit, offset=offset)
+    payload = [
+        {
+            "id": rec.id,
+            "insight_type": rec.kind,
+            "message": rec.message,
+            "severity": rec.severity,
+            "event_type": rec.event_type,
+            "created_at": rec.created_at.isoformat() if rec.created_at else None,
+            "data": rec.data or {},
+        }
+        for rec in items
+    ]
+    return jsonify({"ok": True, "items": payload, "limit": limit, "offset": offset})

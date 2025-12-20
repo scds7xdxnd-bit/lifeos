@@ -25,6 +25,8 @@ class InsightTelemetrySnapshot:
     per_model_false_negatives: Dict[str, int]
     coverage: float
     per_event_counts: Dict[str, int]
+    per_insight_confidence: Dict[str, Dict[str, int]]
+    per_insight_counts: Dict[str, int]
     recent_events: List[Dict[str, str]]
 
 
@@ -45,6 +47,8 @@ class InsightTelemetry:
         self.per_rule_latency_ms: defaultdict[str, List[float]] = defaultdict(list)
         self.per_event_latency_ms: List[float] = []
         self.per_event_counts: Counter[str] = Counter()
+        self.per_insight_confidence: defaultdict[str, Counter[str]] = defaultdict(Counter)
+        self.per_insight_counts: Counter[str] = Counter()
         self.per_domain_false_positives: Counter[str] = Counter()
         self.per_domain_false_negatives: Counter[str] = Counter()
         self.per_model_false_positives: Counter[str] = Counter()
@@ -88,6 +92,14 @@ class InsightTelemetry:
                     "at": datetime.now(timezone.utc).isoformat(),
                 }
             )
+
+    def record_confidence(self, insight_type: str, confidence_band: str) -> None:
+        """Track confidence distribution for insight types."""
+        if not insight_type or not confidence_band:
+            return
+        with self._lock:
+            self.per_insight_counts[insight_type] += 1
+            self.per_insight_confidence[insight_type][confidence_band] += 1
 
     def record_inference_feedback(
         self,
@@ -136,6 +148,8 @@ class InsightTelemetry:
                 per_model_false_negatives=dict(self.per_model_false_negatives),
                 coverage=coverage,
                 per_event_counts=dict(self.per_event_counts),
+                per_insight_confidence={insight: dict(bands) for insight, bands in self.per_insight_confidence.items()},
+                per_insight_counts=dict(self.per_insight_counts),
                 recent_events=list(self.recent_events),
             )
 

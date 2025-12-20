@@ -1,4 +1,4 @@
-# Calendar Event Creation UX — DevOps Runbook
+# Calendar Event Creation UX - DevOps Runbook
 
 ## Purpose
 Provide a lightweight smoke test for the new calendar event creation UX markup without changing CI/CD pipelines.

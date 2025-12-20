@@ -6,6 +6,16 @@ from lifeos.core.insights.ml.contracts import (
     list_ml_attachment_contracts,
 )
 from lifeos.core.insights.ml.embeddings import embed_text
+from lifeos.core.insights.ml.replay_contracts import (
+    GOLD_REPLAY_DATASETS,
+    REPLAY_DETERMINISM_CONTRACTS,
+    GoldReplayDatasetSpec,
+    ReplayDeterminismContract,
+    get_gold_replay_dataset,
+    get_replay_determinism_contract,
+    list_gold_replay_datasets,
+    list_replay_determinism_contracts,
+)
 from lifeos.core.insights.ml.event_schemas import (
     INFERENCE_EVENT_MODELS,
     FinanceTransactionInferenceEvent,
@@ -31,6 +41,14 @@ __all__ = [
     "ML_ATTACHMENT_CONTRACTS",
     "get_ml_attachment_contract",
     "list_ml_attachment_contracts",
+    "ReplayDeterminismContract",
+    "GoldReplayDatasetSpec",
+    "REPLAY_DETERMINISM_CONTRACTS",
+    "GOLD_REPLAY_DATASETS",
+    "get_replay_determinism_contract",
+    "list_replay_determinism_contracts",
+    "get_gold_replay_dataset",
+    "list_gold_replay_datasets",
     "embed_text",
     "extract_event_features",
     "cosine_similarity",
