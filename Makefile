@@ -9,7 +9,7 @@ APP_ENV ?= development
 LIFEOS_PATH ?= lifeos
 
 .PHONY: help venv install lint typecheck security test test-unit test-integration test-ml test-all \
-        check-migrations run-migrations smoketest build-image coverage deploy run seed demo ci clean
+        lint-fix check-migrations run-migrations smoketest build-image coverage deploy run seed demo ci clean
 
 #------------------------------------------------------------------------------
 # Help
@@ -65,6 +65,9 @@ install: venv
 #------------------------------------------------------------------------------
 lint:
 	@./scripts/ci/lint.sh
+
+lint-fix:
+	@./scripts/ci/lint_fix.sh
 
 typecheck:
 	@./scripts/ci/typecheck.sh
