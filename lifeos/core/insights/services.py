@@ -11,8 +11,8 @@ from sqlalchemy import or_
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
 from lifeos.core.insights.routing import enforce_confidence_routing
-from lifeos.core.insights.telemetry import insight_telemetry
 from lifeos.core.insights.schemas import InsightsFeedQuery
+from lifeos.core.insights.telemetry import insight_telemetry
 from lifeos.extensions import db
 
 
