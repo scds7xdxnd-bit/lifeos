@@ -69,7 +69,7 @@ def admin_reset_sessions_command(user_id: int | None, email: str | None, reason:
 
     click.echo(
         f"admin_reset ok: user_id={target_user_id} reset_count={result['reset_count']} "
-        f"scope={result['session_scope']} reason=\"{reason_clean}\""
+        f'scope={result["session_scope"]} reason="{reason_clean}"'
     )
     click.echo("Outbox event enqueued; worker will dispatch auth.session.admin_reset.")
 

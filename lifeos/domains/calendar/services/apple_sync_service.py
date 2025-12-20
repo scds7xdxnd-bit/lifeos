@@ -252,8 +252,8 @@ def fetch_calendar_events(
         <C:filter>
             <C:comp-filter name="VCALENDAR">
                 <C:comp-filter name="VEVENT">
-                    <C:time-range start="{time_min.strftime('%Y%m%dT%H%M%SZ')}"
-                                  end="{time_max.strftime('%Y%m%dT%H%M%SZ')}"/>
+                    <C:time-range start="{time_min.strftime("%Y%m%dT%H%M%SZ")}"
+                                  end="{time_max.strftime("%Y%m%dT%H%M%SZ")}"/>
                 </C:comp-filter>
             </C:comp-filter>
         </C:filter>
