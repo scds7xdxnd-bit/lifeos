@@ -7,21 +7,27 @@
       <div>
         <h2 style="margin:0;">Accounts</h2>
         <p style="margin:0; color:#5b6470;">Chart of accounts with balances and categories.</p>
+        <p style="margin:0.25rem 0 0; color:#7a8599; font-size:0.9rem;">Read-only overview. Filter only when you need a closer look.</p>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
-        <select id="acct-type-filter" class="input" style="min-width:140px;">
-          <option value="">All types</option>
-          <option value="asset">Asset</option>
-          <option value="liability">Liability</option>
-          <option value="equity">Equity</option>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
-        </select>
+        <button type="button" class="btn" id="acct-review">Review accounts</button>
+        <button type="button" class="btn btn-secondary" id="acct-filter-toggle" aria-expanded="false">Filter</button>
         <button type="button" class="btn btn-secondary" id="acct-reload">Reload</button>
       </div>
     </div>
     <div id="acct-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to view accounts.</div>
     <div id="acct-status" class="auth-status" style="margin-top:0.25rem;"></div>
+
+    <div id="acct-filter-panel" data-display="flex" style="display:none; gap:0.5rem; align-items:center; margin-top:0.5rem; flex-wrap:wrap;">
+      <select id="acct-type-filter" class="input" style="min-width:140px;">
+        <option value="">All types</option>
+        <option value="asset">Asset</option>
+        <option value="liability">Liability</option>
+        <option value="equity">Equity</option>
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+    </div>
 
     <div style="overflow-x:auto; margin-top:0.5rem;">
       <table>
@@ -59,8 +65,12 @@
       <div>
         <h3 style="margin:0;">Account Categories</h3>
         <p style="margin:0; color:#5b6470;">Manage custom categories for organizing accounts.</p>
+        <p style="margin:0.25rem 0 0; color:#7a8599; font-size:0.9rem;">Defaults are read-only. Create new categories only when needed.</p>
       </div>
-      <button type="button" class="btn btn-secondary" id="cat-reload">Refresh</button>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button type="button" class="btn" id="cat-toggle" aria-expanded="false">Create category</button>
+        <button type="button" class="btn btn-secondary" id="cat-reload">Refresh</button>
+      </div>
     </div>
     <div id="cat-status" class="auth-status" style="margin-top:0.25rem;"></div>
 
@@ -79,7 +89,7 @@
     </div>
 
     <!-- New Category Form -->
-    <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #e0e5ec;">
+    <div id="cat-form-panel" style="display:none; margin-top:1rem; padding-top:1rem; border-top:1px solid #e0e5ec;">
       <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem;">Create Custom Category</h4>
       <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items:end;">
         <div class="field">
@@ -113,12 +123,17 @@
     const acctBody = document.getElementById('acct-body');
     const acctStatus = document.getElementById('acct-status');
     const acctTypeFilter = document.getElementById('acct-type-filter');
+    const acctFilterPanel = document.getElementById('acct-filter-panel');
+    const acctFilterToggle = document.getElementById('acct-filter-toggle');
+    const acctReviewBtn = document.getElementById('acct-review');
     const acctReload = document.getElementById('acct-reload');
     const loginHint = document.getElementById('acct-login-hint');
 
     const catBody = document.getElementById('cat-body');
     const catStatus = document.getElementById('cat-status');
     const catReload = document.getElementById('cat-reload');
+    const catToggle = document.getElementById('cat-toggle');
+    const catFormPanel = document.getElementById('cat-form-panel');
     const catNewType = document.getElementById('cat-new-type');
     const catNewName = document.getElementById('cat-new-name');
     const catNewDefault = document.getElementById('cat-new-default');
@@ -133,8 +148,18 @@
 
     const ensureAuth = () => {
       const authed = !!lifeosAuth?.getTokens().access_token;
-      [acctReload, catReload, catCreateBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      [acctReload, catReload, catCreateBtn, acctFilterToggle, acctReviewBtn, catToggle].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      [acctTypeFilter, catNewType, catNewName, catNewDefault].forEach((node) => { if (node) node.disabled = !authed; });
       loginHint.style.display = authed ? 'none' : 'block';
+      if (!authed) {
+        if (acctFilterPanel) acctFilterPanel.style.display = 'none';
+        if (acctFilterToggle) acctFilterToggle.setAttribute('aria-expanded', 'false');
+        if (catFormPanel) catFormPanel.style.display = 'none';
+        if (catToggle) {
+          catToggle.setAttribute('aria-expanded', 'false');
+          catToggle.textContent = 'Create category';
+        }
+      }
       return authed;
     };
 
@@ -230,6 +255,22 @@
 
     acctReload?.addEventListener('click', () => {
       window.location.reload();
+    });
+    acctReviewBtn?.addEventListener('click', () => {
+      acctBody?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    acctFilterToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = acctFilterPanel.style.display !== 'none';
+      acctFilterPanel.style.display = isOpen ? 'none' : (acctFilterPanel.dataset.display || 'block');
+      acctFilterToggle.setAttribute('aria-expanded', (!isOpen).toString());
+    });
+    catToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = catFormPanel.style.display !== 'none';
+      catFormPanel.style.display = isOpen ? 'none' : 'block';
+      catToggle.setAttribute('aria-expanded', (!isOpen).toString());
+      catToggle.textContent = isOpen ? 'Create category' : 'Hide form';
     });
 
     window.addEventListener('lifeos:auth-changed', (e) => {

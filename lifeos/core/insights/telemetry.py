@@ -92,6 +92,13 @@ class InsightTelemetry:
                     "at": datetime.now(timezone.utc).isoformat(),
                 }
             )
+        try:
+            from lifeos.core.observability.metrics import record_insight_latency_ms
+
+            record_insight_latency_ms(latency_ms)
+        except Exception:
+            # Metrics should never break insight processing.
+            pass
 
     def record_confidence(self, insight_type: str, confidence_band: str) -> None:
         """Track confidence distribution for insight types."""

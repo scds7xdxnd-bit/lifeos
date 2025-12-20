@@ -16,6 +16,8 @@ pytestmark = pytest.mark.unit
 def test_gold_replay_dataset_spec_matches_file():
     spec = GOLD_REPLAY_DATASETS["gold_replay_dataset_v1"]
     dataset_path = Path(spec.dataset_path)
+    if not dataset_path.is_absolute():
+        dataset_path = Path(__file__).resolve().parents[2] / dataset_path
     assert dataset_path.exists()
 
     payload = json.loads(dataset_path.read_text())

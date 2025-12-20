@@ -7,7 +7,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 from sqlalchemy.orm import selectinload
 
-from lifeos.core.utils.decorators import csrf_protected, require_roles
+from lifeos.core.utils.decorators import csrf_protected, read_only_endpoint, require_roles
 from lifeos.domains.finance.mappers import map_journal_entry_request
 from lifeos.domains.finance.models.accounting_models import JournalEntry, JournalLine
 from lifeos.domains.finance.schemas.finance_schemas import JournalEntryCreateRequest
@@ -22,6 +22,7 @@ journal_api_bp = Blueprint("finance_journal_api", __name__)
 @journal_api_bp.get("/journal")
 @jwt_required()
 @limiter.limit("240/minute")
+@read_only_endpoint
 def list_journal_entries():
     user_id = int(get_jwt_identity())
     # Get total count per user to present a user-scoped entry number (avoids global ID confusion)
@@ -59,6 +60,7 @@ def list_journal_entries():
 @journal_api_bp.get("/journal/entries/<int:entry_id>")
 @jwt_required()
 @limiter.limit("240/minute")
+@read_only_endpoint
 def get_journal_entry_detail(entry_id: int):
     """Return a single journal entry with line-level detail and totals."""
 

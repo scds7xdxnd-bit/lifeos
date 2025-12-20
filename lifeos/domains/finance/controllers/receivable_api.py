@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
-from lifeos.core.utils.decorators import csrf_protected, require_roles
+from lifeos.core.utils.decorators import csrf_protected, read_only_endpoint, require_roles
 from lifeos.domains.finance.mappers import map_receivable, map_receivable_entry
 from lifeos.domains.finance.schemas.finance_schemas import (
     ReceivableCreate,
@@ -22,6 +22,7 @@ receivable_api_bp = Blueprint("finance_receivable_api", __name__)
 
 @receivable_api_bp.get("/receivables")
 @jwt_required()
+@read_only_endpoint
 def list_receivables():
     user_id = int(get_jwt_identity())
     page = int(request.args.get("page", 1))
@@ -66,6 +67,7 @@ def create_receivable_endpoint():
 
 @receivable_api_bp.get("/receivables/<int:tracker_id>")
 @jwt_required()
+@read_only_endpoint
 def get_receivable(tracker_id: int):
     user_id = int(get_jwt_identity())
     tracker = receivable_service.get_receivable(user_id, tracker_id)
@@ -112,6 +114,7 @@ def delete_receivable(tracker_id: int):
 
 @receivable_api_bp.get("/receivables/<int:tracker_id>/entries")
 @jwt_required()
+@read_only_endpoint
 def list_receivable_entries(tracker_id: int):
     user_id = int(get_jwt_identity())
     page = int(request.args.get("page", 1))

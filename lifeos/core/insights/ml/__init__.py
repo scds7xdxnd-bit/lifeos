@@ -23,6 +23,12 @@ from lifeos.core.insights.ml.event_schemas import (
     WorkSessionInference,
 )
 from lifeos.core.insights.ml.feature_extractors import extract_event_features
+from lifeos.core.insights.ml.metrics_contracts import (
+    PHASE3B_SLO_METRICS,
+    SLOMetricContract,
+    get_phase3b_slo_metric,
+    list_phase3b_slo_metrics,
+)
 from lifeos.core.insights.ml.ranking import cosine_similarity, rank_candidates
 from lifeos.core.insights.ml.replay_contracts import (
     GOLD_REPLAY_DATASETS,
@@ -49,6 +55,10 @@ __all__ = [
     "list_replay_determinism_contracts",
     "get_gold_replay_dataset",
     "list_gold_replay_datasets",
+    "SLOMetricContract",
+    "PHASE3B_SLO_METRICS",
+    "get_phase3b_slo_metric",
+    "list_phase3b_slo_metrics",
     "embed_text",
     "extract_event_features",
     "cosine_similarity",

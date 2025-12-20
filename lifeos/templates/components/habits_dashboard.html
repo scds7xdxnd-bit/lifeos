@@ -2,17 +2,28 @@
 <div class="card" id="{{ component_id }}-card">
   <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
     <div>
+      <div class="meta">Habits</div>
       <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-        <h2 style="margin:0;">Habits</h2>
+        <h2 style="margin:0;">Did I keep my commitments recently?</h2>
         {% set badge_domain = 'habits' %}{% include "components/inferred_badge.html" %}
       </div>
-      <p style="margin:0; color:#5b6470;">Track habit targets, log completions, and manage streaks.</p>
+      <p style="margin:0; color:#5b6470;">Review recent logs before adding new habits.</p>
     </div>
-    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <button type="button" class="btn" id="{{ component_id }}-review-btn">Review today</button>
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    </div>
   </div>
   <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage habits.</div>
 
-  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+  <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+    <button type="button" class="text-link" id="{{ component_id }}-create-toggle">New habit</button>
+  </div>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No habits yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+
+  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:none; gap:0.5rem;">
     <div class="field">
       <label for="{{ component_id }}-name">Habit name</label>
       <input id="{{ component_id }}-name" name="name" type="text" placeholder="e.g., Morning run" required>
@@ -52,9 +63,6 @@
       <div id="{{ component_id }}-create-status" class="auth-status"></div>
     </div>
   </form>
-
-  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No habits yet.</div>
-  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
 </div>
 
 <script>
@@ -68,6 +76,8 @@
     const listEl = el('list');
     const emptyEl = el('empty');
     const createBtn = el('create-btn');
+    const reviewBtn = el('review-btn');
+    const createToggle = el('create-toggle');
 
     const setStatus = (node, msg, tone = '') => {
       if (!node) return;
@@ -80,6 +90,8 @@
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
       Array.from(createForm?.querySelectorAll('input, textarea, select, button') || []).forEach((node) => node.disabled = !authed);
+      createToggle.disabled = !authed;
+      reviewBtn.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };
@@ -102,8 +114,8 @@
             ${habit.domain_link ? `<div style="color:#5b6470; font-size:0.85rem;">Domain: ${habit.domain_link}</div>` : ''}
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <button class="btn btn-secondary" data-action="toggle-active" data-id="${habit.id}">${habit.is_active ? 'Deactivate' : 'Activate'}</button>
-            <button class="btn btn-secondary" data-action="delete" data-id="${habit.id}">Delete</button>
+            <button class="btn" data-action="toggle-log" data-id="${habit.id}">Log completion</button>
+            <button class="btn btn-secondary" data-action="toggle-manage" data-id="${habit.id}">Manage</button>
           </div>
         </div>
         <div style="margin-top:0.35rem; display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.95rem;">
@@ -112,7 +124,7 @@
           <span>Last: ${lastLogged}</span>
           <span>Status: ${habit.is_active ? 'Active' : 'Inactive'}</span>
         </div>
-        <div style="margin-top:0.35rem;">
+        <div data-section="manage" style="margin-top:0.35rem; display:none;">
           <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Quick update</label>
           <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
             <input type="text" data-field="schedule_type" placeholder="Schedule (daily/weekly/monthly)" value="${habit.schedule_type || ''}">
@@ -122,9 +134,11 @@
           </div>
           <div style="display:flex; gap:0.5rem; margin-top:0.35rem; flex-wrap:wrap;">
             <button class="btn btn-secondary" data-action="save" data-id="${habit.id}">Save updates</button>
+            <button class="btn btn-secondary" data-action="toggle-active" data-id="${habit.id}">${habit.is_active ? 'Deactivate' : 'Activate'}</button>
+            <button class="btn btn-secondary" data-action="delete" data-id="${habit.id}">Delete</button>
           </div>
         </div>
-        <div style="margin-top:0.5rem;">
+        <div data-section="log" style="margin-top:0.5rem; display:none;">
           <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Log completion</label>
           <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));">
             <input type="date" data-field="logged_date">
@@ -203,6 +217,18 @@
       if (!habitId) return;
       const card = e.target.closest('[data-habit-card]');
       const statusNode = card?.querySelector('[data-role="row-status"]');
+
+      if (action === 'toggle-manage') {
+        const section = card?.querySelector('[data-section="manage"]');
+        if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+
+      if (action === 'toggle-log') {
+        const section = card?.querySelector('[data-section="log"]');
+        if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
 
       if (action === 'toggle-active') {
         const nextActive = card?.dataset?.active !== 'true';
@@ -286,12 +312,24 @@
     });
 
     reloadBtn?.addEventListener('click', fetchHabits);
+    reviewBtn?.addEventListener('click', () => {
+      const first = listEl.querySelector('[data-habit-card]');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    createToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = createForm.style.display !== 'none';
+      createForm.style.display = isOpen ? 'none' : 'grid';
+      createToggle.textContent = isOpen ? 'New habit' : 'Hide form';
+    });
     window.addEventListener('lifeos:auth-changed', (e) => {
       ensureAuth();
       if (e.detail?.loggedIn) fetchHabits();
       else {
         listEl.innerHTML = '';
         emptyEl.style.display = 'block';
+        createForm.style.display = 'none';
+        if (createToggle) createToggle.textContent = 'New habit';
       }
     });
     ensureAuth();

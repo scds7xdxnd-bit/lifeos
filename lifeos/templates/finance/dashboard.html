@@ -9,6 +9,7 @@
           {% set badge_domain = 'finance' %}{% include "components/inferred_badge.html" %}
         </div>
         <p style="margin:0; color:#5b6470;">Where do I stand right now, and what changed recently?</p>
+        <p style="margin:0.25rem 0 0; color:#7a8599; font-size:0.9rem;">Read-first summary. Review details only when you need to act.</p>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
         <button type="button" class="btn" id="dash-review">Review transactions</button>
@@ -41,6 +42,7 @@
   <div class="card">
     <details>
       <summary style="cursor:pointer; font-weight:600; color:#1f2432;">Review balances</summary>
+      <p style="margin:0.5rem 0 0; color:#7a8599; font-size:0.9rem;">Read-only balances by account.</p>
       <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
         <h3 style="margin:0;">Account balances</h3>
         <span style="font-size:0.9rem; color:#5b6470;" id="dash-accounts-meta"></span>

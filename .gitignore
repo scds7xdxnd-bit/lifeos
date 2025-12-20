@@ -33,6 +33,7 @@ build/
 
 # Local data / databases
 instance/
+flask_app/
 flask_app/instance/
 *.sqlite
 *.sqlite3

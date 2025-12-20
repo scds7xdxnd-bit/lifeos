@@ -11,12 +11,14 @@ from lifeos.domains.finance.schemas.finance_schemas import (
     TrialBalanceFilter,
 )
 from lifeos.domains.finance.services import trial_balance_service
+from lifeos.core.utils.decorators import read_only_endpoint
 
 trial_balance_api_bp = Blueprint("trial_balance_api", __name__)
 
 
 @trial_balance_api_bp.get("/trial_balance")
 @jwt_required()
+@read_only_endpoint
 def trial_balance():
     payload = request.args or {}
     try:
@@ -36,6 +38,7 @@ def trial_balance():
 
 @trial_balance_api_bp.get("/trial_balance/period")
 @jwt_required()
+@read_only_endpoint
 def period_balance():
     payload = request.args or {}
     try:
@@ -49,6 +52,7 @@ def period_balance():
 
 @trial_balance_api_bp.get("/trial_balance/monthly")
 @jwt_required()
+@read_only_endpoint
 def monthly_rollup():
     user_id = int(get_jwt_identity())
     rollup = trial_balance_service.monthly_rollup(user_id)

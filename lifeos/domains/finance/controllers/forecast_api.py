@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from lifeos.core.utils.decorators import csrf_protected, require_roles
+from lifeos.core.utils.decorators import csrf_protected, read_only_endpoint, require_roles
 from lifeos.domains.finance.schemas.finance_schemas import (
     ForecastParams,
     ScheduleRowCreate,
@@ -24,6 +24,7 @@ forecast_api_bp = Blueprint("finance_forecast_api", __name__)
 
 @forecast_api_bp.get("/forecast")
 @jwt_required()
+@read_only_endpoint
 def get_forecast():
     user_id = int(get_jwt_identity())
     try:

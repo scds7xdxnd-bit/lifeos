@@ -158,6 +158,7 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.core.auth.api_v1 import api_v1_auth_bp
     from lifeos.core.auth.controllers import auth_bp, auth_pages_bp  # local import to avoid circulars
     from lifeos.core.insights.api_v1 import api_v1_insights_bp
+    from lifeos.core.observability.controllers import metrics_bp
     from lifeos.core.insights.controllers import insights_api_bp
     from lifeos.core.insights.pages import insights_pages_bp
     from lifeos.core.users.controllers import user_api_bp, user_pages_bp
@@ -226,6 +227,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
     app.register_blueprint(calendar_view_api_bp, url_prefix="/api/v1/calendar")
     app.register_blueprint(calendar_pages_bp, url_prefix="/calendar")
+    app.register_blueprint(metrics_bp)
 
     # Admin/debug endpoints: register only in non-production or when debugging.
     env = (app.config.get("ENV") or "").lower()

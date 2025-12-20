@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from lifeos.core.insights.models import InsightRecord
 from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.core.insights.services import list_insights_feed
+from lifeos.core.utils.decorators import read_only_endpoint
 from lifeos.readmodels.projections.review_queue import fetch_review_queue_projection
 
 api_v1_insights_bp = Blueprint("insights_api_v1", __name__)
@@ -16,6 +17,7 @@ api_v1_insights_bp = Blueprint("insights_api_v1", __name__)
 
 @api_v1_insights_bp.get("/feed")
 @jwt_required()
+@read_only_endpoint
 def insights_feed_v1():
     """Return paginated insights for the current user with optional filters."""
     user_id = int(get_jwt_identity())
@@ -54,6 +56,7 @@ def insights_feed_v1():
 
 @api_v1_insights_bp.get("/review")
 @jwt_required()
+@read_only_endpoint
 def insights_review_queue_v1():
     """Return review-only insights (confidence_band=needs_review)."""
     user_id = int(get_jwt_identity())

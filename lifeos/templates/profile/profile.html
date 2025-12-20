@@ -1,30 +1,40 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 <div class="container" style="max-width: 900px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
-  <div id="profile-empty" class="card empty-state" style="display:none;">Please log in to view your profile.</div>
+  <div id="profile-empty" class="card empty-state" style="display:none;">
+    <div style="font-weight:600;">Sign in required</div>
+    <div class="muted">Please sign in to view your account status.</div>
+  </div>
 
   <div id="profile-card" class="card" style="display:none; gap:0.75rem;">
     <div style="display:flex; justify-content: space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap;">
       <div>
         <div class="meta">Profile</div>
-        <h2 id="profile-name" style="margin:4px 0 6px; letter-spacing:-0.02em;">—</h2>
-        <div class="meta" id="profile-email">Email · —</div>
+        <h2 style="margin:4px 0 6px; letter-spacing:-0.02em;">Is my account safe and configured?</h2>
+        <div class="muted">This page is read-only. It reflects your current session and defaults.</div>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <span id="profile-session" class="badge">Session active</span>
         <span id="profile-timezone" class="badge">Timezone not set</span>
-        <span id="profile-roles-count" class="badge" style="display:none;"></span>
       </div>
     </div>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:0.75rem;">
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:0.75rem;">
       <div class="card" style="padding:0.75rem;">
-        <div class="meta" style="margin-bottom:4px;">Roles</div>
-        <div id="profile-roles" class="muted">No roles assigned.</div>
-      </div>
-      <div class="card" style="padding:0.75rem;">
-        <div class="meta" style="margin-bottom:4px;">Account</div>
+        <div class="meta" style="margin-bottom:6px;">Account</div>
         <div style="display:grid; gap:6px; color: var(--text-strong);">
+          <div><strong>Name:</strong> <span id="profile-name">—</span></div>
+          <div><strong>Email:</strong> <span id="profile-email">—</span></div>
           <div><strong>Timezone:</strong> <span id="profile-tz-value">Not set</span></div>
           <div><strong>Member since:</strong> <span id="profile-created">—</span></div>
+        </div>
+      </div>
+      <div class="card" style="padding:0.75rem;">
+        <div class="meta" style="margin-bottom:6px;">Access</div>
+        <div style="display:grid; gap:6px;">
+          <div class="muted">Roles assigned</div>
+          <div id="profile-roles" class="muted">No roles assigned.</div>
+          <div id="profile-roles-count" class="badge" style="display:none;"></div>
         </div>
       </div>
     </div>
@@ -33,12 +43,12 @@
   <div id="profile-info" class="card" style="display:none; gap:0.5rem;">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
       <div>
-        <div class="meta">Preferences</div>
-        <h3 style="margin:4px 0 0;">Session & notifications</h3>
+        <div class="meta">Defaults</div>
+        <h3 style="margin:4px 0 0;">Session & preferences</h3>
       </div>
       <a class="btn btn-secondary" href="/calendar/">Go to Calendar</a>
     </div>
-    <div class="muted">Profile data is read-only here. Manage activity from the main apps.</div>
+    <div class="muted">Changes to account settings are handled in the admin tools. This view stays read-only.</div>
   </div>
 </div>
 
@@ -60,7 +70,7 @@
       card.style.display = 'grid';
       info.style.display = 'grid';
       document.getElementById('profile-name').textContent = user.full_name || user.email || 'User';
-      document.getElementById('profile-email').textContent = `Email · ${user.email || '—'}`;
+      document.getElementById('profile-email').textContent = user.email || '—';
       document.getElementById('profile-timezone').textContent = user.timezone || 'Timezone not set';
       document.getElementById('profile-tz-value').textContent = user.timezone || 'Not set';
       document.getElementById('profile-created').textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';

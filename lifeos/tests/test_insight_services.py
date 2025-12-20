@@ -67,10 +67,14 @@ def test_persist_insights_saves_records_with_defaults(app):
         assert first.kind == "generic"
         assert first.severity == "info"
         assert first.message == "first insight"
-        assert first.data == {}
+        assert first.data == {"confidence_band": "informational", "routing": "display"}
         assert second.kind == "alert"
         assert second.severity == "warning"
-        assert second.data == {"foo": "bar"}
+        assert second.data == {
+            "foo": "bar",
+            "confidence_band": "informational",
+            "routing": "display",
+        }
         assert InsightRecord.query.filter_by(user_id=user.id).count() == 2
 
 

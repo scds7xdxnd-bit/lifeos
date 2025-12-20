@@ -6,63 +6,70 @@
       <div>
         <h2 style="margin:0;">Schedule & Forecast</h2>
         <p style="margin:0; color:#5b6470;">Add scheduled events, update/delete, and view forecast rollups.</p>
+        <p style="margin:0.25rem 0 0; color:#7a8599; font-size:0.9rem;">Read-first schedule. Use manage mode only when you need to edit rows.</p>
       </div>
-      <button type="button" class="btn btn-secondary" id="sched-reload">Reload</button>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button type="button" class="btn" id="sched-toggle-create" aria-expanded="false">New schedule</button>
+        <button type="button" class="btn btn-secondary" id="sched-toggle-manage" aria-expanded="false">Manage rows</button>
+        <button type="button" class="btn btn-secondary" id="sched-reload">Refresh</button>
+      </div>
     </div>
     <div id="sched-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage schedule.</div>
-    <form id="sched-form" style="display:grid; gap:0.5rem; margin-top:0.75rem;">
-      <div class="field">
-        <label for="sched-account">Account</label>
-        <div class="account-search-wrapper" id="sched-account-wrapper" style="position: relative;">
-          <input
-            type="hidden"
-            id="sched-account-id"
-            name="account_id"
-            required
-          >
-          <input
-            type="text"
-            class="account-search-input"
-            id="sched-account-input"
-            placeholder="Search or create account..."
-            autocomplete="off"
-            style="width: 100%;"
-          >
-          <div
-            class="account-search-dropdown"
-            id="sched-account-dropdown"
-            role="listbox"
-            style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;"
-          >
-            <div id="sched-account-loading" style="display: none; padding: 0.5rem; color: #5b6470; text-align: center;">
-              <span>Searching...</span>
-            </div>
-            <div id="sched-account-results" style="max-height: 250px; overflow-y: auto;"></div>
-            <div id="sched-account-empty" style="padding: 0.5rem; color: #5b6470; text-align: center; display: none;">
-              No accounts found
+    <div id="sched-create-panel" style="display:none; margin-top:0.75rem;">
+      <form id="sched-form" style="display:grid; gap:0.5rem;">
+        <div class="field">
+          <label for="sched-account">Account</label>
+          <div class="account-search-wrapper" id="sched-account-wrapper" style="position: relative;">
+            <input
+              type="hidden"
+              id="sched-account-id"
+              name="account_id"
+              required
+            >
+            <input
+              type="text"
+              class="account-search-input"
+              id="sched-account-input"
+              placeholder="Search or create account..."
+              autocomplete="off"
+              style="width: 100%;"
+            >
+            <div
+              class="account-search-dropdown"
+              id="sched-account-dropdown"
+              role="listbox"
+              style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;"
+            >
+              <div id="sched-account-loading" style="display: none; padding: 0.5rem; color: #5b6470; text-align: center;">
+                <span>Searching...</span>
+              </div>
+              <div id="sched-account-results" style="max-height: 250px; overflow-y: auto;"></div>
+              <div id="sched-account-empty" style="padding: 0.5rem; color: #5b6470; text-align: center; display: none;">
+                No accounts found
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
-        <div class="field">
-          <label for="sched-date">Event date</label>
-          <input id="sched-date" name="event_date" type="date" required>
+        <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+          <div class="field">
+            <label for="sched-date">Event date</label>
+            <input id="sched-date" name="event_date" type="date" required>
+          </div>
+          <div class="field">
+            <label for="sched-amount">Amount</label>
+            <input id="sched-amount" name="amount" type="number" step="0.01" required>
+          </div>
         </div>
         <div class="field">
-          <label for="sched-amount">Amount</label>
-          <input id="sched-amount" name="amount" type="number" step="0.01" required>
+          <label for="sched-memo">Memo</label>
+          <input id="sched-memo" name="memo" type="text" placeholder="Optional">
         </div>
-      </div>
-      <div class="field">
-        <label for="sched-memo">Memo</label>
-        <input id="sched-memo" name="memo" type="text" placeholder="Optional">
-      </div>
-      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
-        <button type="submit" class="btn" id="sched-create">Add schedule row</button>
-        <div id="sched-status" class="auth-status"></div>
-      </div>
-    </form>
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+          <button type="submit" class="btn" id="sched-create">Add schedule row</button>
+          <div id="sched-status" class="auth-status"></div>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="card">
@@ -86,12 +93,15 @@
         <p style="margin:0; color:#5b6470;">Projected daily balances.</p>
       </div>
       <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-        <input type="number" id="forecast-days" min="1" max="365" value="30" style="width:80px;">
-        <button type="button" class="btn btn-secondary" id="forecast-refresh">Refresh</button>
-        <button type="button" class="btn btn-secondary" id="schedule-recompute">Recompute schedule</button>
+        <button type="button" class="btn" id="forecast-refresh">Refresh forecast</button>
+        <button type="button" class="btn btn-secondary" id="forecast-toggle" aria-expanded="false">Adjust horizon</button>
       </div>
     </div>
     <div id="forecast-status" class="auth-status" style="margin-top:0.25rem;"></div>
+    <div id="forecast-controls" style="display:none; margin-top:0.5rem; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <input type="number" id="forecast-days" min="1" max="365" value="30" style="width:80px;">
+      <button type="button" class="btn btn-secondary" id="schedule-recompute">Recompute schedule</button>
+    </div>
     <div style="overflow-x:auto; margin-top:0.5rem;">
       <table>
         <thead><tr><th>Date</th><th>Projected balance</th><th>Memo</th></tr></thead>
@@ -108,6 +118,9 @@
     const statusEl = document.getElementById('sched-status');
     const loginHint = document.getElementById('sched-login-hint');
     const reloadBtn = document.getElementById('sched-reload');
+    const createToggle = document.getElementById('sched-toggle-create');
+    const manageToggle = document.getElementById('sched-toggle-manage');
+    const createPanel = document.getElementById('sched-create-panel');
     const accountInput = document.getElementById('sched-account-input');
     const accountIdInput = document.getElementById('sched-account-id');
     const accountDropdown = document.getElementById('sched-account-dropdown');
@@ -121,8 +134,11 @@
     const forecastStatus = document.getElementById('forecast-status');
     const daysInput = document.getElementById('forecast-days');
     const forecastBtn = document.getElementById('forecast-refresh');
+    const forecastToggle = document.getElementById('forecast-toggle');
+    const forecastControls = document.getElementById('forecast-controls');
     const recomputeBtn = document.getElementById('schedule-recompute');
     let scheduleRows = [];
+    let manageMode = false;
 
     const authHeaders = (extra = {}) => {
       const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -136,6 +152,16 @@
       node.textContent = msg || '';
       if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
     };
+    const resolveContractError = (body, res) => {
+      const error = body?.error;
+      if (res?.status === 409 || error === 'read_only_violation') {
+        return 'Read-only contract violation detected. Please refresh and report this issue.';
+      }
+      if (['contract_mismatch', 'contract_violation', 'schema_mismatch'].includes(error)) {
+        return 'Contract mismatch detected. Please refresh and try again.';
+      }
+      return '';
+    };
 
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
@@ -144,9 +170,27 @@
         debouncedSearch(accountInput.value);
       }
       Array.from(form?.querySelectorAll('input, button, select') || []).forEach((node) => node.disabled = !authed);
-      [forecastBtn, recomputeBtn, reloadBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      Array.from(listEl?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
+      [forecastBtn, recomputeBtn, reloadBtn, createToggle, manageToggle, forecastToggle].forEach((btn) => { if (btn) btn.disabled = !authed; });
       if (daysInput) daysInput.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
+      if (!authed) {
+        if (createPanel) createPanel.style.display = 'none';
+        if (createToggle) {
+          createToggle.setAttribute('aria-expanded', 'false');
+          createToggle.textContent = 'New schedule';
+        }
+        if (manageToggle) {
+          manageToggle.setAttribute('aria-expanded', 'false');
+          manageToggle.textContent = 'Manage rows';
+        }
+        if (forecastControls) {
+          forecastControls.style.display = 'none';
+          forecastToggle?.setAttribute('aria-expanded', 'false');
+        }
+        manageMode = false;
+        renderRows();
+      }
       return authed;
     };
 
@@ -430,16 +474,27 @@
       emptyEl.style.display = 'none';
       items.forEach((row) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="text-align:center;"><input type="date" value="${row.event_date || ''}" data-field="event_date" data-id="${row.id}" style="width:130px;"></td>
-          <td style="text-align:center;">${cleanLabel(row.account_name || accountLabel(row.account_id) || row.account_id)}</td>
-          <td style="text-align:center;"><input type="number" step="0.01" value="${row.amount ?? ''}" data-field="amount" data-id="${row.id}" style="width:120px;"></td>
-          <td style="text-align:center;"><input type="text" value="${row.memo || ''}" data-field="memo" data-id="${row.id}" style="width:180px;"></td>
-          <td style="text-align:center;">
-            <button class="btn btn-secondary" data-action="update" data-id="${row.id}">Update</button>
-            <button class="btn btn-secondary" data-action="delete" data-id="${row.id}">Delete</button>
-          </td>
-        `;
+        if (manageMode) {
+          tr.innerHTML = `
+            <td style="text-align:center;"><input type="date" value="${row.event_date || ''}" data-field="event_date" data-id="${row.id}" style="width:130px;"></td>
+            <td style="text-align:center;">${cleanLabel(row.account_name || accountLabel(row.account_id) || row.account_id)}</td>
+            <td style="text-align:center;"><input type="number" step="0.01" value="${row.amount ?? ''}" data-field="amount" data-id="${row.id}" style="width:120px;"></td>
+            <td style="text-align:center;"><input type="text" value="${row.memo || ''}" data-field="memo" data-id="${row.id}" style="width:180px;"></td>
+            <td style="text-align:center;">
+              <button class="btn btn-secondary" data-action="update" data-id="${row.id}">Update</button>
+              <button class="btn btn-secondary" data-action="delete" data-id="${row.id}">Delete</button>
+            </td>
+          `;
+        } else {
+          const amount = row.amount ?? null;
+          tr.innerHTML = `
+            <td style="text-align:center;">${row.event_date || '—'}</td>
+            <td style="text-align:center;">${cleanLabel(row.account_name || accountLabel(row.account_id) || row.account_id)}</td>
+            <td style="text-align:center;">${amount === null ? '—' : Number(amount).toFixed(2)}</td>
+            <td style="text-align:center;">${row.memo || '—'}</td>
+            <td style="text-align:center; color:#7a8599; font-size:0.9rem;">Read-only</td>
+          `;
+        }
         listEl.appendChild(tr);
       });
     };
@@ -449,6 +504,11 @@
       setStatus(statusEl, 'Loading schedule...');
       const res = await fetch('/api/finance/dashboard', { headers: lifeosAuth.authHeaders() });
       const body = await res.json().catch(() => ({}));
+      const contractError = resolveContractError(body, res);
+      if (contractError) {
+        setStatus(statusEl, contractError, 'error');
+        return;
+      }
       if (res.ok && body.ok !== false) {
         scheduleRows = (body.upcoming_schedule || []).map((r) => ({
           id: r.id,
@@ -474,6 +534,11 @@
       const params = new URLSearchParams({ days: days.toString() });
       const res = await fetch(`/api/finance/forecast?${params.toString()}`, { headers: lifeosAuth.authHeaders() });
       const body = await res.json().catch(() => ({}));
+      const contractError = resolveContractError(body, res);
+      if (contractError) {
+        setStatus(forecastStatus, contractError, 'error');
+        return;
+      }
       if (res.ok && body.ok !== false) {
         (body.forecast || []).forEach((row) => {
           const tr = document.createElement('tr');
@@ -574,6 +639,29 @@
           setStatus(statusEl, reason === 401 ? 'Please log in.' : 'Unable to update.', 'error');
         }
       }
+    });
+
+    createToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = createPanel.style.display !== 'none';
+      createPanel.style.display = isOpen ? 'none' : 'block';
+      createToggle.setAttribute('aria-expanded', (!isOpen).toString());
+      createToggle.textContent = isOpen ? 'New schedule' : 'Hide form';
+    });
+
+    manageToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      manageMode = !manageMode;
+      manageToggle.setAttribute('aria-expanded', manageMode.toString());
+      manageToggle.textContent = manageMode ? 'Done managing' : 'Manage rows';
+      renderRows();
+    });
+
+    forecastToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = forecastControls.style.display !== 'none';
+      forecastControls.style.display = isOpen ? 'none' : 'flex';
+      forecastToggle.setAttribute('aria-expanded', (!isOpen).toString());
     });
 
     forecastBtn?.addEventListener('click', fetchForecast);

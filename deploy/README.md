@@ -453,6 +453,14 @@ AUTH_TOKEN="$TOKEN" BASE_URL="https://staging.lifeos.example.com" \
 
 The script checks day/week/month/ledger endpoints for 200 responses. Toggle `CALENDAR_VIEW_API_V2` in your env to enable/disable the new view endpoints during rollout.
 
+### Phase 3b Contract Hardening Smoke Test
+
+Run the contract and read-only guard tests after deploys that touch read surfaces:
+
+```bash
+scripts/ops/phase3b_contract_smoketest.sh
+```
+
 ---
 
 ## Security Best Practices

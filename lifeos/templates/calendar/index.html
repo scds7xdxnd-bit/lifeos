@@ -295,6 +295,16 @@
     if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
     return base;
   };
+  const resolveContractError = (body, res) => {
+    const error = body?.error;
+    if (res?.status === 409 || error === 'read_only_violation') {
+      return 'Read-only contract violation detected. Please refresh and report this issue.';
+    }
+    if (['contract_mismatch', 'contract_violation', 'schema_mismatch'].includes(error)) {
+      return 'Contract mismatch detected. Please refresh and try again.';
+    }
+    return '';
+  };
 
   // View state
   let currentView = 'list';
@@ -862,6 +872,11 @@
     if (cursor) params.set('cursor', cursor);
     const res = await fetch(`/api/v1/calendar/ledger?${params.toString()}`, { headers: getAuthHeaders() });
     const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
     if (res.ok && data.ok) {
       mergeLedgerEvents(data.events || []);
       if (direction === 'backward') {
@@ -894,6 +909,11 @@
     setStatus(statusEl, 'Loading day...');
     const res = await fetch(`/api/v1/calendar/day?date=${localDateKey(dateObj)}`, { headers: getAuthHeaders() });
     const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
     if (res.ok && data.ok) {
       dayEvents = data.events || [];
       dayWindow = { start: data.window_start, end: data.window_end };
@@ -910,6 +930,11 @@
     setStatus(statusEl, 'Loading week...');
     const res = await fetch(`/api/v1/calendar/week?start=${localDateKey(startDate)}`, { headers: getAuthHeaders() });
     const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
     if (res.ok && data.ok) {
       weekEvents = data.events || [];
       weekWindow = { start: data.window_start, end: data.window_end };
@@ -928,6 +953,11 @@
     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
     const res = await fetch(`/api/v1/calendar/month?year=${year}&month=${month}`, { headers: getAuthHeaders() });
     const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
     if (res.ok && data.ok) {
       monthEvents = data.events || [];
       monthWindow = { start: data.window_start, end: data.window_end, spillover: data.spillover_days || [] };

@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-15 (v2.6 — Phase 3a complete; deterministic replay + governance hardened)_
+_Last updated: 2025-12-15 (v2.8 — Phase 3b complete; interface contracts frozen)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -13,7 +13,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Event System**: In-process event bus, event catalog per domain, event_record audit table
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
-- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251220_readmodels_bootstrap`)
+- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251223_insight_routing_columns`)
 - **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live. Latest runs: PR workflow reported 24 passed / 10 xfailed / 497 errors (needs investigation on selective job), main workflow reported 515 passed / 6 deselected / 10 xfailed (green).
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
@@ -34,6 +34,8 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Documentation Governance**: UI/UX Constitution is binding (`lifeos/docs/ui_ux_constitution.md`); Tasks Hub at `lifeos/docs/tasks/` with `archive/` for completed cross-team handoffs; semantics canon published under `lifeos/docs/semantics/`.
 - **Phase 2.5 Semantic Contract Freeze**: Complete; canonical references in `lifeos/docs/semantics/` are binding for Phase 3a and beyond.
 - **Phase 3a Cross-Domain Intelligence Hardening**: Complete; replay determinism, confidence routing, and governance tests enforced. Telemetry checks require admin `AUTH_TOKEN`.
+- **Phase 3a.5 Domain UX & Semantic Surface Alignment**: Complete; DSDs approved, read/write boundaries and interaction patterns normalized, finance surfaces aligned to read-first intent.
+- **Phase 3b Interface & Contract Hardening**: Complete; versioned API contracts, read-only guardrails, DSD alignment tests, and SLO alerts enforced.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -132,8 +134,8 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3a — Cross-Domain Intelligence formalization/hardening (not invention); leverage existing events, interpreter, rules, and telemetry; tighten projections and confidence handling.
-- Deferred behind triggers: Phase 3b — Interface & Contract Hardening (reframed from mobile) and Phase 3c sub-phases (scaling/broker/multi-device); Phase 4 remains later.
+- Active: Phase 3c track selection (scaling/broker/multi-device) based on trigger signals; Phase 3b is complete.
+- Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
@@ -145,7 +147,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 ## ⚠️ Partially Implemented / Planned
 - **Session Lifecycle Scaffold**: Interface-only `core/auth/session_*`, `device.py`, `constants.py`, `admin_controllers.py`, and session event contracts. Only minimal `admin_reset` path + optional DB reset script may be implemented now; broader behavior deferred to Phase 3c.
 - **Broker Integration**: Stub in `lifeos/lifeos_platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
-- **Read Model Projections**: Not yet implemented; events flow to outbox but no materialized read-side views
+- **Read Model Projections**: Partial; read-only projections exist for insights/review, broader domain projections remain pending
 - **Autonomous Assistant**: Framework ready; rules/NLU inference deferred
 - **RL-based Personalization**: Blocked on read models; placeholder for future
 - **Admin Dashboard**: Stub; full audit/insights UI planned for Q1 2026
@@ -221,6 +223,9 @@ lifeos/
 │   ├── tasks/
 │   │   ├── README.md
 │   │   ├── calendar_event_creation_ux_ops.md
+│   │   ├── calendar_subsystem_refactor_ops.md
+│   │   ├── phase_3a_cross_domain_intelligence_hardening_ops.md
+│   │   ├── phase_3b_interface_contract_hardening_ops.md
 │   │   └── archive/
 │   │       ├── calendar_subsystem_refactor.md
 │   │       ├── calendar_subsystem_refactor_ops.md
@@ -228,7 +233,11 @@ lifeos/
 │   │       ├── auth_experience_refactor.md
 │   │       ├── ux_alignment_sprint_phase1.md
 │   │       ├── phase_2_5_semantic_insight_contract_freeze.md
-│   │       └── phase_3a_cross_domain_intelligence_hardening.md
+│   │       ├── phase_3a_cross_domain_intelligence_hardening.md
+│   │       ├── phase_3a_5_domain_ux_semantic_surface_alignment.md
+│   │       ├── phase_3a_5_dsd_checklist.md
+│   │       ├── phase_3a_5_dsds.md
+│   │       └── phase_3b_interface_contract_hardening.md
 │   ├── prompts/
 │   └── archive/
 ├── templates/                      # Jinja2 templates
@@ -370,7 +379,7 @@ Planned (not yet in repo; Phase 3c or approved interim hygiene):
 - Background cleanup/TTL task implementations.
 
 **Cross-team handoff (structure first):**
-- DB: prepare additive migration plan for `auth_session` (`session_id`, `user_id`, `lifecycle_state`, `created_at`, `invalidated_at`, optional `device_id` nullable stub). Do not alter existing auth tables or token semantics; keep device_id nullable.
+- DB: `auth_session` table exists (migration `20251221_auth_session_table.py`) with `session_id`, `user_id`, `lifecycle_state`, `created_at`, `invalidated_at`, optional `device_id` nullable stub. Do not alter existing auth tables or token semantics; keep device_id nullable.
 - Backend: land interface files and admin_reset contract only; avoid wiring emitters or token changes. Treat repository/read-model layers as contracts, not implementations.
 - QA: design contract-level tests for session lifecycle events and admin reset flows (replay and projection determinism). Do not simulate multi-device/offline or modify auth tokens.
 - Frontend: no UI work now; align on future admin-only endpoint contract when backend enables it.
@@ -395,11 +404,11 @@ Planned (not yet in repo; Phase 3c or approved interim hygiene):
 
 **DB-level reset strategy (conceptual, additive-friendly):**
 - Scope: one user per invocation; no truncation; no cascading deletes.
-- Tables affected (conceptual): existing `session_token` rows (or future `auth_session` table when introduced) marked `invalidated_at=now`, `lifecycle_state='admin_reset'`; `jwt_blocklist` may be appended with relevant tokens if present; user row untouched.
+- Tables affected (conceptual): existing `session_token` rows (and `auth_session` where present) marked `invalidated_at=now`, `lifecycle_state='admin_reset'`; `jwt_blocklist` may be appended with relevant tokens if present; user row untouched.
 - Operations: idempotent by filtering on `user_id` and states ≠ already `admin_reset`/`invalidated`; repeated runs yield no further effect.
 - Audit/replay: emit `auth.session.admin_reset` after DB mutation; ensure outbox entry is durably written. Read models, if present, replay this event to converge.
 - Reversible in intent: does not delete user; only invalidates session state. Recovery is via normal login afterward.
-- Safety: additive-only migrations; no schema change required now. Future `auth_session` table remains planned (Phase 3c) and would follow same invalidation semantics.
+- Safety: additive-only migrations; no schema change required now. `auth_session` follows the same invalidation semantics.
 
 **Invariants after admin_reset:**
 - User identity remains intact; no deletion or mutation of `user`.
@@ -417,19 +426,19 @@ Planned (not yet in repo; Phase 3c or approved interim hygiene):
 **Backend handoff (do now vs defer):**
 - Implement now: `SessionLifecycleService.admin_reset` contract, admin-only controller entrypoint (stub), repository method to mark sessions invalidated/admin_reset, outbox emission of `auth.session.admin_reset`, and a minimal DB-level reset script/CLI for single-user scope. Ensure idempotency and audit logging.
 - Keep interface-only: session read models, device identity types, hydrators, background cleanup/TTL tasks.
-- Defer: any token/cookie changes, device FK migration (`auth_session`), UI surfaces, multi-device/offline logic, browser detection.
+- Defer: any token/cookie changes, device_id enforcement, UI surfaces, multi-device/offline logic, browser detection.
 - Do not “improve” by adding heuristics, auto-triggers, or client changes; this is hygiene only.
 
 ---
 
 # 5. Data Model Inventory (additive migrations)
-**Core (11 tables; +1 planned additive, not authored yet):**
+**Core (12 tables, additive):**
 - `user`, `user_preference` (user identity & settings)
 - `role`, `permission`, `role_permission`, `user_role` (RBAC)
 - `session_token`, `jwt_blocklist`, `password_reset_token` (auth state)
 - `event_record` (audit log for all domain events)
 - `insight_record` (derived signals for UI)
-- _(Planned, Phase 3c)_: `auth_session` (immutable `session_id`, `user_id`, `lifecycle_state` in {active, invalidated, expired, admin_reset}, `created_at`, `invalidated_at`, optional `device_id` nullable stub). Migration is additive-only and deferred; do not alter existing auth tables.
+- `auth_session` (immutable `session_id`, `user_id`, `lifecycle_state` in {active, invalidated, expired, admin_reset}, `created_at`, `invalidated_at`, optional `device_id` nullable stub; migration `20251221_auth_session_table.py`).
 
 **Finance (14 tables):**
 - `finance_account_category`, `finance_account` (chart of accounts)
@@ -532,7 +541,7 @@ Planned (not yet in repo; Phase 3c or approved interim hygiene):
 # 8. Schema Evolution & Migrations
 - Single Alembic home: `lifeos/migrations`. Root `alembic.ini` targets it; `migrate.init_app` uses the absolute path.
 - Additive-first: new columns nullable/defaulted; new tables allowed. Destructive changes require two-phase (shadow + backfill + swap).
-- Placeholder (not authored yet): additive migration for `auth_session` table with optional `device_id` FK; queued for Phase 3c.
+- `auth_session` migration is additive and present (`20251221_auth_session_table.py`); `device_id` remains nullable stub.
 - Migration ownership: domain team for domain tables; core team for shared tables.
 - Backfills live in scripts/management commands, not long Alembic steps.
 - Index rule: always index `user_id` plus primary query dimension (e.g., date/event_type). Enforced via models and migration `20251204_core_user_query_indexes.py`.
@@ -893,18 +902,19 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - ✅ Acceptance criteria recorded in this doc (Section 0)
 - **Specification**: `lifeos/docs/CALENDAR_FIRST_ARCHITECTURE.md`
 
-**Phase 3a (Current) — Cross-Domain Intelligence (formalization/hardening):**
-- [ ] Correlate calendar + journal + domain events to surface insights (energy vs habits, finance stress vs health, calendar→finance/habits/health impacts) using existing interpreter/events/rules.
-- [ ] Define/read projections for high-value queries as read-only, conservative surfaces (cached queries or denormalized tables); no full CQRS infra.
-- [ ] Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence routed with audit trail; **no autonomous action without explicit user confirmation in Phase 3a**.
-- [ ] Telemetry: insight generation metrics, coverage, false-positive/negative tracking.
-- [ ] ML enablement: keep model hooks behind services; log `model_version`/`payload_version`.
-- [ ] Backend tasks: harden event catalog completeness; extend insights rules to consume calendar/journal cross-signals; replay-safe projections only.
+**Phase 3a (Complete) — Cross-Domain Intelligence (formalization/hardening):**
+- ✅ Correlate calendar + journal + domain events to surface insights using existing interpreter/events/rules.
+- ✅ Define/read projections for high-value queries as read-only, conservative surfaces; no full CQRS infra.
+- ✅ Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence routed with audit trail; no autonomous action without explicit user confirmation.
+- ✅ Telemetry: insight generation metrics, coverage, false-positive/negative tracking.
+- ✅ ML enablement: keep model hooks behind services; log `model_version`/`payload_version`.
+- ✅ Backend tasks: harden event catalog completeness; extend insights rules to consume calendar/journal cross-signals; replay-safe projections only.
 
-**Phase 3b (Option) — Interface & Contract Hardening:**
-- [ ] API versioning strategy (`/api/v1`, `/api/v2`)
-- [ ] Auth/session contract hardening for clients (without committing to native/offline)
-- [ ] Session lifecycle scaffold remains structure-only; keep behavior unchanged until Phase 3c
+**Phase 3b (Complete) — Interface & Contract Hardening:**
+- ✅ Versioned response schemas for read surfaces (insights, review queue, calendar views/ledger, finance read APIs)
+- ✅ Read-only guardrails enforced with contract tests
+- ✅ DSD alignment enforced in CI
+- ✅ SLOs defined with alerts; metrics exposed via `/metrics`
 
 **Phase 3c (Option) — Scaling Track (split by trigger):**
 - **Phase 3c-1 — Read & Throughput Scaling (trigger: slow dashboards/insight cost growth/background load):**
@@ -1083,7 +1093,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.6 (Phase 3a complete; deterministic replay + governance hardened; session scaffold + admin reset stub): 2025-12-15. Author: LifeOS Architect._
+_Constitution v2.8 (Phase 3b complete; interface contracts frozen; session scaffold + admin reset stub): 2025-12-15. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-15):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1093,7 +1103,10 @@ _Constitution v2.6 (Phase 3a complete; deterministic replay + governance hardene
 
 **Phase Summary (2025-12-15):**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
+- ✅ Phase 3a.5 complete: DSDs approved across all domains; read-first patterns enforced; finance surfaces stabilized
 - ✅ QA sweep green; telemetry smoke check requires admin `AUTH_TOKEN`
+- ✅ Phase 3b complete: versioned API contracts, read-only guardrails, DSD alignment tests, SLOs and alerts live
+- ✅ Phase 3b ops checks green; /metrics exposes Phase 3b SLO metrics; contract smoke tests green
 
 ---
 

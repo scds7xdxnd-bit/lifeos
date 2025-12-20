@@ -21,6 +21,7 @@ from lifeos.domains.calendar.services.calendar_service import (
     get_week_view,
 )
 from lifeos.extensions import limiter
+from lifeos.core.utils.decorators import read_only_endpoint
 
 calendar_view_api_bp = Blueprint("calendar_view_api", __name__)
 
@@ -32,6 +33,7 @@ def _json_error(exc: ValidationError):
 @calendar_view_api_bp.get("/day")
 @jwt_required()
 @limiter.limit("240/minute")
+@read_only_endpoint
 def day_view():
     """Deterministic day view: returns all events overlapping the day."""
     user_id = int(get_jwt_identity())
@@ -57,6 +59,7 @@ def day_view():
 @calendar_view_api_bp.get("/week")
 @jwt_required()
 @limiter.limit("240/minute")
+@read_only_endpoint
 def week_view():
     """Deterministic week view: 7-day window from provided start date."""
     user_id = int(get_jwt_identity())
@@ -82,6 +85,7 @@ def week_view():
 @calendar_view_api_bp.get("/month")
 @jwt_required()
 @limiter.limit("240/minute")
+@read_only_endpoint
 def month_view():
     """Deterministic month view with backend-owned spillover days."""
     user_id = int(get_jwt_identity())
@@ -107,6 +111,7 @@ def month_view():
 @calendar_view_api_bp.get("/ledger")
 @jwt_required()
 @limiter.limit("240/minute")
+@read_only_endpoint
 def ledger_view():
     """Chronological ledger anchored at today (or provided anchor) with cursor pagination."""
     user_id = int(get_jwt_identity())
