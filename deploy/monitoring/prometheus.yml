@@ -14,7 +14,8 @@ alerting:
 
 # Load rules for alert conditions
 rule_files:
-  - 'prometheus.rules.yml'
+  - 'rules.yml'
+  - 'phase3b-alerts.yml'
 
 scrape_configs:
   # Prometheus self-monitoring
@@ -22,15 +23,11 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # LifeOS Web Application (Gunicorn)
-  - job_name: 'lifeos-web'
-    metrics_path: '/metrics'
+  # LifeOS Web Application (host machine)
+  - job_name: 'lifeos'
     static_configs:
-      - targets: ['localhost:8000']
-        labels:
-          service: 'web'
-    scrape_interval: 10s
-    scrape_timeout: 5s
+      - targets:
+          - 'host.docker.internal:5001'
 
   # StatsD Exporter (collects application metrics)
   - job_name: 'statsd-exporter'

@@ -34,6 +34,57 @@ Implemented in `deploy/monitoring/prometheus.rules.yml`:
 - Contract violations: `increase(lifeos_contract_violations_total[10m])`.
 - Metric presence checks for all above counters/histograms.
 
+## Stability Soak (Phase 3b confirmation gate)
+Objective: verify contracts, projections, and observability stay quiet and deterministic under normal use.
+
+Duration:
+- 3-7 days
+- Must include at least one cold deploy, one restart, and one replay/backfill run (if applicable)
+
+Operating assumptions:
+- Normal developer/admin usage
+- No synthetic load tests
+- No schema changes
+- No new features
+
+Good outcome definition:
+- Alerts do not flap
+- Metrics present at all times
+- Zero unexplained determinism failures
+- Zero contract violations
+- No projection correctness errors
+- Insight latency stable (no upward drift)
+
+Metrics to observe:
+- lifeos_projection_correctness_total / lifeos_projection_correctness_errors_total
+  - Errors must be zero or extremely rare; rate <= 0.1%
+- lifeos_replay_determinism_failures_total
+  - Must remain zero except during intentional replay testing
+- lifeos_insight_latency_seconds_bucket (p50/p95/p99)
+  - p95 stable; no unexplained long-tail spikes
+- lifeos_contract_violations_total
+  - Must remain zero
+- Phase3bSLOMetricsMissing
+  - Must never fire; /metrics must always expose all Phase 3b metrics
+
+Manual checks (once per soak):
+- Restart check: restart app; confirm /metrics exposes all metrics immediately and no alerts fire.
+- Replay check: run a controlled replay; determinism failures stay zero; projection correctness errors stay zero.
+- Frontend smoke: load insight feed, review queue, calendar view, finance read surfaces; no schema-mismatch errors or undefined fields.
+
+Soak log (minimal):
+- Day 1: deploy ok; metrics present; alerts green
+- Day 3: restart performed; no determinism failures
+- Day 6: replay test; counters behaved as expected
+
+Exit criteria:
+- Zero unexplained determinism failures
+- Zero contract violations
+- Zero projection correctness errors
+- Metrics-missing alert never fired
+- Insight latency stable
+- Alerts trusted (no unexplained flaps)
+
 ## Metrics endpoint
 - `/metrics` is exposed by the web app and includes Phase 3b counters/histograms.
 - Prometheus scrapes `lifeos-web` at `/metrics` (configured in `deploy/monitoring/prometheus.yml`).

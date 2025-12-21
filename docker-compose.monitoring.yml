@@ -1,6 +1,6 @@
 # LifeOS Monitoring Stack Compose Override
 # Use: docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
-# 
+#
 # This stack adds monitoring infrastructure:
 # - Prometheus (metrics collection & storage)
 # - Grafana (visualization & dashboards)
@@ -41,6 +41,7 @@ services:
     volumes:
       - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/monitoring/prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+      - ./deploy/monitoring/phase3b-alerts.yml:/etc/prometheus/phase3b-alerts.yml:ro
       - lifeos-prometheus:/prometheus
     ports:
       - "9090:9090"

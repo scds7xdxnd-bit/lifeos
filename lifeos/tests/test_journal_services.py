@@ -507,7 +507,6 @@ def test_list_entries_filter_by_mood(app, test_user):
         assert entries[0].title == "Happy"
 
 
-@pytest.mark.xfail(reason="SQLite JSON contains() filter does not work correctly with array fields")
 def test_list_entries_filter_by_tag(app, test_user):
     """Should filter by tag."""
     with app.app_context():
