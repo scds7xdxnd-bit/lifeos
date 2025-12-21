@@ -40,6 +40,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     FLASK_APP=lifeos.wsgi \
     APP_ENV=production \
+    MLSUGGESTER_MODEL_DIR=/app/lifeos/ml_assets \
     PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
@@ -52,7 +53,6 @@ RUN pip install --upgrade pip && \
 
 # Copy application code
 COPY --chown=lifeos:lifeos lifeos /app/lifeos
-COPY --chown=lifeos:lifeos flask_app /app/flask_app
 COPY --chown=lifeos:lifeos migrations /app/migrations
 COPY --chown=lifeos:lifeos alembic.ini /app/alembic.ini
 COPY --chown=lifeos:lifeos deploy /app/deploy

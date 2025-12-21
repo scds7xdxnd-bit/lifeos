@@ -6,12 +6,12 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
+from lifeos.core.utils.decorators import read_only_endpoint
 from lifeos.domains.finance.schemas.finance_schemas import (
     PeriodBalanceFilter,
     TrialBalanceFilter,
 )
 from lifeos.domains.finance.services import trial_balance_service
-from lifeos.core.utils.decorators import read_only_endpoint
 
 trial_balance_api_bp = Blueprint("trial_balance_api", __name__)
 

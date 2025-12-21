@@ -23,7 +23,7 @@ services:
     container_name: lifeos-web
     environment:
       <<: *common-env
-      MLSUGGESTER_MODEL_DIR: ${MLSUGGESTER_MODEL_DIR:-/app/flask_app}
+      MLSUGGESTER_MODEL_DIR: ${MLSUGGESTER_MODEL_DIR:-/app/lifeos/ml_assets}
       STATIC_CACHE_MAX_AGE: ${STATIC_CACHE_MAX_AGE:-3600}
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
       GUNICORN_THREADS: ${GUNICORN_THREADS:-4}

@@ -7,7 +7,6 @@ import json
 from dataclasses import dataclass, field
 from typing import Iterable, Optional
 
-
 ALLOWED_SOURCES = {"user", "system", "imported"}
 ALLOWED_STABILITY = {"stable", "conditional"}
 

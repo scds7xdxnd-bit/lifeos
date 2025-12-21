@@ -15,7 +15,7 @@ Default users:
 - `SECRET_KEY`, `JWT_SECRET_KEY`: set to strong secrets in production
 - `DATABASE_URL`: e.g., `postgresql://user:pass@host:5432/lifeos`
 - `REDIS_URL`: for rate limiting (defaults to memory)
-- `MLSUGGESTER_MODEL_DIR`: path to legacy joblib models (defaults to `flask_app`)
+- `MLSUGGESTER_MODEL_DIR`: path to legacy joblib models (e.g., `lifeos/ml_assets` or a mounted path)
 - `ENABLE_ML`: toggle legacy/embedding model usage
 
 ## Tests & CI

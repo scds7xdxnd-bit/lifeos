@@ -6,9 +6,9 @@ from functools import wraps
 from typing import Callable, Iterable, TypeVar
 
 from flask import current_app, jsonify, request
-from sqlalchemy import event as sa_event
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
 from flask_jwt_extended.exceptions import JWTExtendedException
+from sqlalchemy import event as sa_event
 
 from lifeos.core.auth.csrf import validate_csrf_token
 from lifeos.extensions import db

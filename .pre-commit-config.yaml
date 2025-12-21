@@ -15,6 +15,11 @@ repos:
         args: ["--fix", "lifeos/"]
         always_run: true
         pass_filenames: false
+      - id: ruff
+        name: ruff-imports
+        args: ["--select", "I", "--fix", "lifeos/"]
+        always_run: true
+        pass_filenames: false
 
   - repo: https://github.com/psf/black
     rev: 24.8.0

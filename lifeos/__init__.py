@@ -158,9 +158,9 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.core.auth.api_v1 import api_v1_auth_bp
     from lifeos.core.auth.controllers import auth_bp, auth_pages_bp  # local import to avoid circulars
     from lifeos.core.insights.api_v1 import api_v1_insights_bp
-    from lifeos.core.observability.controllers import metrics_bp
     from lifeos.core.insights.controllers import insights_api_bp
     from lifeos.core.insights.pages import insights_pages_bp
+    from lifeos.core.observability.controllers import metrics_bp
     from lifeos.core.users.controllers import user_api_bp, user_pages_bp
     from lifeos.domains.calendar.controllers.calendar_api import calendar_api_bp
     from lifeos.domains.calendar.controllers.calendar_pages import calendar_pages_bp

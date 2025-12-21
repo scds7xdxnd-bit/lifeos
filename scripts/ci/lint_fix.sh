@@ -11,6 +11,7 @@ cd "$PROJECT_ROOT"
 
 echo "=== Running Ruff Auto-fix ==="
 ruff check lifeos/ --fix
+ruff check lifeos/ --select I --fix
 
 echo "=== Running Black Auto-format ==="
 black lifeos/

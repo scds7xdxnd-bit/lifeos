@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
+from lifeos.core.utils.decorators import read_only_endpoint
 from lifeos.domains.calendar.schemas import (
     DayViewParams,
     LedgerParams,
@@ -21,7 +22,6 @@ from lifeos.domains.calendar.services.calendar_service import (
     get_week_view,
 )
 from lifeos.extensions import limiter
-from lifeos.core.utils.decorators import read_only_endpoint
 
 calendar_view_api_bp = Blueprint("calendar_view_api", __name__)
 
