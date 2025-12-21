@@ -11,4 +11,3 @@ def embed_text(text: str) -> List[float]:
     h = hashlib.sha256(text.encode("utf-8")).digest()
     # Return a short vector for demo purposes
     return [b / 255 for b in h[:16]]
-

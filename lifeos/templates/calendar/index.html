@@ -1,19 +1,19 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 <div class="container" style="max-width: 1200px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
-  
+
   <!-- Header with Navigation -->
   <div class="card">
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
       <div>
         <h2 style="margin:0;">Calendar</h2>
-        <p style="margin:0; color:#5b6470;">Your life events hub. Events are automatically analyzed to create records across domains.</p>
+        <p style="margin:0; color:#5b6470;">What’s next and what needs confirmation.</p>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
-        <a href="/calendar/review" class="btn btn-secondary" id="pending-badge-link">
+        <button type="button" class="btn" id="pending-badge-link" onclick="window.location.href='/calendar/review'">
           Review Pending <span id="pending-count" style="background:#0b4f9c; color:white; padding:0.1rem 0.4rem; border-radius:10px; font-size:0.8rem; margin-left:0.25rem;">0</span>
-        </a>
-        <button type="button" class="btn" id="cal-create-btn">+ New Event</button>
+        </button>
+        <button type="button" class="btn btn-secondary" id="cal-create-btn">+ New Event</button>
       </div>
     </div>
     <div id="cal-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in with to manage events.</div>
@@ -27,7 +27,7 @@
     </div>
     <div class="card" style="text-align:center;">
       <div style="font-size:2rem; font-weight:700; color:#1d7a36;" id="stat-week">0</div>
-      <div style="color:#5b6470; font-size:0.9rem;">This Week</div>
+      <div style="color:#5b6470; font-size:0.9rem;" id="stat-range-label">This Week</div>
     </div>
     <div class="card" style="text-align:center;">
       <div style="font-size:2rem; font-weight:700; color:#8b5cf6;" id="stat-inferred">0</div>
@@ -37,42 +37,19 @@
 
   <!-- View Mode Toggle & Date Navigation -->
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:0.75rem;">
-      <!-- View Mode Toggle -->
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
       <div style="display:flex; gap:0.25rem; background:#e0e5ec; border-radius:8px; padding:0.25rem;">
         <button type="button" class="cal-view-btn" data-view="day" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:transparent; color:#5b6470;">Day</button>
         <button type="button" class="cal-view-btn" data-view="week" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:transparent; color:#5b6470;">Week</button>
         <button type="button" class="cal-view-btn" data-view="month" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:transparent; color:#5b6470;">Month</button>
-        <button type="button" class="cal-view-btn active" data-view="list" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:#0b4f9c; color:white;">List</button>
+        <button type="button" class="cal-view-btn active" data-view="list" style="padding:0.4rem 0.75rem; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; background:#0b4f9c; color:white;">Ledger</button>
       </div>
-      <!-- Quick Navigation -->
       <div style="display:flex; gap:0.5rem; align-items:center;">
         <button type="button" class="btn btn-secondary" id="cal-nav-prev" style="padding:0.4rem 0.6rem;">←</button>
         <button type="button" class="btn btn-secondary" id="cal-nav-today" style="padding:0.4rem 0.75rem;">Today</button>
         <button type="button" class="btn btn-secondary" id="cal-nav-next" style="padding:0.4rem 0.6rem;">→</button>
         <span id="cal-nav-label" style="font-weight:600; min-width:150px; text-align:center;"></span>
       </div>
-    </div>
-    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items:end;">
-      <div class="field">
-        <label for="cal-start-date">From</label>
-        <input type="date" id="cal-start-date" class="input">
-      </div>
-      <div class="field">
-        <label for="cal-end-date">To</label>
-        <input type="date" id="cal-end-date" class="input">
-      </div>
-      <div class="field">
-        <label for="cal-source-filter">Source</label>
-        <select id="cal-source-filter" class="input">
-          <option value="">All sources</option>
-          <option value="manual">Manual</option>
-          <option value="sync_google">Google Calendar</option>
-          <option value="sync_apple">Apple Calendar</option>
-          <option value="api">API</option>
-        </select>
-      </div>
-      <button type="button" class="btn btn-secondary" id="cal-filter-apply">Apply Filter</button>
     </div>
   </div>
 
@@ -112,8 +89,12 @@
   <!-- List View (existing) -->
   <div id="cal-list-view" class="card cal-view-panel">
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
-      <h3 style="margin:0;">Events</h3>
-      <button type="button" class="btn btn-secondary" id="cal-reload">Refresh</button>
+      <h3 style="margin:0;">Event list</h3>
+      <div style="display:flex; gap:0.5rem;">
+        <button type="button" class="btn btn-secondary" id="ledger-load-newer">Load newer</button>
+        <button type="button" class="btn btn-secondary" id="ledger-load-older">Load older</button>
+        <button type="button" class="btn btn-secondary" id="cal-reload">Refresh</button>
+      </div>
     </div>
     <div id="cal-status" class="auth-status" style="margin-bottom:0.5rem;"></div>
     <div id="cal-events-list" style="display:grid; gap:0.5rem;"></div>
@@ -130,14 +111,33 @@
       <label for="cal-event-title">Title *</label>
       <input type="text" id="cal-event-title" class="input" placeholder="e.g., Gym workout, Lunch with John" required maxlength="255">
     </div>
-    <div style="display:grid; gap:0.5rem; grid-template-columns: 1fr 1fr;">
-      <div class="field">
-        <label for="cal-event-start">Start *</label>
-        <input type="datetime-local" id="cal-event-start" class="input" required>
-      </div>
-      <div class="field">
-        <label for="cal-event-end">End</label>
-        <input type="datetime-local" id="cal-event-end" class="input">
+    <div class="field">
+      <label for="cal-event-date">When *</label>
+      <div id="cal-when-controls" style="display:grid; gap:0.5rem;">
+        <div style="display:grid; gap:0.5rem; grid-template-columns: 1.2fr 1fr;">
+          <input type="date" id="cal-event-date" class="input" required>
+          <input type="text" id="cal-event-start-time" class="input" placeholder="9:00 AM" list="cal-time-options" required>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <span style="color:#5b6470; font-size:0.85rem;">Ends</span>
+          <span id="cal-event-end-preview" style="font-weight:600;">—</span>
+          <button type="button" class="text-link" id="cal-event-end-toggle">Adjust end</button>
+        </div>
+        <div id="cal-event-end-controls" style="display:none; padding:0.5rem; background:#f7f8fa; border-radius:8px;">
+          <div style="display:grid; gap:0.5rem; grid-template-columns: 1.2fr 1fr;">
+            <input type="date" id="cal-event-end-date" class="input">
+            <input type="text" id="cal-event-end-time" class="input" placeholder="10:00 AM" list="cal-time-options">
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <span style="color:#5b6470; font-size:0.85rem;">Duration</span>
+          <div id="cal-event-duration" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+            <button type="button" class="cal-duration-btn" data-duration="15" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">15m</button>
+            <button type="button" class="cal-duration-btn" data-duration="30" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">30m</button>
+            <button type="button" class="cal-duration-btn" data-duration="45" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">45m</button>
+            <button type="button" class="cal-duration-btn" data-duration="60" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">1h</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="field" style="display:flex; align-items:center; gap:0.5rem;">
@@ -145,27 +145,43 @@
       <label for="cal-event-allday" style="margin:0; font-weight:normal;">All-day event</label>
     </div>
     <div class="field">
-      <label for="cal-event-location">Location</label>
-      <input type="text" id="cal-event-location" class="input" placeholder="e.g., Gym, Coffee Shop, Office" maxlength="512">
-    </div>
-    <div class="field">
-      <label for="cal-event-description">Description</label>
-      <textarea id="cal-event-description" class="input" rows="3" placeholder="Additional details..."></textarea>
-    </div>
-    <div class="field">
-      <label for="cal-event-tags">Tags (comma-separated)</label>
-      <input type="text" id="cal-event-tags" class="input" placeholder="e.g., work, meeting, fitness">
-    </div>
-    <div style="display:grid; gap:0.5rem; grid-template-columns: 1fr 1fr;">
-      <div class="field">
-        <label for="cal-event-color">Color</label>
-        <input type="color" id="cal-event-color" class="input" value="#0b4f9c" style="height:38px; padding:0.25rem;">
+      <button type="button" class="text-link" id="cal-event-advanced-toggle">More options</button>
+      <div id="cal-event-advanced" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#f7f8fa; border-radius:8px; gap:0.75rem;">
+        <div class="field">
+          <label for="cal-event-location">Location</label>
+          <input type="text" id="cal-event-location" class="input" placeholder="e.g., Gym, Coffee Shop, Office" maxlength="512">
+        </div>
+        <div class="field">
+          <label for="cal-event-description">Description</label>
+          <textarea id="cal-event-description" class="input" rows="3" placeholder="Additional details..."></textarea>
+        </div>
+        <div class="field">
+          <label for="cal-event-tags">Tags (comma-separated)</label>
+          <input type="text" id="cal-event-tags" class="input" placeholder="e.g., work, meeting, fitness">
+        </div>
+        <div class="field">
+          <label for="cal-event-color">Color</label>
+          <input type="hidden" id="cal-event-color" value="#0b4f9c">
+          <div id="cal-event-color-palette" style="display:grid; gap:0.5rem; grid-template-columns: repeat(5, 1fr);">
+            <button type="button" class="cal-color-swatch" data-color="#0b4f9c" aria-label="Deep blue" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#0b4f9c; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#1f6f8b" aria-label="Ocean" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#1f6f8b; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#2f855a" aria-label="Evergreen" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#2f855a; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#7a6a2f" aria-label="Olive" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#7a6a2f; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#a05a2c" aria-label="Amber" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#a05a2c; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#9b2c2c" aria-label="Brick" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#9b2c2c; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#6b4c7a" aria-label="Plum" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#6b4c7a; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#4b5563" aria-label="Slate" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#4b5563; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#5b6b7f" aria-label="Steel" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#5b6b7f; cursor:pointer;"></button>
+            <button type="button" class="cal-color-swatch" data-color="#2f3e46" aria-label="Charcoal" style="width:32px; height:32px; border-radius:50%; border:1px solid #cfd6e0; background:#2f3e46; cursor:pointer;"></button>
+          </div>
+        </div>
+        <div class="field" style="display:flex; align-items:center; gap:0.5rem;">
+          <input type="checkbox" id="cal-event-private" style="width:auto;">
+          <label for="cal-event-private" style="margin:0; font-weight:normal;">Private</label>
+        </div>
       </div>
-      <div class="field" style="display:flex; align-items:center; gap:0.5rem; padding-top:1.5rem;">
-        <input type="checkbox" id="cal-event-private" style="width:auto;">
-        <label for="cal-event-private" style="margin:0; font-weight:normal;">Private</label>
-      </div>
     </div>
+    <datalist id="cal-time-options"></datalist>
     <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
       <button type="submit" class="btn" style="flex:1;">Save Event</button>
       <button type="button" class="btn btn-secondary" id="cal-modal-cancel" style="flex:1;">Cancel</button>
@@ -199,6 +215,78 @@
     return `${y}-${m}-${day}`;
   };
 
+  const parseLocalDateTime = (isoStr) => {
+    if (!isoStr) return null;
+    // Remove trailing Z/offset so we treat it as provided (naive) local time
+    const cleaned = isoStr.replace(/Z$/, '');
+    return new Date(cleaned);
+  };
+
+  const pad2 = (num) => String(num).padStart(2, '0');
+  const TIME_STEP_MINUTES = 15;
+  const DEFAULT_DURATION_MINUTES = 60;
+
+  const roundToNearestMinutes = (date, stepMinutes = TIME_STEP_MINUTES) => {
+    const ms = stepMinutes * 60 * 1000;
+    return new Date(Math.round(date.getTime() / ms) * ms);
+  };
+
+  const formatTime12h = (date) => date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const formatTimeFromParts = (hours, minutes) => formatTime12h(new Date(2000, 0, 1, hours, minutes));
+
+  const parseTimeInput = (value) => {
+    if (!value) return null;
+    const raw = value.trim().toLowerCase();
+    const normalized = raw.replace(/\./g, '');
+    const zhMatch = normalized.match(/^(上午|下午)\s*(\d{1,2})(?::(\d{2}))?$/);
+    if (zhMatch) {
+      let hours = parseInt(zhMatch[2], 10);
+      const minutes = parseInt(zhMatch[3] || '0', 10);
+      if (hours === 12) hours = 0;
+      if (zhMatch[1] === '下午') hours += 12;
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        return { hours, minutes };
+      }
+      return null;
+    }
+    const ampmMatch = normalized.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/);
+    if (ampmMatch) {
+      let hours = parseInt(ampmMatch[1], 10);
+      const minutes = parseInt(ampmMatch[2] || '0', 10);
+      if (hours === 12) hours = 0;
+      if (ampmMatch[3] === 'pm') hours += 12;
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        return { hours, minutes };
+      }
+      return null;
+    }
+    const twentyFourMatch = normalized.match(/^([01]?\d|2[0-3])(?::([0-5]\d))?$/);
+    if (twentyFourMatch) {
+      const hours = parseInt(twentyFourMatch[1], 10);
+      const minutes = parseInt(twentyFourMatch[2] || '0', 10);
+      return { hours, minutes };
+    }
+    return null;
+  };
+
+  const buildDateTimeString = (dateStr, timeParts) => {
+    if (!dateStr || !timeParts) return '';
+    return `${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}`;
+  };
+
+  const toLocalDate = (dateStr, timeParts) => new Date(`${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}:00`);
+
+  const formatDateLabel = (dateStr) => {
+    if (!dateStr) return '';
+    const dateObj = new Date(`${dateStr}T00:00`);
+    return dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
   // Get auth headers with CSRF token from meta tag (session-bound)
   const getAuthHeaders = (extra = {}) => {
     const base = lifeosAuth.authHeaders(extra);
@@ -207,11 +295,29 @@
     if (metaCsrf) base['X-CSRF-Token'] = metaCsrf;
     return base;
   };
+  const resolveContractError = (body, res) => {
+    const error = body?.error;
+    if (res?.status === 409 || error === 'read_only_violation') {
+      return 'Read-only contract violation detected. Please refresh and report this issue.';
+    }
+    if (['contract_mismatch', 'contract_violation', 'schema_mismatch'].includes(error)) {
+      return 'Contract mismatch detected. Please refresh and try again.';
+    }
+    return '';
+  };
 
   // View state
   let currentView = 'list';
   let currentDate = new Date();
-  let allEvents = [];
+  let dayEvents = [];
+  let weekEvents = [];
+  let monthEvents = [];
+  let ledgerEvents = [];
+  let ledgerBackwardCursor = null;
+  let ledgerForwardCursor = null;
+  let dayWindow = null;
+  let weekWindow = null;
+  let monthWindow = null;
 
   // DOM elements - View panels
   const viewBtns = document.querySelectorAll('.cal-view-btn');
@@ -220,7 +326,7 @@
   const navNext = document.getElementById('cal-nav-next');
   const navToday = document.getElementById('cal-nav-today');
   const navLabel = document.getElementById('cal-nav-label');
-  
+
   // View containers
   const dayView = document.getElementById('cal-day-view');
   const weekView = document.getElementById('cal-week-view');
@@ -234,19 +340,17 @@
   const loginHint = document.getElementById('cal-login-hint');
   const createBtn = document.getElementById('cal-create-btn');
   const reloadBtn = document.getElementById('cal-reload');
-  const filterApplyBtn = document.getElementById('cal-filter-apply');
   const eventsListEl = document.getElementById('cal-events-list');
   const statusEl = document.getElementById('cal-status');
-  const startDateInput = document.getElementById('cal-start-date');
-  const endDateInput = document.getElementById('cal-end-date');
-  const sourceFilter = document.getElementById('cal-source-filter');
-  
+
   // Stats
   const statToday = document.getElementById('stat-today');
   const statWeek = document.getElementById('stat-week');
   const statInferred = document.getElementById('stat-inferred');
+  const statRangeLabel = document.getElementById('stat-range-label');
   const pendingCount = document.getElementById('pending-count');
-  
+  const pendingLink = document.getElementById('pending-badge-link');
+
   // Modal elements
   const modalOverlay = document.getElementById('cal-modal-overlay');
   const modal = document.getElementById('cal-modal');
@@ -254,7 +358,22 @@
   const eventForm = document.getElementById('cal-event-form');
   const modalCancel = document.getElementById('cal-modal-cancel');
   const modalStatus = document.getElementById('cal-modal-status');
-  
+  const eventDateInput = document.getElementById('cal-event-date');
+  const eventStartTimeInput = document.getElementById('cal-event-start-time');
+  const eventEndDateInput = document.getElementById('cal-event-end-date');
+  const eventEndTimeInput = document.getElementById('cal-event-end-time');
+  const eventEndPreview = document.getElementById('cal-event-end-preview');
+  const eventEndToggle = document.getElementById('cal-event-end-toggle');
+  const eventEndControls = document.getElementById('cal-event-end-controls');
+  const durationButtons = document.querySelectorAll('.cal-duration-btn');
+  const allDayToggle = document.getElementById('cal-event-allday');
+  const advancedToggle = document.getElementById('cal-event-advanced-toggle');
+  const advancedSection = document.getElementById('cal-event-advanced');
+  const colorInput = document.getElementById('cal-event-color');
+  const colorButtons = document.querySelectorAll('.cal-color-swatch');
+  const whenControls = document.getElementById('cal-when-controls');
+  const timeDatalist = document.getElementById('cal-time-options');
+
   // Detail modal
   const detailOverlay = document.getElementById('cal-detail-overlay');
   const detailModal = document.getElementById('cal-detail-modal');
@@ -264,18 +383,14 @@
   const detailClose = document.getElementById('cal-detail-close');
   const detailEdit = document.getElementById('cal-detail-edit');
   const detailDelete = document.getElementById('cal-detail-delete');
-  
-  let currentEventId = null;
+  const ledgerLoadOlderBtn = document.getElementById('ledger-load-older');
+  const ledgerLoadNewerBtn = document.getElementById('ledger-load-newer');
 
-  // Initialize date filters to current week
+  let currentEventId = null;
+  let durationMinutes = DEFAULT_DURATION_MINUTES;
+  let endDateLocked = true;
+
   const today = new Date();
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay());
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  
-  startDateInput.value = localDateKey(weekStart);
-  endDateInput.value = localDateKey(weekEnd);
 
   // ==================== View Mode Logic ====================
   const switchView = (viewName) => {
@@ -295,7 +410,14 @@
       panel.style.display = panel.id === `cal-${viewName}-view` ? 'block' : 'none';
     });
     updateNavLabel();
-    renderCurrentView();
+    updateStatLabels();
+    refreshCurrentView();
+  };
+
+  const getWeekStart = (d) => {
+    const weekStart = new Date(d);
+    weekStart.setDate(d.getDate() - d.getDay());
+    return weekStart;
   };
 
   const updateNavLabel = () => {
@@ -303,15 +425,27 @@
     if (currentView === 'day') {
       navLabel.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     } else if (currentView === 'week') {
-      const weekStart = new Date(currentDate);
-      weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+      const weekStart = getWeekStart(currentDate);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       navLabel.textContent = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     } else if (currentView === 'month') {
       navLabel.textContent = currentDate.toLocaleDateString('en-US', opts);
     } else {
-      navLabel.textContent = '';
+      navLabel.textContent = 'Ledger';
+    }
+  };
+
+  const updateStatLabels = () => {
+    if (!statRangeLabel) return;
+    if (currentView === 'day') {
+      statRangeLabel.textContent = 'Selected Day';
+    } else if (currentView === 'week') {
+      statRangeLabel.textContent = 'This Week';
+    } else if (currentView === 'month') {
+      statRangeLabel.textContent = 'This Month';
+    } else {
+      statRangeLabel.textContent = 'Events Loaded';
     }
   };
 
@@ -324,21 +458,31 @@
       currentDate.setMonth(currentDate.getMonth() + direction);
     }
     updateNavLabel();
-    renderCurrentView();
+    refreshCurrentView();
   };
 
   const goToToday = () => {
     currentDate = new Date();
     updateNavLabel();
-    renderCurrentView();
+    refreshCurrentView();
   };
 
   // ==================== Day View Rendering ====================
   const renderDayView = () => {
+    const windowStart = dayWindow?.start ? parseLocalDateTime(dayWindow.start) : (() => {
+      const d = new Date(currentDate);
+      d.setHours(0,0,0,0);
+      return d;
+    })();
+    const windowEnd = dayWindow?.end ? parseLocalDateTime(dayWindow.end) : (() => {
+      const d = new Date(windowStart);
+      d.setDate(d.getDate() + 1);
+      return d;
+    })();
     const dateStr = localDateKey(currentDate);
     const dayTitle = document.getElementById('cal-day-title');
     dayTitle.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    
+
     // Build hourly grid
     let html = '<div style="display:grid; grid-template-columns: 50px 1fr;">';
     for (let h = 0; h < 24; h++) {
@@ -351,11 +495,16 @@
     }
     html += '</div>';
     dayGrid.innerHTML = html;
-    
+
     // Place events
-    const dayEvents = allEvents.filter(e => e.start_time.startsWith(dateStr));
-    dayEvents.forEach(event => {
-      const startTime = new Date(event.start_time);
+    const dayItems = dayEvents.filter(e => {
+      const start = parseLocalDateTime(e.start_time);
+      const end = parseLocalDateTime(e.end_time || e.start_time);
+      return start < windowEnd && end > windowStart;
+    });
+
+    dayItems.forEach(event => {
+      const startTime = parseLocalDateTime(event.start_time);
       const hour = startTime.getHours();
       const minutes = startTime.getMinutes();
       const slot = dayGrid.querySelector(`[data-hour="${hour}"][data-date="${dateStr}"]`);
@@ -373,12 +522,12 @@
   const renderWeekView = () => {
     const weekStart = new Date(currentDate);
     weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-    
+
     const weekTitle = document.getElementById('cal-week-title');
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
     weekTitle.textContent = `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-    
+
     // Header row
     let html = '<div style="background:#f7f8fa; padding:0.5rem; font-size:0.7rem; color:#5b6470;"></div>';
     for (let d = 0; d < 7; d++) {
@@ -390,11 +539,12 @@
         <span style="font-size:1.1rem;">${day.getDate()}</span>
       </div>`;
     }
-    
+
     // Hour rows
-    for (let h = 6; h < 22; h++) {
+    for (let h = 0; h < 24; h++) {
       const hourLabel = h === 12 ? '12 PM' : h < 12 ? `${h} AM` : `${h - 12} PM`;
-      html += `<div style="padding:0.25rem; font-size:0.7rem; color:#5b6470; text-align:right; border-top:1px solid #f0f0f0;">${hourLabel}</div>`;
+      const displayLabel = h === 0 ? '12 AM' : hourLabel;
+      html += `<div style="padding:0.25rem; font-size:0.7rem; color:#5b6470; text-align:right; border-top:1px solid #f0f0f0;">${displayLabel}</div>`;
       for (let d = 0; d < 7; d++) {
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + d);
@@ -403,14 +553,27 @@
       }
     }
     weekGrid.innerHTML = html;
-    
+
     // Place events
-    allEvents.forEach(event => {
-      const startTime = new Date(event.start_time);
-      const dateStr = event.start_time.split('T')[0];
+    const windowStart = weekWindow?.start ? parseLocalDateTime(weekWindow.start) : (() => {
+      const w = getWeekStart(currentDate);
+      w.setHours(0,0,0,0);
+      return w;
+    })();
+    const windowEnd = weekWindow?.end ? parseLocalDateTime(weekWindow.end) : (() => {
+      const w = new Date(windowStart);
+      w.setDate(w.getDate() + 7);
+      return w;
+    })();
+
+    weekEvents.forEach(event => {
+      const startTime = parseLocalDateTime(event.start_time);
+      const endTime = parseLocalDateTime(event.end_time || event.start_time);
+      if (!(startTime < windowEnd && endTime > windowStart)) return;
       const hour = startTime.getHours();
-      if (hour >= 6 && hour < 22) {
-        const slot = weekGrid.querySelector(`[data-hour="${hour}"][data-date="${dateStr}"]`);
+      const dateKey = localDateKey(startTime);
+      if (hour >= 0 && hour < 24) {
+        const slot = weekGrid.querySelector(`[data-hour="${hour}"][data-date="${dateKey}"]`);
         if (slot) {
           const eventEl = document.createElement('div');
           eventEl.style.cssText = `background:${event.color || '#0b4f9c'}; color:white; padding:0.15rem 0.25rem; border-radius:3px; font-size:0.7rem; cursor:pointer; margin:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;`;
@@ -429,30 +592,38 @@
     const month = currentDate.getMonth();
     const monthTitle = document.getElementById('cal-month-title');
     monthTitle.textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    
+
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startDay = firstDay.getDay();
-    
+
     // Header row
     let html = '';
     ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
       html += `<div style="background:#f7f8fa; padding:0.5rem; text-align:center; font-weight:600; font-size:0.8rem; color:#5b6470;">${d}</div>`;
     });
-    
+
     // Empty cells before first day
     for (let i = 0; i < startDay; i++) {
       html += `<div style="min-height:80px; background:#fafafa; border:1px solid #f0f0f0;"></div>`;
     }
-    
+
     // Days of month
     const todayStr = localDateKey(new Date());
     for (let day = 1; day <= lastDay.getDate(); day++) {
       const dateObj = new Date(year, month, day);
       const dateStr = localDateKey(dateObj);
       const isToday = dateStr === todayStr;
-      const dayEvents = allEvents.filter(e => e.start_time.startsWith(dateStr));
-      
+      const dayEvents = monthEvents.filter(e => {
+        const start = parseLocalDateTime(e.start_time);
+        const end = parseLocalDateTime(e.end_time || e.start_time);
+        const dayStart = new Date(dateObj);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayStart.getDate() + 1);
+        return start < dayEnd && end > dayStart;
+      });
+
       html += `<div style="min-height:80px; border:1px solid #e0e5ec; padding:0.25rem; ${isToday ? 'background:#e6f0ff;' : ''}" data-date="${dateStr}">
         <div style="font-weight:600; font-size:0.85rem; ${isToday ? 'color:#0b4f9c;' : ''}">${day}</div>
         <div style="display:grid; gap:2px; margin-top:0.25rem;">
@@ -463,7 +634,7 @@
         </div>
       </div>`;
     }
-    
+
     monthGrid.innerHTML = html;
   };
 
@@ -471,7 +642,7 @@
     if (currentView === 'day') renderDayView();
     else if (currentView === 'week') renderWeekView();
     else if (currentView === 'month') renderMonthView();
-    // List view is handled by renderEvents()
+    else renderLedger();
   };
 
   // Expose for month view onclick
@@ -485,23 +656,163 @@
     if (tone) el.dataset.tone = tone; else el.removeAttribute('data-tone');
   };
 
+  const buildTimeOptions = () => {
+    if (!timeDatalist) return;
+    timeDatalist.innerHTML = '';
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += TIME_STEP_MINUTES) {
+        const label = formatTimeFromParts(h, m);
+        const option = document.createElement('option');
+        option.value = label;
+        timeDatalist.appendChild(option);
+      }
+    }
+  };
+
+  const setDurationButtonState = (btn, active) => {
+    btn.style.background = active ? '#0b4f9c' : '#f7f8fa';
+    btn.style.color = active ? '#ffffff' : '#4b5563';
+    btn.style.borderColor = active ? '#0b4f9c' : '#d7dde6';
+    btn.setAttribute('aria-pressed', String(active));
+  };
+
+  const syncDurationButtons = () => {
+    durationButtons.forEach(btn => {
+      const minutes = parseInt(btn.dataset.duration, 10);
+      setDurationButtonState(btn, minutes === durationMinutes);
+    });
+  };
+
+  const setColorSelection = (color) => {
+    if (!colorInput) return;
+    const palette = Array.from(colorButtons).map(btn => btn.dataset.color.toLowerCase());
+    const normalized = (color || '').toLowerCase();
+    const resolved = palette.includes(normalized) ? normalized : (palette[0] || '#0b4f9c');
+    colorInput.value = resolved;
+    colorButtons.forEach(btn => {
+      const selected = btn.dataset.color.toLowerCase() === resolved;
+      btn.setAttribute('aria-pressed', String(selected));
+      btn.style.boxShadow = selected ? '0 0 0 2px #ffffff, 0 0 0 4px #0b4f9c' : 'none';
+    });
+  };
+
+  const normalizeTimeInput = (input) => {
+    const parsed = parseTimeInput(input.value);
+    if (parsed) {
+      input.value = formatTimeFromParts(parsed.hours, parsed.minutes);
+    }
+    return parsed;
+  };
+
+  const getStartParts = () => {
+    const dateStr = eventDateInput?.value || '';
+    const timeParts = normalizeTimeInput(eventStartTimeInput);
+    if (!dateStr || !timeParts) return null;
+    return { dateStr, timeParts };
+  };
+
+  const getEndParts = () => {
+    const dateStr = eventEndDateInput?.value || '';
+    const timeParts = normalizeTimeInput(eventEndTimeInput);
+    if (!dateStr || !timeParts) return null;
+    return { dateStr, timeParts };
+  };
+
+  const updateEndPreview = () => {
+    const endParts = getEndParts();
+    const startDate = eventDateInput?.value || '';
+    if (!endParts || !eventEndPreview) {
+      if (eventEndPreview) eventEndPreview.textContent = '—';
+      return;
+    }
+    const timeLabel = formatTimeFromParts(endParts.timeParts.hours, endParts.timeParts.minutes);
+    const dateLabel = endParts.dateStr === startDate ? '' : `${formatDateLabel(endParts.dateStr)} · `;
+    eventEndPreview.textContent = `${dateLabel}${timeLabel}`;
+  };
+
+  const setEndFromStart = () => {
+    const startParts = getStartParts();
+    if (!startParts || !eventEndDateInput || !eventEndTimeInput) return;
+    const startDateTime = toLocalDate(startParts.dateStr, startParts.timeParts);
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+    if (endDateLocked) {
+      eventEndDateInput.value = localDateKey(endDateTime);
+      eventEndTimeInput.value = formatTimeFromParts(endDateTime.getHours(), endDateTime.getMinutes());
+    }
+    updateEndPreview();
+    syncDurationButtons();
+  };
+
+  const updateDurationFromEnd = () => {
+    const startParts = getStartParts();
+    const endParts = getEndParts();
+    if (!startParts || !endParts) return;
+    const startDateTime = toLocalDate(startParts.dateStr, startParts.timeParts);
+    const endDateTime = toLocalDate(endParts.dateStr, endParts.timeParts);
+    const diffMinutes = Math.round((endDateTime - startDateTime) / 60000);
+    if (diffMinutes > 0) {
+      durationMinutes = diffMinutes;
+    }
+    endDateLocked = endParts.dateStr === startParts.dateStr;
+    syncDurationButtons();
+    updateEndPreview();
+  };
+
+  const syncAllDayVisibility = () => {
+    if (!whenControls || !allDayToggle) return;
+    const isAllDay = allDayToggle.checked;
+    whenControls.style.display = isAllDay ? 'none' : 'grid';
+    if (eventEndToggle && eventEndControls) {
+      eventEndToggle.disabled = isAllDay;
+      if (isAllDay) {
+        eventEndControls.style.display = 'none';
+        eventEndToggle.textContent = 'Adjust end';
+      }
+    }
+    if (eventEndPreview) {
+      if (isAllDay) {
+        eventEndPreview.textContent = 'All day';
+      } else {
+        updateEndPreview();
+      }
+    }
+  };
+
+  pendingLink?.addEventListener('click', (e) => {
+    if (!lifeosAuth.getTokens().access_token) {
+      e.preventDefault();
+    }
+  });
+
   const ensureAuth = () => {
     const authed = !!lifeosAuth.getTokens().access_token;
-    [createBtn, reloadBtn, filterApplyBtn].forEach(btn => { if (btn) btn.disabled = !authed; });
+    [createBtn, reloadBtn, ledgerLoadOlderBtn, ledgerLoadNewerBtn].forEach(el => { if (el) el.disabled = !authed; });
+    viewBtns.forEach(btn => { btn.disabled = !authed; });
+    if (pendingLink) {
+      pendingLink.setAttribute('aria-disabled', String(!authed));
+      pendingLink.style.pointerEvents = authed ? 'auto' : 'none';
+      pendingLink.style.opacity = authed ? '1' : '0.6';
+    }
     loginHint.style.display = authed ? 'none' : 'block';
     return authed;
   };
 
   const formatDateTime = (isoStr) => {
     if (!isoStr) return '—';
-    const d = new Date(isoStr);
-    return d.toLocaleString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric', 
-      hour: 'numeric', 
-      minute: '2-digit' 
+    const d = parseLocalDateTime(isoStr);
+    return d.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
     });
+  };
+
+  const formatLedgerTime = (isoStr) => {
+    if (!isoStr) return '—';
+    const d = parseLocalDateTime(isoStr);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   };
 
   const formatDuration = (minutes) => {
@@ -512,34 +823,161 @@
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
-  // Fetch and render events
-  const fetchEvents = async () => {
+  const mergeLedgerEvents = (newEvents = []) => {
+    const byId = new Map();
+    ledgerEvents.forEach((e) => byId.set(e.id, e));
+    newEvents.forEach((e) => byId.set(e.id, e));
+    ledgerEvents = Array.from(byId.values()).sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+  };
+
+  const renderLedger = () => {
+    updateStats(ledgerEvents);
+    eventsListEl.innerHTML = '';
+    if (!ledgerEvents.length) {
+      eventsListEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#5b6470;">No events yet.</div>';
+      return;
+    }
+    ledgerEvents.forEach(event => {
+      const eventEl = document.createElement('div');
+      eventEl.style.cssText = 'display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem; border-radius:8px; cursor:pointer; transition:background 0.15s;';
+      eventEl.onmouseenter = () => eventEl.style.background = '#f7f8fa';
+      eventEl.onmouseleave = () => eventEl.style.background = '';
+
+      const colorDot = event.color || '#0b4f9c';
+      const time = event.all_day ? 'All day' : parseLocalDateTime(event.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const duration = event.duration_minutes ? ` (${formatDuration(event.duration_minutes)})` : '';
+      const tags = (event.tags || []).map(t => `<span style="background:#e0e5ec; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.75rem;">${t}</span>`).join(' ');
+
+      eventEl.innerHTML = `
+        <div style="width:4px; min-height:40px; background:${colorDot}; border-radius:2px;"></div>
+        <div style="flex:1;">
+          <div style="font-weight:600; color:#1f2430;">${event.title}${event.is_private ? ' 🔒' : ''}</div>
+          <div style="font-size:0.85rem; color:#5b6470;">${time}${duration}</div>
+          ${event.location ? `<div style="font-size:0.85rem; color:#5b6470;">📍 ${event.location}</div>` : ''}
+          ${tags ? `<div style="margin-top:0.25rem;">${tags}</div>` : ''}
+        </div>
+        <div style="font-size:0.75rem; color:#7a8599; text-transform:capitalize;">${event.source}</div>
+      `;
+
+      eventEl.addEventListener('click', () => showEventDetail(event.id));
+      eventsListEl.appendChild(eventEl);
+    });
+  };
+
+  const fetchLedger = async (direction = 'backward', cursor = null) => {
     if (!ensureAuth()) return;
-    setStatus(statusEl, 'Loading...');
-    
-    const params = new URLSearchParams();
-    if (startDateInput.value) params.set('start_date', startDateInput.value + 'T00:00:00');
-    if (endDateInput.value) params.set('end_date', endDateInput.value + 'T23:59:59');
-    if (sourceFilter.value) params.set('source', sourceFilter.value);
-    params.set('limit', '100');
-    
-    try {
-      const res = await fetch(`/api/calendar/events?${params}`, {
-        headers: getAuthHeaders(),
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.ok) {
-        allEvents = data.events || [];
-        renderEvents(allEvents);
-        updateStats(allEvents);
-        renderCurrentView(); // Update day/week/month views
-        setStatus(statusEl, '');
+    setStatus(statusEl, 'Loading ledger...');
+    const anchor = localDateKey(new Date());
+    const params = new URLSearchParams({ anchor, direction, limit: '50' });
+    if (cursor) params.set('cursor', cursor);
+    const res = await fetch(`/api/v1/calendar/ledger?${params.toString()}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
+    if (res.ok && data.ok) {
+      mergeLedgerEvents(data.events || []);
+      if (direction === 'backward') {
+        ledgerBackwardCursor = data.next_cursor || null;
       } else {
-        setStatus(statusEl, data.error || 'Failed to load events', 'error');
+        ledgerForwardCursor = data.next_cursor || null;
       }
-    } catch (err) {
-      setStatus(statusEl, 'Network error', 'error');
+      ledgerLoadOlderBtn.disabled = !ledgerBackwardCursor;
+      ledgerLoadNewerBtn.disabled = !ledgerForwardCursor;
+      renderLedger();
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load ledger', 'error');
+    }
+  };
+
+  const loadLedgerFresh = () => {
+    ledgerEvents = [];
+    ledgerBackwardCursor = null;
+    ledgerForwardCursor = null;
+    if (ledgerLoadOlderBtn) ledgerLoadOlderBtn.disabled = true;
+    if (ledgerLoadNewerBtn) ledgerLoadNewerBtn.disabled = true;
+    renderLedger();
+    fetchLedger('backward', null).then(() => fetchLedger('forward', null));
+  };
+
+  // Fetch deterministic views from backend
+  const fetchDayView = async (dateObj) => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading day...');
+    const res = await fetch(`/api/v1/calendar/day?date=${localDateKey(dateObj)}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
+    if (res.ok && data.ok) {
+      dayEvents = data.events || [];
+      dayWindow = { start: data.window_start, end: data.window_end };
+      renderCurrentView();
+      updateStats(dayEvents);
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load day', 'error');
+    }
+  };
+
+  const fetchWeekView = async (startDate) => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading week...');
+    const res = await fetch(`/api/v1/calendar/week?start=${localDateKey(startDate)}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
+    if (res.ok && data.ok) {
+      weekEvents = data.events || [];
+      weekWindow = { start: data.window_start, end: data.window_end };
+      renderCurrentView();
+      updateStats(weekEvents);
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load week', 'error');
+    }
+  };
+
+  const fetchMonthView = async (dateObj) => {
+    if (!ensureAuth()) return;
+    setStatus(statusEl, 'Loading month...');
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const res = await fetch(`/api/v1/calendar/month?year=${year}&month=${month}`, { headers: getAuthHeaders() });
+    const data = await res.json().catch(() => ({}));
+    const contractError = resolveContractError(data, res);
+    if (contractError) {
+      setStatus(statusEl, contractError, 'error');
+      return;
+    }
+    if (res.ok && data.ok) {
+      monthEvents = data.events || [];
+      monthWindow = { start: data.window_start, end: data.window_end, spillover: data.spillover_days || [] };
+      renderCurrentView();
+      updateStats(monthEvents);
+      setStatus(statusEl, '');
+    } else {
+      setStatus(statusEl, data.error || 'Failed to load month', 'error');
+    }
+  };
+
+  const refreshCurrentView = () => {
+    if (currentView === 'day') {
+      fetchDayView(currentDate);
+    } else if (currentView === 'week') {
+      fetchWeekView(getWeekStart(currentDate));
+    } else if (currentView === 'month') {
+      fetchMonthView(currentDate);
+    } else {
+      loadLedgerFresh();
     }
   };
 
@@ -562,60 +1000,11 @@
   };
 
   const updateStats = (events) => {
+    updateStatLabels();
     const todayStr = localDateKey(today);
     const todayEvents = events.filter(e => e.start_time.startsWith(todayStr));
     statToday.textContent = todayEvents.length;
     statWeek.textContent = events.length;
-  };
-
-  const renderEvents = (events) => {
-    eventsListEl.innerHTML = '';
-    if (!events.length) {
-      eventsListEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#5b6470;">No events found for this period.</div>';
-      return;
-    }
-
-    // Group by date
-    const grouped = {};
-    events.forEach(e => {
-      const dateKey = e.start_time.split('T')[0];
-      if (!grouped[dateKey]) grouped[dateKey] = [];
-      grouped[dateKey].push(e);
-    });
-
-    Object.keys(grouped).sort().forEach(dateKey => {
-      const dateHeader = document.createElement('div');
-      const dateObj = new Date(dateKey + 'T00:00:00');
-      dateHeader.style.cssText = 'font-weight:600; color:#1f2430; padding:0.5rem 0; border-bottom:1px solid #e0e5ec; margin-top:0.5rem;';
-      dateHeader.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-      eventsListEl.appendChild(dateHeader);
-
-      grouped[dateKey].forEach(event => {
-        const eventEl = document.createElement('div');
-        eventEl.style.cssText = 'display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem; border-radius:8px; cursor:pointer; transition:background 0.15s;';
-        eventEl.onmouseenter = () => eventEl.style.background = '#f7f8fa';
-        eventEl.onmouseleave = () => eventEl.style.background = '';
-        
-        const colorDot = event.color || '#0b4f9c';
-        const time = event.all_day ? 'All day' : new Date(event.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const duration = event.duration_minutes ? ` (${formatDuration(event.duration_minutes)})` : '';
-        const tags = (event.tags || []).map(t => `<span style="background:#e0e5ec; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.75rem;">${t}</span>`).join(' ');
-        
-        eventEl.innerHTML = `
-          <div style="width:4px; min-height:40px; background:${colorDot}; border-radius:2px;"></div>
-          <div style="flex:1;">
-            <div style="font-weight:600; color:#1f2430;">${event.title}${event.is_private ? ' 🔒' : ''}</div>
-            <div style="font-size:0.85rem; color:#5b6470;">${time}${duration}</div>
-            ${event.location ? `<div style="font-size:0.85rem; color:#5b6470;">📍 ${event.location}</div>` : ''}
-            ${tags ? `<div style="margin-top:0.25rem;">${tags}</div>` : ''}
-          </div>
-          <div style="font-size:0.75rem; color:#7a8599; text-transform:capitalize;">${event.source}</div>
-        `;
-        
-        eventEl.addEventListener('click', () => showEventDetail(event.id));
-        eventsListEl.appendChild(eventEl);
-      });
-    });
   };
 
   // Event detail modal
@@ -625,7 +1014,7 @@
         headers: getAuthHeaders(),
       });
       const data = await res.json();
-      
+
       if (!res.ok || !data.ok) {
         alert('Failed to load event');
         return;
@@ -634,11 +1023,11 @@
       const event = data.event;
       currentEventId = event.id;
       detailTitle.textContent = event.title;
-      
-      const time = event.all_day 
-        ? 'All day' 
+
+      const time = event.all_day
+        ? 'All day'
         : `${formatDateTime(event.start_time)}${event.end_time ? ' → ' + formatDateTime(event.end_time) : ''}`;
-      
+
       detailContent.innerHTML = `
         <div style="display:grid; gap:0.5rem;">
           <div><strong>Time:</strong> ${time}</div>
@@ -690,20 +1079,48 @@
   const openModal = (eventData = null) => {
     const isEdit = !!(eventData && eventData.id);
     modalTitle.textContent = isEdit ? 'Edit Event' : 'New Event';
-    
+
     // Only set event ID if it's a valid number
     const validId = isEdit && typeof eventData.id === 'number' ? eventData.id : '';
     document.getElementById('cal-event-id').value = validId;
     document.getElementById('cal-event-title').value = isEdit ? eventData.title : '';
-    document.getElementById('cal-event-start').value = isEdit ? eventData.start_time.slice(0, 16) : '';
-    document.getElementById('cal-event-end').value = isEdit && eventData.end_time ? eventData.end_time.slice(0, 16) : '';
-    document.getElementById('cal-event-allday').checked = isEdit ? eventData.all_day : false;
+    const startDateTime = isEdit ? parseLocalDateTime(eventData.start_time) : roundToNearestMinutes(new Date());
+    eventDateInput.value = localDateKey(startDateTime);
+    eventStartTimeInput.value = formatTime12h(startDateTime);
+
+    durationMinutes = DEFAULT_DURATION_MINUTES;
+    endDateLocked = true;
+
+    if (isEdit && eventData.end_time) {
+      const endDateTime = parseLocalDateTime(eventData.end_time);
+      const diffMinutes = Math.round((endDateTime - startDateTime) / 60000);
+      durationMinutes = diffMinutes > 0 ? diffMinutes : DEFAULT_DURATION_MINUTES;
+      endDateLocked = localDateKey(endDateTime) === localDateKey(startDateTime);
+      eventEndDateInput.value = localDateKey(endDateTime);
+      eventEndTimeInput.value = formatTime12h(endDateTime);
+    } else {
+      const endDateTime = new Date(startDateTime.getTime() + DEFAULT_DURATION_MINUTES * 60000);
+      eventEndDateInput.value = localDateKey(endDateTime);
+      eventEndTimeInput.value = formatTime12h(endDateTime);
+    }
+
+    allDayToggle.checked = isEdit ? eventData.all_day : false;
     document.getElementById('cal-event-location').value = isEdit ? eventData.location || '' : '';
     document.getElementById('cal-event-description').value = isEdit ? eventData.description || '' : '';
     document.getElementById('cal-event-tags').value = isEdit && eventData.tags ? eventData.tags.join(', ') : '';
-    document.getElementById('cal-event-color').value = isEdit && eventData.color ? eventData.color : '#0b4f9c';
+    setColorSelection(isEdit && eventData.color ? eventData.color : '#0b4f9c');
     document.getElementById('cal-event-private').checked = isEdit ? eventData.is_private : false;
-    
+
+    eventEndControls.style.display = 'none';
+    eventEndToggle.textContent = 'Adjust end';
+    if (advancedSection && advancedToggle) {
+      advancedSection.style.display = 'none';
+      advancedToggle.textContent = 'More options';
+    }
+    syncDurationButtons();
+    updateEndPreview();
+    syncAllDayVisibility();
+
     setStatus(modalStatus, '');
     modalOverlay.style.display = 'block';
     modal.style.display = 'block';
@@ -718,6 +1135,46 @@
   createBtn.addEventListener('click', () => openModal());
   modalCancel.addEventListener('click', closeModal);
   modalOverlay.addEventListener('click', closeModal);
+  eventDateInput.addEventListener('change', () => {
+    setEndFromStart();
+  });
+  eventStartTimeInput.addEventListener('change', () => {
+    normalizeTimeInput(eventStartTimeInput);
+    setEndFromStart();
+  });
+  eventEndDateInput.addEventListener('change', () => {
+    updateDurationFromEnd();
+  });
+  eventEndTimeInput.addEventListener('change', () => {
+    normalizeTimeInput(eventEndTimeInput);
+    updateDurationFromEnd();
+  });
+  eventEndToggle.addEventListener('click', () => {
+    const isOpen = eventEndControls.style.display !== 'none';
+    eventEndControls.style.display = isOpen ? 'none' : 'block';
+    eventEndToggle.textContent = isOpen ? 'Adjust end' : 'Hide end';
+  });
+  durationButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const minutes = parseInt(btn.dataset.duration, 10);
+      if (!Number.isNaN(minutes)) {
+        durationMinutes = minutes;
+        endDateLocked = true;
+        setEndFromStart();
+      }
+    });
+  });
+  colorButtons.forEach(btn => {
+    btn.addEventListener('click', () => setColorSelection(btn.dataset.color));
+  });
+  advancedToggle.addEventListener('click', () => {
+    const isOpen = advancedSection.style.display !== 'none';
+    advancedSection.style.display = isOpen ? 'none' : 'grid';
+    advancedToggle.textContent = isOpen ? 'More options' : 'Hide options';
+  });
+  allDayToggle.addEventListener('change', () => {
+    syncAllDayVisibility();
+  });
 
   detailEdit.addEventListener('click', async () => {
     if (!currentEventId) {
@@ -726,7 +1183,7 @@
     }
     const eventIdToEdit = currentEventId; // Capture before async operations
     closeDetailModal();
-    
+
     try {
       // Fetch full event for edit
       const res = await fetch(`/api/calendar/events/${eventIdToEdit}`, {
@@ -747,17 +1204,17 @@
   detailDelete.addEventListener('click', async () => {
     if (!currentEventId) return;
     if (!confirm('Delete this event?')) return;
-    
+
     try {
       const res = await fetch(`/api/calendar/events/${currentEventId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
       const data = await res.json();
-      
+
       if (res.ok && data.ok) {
         closeDetailModal();
-        fetchEvents();
+        refreshCurrentView();
       } else {
         alert(data.error || 'Failed to delete');
       }
@@ -769,47 +1226,85 @@
   // Form submission
   eventForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const eventIdRaw = document.getElementById('cal-event-id').value;
     // Validate eventId - must be empty (create) or a valid numeric string (edit)
     const eventId = eventIdRaw && eventIdRaw !== 'null' && eventIdRaw !== 'undefined' && !isNaN(parseInt(eventIdRaw, 10))
       ? eventIdRaw
       : '';
     const isEdit = !!eventId;
-    
+
     const tagsRaw = document.getElementById('cal-event-tags').value;
     const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
-    
+
+    const allDay = allDayToggle.checked;
+    const startDate = eventDateInput.value;
+    const startParts = parseTimeInput(eventStartTimeInput.value);
+    if (!startDate || !startParts) {
+      setStatus(modalStatus, 'Enter a valid start time (e.g., 9:30 AM or 09:30)', 'error');
+      eventStartTimeInput.focus();
+      return;
+    }
+    eventStartTimeInput.value = formatTimeFromParts(startParts.hours, startParts.minutes);
+
+    const startTimeString = allDay
+      ? `${startDate}T00:00`
+      : buildDateTimeString(startDate, startParts);
+
+    let endTimeString = null;
+    if (!allDay) {
+      const endDate = eventEndDateInput.value || startDate;
+      const endParts = parseTimeInput(eventEndTimeInput.value);
+      if (!endDate || !endParts) {
+        setStatus(modalStatus, 'Enter a valid end time (e.g., 10:30 AM or 10:30)', 'error');
+        eventEndTimeInput.focus();
+        return;
+      }
+      eventEndTimeInput.value = formatTimeFromParts(endParts.hours, endParts.minutes);
+      endTimeString = buildDateTimeString(endDate, endParts);
+
+      const startDateTime = toLocalDate(startDate, startParts);
+      const endDateTime = toLocalDate(endDate, endParts);
+      if (endDateTime <= startDateTime) {
+        setStatus(modalStatus, 'End time must be after start time', 'error');
+        return;
+      }
+    }
+
     const payload = {
       title: document.getElementById('cal-event-title').value.trim(),
-      start_time: document.getElementById('cal-event-start').value,
-      end_time: document.getElementById('cal-event-end').value || null,
-      all_day: document.getElementById('cal-event-allday').checked,
+      start_time: startTimeString,
+      all_day: allDay,
       location: document.getElementById('cal-event-location').value.trim() || null,
       description: document.getElementById('cal-event-description').value.trim() || null,
       tags,
-      color: document.getElementById('cal-event-color').value,
+      color: colorInput?.value || '#0b4f9c',
       is_private: document.getElementById('cal-event-private').checked,
     };
+    if (allDay) {
+      payload.end_time = null;
+    } else {
+      payload.end_time = endTimeString;
+    }
 
     setStatus(modalStatus, 'Saving...');
-    
+
     try {
       const url = isEdit ? `/api/calendar/events/${eventId}` : '/api/calendar/events';
       const method = isEdit ? 'PATCH' : 'POST';
-      
+
       const res = await fetch(url, {
         method,
         headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      
+
       if (res.ok && data.ok) {
         setStatus(modalStatus, 'Saved!', 'success');
         setTimeout(() => {
           closeModal();
-          fetchEvents();
+          refreshCurrentView();
           fetchPendingCount();
         }, 500);
       } else {
@@ -829,16 +1324,24 @@
   });
 
   // Event listeners
-  reloadBtn.addEventListener('click', () => { fetchEvents(); fetchPendingCount(); });
-  filterApplyBtn.addEventListener('click', fetchEvents);
+  reloadBtn.addEventListener('click', () => { refreshCurrentView(); fetchPendingCount(); });
+  ledgerLoadOlderBtn?.addEventListener('click', () => {
+    if (ledgerBackwardCursor) fetchLedger('backward', ledgerBackwardCursor);
+  });
+  ledgerLoadNewerBtn?.addEventListener('click', () => {
+    if (ledgerForwardCursor) fetchLedger('forward', ledgerForwardCursor);
+  });
 
   window.addEventListener('lifeos:auth-changed', (e) => {
     ensureAuth();
     if (e.detail?.loggedIn) {
-      fetchEvents();
+      refreshCurrentView();
       fetchPendingCount();
     } else {
-      allEvents = [];
+      dayEvents = [];
+      weekEvents = [];
+      monthEvents = [];
+      ledgerEvents = [];
       eventsListEl.innerHTML = '';
       statToday.textContent = '0';
       statWeek.textContent = '0';
@@ -859,22 +1362,31 @@
   viewBtns.forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
-  
+
   // Navigation listeners
   navPrev.addEventListener('click', () => navigateDate(-1));
   navNext.addEventListener('click', () => navigateDate(1));
   navToday.addEventListener('click', goToToday);
-  
-  // Reload buttons for each view
-  document.getElementById('cal-reload-day')?.addEventListener('click', () => { fetchEvents(); });
-  document.getElementById('cal-reload-week')?.addEventListener('click', () => { fetchEvents(); });
-  document.getElementById('cal-reload-month')?.addEventListener('click', () => { fetchEvents(); });
 
-  // Initialize
-  ensureAuth();
-  updateNavLabel();
-  fetchEvents();
-  fetchPendingCount();
+  // Reload buttons for each view
+  document.getElementById('cal-reload-day')?.addEventListener('click', () => { fetchDayView(currentDate); });
+  document.getElementById('cal-reload-week')?.addEventListener('click', () => { fetchWeekView(getWeekStart(currentDate)); });
+  document.getElementById('cal-reload-month')?.addEventListener('click', () => { fetchMonthView(currentDate); });
+
+  // Initialize after auth session check to avoid firing with stale tokens
+  const init = () => {
+    buildTimeOptions();
+    ensureAuth();
+    updateNavLabel();
+    updateStatLabels();
+    refreshCurrentView();
+    fetchPendingCount();
+  };
+  if (window.lifeosAuthReady?.then) {
+    window.lifeosAuthReady.finally(init);
+  } else {
+    init();
+  }
 })();
 </script>
 {% endblock %}

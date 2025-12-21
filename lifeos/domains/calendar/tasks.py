@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 def sync_all_google_calendars() -> Dict[str, int]:
     """
     Sync all active Google Calendar connections.
-    
+
     Call this periodically (e.g., every 15 minutes via cron or scheduler).
-    
+
     Returns:
         Dict with total stats across all users
     """
@@ -29,7 +29,13 @@ def sync_all_google_calendars() -> Dict[str, int]:
         is_active=True,
     ).all()
 
-    total_stats = {"synced_users": 0, "created": 0, "updated": 0, "deleted": 0, "errors": 0}
+    total_stats = {
+        "synced_users": 0,
+        "created": 0,
+        "updated": 0,
+        "deleted": 0,
+        "errors": 0,
+    }
 
     for token in active_tokens:
         try:
@@ -49,14 +55,16 @@ def sync_all_google_calendars() -> Dict[str, int]:
 def sync_google_calendar_for_user(user_id: int) -> dict:
     """
     Sync calendar events from Google Calendar for a specific user.
-    
+
     Args:
         user_id: User ID to sync
-        
+
     Returns:
         Sync stats dict
     """
-    from lifeos.domains.calendar.services.google_sync_service import sync_google_calendar
+    from lifeos.domains.calendar.services.google_sync_service import (
+        sync_google_calendar,
+    )
 
     return sync_google_calendar(user_id)
 
@@ -64,10 +72,10 @@ def sync_google_calendar_for_user(user_id: int) -> dict:
 def sync_apple_calendar_for_user(user_id: int) -> dict:
     """
     Sync calendar events from Apple Calendar for a specific user.
-    
+
     Args:
         user_id: User ID to sync
-        
+
     Returns:
         Sync stats dict
     """
@@ -79,9 +87,9 @@ def sync_apple_calendar_for_user(user_id: int) -> dict:
 def sync_all_apple_calendars() -> Dict[str, int]:
     """
     Sync all active Apple Calendar connections.
-    
+
     Call this periodically (e.g., every 15 minutes via cron or scheduler).
-    
+
     Returns:
         Dict with total stats across all users
     """
@@ -96,7 +104,13 @@ def sync_all_apple_calendars() -> Dict[str, int]:
         is_active=True,
     ).all()
 
-    total_stats = {"synced_users": 0, "created": 0, "updated": 0, "deleted": 0, "errors": 0}
+    total_stats = {
+        "synced_users": 0,
+        "created": 0,
+        "updated": 0,
+        "deleted": 0,
+        "errors": 0,
+    }
 
     for token in active_tokens:
         try:
@@ -116,20 +130,20 @@ def sync_all_apple_calendars() -> Dict[str, int]:
 def cleanup_old_interpretations(days: int = 90) -> int:
     """
     Cleanup rejected/ignored interpretations older than N days.
-    
+
     Returns count of deleted records.
     """
-    from lifeos.domains.calendar.models.calendar_event import CalendarEventInterpretation
+    from lifeos.domains.calendar.models.calendar_event import (
+        CalendarEventInterpretation,
+    )
     from lifeos.extensions import db
 
     cutoff = datetime.utcnow() - timedelta(days=days)
 
-    deleted = (
-        CalendarEventInterpretation.query.filter(
-            CalendarEventInterpretation.status.in_(["rejected", "ignored"]),
-            CalendarEventInterpretation.updated_at < cutoff,
-        ).delete(synchronize_session=False)
-    )
+    deleted = CalendarEventInterpretation.query.filter(
+        CalendarEventInterpretation.status.in_(["rejected", "ignored"]),
+        CalendarEventInterpretation.updated_at < cutoff,
+    ).delete(synchronize_session=False)
 
     db.session.commit()
     return deleted
@@ -138,10 +152,10 @@ def cleanup_old_interpretations(days: int = 90) -> int:
 def cleanup_stale_oauth_tokens(days: int = 30) -> int:
     """
     Cleanup inactive OAuth tokens that haven't synced in N days.
-    
+
     Args:
         days: Days of inactivity before cleanup
-        
+
     Returns:
         Count of deleted tokens
     """
@@ -150,12 +164,10 @@ def cleanup_stale_oauth_tokens(days: int = 30) -> int:
 
     cutoff = datetime.utcnow() - timedelta(days=days)
 
-    deleted = (
-        CalendarOAuthToken.query.filter(
-            CalendarOAuthToken.is_active == False,
-            CalendarOAuthToken.updated_at < cutoff,
-        ).delete(synchronize_session=False)
-    )
+    deleted = CalendarOAuthToken.query.filter(
+        CalendarOAuthToken.is_active.is_(False),
+        CalendarOAuthToken.updated_at < cutoff,
+    ).delete(synchronize_session=False)
 
     db.session.commit()
     logger.info(f"Cleaned up {deleted} stale OAuth tokens")

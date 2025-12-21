@@ -54,7 +54,7 @@ def update_preferences(user: User, prefs: dict) -> User:
 def _ensure_default_roles(user: User) -> None:
     """
     Assign baseline roles for new users.
-    
+
     All users get standard write access to all domains by default.
     This ensures a consistent experience across the platform.
     """

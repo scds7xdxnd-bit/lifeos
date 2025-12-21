@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from pydantic import ValidationError
 
 from lifeos.core.utils.decorators import csrf_protected, require_roles
-from lifeos.extensions import limiter
+from lifeos.domains.finance.ml.feedback import record_feedback
 from lifeos.domains.finance.models.accounting_models import Account
 from lifeos.domains.finance.schemas.finance_schemas import (
     AccountCategoryCreate,
@@ -17,27 +18,29 @@ from lifeos.domains.finance.schemas.finance_schemas import (
     JournalEntryCreate,
     TransactionCreate,
 )
-from pydantic import ValidationError
 from lifeos.domains.finance.services.accounting_service import (
     create_account,
     create_account_inline,
     create_custom_account_category,
     get_account_subtypes,
+    get_suggested_accounts,
     list_account_categories,
     post_journal_entry,
-    search_accounts,
     update_account_category,
-    get_suggested_accounts,
 )
 from lifeos.domains.finance.services.journal_service import record_transaction
 from lifeos.domains.finance.services.suggestion_service import suggest_accounts
-from lifeos.domains.finance.services.trial_balance_service import calculate_trial_balance, net_balance_for_account
-from lifeos.domains.finance.ml.feedback import record_feedback
+from lifeos.domains.finance.services.trial_balance_service import (
+    calculate_trial_balance,
+    net_balance_for_account,
+)
+from lifeos.extensions import limiter
 
 finance_api_bp = Blueprint("finance_api", __name__)
 
 
 # ==================== Account Search & Inline Creation ====================
+
 
 @finance_api_bp.get("/accounts/search")
 @jwt_required()
@@ -45,12 +48,12 @@ finance_api_bp = Blueprint("finance_api", __name__)
 def search_accounts_endpoint():
     """
     Search for existing accounts by name (typeahead).
-    
+
     Query Parameters:
     - q: Search query (required, 1-100 chars)
     - limit: Max results (optional, default 20, max 100)
     - include_ml: Include ML suggestions (optional, default true)
-    
+
     Returns:
     {
       "ok": true,
@@ -61,12 +64,13 @@ def search_accounts_endpoint():
     }
     """
     user_id = int(get_jwt_identity())
-    
+
     try:
         data = AccountSearchQuery.model_validate(request.args)
-    except Exception as exc:
-        return jsonify({"ok": False, "error": "invalid_query"}), 400
-    
+    except Exception:
+        # On invalid query, return empty results to keep client logic simple.
+        return jsonify({"ok": True, "results": []}), 200
+
     try:
         results = get_suggested_accounts(
             user_id=user_id,
@@ -78,7 +82,7 @@ def search_accounts_endpoint():
     except ValueError as exc:
         code = str(exc)
         if code == "invalid_query":
-            return jsonify({"ok": False, "error": "invalid_query"}), 400
+            return jsonify({"ok": True, "results": []}), 200
         return jsonify({"ok": False, "error": "validation_error"}), 400
 
 
@@ -90,14 +94,14 @@ def search_accounts_endpoint():
 def create_account_inline_endpoint():
     """
     Create a new account with minimal input (inline account creation).
-    
+
     Request Body:
     {
       "name": "My Savings Account",
       "account_type": "asset",
       "account_subtype": "bank"
     }
-    
+
     Response (201 Created):
     {
       "ok": true,
@@ -109,7 +113,7 @@ def create_account_inline_endpoint():
         "created_at": "2025-12-06T10:30:00Z"
       }
     }
-    
+
     Response (409 Conflict - already exists, returned as 200 for idempotency):
     {
       "ok": true,
@@ -118,7 +122,7 @@ def create_account_inline_endpoint():
     """
     user_id = int(get_jwt_identity())
     payload = request.get_json(silent=True) or {}
-    
+
     try:
         data = AccountInlineCreate.model_validate(payload)
     except Exception as exc:
@@ -128,7 +132,7 @@ def create_account_inline_endpoint():
                 if "account_type" in err.get("loc", ()):  # type: ignore[arg-type]
                     return jsonify({"ok": False, "error": "invalid_account_type"}), 400
         return jsonify({"ok": False, "error": "validation_error"}), 400
-    
+
     try:
         account = create_account_inline(
             user_id=user_id,
@@ -138,22 +142,30 @@ def create_account_inline_endpoint():
             category_id=data.category_id,
             category_name_new=data.category_name_new,
         )
-        return jsonify(
-            {
-                "ok": True,
-                "account": {
-                    "id": account.id,
-                    "name": account.name,
-                    "account_type": account.account_type,
-                    "account_subtype": account.account_subtype,
-                    "category_id": account.category_id,
-                    "created_at": account.created_at.isoformat(),
-                },
-            }
-        ), 201
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "account": {
+                        "id": account.id,
+                        "name": account.name,
+                        "account_type": account.account_type,
+                        "account_subtype": account.account_subtype,
+                        "category_id": account.category_id,
+                        "created_at": account.created_at.isoformat(),
+                    },
+                }
+            ),
+            201,
+        )
     except ValueError as exc:
         code = str(exc)
-        if code in {"invalid_name", "invalid_account_type", "invalid_account_subtype", "validation_error"}:
+        if code in {
+            "invalid_name",
+            "invalid_account_type",
+            "invalid_account_subtype",
+            "validation_error",
+        }:
             return jsonify({"ok": False, "error": code}), 400
         return jsonify({"ok": False, "error": "validation_error"}), 400
 
@@ -163,17 +175,17 @@ def create_account_inline_endpoint():
 def get_account_subtypes_endpoint(account_type: str):
     """
     Get valid subtypes for a given account type.
-    
+
     Path Parameters:
     - account_type: One of 'asset', 'liability', 'equity', 'income', 'expense'
-    
+
     Response (200 OK):
     {
       "ok": true,
       "account_type": "asset",
       "subtypes": ["cash", "bank", "investment", "property", "other"]
     }
-    
+
     Response (400 Bad Request):
     {
       "ok": false,
@@ -182,13 +194,16 @@ def get_account_subtypes_endpoint(account_type: str):
     """
     try:
         subtypes = get_account_subtypes(account_type)
-        return jsonify(
-            {
-                "ok": True,
-                "account_type": account_type,
-                "subtypes": subtypes,
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "account_type": account_type,
+                    "subtypes": subtypes,
+                }
+            ),
+            200,
+        )
     except ValueError as exc:
         code = str(exc)
         if code == "invalid_account_type":
@@ -211,7 +226,9 @@ def list_account_categories_endpoint():
         if base_type:
             # Validate base_type quickly via subtypes helper
             _ = get_account_subtypes(base_type)
-        categories = list_account_categories(int(get_jwt_identity()), base_type=base_type, include_system=include_system)
+        categories = list_account_categories(
+            int(get_jwt_identity()), base_type=base_type, include_system=include_system
+        )
     except ValueError as exc:
         code = str(exc)
         if code == "invalid_account_type":
@@ -272,6 +289,7 @@ def create_account_category_endpoint():
         201,
     )
 
+
 @finance_api_bp.post("/accounts")
 @jwt_required()
 @csrf_protected
@@ -298,7 +316,13 @@ def create_account_endpoint():
         )
     except ValueError as exc:
         code = str(exc)
-        if code in {"invalid_name", "invalid_account_type", "invalid_account_subtype", "invalid_base_type", "invalid_category"}:
+        if code in {
+            "invalid_name",
+            "invalid_account_type",
+            "invalid_account_subtype",
+            "invalid_base_type",
+            "invalid_category",
+        }:
             return jsonify({"ok": False, "error": code}), 400
         if code == "not_found":
             return jsonify({"ok": False, "error": code}), 404
@@ -361,7 +385,11 @@ def post_journal():
     payload = request.get_json(silent=True) or {}
     payload["user_id"] = int(get_jwt_identity())
     data = JournalEntryCreate.model_validate(payload)
-    entry = post_journal_entry(user_id=data.user_id, description=data.description or "", lines=[line.model_dump() for line in data.lines])
+    entry = post_journal_entry(
+        user_id=data.user_id,
+        description=data.description or "",
+        lines=[line.model_dump() for line in data.lines],
+    )
     return jsonify({"ok": True, "entry_id": entry.id})
 
 
@@ -429,5 +457,10 @@ def suggestion_feedback():
     suggestion_id = str(payload.get("suggestion_id") or "")
     accepted = bool(payload.get("accepted"))
     score = payload.get("score")
-    record_feedback(user_id=int(get_jwt_identity()), suggestion_id=suggestion_id, accepted=accepted, score=score)
+    record_feedback(
+        user_id=int(get_jwt_identity()),
+        suggestion_id=suggestion_id,
+        accepted=accepted,
+        score=score,
+    )
     return jsonify({"ok": True})

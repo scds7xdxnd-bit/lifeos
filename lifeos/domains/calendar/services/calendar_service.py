@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from calendar import monthrange
+from datetime import date, datetime, time, timedelta
 from typing import List, Optional
 
+from sqlalchemy import and_, func, or_
+
+from lifeos.core.interpreter.inference_emitter import emit_inference_event
 from lifeos.domains.calendar.events import (
     CALENDAR_EVENT_CREATED,
     CALENDAR_EVENT_DELETED,
@@ -12,12 +16,13 @@ from lifeos.domains.calendar.events import (
     CALENDAR_INTERPRETATION_CONFIRMED,
     CALENDAR_INTERPRETATION_REJECTED,
 )
+from lifeos.domains.calendar.mappers import calendar_event_to_response
 from lifeos.domains.calendar.models.calendar_event import (
     CalendarEvent,
     CalendarEventInterpretation,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def create_calendar_event(
@@ -37,7 +42,7 @@ def create_calendar_event(
 ) -> CalendarEvent:
     """
     Create a new calendar event.
-    
+
     Emits calendar.event.created event for interpreter processing.
     """
     title = (title or "").strip()
@@ -100,7 +105,7 @@ def update_calendar_event(
 ) -> CalendarEvent:
     """
     Update an existing calendar event.
-    
+
     Emits calendar.event.updated event for interpreter re-processing.
     """
     event = CalendarEvent.query.filter_by(id=event_id, user_id=user_id).first()
@@ -180,7 +185,7 @@ def update_calendar_event(
 def delete_calendar_event(user_id: int, event_id: int) -> None:
     """
     Delete a calendar event and its interpretations.
-    
+
     Emits calendar.event.deleted event.
     """
     event = CalendarEvent.query.filter_by(id=event_id, user_id=user_id).first()
@@ -216,7 +221,7 @@ def list_calendar_events(
 ) -> List[CalendarEvent]:
     """
     List calendar events with optional filters.
-    
+
     Returns events ordered by start_time descending.
     """
     query = CalendarEvent.query.filter(CalendarEvent.user_id == user_id)
@@ -228,12 +233,7 @@ def list_calendar_events(
     if source:
         query = query.filter(CalendarEvent.source == source)
 
-    return (
-        query.order_by(CalendarEvent.start_time.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEvent.start_time.desc()).offset(offset).limit(limit).all()
 
 
 def get_pending_interpretations(
@@ -253,12 +253,7 @@ def get_pending_interpretations(
     if domain:
         query = query.filter(CalendarEventInterpretation.domain == domain)
 
-    return (
-        query.order_by(CalendarEventInterpretation.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(CalendarEventInterpretation.created_at.desc()).offset(offset).limit(limit).all()
 
 
 def update_interpretation_status(
@@ -268,19 +263,18 @@ def update_interpretation_status(
     record_id: Optional[int] = None,
 ) -> CalendarEventInterpretation:
     """
-    Update interpretation status (confirm, reject, ignore).
-    
+    Update interpretation status (confirm, reject, ignore, ambiguous).
+
     Emits appropriate event based on new status.
     """
-    if status not in {"confirmed", "rejected", "ignored"}:
+    if status not in {"confirmed", "rejected", "ignored", "ambiguous"}:
         raise ValueError("invalid_status")
 
-    interpretation = CalendarEventInterpretation.query.filter_by(
-        id=interpretation_id, user_id=user_id
-    ).first()
+    interpretation = CalendarEventInterpretation.query.filter_by(id=interpretation_id, user_id=user_id).first()
     if not interpretation:
         raise ValueError("not_found")
 
+    previous_record_id = interpretation.record_id
     interpretation.status = status
     if record_id is not None:
         interpretation.record_id = record_id
@@ -298,6 +292,8 @@ def update_interpretation_status(
                 "domain": interpretation.domain,
                 "record_type": interpretation.record_type,
                 "record_id": record_id,
+                "status": status,
+                "payload_version": "v1",
                 "confirmed_at": datetime.utcnow().isoformat(),
             },
             user_id=user_id,
@@ -311,10 +307,184 @@ def update_interpretation_status(
                 "user_id": user_id,
                 "domain": interpretation.domain,
                 "record_type": interpretation.record_type,
+                "status": status,
+                "payload_version": "v1",
                 "rejected_at": datetime.utcnow().isoformat(),
             },
             user_id=user_id,
         )
+    elif status == "ambiguous":
+        enqueue_outbox(
+            CALENDAR_INTERPRETATION_REJECTED,
+            {
+                "interpretation_id": interpretation.id,
+                "calendar_event_id": interpretation.calendar_event_id,
+                "user_id": user_id,
+                "domain": interpretation.domain,
+                "record_type": interpretation.record_type,
+                "status": status,
+                "payload_version": "v1",
+                "updated_at": datetime.utcnow().isoformat(),
+            },
+            user_id=user_id,
+        )
+
+    is_false_positive = status in {"rejected", "ambiguous"}
+    is_false_negative = False
+    if status == "confirmed" and record_id is not None:
+        if previous_record_id and record_id != previous_record_id:
+            is_false_negative = True  # model pointed to wrong entity; user corrected
+        elif previous_record_id is None:
+            is_false_negative = True  # model missed mapping; user supplied
+
+    emit_inference_event(
+        domain=interpretation.domain,
+        record_type=interpretation.record_type,
+        user_id=user_id,
+        calendar_event_id=interpretation.calendar_event_id,
+        confidence=float(interpretation.confidence_score),
+        inferred_data=interpretation.classification_data or {},
+        record_id=interpretation.record_id,
+        status=status,
+        model_version="calendar-interpreter-v1",
+        context={"source": "user_review", "interpretation_id": interpretation.id},
+        is_false_positive=is_false_positive,
+        is_false_negative=is_false_negative,
+    )
 
     db.session.commit()
     return interpretation
+
+
+# ==================== Deterministic View & Ledger ====================
+
+
+def _window_overlap_query(user_id: int, window_start: datetime, window_end: datetime):
+    """Return a base query for events overlapping the window."""
+    end_expr = func.coalesce(CalendarEvent.end_time, CalendarEvent.start_time)
+    return (
+        CalendarEvent.query.filter(CalendarEvent.user_id == user_id)
+        .filter(CalendarEvent.start_time < window_end)
+        .filter(end_expr > window_start)
+        .order_by(CalendarEvent.start_time.asc(), CalendarEvent.id.asc())
+    )
+
+
+def _window_bounds_for_day(target_date: date) -> tuple[datetime, datetime]:
+    start = datetime.combine(target_date, time.min)
+    end = start + timedelta(days=1)
+    return start, end
+
+
+def _window_bounds_for_week(start_date: date) -> tuple[datetime, datetime]:
+    start = datetime.combine(start_date, time.min)
+    end = start + timedelta(days=7)
+    return start, end
+
+
+def _window_bounds_for_month(year: int, month: int) -> tuple[datetime, datetime, list[date]]:
+    first_day = date(year, month, 1)
+    _, last_dom = monthrange(year, month)
+    last_day = date(year, month, last_dom)
+    # ISO week (Mon-Sun) for grid spillover
+    grid_start = first_day - timedelta(days=first_day.weekday())
+    grid_end = last_day + timedelta(days=(6 - last_day.weekday()))
+    window_start = datetime.combine(grid_start, time.min)
+    window_end = datetime.combine(grid_end + timedelta(days=1), time.min)
+    spillover_days: list[date] = []
+    cur = grid_start
+    while cur < first_day:
+        spillover_days.append(cur)
+        cur += timedelta(days=1)
+    cur = last_day + timedelta(days=1)
+    while cur <= grid_end:
+        spillover_days.append(cur)
+        cur += timedelta(days=1)
+    return window_start, window_end, spillover_days
+
+
+def get_day_view(user_id: int, target_date: date) -> dict:
+    window_start, window_end = _window_bounds_for_day(target_date)
+    events = _window_overlap_query(user_id, window_start, window_end).all()
+    return {
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }
+
+
+def get_week_view(user_id: int, start_date: date) -> dict:
+    window_start, window_end = _window_bounds_for_week(start_date)
+    events = _window_overlap_query(user_id, window_start, window_end).all()
+    return {
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }
+
+
+def get_month_view(user_id: int, year: int, month: int) -> dict:
+    window_start, window_end, spillover_days = _window_bounds_for_month(year, month)
+    events = _window_overlap_query(user_id, window_start, window_end).all()
+    return {
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "spillover_days": [d.isoformat() for d in spillover_days],
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }
+
+
+def get_ledger(
+    user_id: int,
+    anchor_date: date,
+    direction: str = "backward",
+    limit: int = 50,
+    cursor: Optional[str] = None,
+) -> dict:
+    """Chronological ledger anchored at a date, cursor-based."""
+    anchor_dt = datetime.combine(anchor_date, time.min)
+    pivot_time = anchor_dt
+    pivot_id = None
+    if cursor:
+        try:
+            ts_str, id_str = cursor.split("|", 1)
+            pivot_time = datetime.fromisoformat(ts_str)
+            pivot_id = int(id_str)
+        except Exception:
+            pivot_time = anchor_dt
+            pivot_id = None
+    elif direction == "backward":
+        # Include events on the anchor day when scanning backward.
+        pivot_time = anchor_dt + timedelta(days=1)
+
+    base_query = CalendarEvent.query.filter(CalendarEvent.user_id == user_id)
+
+    if direction == "forward":
+        cond = or_(
+            CalendarEvent.start_time > pivot_time,
+            and_(CalendarEvent.start_time == pivot_time, CalendarEvent.id > (pivot_id or 0)),
+        )
+        query = base_query.filter(cond).order_by(CalendarEvent.start_time.asc(), CalendarEvent.id.asc()).limit(limit)
+        events = query.all()
+        next_cursor = f"{events[-1].start_time.isoformat()}|{events[-1].id}" if events else None
+        prev_cursor = f"{events[0].start_time.isoformat()}|{events[0].id}" if events else None
+    else:
+        end_expr = func.coalesce(CalendarEvent.end_time, CalendarEvent.start_time)
+        cond = or_(
+            end_expr < pivot_time,
+            and_(end_expr == pivot_time, CalendarEvent.id < (pivot_id or 0)),
+        )
+        query = base_query.filter(cond).order_by(CalendarEvent.start_time.desc(), CalendarEvent.id.desc()).limit(limit)
+        events_desc = query.all()
+        events = list(reversed(events_desc))
+        next_cursor = f"{events[0].start_time.isoformat()}|{events[0].id}" if events else None
+        prev_cursor = f"{events[-1].start_time.isoformat()}|{events[-1].id}" if events else None
+
+    return {
+        "anchor": anchor_date.isoformat(),
+        "direction": direction,
+        "cursor": cursor,
+        "next_cursor": next_cursor,
+        "prev_cursor": prev_cursor,
+        "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
+    }

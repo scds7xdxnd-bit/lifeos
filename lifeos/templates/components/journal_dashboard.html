@@ -2,17 +2,29 @@
 <div class="card" id="{{ component_id }}-card">
   <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
     <div>
+      <div class="meta">Journal</div>
       <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-        <h2 style="margin:0;">Personal Journal</h2>
+        <h2 style="margin:0;">What did I note recently?</h2>
         {% set badge_domain = 'journal' %}{% include "components/inferred_badge.html" %}
       </div>
-      <p style="margin:0; color:#5b6470;">Capture entries, moods, and tags with quick edits.</p>
+      <p style="margin:0; color:#5b6470;">Review entries before adding anything new.</p>
     </div>
-    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <button type="button" class="btn" id="{{ component_id }}-review-btn">Review recent</button>
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    </div>
   </div>
   <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage journal entries.</div>
 
-  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+  <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+    <button type="button" class="text-link" id="{{ component_id }}-create-toggle">New entry</button>
+    <button type="button" class="text-link" id="{{ component_id }}-filter-toggle">Refine view</button>
+  </div>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No entries yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+
+  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:none; gap:0.5rem;">
     <div class="field">
       <label for="{{ component_id }}-title">Title</label>
       <input id="{{ component_id }}-title" name="title" type="text" placeholder="Optional title">
@@ -45,15 +57,12 @@
     </div>
   </form>
 
-  <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+  <div id="{{ component_id }}-filters" style="margin-top:0.75rem; display:none; gap:0.5rem; flex-wrap:wrap;">
     <input id="{{ component_id }}-filter-search" type="text" placeholder="Search text" style="flex:1; min-width:180px;">
     <input id="{{ component_id }}-filter-tag" type="text" placeholder="Tag filter" style="min-width:140px;">
     <input id="{{ component_id }}-filter-mood" type="number" min="1" max="10" placeholder="Mood" style="min-width:90px;">
     <button type="button" class="btn btn-secondary" id="{{ component_id }}-filter-apply">Apply filters</button>
   </div>
-
-  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No entries yet.</div>
-  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
 </div>
 
 <script>
@@ -71,6 +80,10 @@
     const filterTag = el('filter-tag');
     const filterMood = el('filter-mood');
     const filterApply = el('filter-apply');
+    const reviewBtn = el('review-btn');
+    const createToggle = el('create-toggle');
+    const filterToggle = el('filter-toggle');
+    const filtersWrap = el('filters');
 
     const setStatus = (node, msg, tone = '') => {
       if (!node) return;
@@ -88,6 +101,10 @@
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
       Array.from(createForm?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
+      Array.from(filtersWrap?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
+      createToggle.disabled = !authed;
+      filterToggle.disabled = !authed;
+      reviewBtn.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };
@@ -249,7 +266,51 @@
 
     filterApply?.addEventListener('click', fetchEntries);
     reloadBtn?.addEventListener('click', fetchEntries);
-    ensureAuth();
-    fetchEntries();
+    reviewBtn?.addEventListener('click', () => {
+      const first = listEl.querySelector('[data-entry-card]');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    createToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = createForm.style.display !== 'none';
+      createForm.style.display = isOpen ? 'none' : 'grid';
+      createToggle.textContent = isOpen ? 'New entry' : 'Hide entry form';
+    });
+    filterToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = filtersWrap.style.display !== 'none';
+      filtersWrap.style.display = isOpen ? 'none' : 'flex';
+      filterToggle.textContent = isOpen ? 'Refine view' : 'Hide filters';
+    });
+    const resetLoggedOut = () => {
+      if (emptyEl) {
+        emptyEl.textContent = 'Log in to view entries.';
+        emptyEl.style.display = 'block';
+      }
+      if (listEl) listEl.innerHTML = '';
+      setStatus(createStatus, '');
+      createForm.style.display = 'none';
+      filtersWrap.style.display = 'none';
+      if (createToggle) createToggle.textContent = 'New entry';
+      if (filterToggle) filterToggle.textContent = 'Refine view';
+    };
+
+    window.addEventListener('lifeos:auth-changed', (e) => {
+      if (ensureAuth() && e.detail?.loggedIn) {
+        fetchEntries();
+      } else {
+        resetLoggedOut();
+      }
+    });
+
+    const start = () => {
+      ensureAuth();
+      fetchEntries();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>

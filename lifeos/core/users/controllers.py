@@ -5,8 +5,17 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, render_template, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from lifeos.core.users.schemas import UserCreateRequest, UserResponse, UserUpdateRequest, serialize_user
-from lifeos.core.users.services import create_user, get_user, update_preferences, update_user
+from lifeos.core.users.schemas import (
+    UserCreateRequest,
+    UserUpdateRequest,
+    serialize_user,
+)
+from lifeos.core.users.services import (
+    create_user,
+    get_user,
+    update_preferences,
+    update_user,
+)
 
 user_api_bp = Blueprint("user_api", __name__)
 user_pages_bp = Blueprint("user_pages", __name__)

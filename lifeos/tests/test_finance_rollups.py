@@ -6,15 +6,31 @@ pytestmark = pytest.mark.integration
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.domains.finance.models.accounting_models import AccountCategory
-from lifeos.domains.finance.services.accounting_service import create_account, post_journal_entry
-from lifeos.domains.finance.services.schedule_service import add_schedule_row, recompute_daily_balances
-from lifeos.domains.finance.services.trial_balance_service import calculate_trial_balance, net_balance_for_account
+from lifeos.domains.finance.services.accounting_service import (
+    create_account,
+    post_journal_entry,
+)
+from lifeos.domains.finance.services.schedule_service import (
+    add_schedule_row,
+    recompute_daily_balances,
+)
+from lifeos.domains.finance.services.trial_balance_service import (
+    calculate_trial_balance,
+    net_balance_for_account,
+)
 from lifeos.extensions import db
 
 
 def test_trial_balance_and_net_balance(app):
     with app.app_context():
-        user = create_user(UserCreateRequest(email="a@example.com", password="secret123", full_name="A", timezone="UTC"))
+        user = create_user(
+            UserCreateRequest(
+                email="a@example.com",
+                password="secret123",
+                full_name="A",
+                timezone="UTC",
+            )
+        )
         asset = AccountCategory(
             code="1000",
             name="Cash",
@@ -55,7 +71,14 @@ def test_trial_balance_and_net_balance(app):
 
 def test_money_schedule_recompute(app):
     with app.app_context():
-        user = create_user(UserCreateRequest(email="b@example.com", password="secret123", full_name="B", timezone="UTC"))
+        user = create_user(
+            UserCreateRequest(
+                email="b@example.com",
+                password="secret123",
+                full_name="B",
+                timezone="UTC",
+            )
+        )
         category = AccountCategory(
             code="2000",
             name="Checking",

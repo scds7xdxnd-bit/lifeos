@@ -10,6 +10,7 @@ TASK_CREATED = "projects.task.created"
 TASK_UPDATED = "projects.task.updated"
 TASK_COMPLETED = "projects.task.completed"
 TASK_LOGGED = "projects.task.logged"
+WORK_SESSION_INFERRED = "projects.work_session.inferred"
 
 EVENT_CATALOG = {
     PROJECT_CREATED: {
@@ -90,6 +91,21 @@ EVENT_CATALOG = {
             "logged_at": "datetime",
         },
     },
+    WORK_SESSION_INFERRED: {
+        "version": "v1",
+        "payload": {
+            "log_id": "int",
+            "project_id": "int?",
+            "task_id": "int?",
+            "calendar_event_id": "int",
+            "user_id": "int",
+            "confidence_score": "float",
+            "payload_version": "str",
+            "model_version": "str?",
+            "is_false_positive": "bool?",
+            "is_false_negative": "bool?",
+        },
+    },
 }
 
 __all__ = [
@@ -102,4 +118,5 @@ __all__ = [
     "TASK_UPDATED",
     "TASK_COMPLETED",
     "TASK_LOGGED",
+    "WORK_SESSION_INFERRED",
 ]

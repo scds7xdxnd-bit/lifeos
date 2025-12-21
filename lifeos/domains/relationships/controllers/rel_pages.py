@@ -15,4 +15,3 @@ rel_pages_bp = Blueprint("relationships_pages", __name__)
 def relationships_home():
     contacts = Contact.query.all()
     return render_template("relationships/index.html", contacts=contacts)
-

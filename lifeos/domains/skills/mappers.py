@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from lifeos.domains.skills.models.skill_models import PracticeSession, Skill
-from lifeos.domains.skills.schemas.skill_schemas import PracticeSessionResponse, SkillSummaryResponse
+from lifeos.domains.skills.schemas.skill_schemas import (
+    PracticeSessionResponse,
+    SkillSummaryResponse,
+)
 
 
 def map_skill_summary(summary: dict) -> SkillSummaryResponse:

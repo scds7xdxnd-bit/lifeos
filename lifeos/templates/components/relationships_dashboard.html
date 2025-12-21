@@ -2,17 +2,28 @@
 <div class="card" id="{{ component_id }}-card">
   <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
     <div>
+      <div class="meta">Relationships</div>
       <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-        <h2 style="margin:0;">Relationships</h2>
+        <h2 style="margin:0;">Who needs attention next?</h2>
         {% set badge_domain = 'relationships' %}{% include "components/inferred_badge.html" %}
       </div>
-      <p style="margin:0; color:#5b6470;">Track people, interactions, and reconnect signals.</p>
+      <p style="margin:0; color:#5b6470;">Reconnect cues are suggestions, not judgments.</p>
     </div>
-    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+      <button type="button" class="btn" id="{{ component_id }}-review-btn">Review cues</button>
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    </div>
   </div>
   <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage relationships.</div>
 
-  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:grid; gap:0.5rem;">
+  <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+    <button type="button" class="text-link" id="{{ component_id }}-create-toggle">Add person</button>
+  </div>
+
+  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No people yet.</div>
+  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
+
+  <form id="{{ component_id }}-create-form" style="margin-top:0.75rem; display:none; gap:0.5rem;">
     <div class="field">
       <label for="{{ component_id }}-name">Name</label>
       <input id="{{ component_id }}-name" name="name" type="text" placeholder="e.g., Alex Chen" required>
@@ -40,18 +51,17 @@
       <div id="{{ component_id }}-create-status" class="auth-status"></div>
     </div>
   </form>
-
-  <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No people yet.</div>
-  <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
 </div>
 
 <div class="card" id="{{ component_id }}-reconnect-card" style="margin-top:1rem;">
   <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
     <div>
       <h3 style="margin:0;">Reconnect suggestions</h3>
-      <p style="margin:0; color:#5b6470;">People you haven’t interacted with recently.</p>
+      <p style="margin:0; color:#5b6470;">People you haven’t interacted with in the last 30 days.</p>
     </div>
-    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reconnect-reload">Refresh</button>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-reconnect-reload">Refresh</button>
+    </div>
   </div>
   <div id="{{ component_id }}-reconnect-empty" style="margin-top:0.5rem; color:#5b6470; display:none;">No reconnect suggestions.</div>
   <div id="{{ component_id }}-reconnect-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
@@ -71,6 +81,8 @@
     const reconnectList = el('reconnect-list');
     const reconnectEmpty = el('reconnect-empty');
     const reconnectReload = el('reconnect-reload');
+    const reviewBtn = el('review-btn');
+    const createToggle = el('create-toggle');
 
     const setStatus = (node, msg, tone = '') => {
       if (!node) return;
@@ -88,6 +100,9 @@
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
       Array.from(createForm?.querySelectorAll('input, textarea, select, button') || []).forEach((node) => node.disabled = !authed);
+      createToggle.disabled = !authed;
+      reviewBtn.disabled = !authed;
+      reconnectReload.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };
@@ -112,13 +127,14 @@
             ${person.notes ? `<div style="color:#5b6470; font-size:0.9rem;">${person.notes}</div>` : ''}
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <button class="btn btn-secondary" data-action="delete" data-id="${person.id}">Delete</button>
+            <button class="btn" data-action="toggle-log" data-id="${person.id}">Log interaction</button>
+            <button class="btn btn-secondary" data-action="toggle-manage" data-id="${person.id}">Manage</button>
           </div>
         </div>
         <div style="margin-top:0.35rem; display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.95rem;">
           <span>Last interaction: ${lastDate}${lastMethod ? ' • ' + lastMethod : ''}</span>
         </div>
-        <div style="margin-top:0.35rem;">
+        <div data-section="log" style="margin-top:0.35rem; display:none;">
           <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Log interaction</label>
           <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));">
             <input type="date" data-field="date">
@@ -129,6 +145,11 @@
           <div style="display:flex; gap:0.5rem; margin-top:0.35rem; align-items:center; flex-wrap:wrap;">
             <button class="btn" data-action="log-interaction" data-id="${person.id}">Log</button>
             <span class="auth-status" data-role="row-status" style="min-width:140px;"></span>
+          </div>
+        </div>
+        <div data-section="manage" style="margin-top:0.35rem; display:none;">
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" data-action="delete" data-id="${person.id}">Delete</button>
           </div>
         </div>
       `;
@@ -227,6 +248,18 @@
       const card = e.target.closest('[data-person-card]');
       const statusNode = card?.querySelector('[data-role="row-status"]');
 
+      if (action === 'toggle-log') {
+        const section = card?.querySelector('[data-section="log"]');
+        if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+
+      if (action === 'toggle-manage') {
+        const section = card?.querySelector('[data-section="manage"]');
+        if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+
       if (action === 'delete') {
         setStatus(statusNode, 'Deleting...');
         lifeosTelemetry.track('relationships.person.updated', { source: 'ui', stage: 'submitted', person_id: personId, variant: 'delete' });
@@ -271,6 +304,16 @@
 
     reloadBtn?.addEventListener('click', () => { fetchPeople(); fetchReconnect(); });
     reconnectReload?.addEventListener('click', fetchReconnect);
+    reviewBtn?.addEventListener('click', () => {
+      const first = reconnectList.querySelector('div');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    createToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = createForm.style.display !== 'none';
+      createForm.style.display = isOpen ? 'none' : 'grid';
+      createToggle.textContent = isOpen ? 'Add person' : 'Hide form';
+    });
     window.addEventListener('lifeos:auth-changed', (e) => {
       ensureAuth();
       if (e.detail?.loggedIn) {
@@ -281,6 +324,8 @@
         emptyEl.style.display = 'block';
         reconnectList.innerHTML = '';
         reconnectEmpty.style.display = 'block';
+        createForm.style.display = 'none';
+        if (createToggle) createToggle.textContent = 'Add person';
       }
     });
     ensureAuth();

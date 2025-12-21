@@ -10,7 +10,10 @@ pytestmark = pytest.mark.integration
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
 from lifeos.domains.skills.models.skill_models import PracticeSession, Skill
-from lifeos.domains.skills.services.skill_service import create_skill, log_practice_session
+from lifeos.domains.skills.services.skill_service import (
+    create_skill,
+    log_practice_session,
+)
 from lifeos.extensions import db
 
 

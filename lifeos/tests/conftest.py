@@ -1,20 +1,40 @@
+import os
 import sys
+import uuid
 from pathlib import Path
 
 import pytest
+import sqlalchemy as sa
+from sqlalchemy.orm import scoped_session, sessionmaker
+from alembic import command
+from alembic.config import Config as AlembicConfig
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+RUN_ID = uuid.uuid4().hex
+DEFAULT_TEST_DB = ROOT / "instance" / f"test_{RUN_ID}.db"
+DEFAULT_TEST_DB_URL = f"sqlite:///{DEFAULT_TEST_DB}"
+DEFAULT_TEST_DB.parent.mkdir(parents=True, exist_ok=True)
+if not os.environ.get("TEST_DATABASE_URL") and not os.environ.get("DATABASE_URL"):
+    os.environ["TEST_DATABASE_URL"] = DEFAULT_TEST_DB_URL
 
 from lifeos import create_app
 from lifeos.extensions import db
 from lifeos.core.auth import models as auth_models
 from lifeos.core.users import models as user_models
 from lifeos.core.events import event_models
-from lifeos.domains.finance.models import accounting_models, schedule_models, receivable_models
+from lifeos.domains.finance.models import (
+    accounting_models,
+    schedule_models,
+    receivable_models,
+)
 from lifeos.domains.habits.models import habit
-from lifeos.domains.skills.models.skill_models import Skill as skill, PracticeSession as practice_session
+from lifeos.domains.skills.models.skill_models import (
+    Skill as skill,
+    PracticeSession as practice_session,
+)
 from lifeos.domains.skills.models import skill_metric
 from lifeos.domains.health.models import biometrics, workout, nutrition
 from lifeos.domains.journal.models import journal_entry
@@ -23,7 +43,8 @@ from lifeos.domains.projects.models import project, task, task_log
 from lifeos.core.insights import models as insight_models
 from lifeos.domains.finance.models import schedule_models
 from lifeos.core.auth.models import Role
-from lifeos.platform.outbox import models as outbox_models
+from lifeos.core.users.models import User
+from lifeos.lifeos_platform.outbox import models as outbox_models
 from lifeos.domains.calendar.models import calendar_event as calendar_models
 
 
@@ -37,42 +58,86 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "smoke: Quick smoke tests for CI")
 
 
+def _alembic_config() -> AlembicConfig:
+    cfg = AlembicConfig(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(ROOT / "lifeos" / "migrations"))
+    cfg.set_main_option("lifeos_env", "testing")
+    db_url = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    if not db_url:
+        db_url = DEFAULT_TEST_DB_URL
+    if db_url:
+        cfg.set_main_option("sqlalchemy.url", db_url)
+    return cfg
+
+
+@pytest.fixture(scope="session", autouse=True)
+def migrated_db():
+    """Apply migrations once per session to mirror production schema."""
+    cfg = _alembic_config()
+    command.upgrade(cfg, "head")
+    yield
+    try:
+        command.downgrade(cfg, "base")
+    except Exception:
+        # Downgrade is optional for local/CI runs; ignore failures to avoid hiding test results.
+        pass
+    if os.environ.get("TEST_DATABASE_URL") == DEFAULT_TEST_DB_URL and DEFAULT_TEST_DB.exists():
+        try:
+            DEFAULT_TEST_DB.unlink()
+        except OSError:
+            pass
+
+
 @pytest.fixture()
-def app():
+def app(migrated_db):
+    """
+    Create a per-test app with an isolated database transaction.
+
+    We wrap each test in its own transaction + savepoint so committed data rolls
+    back after the test, preventing cross-test leakage (e.g., duplicate emails).
+    """
     app = create_app("testing")
-    with app.app_context():
-        # ensure all models are imported so metadata is populated before create_all
-        _ = (
-            auth_models,
-            user_models,
-            event_models,
-            accounting_models,
-            schedule_models,
-            receivable_models,
-            habit,
-            skill,
-            practice_session,
-            skill_metric,
-            biometrics,
-            workout,
-            nutrition,
-            journal_entry,
-            contact,
-            interaction,
-            project,
-            task,
-            task_log,
-            outbox_models,
-            calendar_models,
-        )
-        db.create_all()
-        # seed a default admin role so require_roles can find it
-        if not Role.query.filter_by(name="admin").first():
-            db.session.add(Role(name="admin", description="admin role for tests"))
-            db.session.commit()
+    ctx = app.app_context()
+    ctx.push()
+
+    connection = db.engine.connect()
+    cleanup_trans = connection.begin()
+    # Hard-clean any leftover data in case a previous test left state behind.
+    connection.execute(sa.text("PRAGMA foreign_keys=OFF"))
+    for table in reversed(db.Model.metadata.sorted_tables):
+        connection.execute(table.delete())
+    connection.execute(sa.text("PRAGMA foreign_keys=ON"))
+    cleanup_trans.commit()
+
+    transaction = connection.begin()
+
+    session_factory = scoped_session(sessionmaker(bind=connection, expire_on_commit=False, autoflush=False))
+    db.session = session_factory
+    session = session_factory()
+    session.begin_nested()
+
+    @sa.event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(sess, trans):
+        if trans.nested and not trans._parent.nested:
+            sess.begin_nested()
+
+    try:
+        # Seed a default user for FK-dependent tests
+        if not session.query(User).filter_by(email="test@example.com").first():
+            session.add(User(email="test@example.com", password_hash="test"))
+            session.flush()
+        # Seed a default admin role so require_roles can find it
+        if not session.query(Role).filter_by(name="admin").first():
+            session.add(Role(name="admin", description="admin role for tests"))
+            session.flush()
+
         yield app
-        db.session.remove()
-        db.drop_all()
+    finally:
+        sa.event.remove(session, "after_transaction_end", restart_savepoint)
+        session_factory.remove()
+        transaction.rollback()
+        connection.close()
+        ctx.pop()
 
 
 @pytest.fixture()

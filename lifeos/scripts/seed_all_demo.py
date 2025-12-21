@@ -9,9 +9,14 @@ from __future__ import annotations
 import click
 
 from lifeos import create_app
-from lifeos.scripts.seed_admin import seed_admin_user, seed_roles_and_permissions
-from lifeos.scripts.seed_demo import seed_demo_user, seed_accounts, seed_journal_and_transactions, seed_receivables
 from lifeos.extensions import db
+from lifeos.scripts.seed_admin import seed_admin_user, seed_roles_and_permissions
+from lifeos.scripts.seed_demo import (
+    seed_accounts,
+    seed_demo_user,
+    seed_journal_and_transactions,
+    seed_receivables,
+)
 
 
 @click.command()

@@ -1,7 +1,7 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 <div class="container" style="max-width: 900px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
-  
+
   <!-- Header -->
   <div class="card">
     <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
@@ -9,7 +9,7 @@
         <h2 style="margin:0;">Review Interpretations</h2>
         <p style="margin:0; color:#5b6470;">Confirm or reject automatically detected activities from your calendar events.</p>
       </div>
-      <a href="/calendar/" class="btn btn-secondary">← Back to Calendar</a>
+      <button type="button" class="btn btn-secondary" id="review-back-link" onclick="window.location.href='/calendar/'">← Back to Calendar</button>
     </div>
     <div id="review-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to review interpretations.</div>
   </div>
@@ -80,13 +80,13 @@
     <button type="button" class="text-link" id="preview-close" style="font-size:1.5rem; line-height:1;">&times;</button>
   </div>
   <p style="color:#5b6470; font-size:0.9rem; margin:0.5rem 0;">Review the record that will be created:</p>
-  
+
   <div id="preview-content" style="margin-top:1rem; padding:1rem; background:#f7f8fa; border-radius:8px;">
     <!-- Dynamic content -->
   </div>
-  
+
   <div id="preview-status" class="auth-status" style="margin-top:0.5rem;"></div>
-  
+
   <div style="display:flex; gap:0.75rem; margin-top:1rem;">
     <button type="button" class="btn" id="preview-confirm" style="flex:1;">✅ Create Record</button>
     <button type="button" class="btn btn-secondary" id="preview-cancel" style="flex:1;">Cancel</button>
@@ -98,14 +98,15 @@
   const loginHint = document.getElementById('review-login-hint');
   const reloadBtn = document.getElementById('review-reload');
   const domainFilter = document.getElementById('review-domain-filter');
+  const backLink = document.getElementById('review-back-link');
   const reviewList = document.getElementById('review-list');
   const reviewEmpty = document.getElementById('review-empty');
   const statusEl = document.getElementById('review-status');
-  
+
   const statPending = document.getElementById('stat-pending');
   const statConfirmed = document.getElementById('stat-confirmed');
   const statRejected = document.getElementById('stat-rejected');
-  
+
   // Preview modal elements
   const previewOverlay = document.getElementById('preview-overlay');
   const previewModal = document.getElementById('preview-modal');
@@ -115,7 +116,7 @@
   const previewConfirmBtn = document.getElementById('preview-confirm');
   const previewCancelBtn = document.getElementById('preview-cancel');
   const previewCloseBtn = document.getElementById('preview-close');
-  
+
   let allInterpretations = [];
   let currentPreviewInterp = null;
   let currentPreviewCard = null;
@@ -135,9 +136,20 @@
     if (tone) el.dataset.tone = tone; else el.removeAttribute('data-tone');
   };
 
+  backLink?.addEventListener('click', (e) => {
+    if (!lifeosAuth.getTokens().access_token) {
+      e.preventDefault();
+    }
+  });
+
   const ensureAuth = () => {
     const authed = !!lifeosAuth.getTokens().access_token;
-    [reloadBtn].forEach(btn => { if (btn) btn.disabled = !authed; });
+    [reloadBtn, domainFilter].forEach(el => { if (el) el.disabled = !authed; });
+    if (backLink) {
+      backLink.setAttribute('aria-disabled', String(!authed));
+      backLink.style.pointerEvents = authed ? 'auto' : 'none';
+      backLink.style.opacity = authed ? '1' : '0.6';
+    }
     loginHint.style.display = authed ? 'none' : 'block';
     return authed;
   };
@@ -176,17 +188,17 @@
   const fetchInterpretations = async () => {
     if (!ensureAuth()) return;
     setStatus(statusEl, 'Loading...');
-    
+
     const params = new URLSearchParams();
     if (domainFilter.value) params.set('domain', domainFilter.value);
     params.set('limit', '100');
-    
+
     try {
       const res = await fetch(`/api/calendar/interpretations/pending?${params}`, {
         headers: getAuthHeaders(),
       });
       const data = await res.json();
-      
+
       if (res.ok && data.ok) {
         allInterpretations = data.interpretations || [];
         renderInterpretations(allInterpretations);
@@ -208,25 +220,25 @@
 
   const renderInterpretations = (interpretations) => {
     reviewList.innerHTML = '';
-    
+
     if (!interpretations.length) {
       reviewEmpty.style.display = 'block';
       return;
     }
-    
+
     reviewEmpty.style.display = 'none';
-    
+
     interpretations.forEach(interp => {
       const card = document.createElement('div');
       card.style.cssText = 'display:grid; gap:0.75rem; padding:1rem; border:1px solid #e0e5ec; border-radius:8px; background:white;';
       card.id = `interp-${interp.id}`;
-      
+
       const icon = domainIcons[interp.domain] || '📌';
       const color = domainColors[interp.domain] || '#5b6470';
       const conf = confidenceLabel(interp.confidence_score);
       const recordType = (interp.record_type || '').replace(/_/g, ' ');
       const classData = interp.classification_data || {};
-      
+
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -241,15 +253,15 @@
             <div style="font-size:0.75rem; color:#7a8599;">${formatDate(interp.created_at)}</div>
           </div>
         </div>
-        
+
         ${classData.extracted_title ? `<div style="padding:0.5rem; background:#f7f8fa; border-radius:6px; font-size:0.9rem;"><strong>From:</strong> ${classData.extracted_title}</div>` : ''}
-        
+
         ${classData.matched_keywords?.length ? `
           <div style="font-size:0.85rem; color:#5b6470;">
             <strong>Matched:</strong> ${classData.matched_keywords.join(', ')}
           </div>
         ` : ''}
-        
+
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <button type="button" class="btn" data-action="confirm" data-id="${interp.id}" style="flex:1; min-width:100px;">✅ Confirm</button>
           <button type="button" class="btn btn-secondary" data-action="reject" data-id="${interp.id}" style="flex:1; min-width:100px;">❌ Reject</button>
@@ -257,14 +269,14 @@
         </div>
         <div class="interp-status auth-status" style="display:none;"></div>
       `;
-      
+
       // Action handlers
       card.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', async () => {
           const action = btn.dataset.action;
           const id = parseInt(btn.dataset.id);
           const interpData = allInterpretations.find(i => i.id === id);
-          
+
           if (action === 'confirm' && interpData) {
             // Show preview modal before confirming
             showPreview(interpData, card);
@@ -274,7 +286,7 @@
           }
         });
       });
-      
+
       reviewList.appendChild(card);
     });
   };
@@ -283,17 +295,17 @@
   const showPreview = (interp, cardEl) => {
     currentPreviewInterp = interp;
     currentPreviewCard = cardEl;
-    
+
     const icon = domainIcons[interp.domain] || '📌';
     const color = domainColors[interp.domain] || '#5b6470';
     const recordType = (interp.record_type || '').replace(/_/g, ' ');
     const classData = interp.classification_data || {};
-    
+
     previewTitle.innerHTML = `${icon} Create ${interp.domain} Record`;
-    
+
     // Build preview content based on domain
     let contentHtml = '';
-    
+
     if (interp.domain === 'finance') {
       contentHtml = `
         <div style="display:grid; gap:0.5rem;">
@@ -364,7 +376,7 @@
         </div>
       `;
     }
-    
+
     // Add confidence info
     const conf = confidenceLabel(interp.confidence_score);
     contentHtml += `
@@ -372,10 +384,10 @@
         <strong>Confidence:</strong> <span style="color:${conf.color};">${Math.round(interp.confidence_score * 100)}% (${conf.text})</span>
       </div>
     `;
-    
+
     previewContent.innerHTML = contentHtml;
     setStatus(previewStatus, '');
-    
+
     previewOverlay.style.display = 'block';
     previewModal.style.display = 'block';
   };
@@ -389,10 +401,10 @@
 
   const confirmFromPreview = async () => {
     if (!currentPreviewInterp || !currentPreviewCard) return;
-    
+
     previewConfirmBtn.disabled = true;
     setStatus(previewStatus, 'Creating record...', '');
-    
+
     await handleAction(currentPreviewInterp.id, 'confirm', currentPreviewCard);
     closePreview();
     previewConfirmBtn.disabled = false;
@@ -403,7 +415,7 @@
   previewCancelBtn.addEventListener('click', closePreview);
   previewOverlay.addEventListener('click', closePreview);
   previewConfirmBtn.addEventListener('click', confirmFromPreview);
-  
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closePreview();
   });
@@ -415,17 +427,17 @@
       reject: 'rejected',
       ignore: 'ignored',
     };
-    
+
     const status = statusMap[action];
     if (!status) return;
-    
+
     const buttons = cardEl.querySelectorAll('button');
     buttons.forEach(b => b.disabled = true);
-    
+
     const interpStatus = cardEl.querySelector('.interp-status');
     interpStatus.style.display = 'block';
     interpStatus.textContent = action === 'confirm' ? 'Creating record...' : 'Updating...';
-    
+
     try {
       const res = await fetch(`/api/calendar/interpretations/${id}`, {
         method: 'PATCH',
@@ -433,22 +445,22 @@
         body: JSON.stringify({ status }),
       });
       const data = await res.json();
-      
+
       if (res.ok && data.ok) {
         // Animate removal
         cardEl.style.transition = 'all 0.3s ease';
         cardEl.style.opacity = '0';
         cardEl.style.transform = 'translateX(20px)';
-        
+
         setTimeout(() => {
           cardEl.remove();
           allInterpretations = allInterpretations.filter(i => i.id !== parseInt(id));
           updateStats();
-          
+
           if (!allInterpretations.length) {
             reviewEmpty.style.display = 'block';
           }
-          
+
           // Update counters
           if (action === 'confirm') {
             statConfirmed.textContent = parseInt(statConfirmed.textContent) + 1;
@@ -487,8 +499,15 @@
   });
 
   // Initialize
-  ensureAuth();
-  fetchInterpretations();
+  const start = () => {
+    ensureAuth();
+    fetchInterpretations();
+  };
+  if (window.lifeosAuthReady?.then) {
+    window.lifeosAuthReady.finally(start);
+  } else {
+    start();
+  }
 })();
 </script>
 {% endblock %}

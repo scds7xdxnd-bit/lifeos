@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class CalendarEventCreate(BaseModel):
     """Request body for creating a calendar event."""
+
     title: str = Field(min_length=1, max_length=255)
     description: Optional[str] = None
     start_time: datetime
@@ -24,6 +25,7 @@ class CalendarEventCreate(BaseModel):
 
 class CalendarEventUpdate(BaseModel):
     """Request body for updating a calendar event."""
+
     title: Optional[str] = Field(default=None, min_length=1, max_length=255)
     description: Optional[str] = None
     start_time: Optional[datetime] = None
@@ -38,6 +40,7 @@ class CalendarEventUpdate(BaseModel):
 
 class CalendarEventResponse(BaseModel):
     """Response schema for a calendar event."""
+
     id: int
     user_id: int
     title: str
@@ -61,6 +64,7 @@ class CalendarEventResponse(BaseModel):
 
 class InterpretationResponse(BaseModel):
     """Response schema for a calendar event interpretation."""
+
     id: int
     calendar_event_id: int
     domain: str
@@ -77,21 +81,115 @@ class InterpretationResponse(BaseModel):
 
 class InterpretationUpdate(BaseModel):
     """Request body for updating interpretation status."""
+
     status: Literal["confirmed", "rejected", "ignored"]
 
 
 class CalendarEventListParams(BaseModel):
     """Query parameters for listing calendar events."""
+
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     source: Optional[str] = None
     limit: int = Field(default=50, ge=1, le=500)
     offset: int = Field(default=0, ge=0)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_dates(cls, values: dict):
+        """Accept naive/offset datetimes or date strings; tolerate trailing Z."""
+
+        def _parse(val):
+            if val is None:
+                return None
+            if isinstance(val, datetime):
+                return val
+            if isinstance(val, date):
+                return datetime.combine(val, time.min)
+            if isinstance(val, str):
+                raw = val.strip()
+                if raw.endswith("Z"):
+                    raw = raw[:-1] + "+00:00"
+                try:
+                    return datetime.fromisoformat(raw)
+                except Exception:
+                    return None
+            return None
+
+        values = dict(values or {})
+        values["start_date"] = _parse(values.get("start_date"))
+        values["end_date"] = _parse(values.get("end_date"))
+        return values
+
 
 class InterpretationListParams(BaseModel):
     """Query parameters for listing interpretations."""
+
     domain: Optional[str] = None
     status: Optional[str] = None
     limit: int = Field(default=50, ge=1, le=500)
     offset: int = Field(default=0, ge=0)
+
+
+# ==================== View / Ledger Params ====================
+
+
+class DayViewParams(BaseModel):
+    date_value: Optional[date] = None
+
+    @field_validator("date_value", mode="before")
+    @classmethod
+    def _coerce_date(cls, value):
+        if value is None or isinstance(value, date):
+            return value
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, str) and value.strip():
+            return date.fromisoformat(value.strip())
+        raise ValueError("invalid_date")
+
+
+class WeekViewParams(BaseModel):
+    start: Optional[date] = None
+
+    @field_validator("start", mode="before")
+    @classmethod
+    def _coerce_date(cls, value):
+        if value is None or isinstance(value, date):
+            return value
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, str) and value.strip():
+            return date.fromisoformat(value.strip())
+        raise ValueError("invalid_date")
+
+
+class MonthViewParams(BaseModel):
+    year: int
+    month: int
+
+    @model_validator(mode="after")
+    def _validate_month(self):
+        if self.month < 1 or self.month > 12:
+            raise ValueError("invalid_month")
+        if self.year < 1:
+            raise ValueError("invalid_year")
+        return self
+
+
+class LedgerParams(BaseModel):
+    anchor: Optional[date] = None
+    direction: Literal["forward", "backward"] = "backward"
+    limit: int = Field(default=50, ge=1, le=200)
+    cursor: Optional[str] = None
+
+    @field_validator("anchor", mode="before")
+    @classmethod
+    def _coerce_date(cls, value):
+        if value is None or isinstance(value, date):
+            return value
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, str) and value.strip():
+            return date.fromisoformat(value.strip())
+        raise ValueError("invalid_anchor")

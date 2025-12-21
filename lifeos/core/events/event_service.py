@@ -16,4 +16,3 @@ def log_event(event_type: str, payload: dict, user_id: Optional[int] = None) -> 
     db.session.commit()
     event_bus.publish(record)
     return record
-

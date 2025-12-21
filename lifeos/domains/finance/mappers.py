@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from typing import List
 
+from lifeos.domains.finance.models.receivable_models import (
+    ReceivableManualEntry,
+    ReceivableTracker,
+)
 from lifeos.domains.finance.schemas.finance_schemas import JournalEntryCreateRequest
-from lifeos.domains.finance.models.receivable_models import ReceivableTracker, ReceivableManualEntry
 
 
 def map_journal_entry_request(payload: JournalEntryCreateRequest) -> List[dict]:
@@ -28,7 +31,7 @@ def map_receivable(tracker: ReceivableTracker) -> dict:
         "principal": float(tracker.principal),
         "start_date": tracker.start_date.isoformat() if tracker.start_date else None,
         "due_date": tracker.due_date.isoformat() if tracker.due_date else None,
-        "interest_rate": float(tracker.interest_rate) if tracker.interest_rate is not None else None,
+        "interest_rate": (float(tracker.interest_rate) if tracker.interest_rate is not None else None),
     }
 
 

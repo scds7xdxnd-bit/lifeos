@@ -11,7 +11,9 @@ from lifeos.domains.finance.models.schedule_models import MoneyScheduleDailyBala
 def generate_forecast(user_id: int, days: int = 30) -> List[dict]:
     """Return daily balances for the forecast horizon."""
     start = date.today()
-    balances = {row.as_of: float(row.balance) for row in MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).all()}
+    balances = {
+        row.as_of: float(row.balance) for row in MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).all()
+    }
     forecast = []
     running_total = 0.0
     for offset in range(days):

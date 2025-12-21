@@ -1,7 +1,7 @@
 # LifeOS Deployment & Operations Guide
 
-**Last Updated:** 2024-12-18  
-**Architecture Version:** 1.0  
+**Last Updated:** 2024-12-18
+**Architecture Version:** 1.0
 **Deployment Status:** Production Ready
 
 ---
@@ -164,21 +164,21 @@ docker-compose down -v
 docker-compose build --no-cache
 
 # Execute command in container
-docker-compose exec lifeos-web flask db upgrade
-docker-compose exec lifeos-web flask shell
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db upgrade head
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app shell
 ```
 
 ### Database Management
 
 ```bash
 # Run migrations
-docker-compose exec lifeos-web flask db upgrade
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db upgrade head
 
 # Create new migration (after model changes)
-docker-compose exec lifeos-web flask db migrate -m "description"
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db migrate -m "description"
 
 # Downgrade migration
-docker-compose exec lifeos-web flask db downgrade
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db downgrade
 
 # Check migration status
 docker-compose exec lifeos-db psql -U lifeos lifeos -c \
@@ -355,7 +355,7 @@ docker-compose ps
 ### Key Metrics to Monitor
 
 #### Application Metrics
-- **Request Rate**: `rate(http_requests_total[5m])` 
+- **Request Rate**: `rate(http_requests_total[5m])`
 - **Error Rate**: `rate(http_requests_total{status=~"5.."}[5m])`
 - **Response Time (p95)**: `histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))`
 - **Worker Lag**: `platform_outbox_pending_messages`
@@ -439,6 +439,26 @@ docker-compose exec db pg_dump -U lifeos lifeos | gzip > backup.sql.gz
 docker-compose stop lifeos-web lifeos-worker
 gunzip < backup.sql.gz | docker-compose exec -T db psql -U lifeos lifeos
 docker-compose start lifeos-web lifeos-worker
+```
+
+### Calendar View/Ledger Smoke Test (Refactor)
+
+Use the deterministic calendar view/ledger smoke script after deploys or feature-flag changes:
+
+```bash
+# Requires AUTH_TOKEN for a valid user/admin; BASE_URL defaults to http://localhost:8000
+AUTH_TOKEN="$TOKEN" BASE_URL="https://staging.lifeos.example.com" \
+  scripts/ops/calendar_view_smoketest.sh
+```
+
+The script checks day/week/month/ledger endpoints for 200 responses. Toggle `CALENDAR_VIEW_API_V2` in your env to enable/disable the new view endpoints during rollout.
+
+### Phase 3b Contract Hardening Smoke Test
+
+Run the contract and read-only guard tests after deploys that touch read surfaces:
+
+```bash
+scripts/ops/phase3b_contract_smoketest.sh
 ```
 
 ---

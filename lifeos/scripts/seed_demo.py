@@ -5,18 +5,31 @@ from __future__ import annotations
 from datetime import date
 
 from lifeos import create_app
-from lifeos.core.auth.password import hash_password
 from lifeos.core.auth.models import Role
+from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
-from lifeos.domains.finance.models.accounting_models import Account, AccountCategory, JournalEntry, JournalLine, Transaction
-from lifeos.domains.finance.models.receivable_models import ReceivableManualEntry, ReceivableTracker
+from lifeos.domains.finance.models.accounting_models import (
+    Account,
+    AccountCategory,
+    JournalEntry,
+    JournalLine,
+    Transaction,
+)
+from lifeos.domains.finance.models.receivable_models import (
+    ReceivableManualEntry,
+    ReceivableTracker,
+)
 from lifeos.extensions import db
 
 
 def seed_demo_user() -> User:
     user = User.query.filter_by(email="demo@lifeos.test").first()
     if not user:
-        user = User(email="demo@lifeos.test", full_name="Demo User", password_hash=hash_password("demo12345"))
+        user = User(
+            email="demo@lifeos.test",
+            full_name="Demo User",
+            password_hash=hash_password("demo12345"),
+        )
         db.session.add(user)
         db.session.flush()
     # ensure finance:write role
@@ -75,8 +88,22 @@ def seed_journal_and_transactions(user_id: int, accounts: list[Account]) -> None
     db.session.add(entry2)
     db.session.flush()
 
-    txn1 = Transaction(user_id=user_id, amount=500, description="Sale", occurred_at=date.today(), journal_entry_id=entry1.id, category="Income")
-    txn2 = Transaction(user_id=user_id, amount=150, description="Supplies", occurred_at=date.today(), journal_entry_id=entry2.id, category="Expense")
+    txn1 = Transaction(
+        user_id=user_id,
+        amount=500,
+        description="Sale",
+        occurred_at=date.today(),
+        journal_entry_id=entry1.id,
+        category="Income",
+    )
+    txn2 = Transaction(
+        user_id=user_id,
+        amount=150,
+        description="Supplies",
+        occurred_at=date.today(),
+        journal_entry_id=entry2.id,
+        category="Expense",
+    )
     db.session.add_all([txn1, txn2])
 
 
@@ -84,7 +111,14 @@ def seed_receivables(user_id: int) -> None:
     tracker = ReceivableTracker(user_id=user_id, counterparty="Alice", principal=300, start_date=date.today())
     db.session.add(tracker)
     db.session.flush()
-    db.session.add(ReceivableManualEntry(tracker_id=tracker.id, entry_date=date.today(), amount=50, memo="Partial payment"))
+    db.session.add(
+        ReceivableManualEntry(
+            tracker_id=tracker.id,
+            entry_date=date.today(),
+            amount=50,
+            memo="Partial payment",
+        )
+    )
 
 
 def main():

@@ -30,7 +30,10 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for relationships tests."""
     with app.app_context():
-        user = User(email="relationships-tester@example.com", password_hash=hash_password("secret"))
+        user = User(
+            email="relationships-tester@example.com",
+            password_hash=hash_password("secret"),
+        )
         db.session.add(user)
         db.session.commit()
         yield user
@@ -279,10 +282,16 @@ class TestInteractionService:
             person = create_person(test_user.id, name="List Interactions Person")
             log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
             log_interaction(
-                test_user.id, person.id, date_value=date.today() - timedelta(days=1), method="message"
+                test_user.id,
+                person.id,
+                date_value=date.today() - timedelta(days=1),
+                method="message",
             )
             log_interaction(
-                test_user.id, person.id, date_value=date.today() - timedelta(days=2), method="meeting"
+                test_user.id,
+                person.id,
+                date_value=date.today() - timedelta(days=2),
+                method="meeting",
             )
 
             interactions = list_interactions(test_user.id, person.id)
@@ -299,9 +308,7 @@ class TestInteractionService:
         """Edit an existing interaction."""
         with app.app_context():
             person = create_person(test_user.id, name="Edit Interaction Person")
-            interaction = log_interaction(
-                test_user.id, person.id, date_value=date.today(), method="call"
-            )
+            interaction = log_interaction(test_user.id, person.id, date_value=date.today(), method="call")
 
             updated = edit_interaction(
                 test_user.id,
@@ -421,7 +428,7 @@ class TestRelationshipEventEmission:
     def test_person_created_event_emitted(self, app, test_user):
         """Person creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="relationships.person.created"
@@ -438,7 +445,7 @@ class TestRelationshipEventEmission:
     def test_person_updated_event_emitted(self, app, test_user):
         """Person update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             person = create_person(test_user.id, name="Update Event Person")
 
@@ -457,7 +464,7 @@ class TestRelationshipEventEmission:
     def test_person_deleted_event_emitted(self, app, test_user):
         """Person deletion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             person = create_person(test_user.id, name="Delete Event Person")
 
@@ -476,7 +483,7 @@ class TestRelationshipEventEmission:
     def test_interaction_logged_event_emitted(self, app, test_user):
         """Interaction logging should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             person = create_person(test_user.id, name="Interaction Event Person")
 

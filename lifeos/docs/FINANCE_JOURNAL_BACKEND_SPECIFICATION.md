@@ -1,7 +1,7 @@
 # LifeOS Finance: Journal + Inline Account Creation Backend Specification
 
-**Role:** LifeOS-Finance Backend Engineer  
-**Scope:** Implement the new journal-first, inline account-creation workflow in the Finance domain  
+**Role:** LifeOS-Finance Backend Engineer
+**Scope:** Implement the new journal-first, inline account-creation workflow in the Finance domain
 **Status:** Specification (non-code)
 
 ---
@@ -431,7 +431,7 @@ class AccountResponse(BaseModel):
     is_active: bool
     created_at: datetime
     is_existing: bool = True  # For search results
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class AccountSubtypesResponse(BaseModel):
@@ -470,7 +470,7 @@ EVENT_CATALOG = {
 
 - **When:** `create_account_inline()` completes successfully (after commit to DB).
 - **Payload:** See above.
-- **How:** Use `lifeos.platform.outbox.enqueue()` to emit the event to the outbox (for durability + async delivery).
+- **How:** Use `lifeos.lifeos_platform.outbox.enqueue()` to emit the event to the outbox (for durability + async delivery).
 - **Subscribers (future):** Insights engine may listen to account creation to trigger onboarding flows, or export notifications.
 
 ### 5.3 Integration with Insights Engine
@@ -581,7 +581,7 @@ EVENT_CATALOG = {
 
 4. **Events:**
    - Emit from services (not controllers) after successful DB commit.
-   - Use `lifeos.platform.outbox.enqueue()` for durability.
+   - Use `lifeos.lifeos_platform.outbox.enqueue()` for durability.
    - Define event type in `lifeos/domains/finance/events.py` catalog.
    - Payload is JSON-serializable.
 

@@ -8,7 +8,10 @@ pytestmark = pytest.mark.integration
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
 from lifeos.extensions import db
-from lifeos.domains.finance.models.receivable_models import ReceivableTracker, ReceivableManualEntry
+from lifeos.domains.finance.models.receivable_models import (
+    ReceivableTracker,
+    ReceivableManualEntry,
+)
 
 
 def _auth_headers(app, user_id: int):
@@ -31,7 +34,11 @@ def test_create_and_log_receivable(app, client):
 
     resp = client.post(
         "/api/finance/receivables",
-        json={"counterparty": "Client", "principal": 1000, "start_date": date.today().isoformat()},
+        json={
+            "counterparty": "Client",
+            "principal": 1000,
+            "start_date": date.today().isoformat(),
+        },
         headers=headers,
     )
     assert resp.status_code == 201

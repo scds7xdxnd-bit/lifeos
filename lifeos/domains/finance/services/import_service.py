@@ -87,8 +87,18 @@ def commit_import(user_id: int, file_obj) -> Tuple[int, List[dict]]:
                 user_id=user_id,
                 description=row.description or f"Imported txn {idx}",
                 lines=[
-                    {"account_id": row.debit_account_id, "debit": row.amount, "credit": 0, "memo": row.description},
-                    {"account_id": row.credit_account_id, "debit": 0, "credit": row.amount, "memo": row.description},
+                    {
+                        "account_id": row.debit_account_id,
+                        "debit": row.amount,
+                        "credit": 0,
+                        "memo": row.description,
+                    },
+                    {
+                        "account_id": row.credit_account_id,
+                        "debit": 0,
+                        "credit": row.amount,
+                        "memo": row.description,
+                    },
                 ],
                 posted_at=row.posted_at,
             )

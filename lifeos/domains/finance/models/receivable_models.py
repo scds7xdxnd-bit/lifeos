@@ -46,7 +46,9 @@ class LoanGroup(db.Model):
     name: Mapped[str] = mapped_column(db.String(128), nullable=False)
     description: Mapped[str | None] = mapped_column(db.Text)
 
-    links: Mapped[list["LoanGroupLink"]] = relationship("LoanGroupLink", back_populates="group", cascade="all, delete-orphan")
+    links: Mapped[list["LoanGroupLink"]] = relationship(
+        "LoanGroupLink", back_populates="group", cascade="all, delete-orphan"
+    )
 
 
 class LoanGroupLink(db.Model):
@@ -58,4 +60,3 @@ class LoanGroupLink(db.Model):
 
     group: Mapped[LoanGroup] = relationship("LoanGroup", back_populates="links")
     tracker: Mapped[ReceivableTracker] = relationship("ReceivableTracker", back_populates="loan_group_links")
-
