@@ -74,7 +74,7 @@ cat lifeos/migrations/versions/20251218_backend_updates_validation.py
 ```bash
 # Apply migration in dev environment
 cd /Users/ammarhakimi/Dev/finance_app_clean
-flask db upgrade
+python -m flask --app lifeos.wsgi:app db upgrade head
 
 # Verify migration was applied
 flask db current
@@ -100,7 +100,7 @@ pg_dump production_db > backup_20251218_pre_migration.sql
 
 # 2. Apply migration in production
 cd /Users/ammarhakimi/Dev/finance_app_clean
-FLASK_ENV=production flask db upgrade
+FLASK_ENV=production python -m flask --app lifeos.wsgi:app db upgrade head
 
 # 3. Verify migration succeeded
 FLASK_ENV=production flask db current
@@ -191,7 +191,7 @@ psql production_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WH
 psql production_db -c "SELECT * FROM pg_locks WHERE NOT granted;"
 
 # 3. Re-run migration
-flask db upgrade
+python -m flask --app lifeos.wsgi:app db upgrade head
 ```
 
 ### Issue: Normalized names are empty strings
@@ -327,7 +327,7 @@ All supporting documentation has been created/updated:
 ### Apply Migration
 ```bash
 cd /Users/ammarhakimi/Dev/finance_app_clean
-flask db upgrade
+python -m flask --app lifeos.wsgi:app db upgrade head
 ```
 
 ### Verify Migration

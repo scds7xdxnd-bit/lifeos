@@ -1,7 +1,7 @@
 # Finance Journal + Inline Account Creation: Backend Implementation Summary
 
-**Date:** 2025-12-06  
-**Status:** ✅ Complete  
+**Date:** 2025-12-06
+**Status:** ✅ Complete
 **Architecture:** LifeOS Finance Domain (Flask + SQLAlchemy + Event-Driven)
 
 ---
@@ -286,7 +286,7 @@ curl -X GET 'http://localhost:5000/finance/accounts/subtypes/asset'
 2. **Apply migration:**
    ```bash
    cd /Users/ammarhakimi/Dev/finance_app_clean/lifeos
-   flask db upgrade
+   python -m flask --app lifeos.wsgi:app db upgrade head
    ```
 3. **Verify:**
    - Check `finance_account` table has new columns
@@ -392,4 +392,3 @@ pytest lifeos/tests/test_finance*.py -v --cov=lifeos/domains/finance
 ---
 
 **✅ Implementation Complete. Ready for Frontend Integration & Deployment.**
-

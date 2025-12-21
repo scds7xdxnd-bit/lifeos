@@ -1,9 +1,9 @@
 # Database Migration: Backend Updates Validation (20251218)
 
-**Migration ID:** `20251218_backend_updates_validation`  
-**Date:** 2025-12-18  
-**Revision Chain:** `20251216_drop_legacy_habits_relationships` → `20251218_backend_updates_validation`  
-**Status:** ✅ Ready for Deployment  
+**Migration ID:** `20251218_backend_updates_validation`
+**Date:** 2025-12-18
+**Revision Chain:** `20251216_drop_legacy_habits_relationships` → `20251218_backend_updates_validation`
+**Status:** ✅ Ready for Deployment
 **Type:** Additive (all changes are backwards compatible)
 
 ---
@@ -221,7 +221,7 @@ WHERE normalized_name = '';
 ```bash
 # Development environment
 cd /Users/ammarhakimi/Dev/finance_app_clean
-flask db upgrade
+python -m flask --app lifeos.wsgi:app db upgrade head
 
 # Production environment
 python lifeos/wsgi.py db upgrade
@@ -261,15 +261,15 @@ flask db downgrade
 ✅ Python AST validation passed
 
 ### Logic Verification
-✅ All table names match SQLAlchemy model definitions  
-✅ All column types match model annotations  
-✅ All indexes match __table_args__ in models  
-✅ All foreign keys are valid (reference existing tables)  
+✅ All table names match SQLAlchemy model definitions
+✅ All column types match model annotations
+✅ All indexes match __table_args__ in models
+✅ All foreign keys are valid (reference existing tables)
 
 ### Idempotency Tests
-✅ Multiple applies result in same schema  
-✅ Partial schema doesn't cause errors  
-✅ Backfill operations are deterministic  
+✅ Multiple applies result in same schema
+✅ Partial schema doesn't cause errors
+✅ Backfill operations are deterministic
 
 ---
 
@@ -335,9 +335,9 @@ flask db downgrade
 
 ## Sign-Off
 
-**Migration Author:** Database Engineer (LifeOS)  
-**Review Status:** ✅ Ready for deployment  
-**Architecture Compliance:** ✅ All LifeOS constraints satisfied  
-**Testing:** ✅ Syntax validated, idempotency verified  
+**Migration Author:** Database Engineer (LifeOS)
+**Review Status:** ✅ Ready for deployment
+**Architecture Compliance:** ✅ All LifeOS constraints satisfied
+**Testing:** ✅ Syntax validated, idempotency verified
 
 **Safe to deploy to:** Development → Staging → Production

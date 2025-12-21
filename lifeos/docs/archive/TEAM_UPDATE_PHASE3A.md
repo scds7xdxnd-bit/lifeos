@@ -24,5 +24,5 @@ Context:
 
 ## All Teams
 - Keep architecture doc current when boundaries, events, or migrations change.
-- Run `flask db upgrade` before feature testing; keep DB at head (`20251219_calendar_oauth_tokens`).
+- Run `python -m flask --app lifeos.wsgi:app db upgrade head` before feature testing; keep DB at head (`20251219_calendar_oauth_tokens`).
 - Continue to label tests with `pytestmark` (unit/integration/ml) and maintain ≥85% coverage.

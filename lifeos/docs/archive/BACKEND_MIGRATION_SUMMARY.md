@@ -1,7 +1,7 @@
 # LifeOS Backend: Database Migration Summary
 
-**Date:** 2025-12-18  
-**Status:** ✅ **READY FOR FRONTEND BUILD**  
+**Date:** 2025-12-18
+**Status:** ✅ **READY FOR FRONTEND BUILD**
 **Migration:** `20251218_backend_updates_validation`
 
 ---
@@ -74,13 +74,13 @@
 ### Option 1: Development
 ```bash
 cd /Users/ammarhakimi/Dev/finance_app_clean
-flask db upgrade
+python -m flask --app lifeos.wsgi:app db upgrade head
 ```
 
 ### Option 2: Production
 ```bash
 # With environment variable
-FLASK_ENV=production flask db upgrade
+FLASK_ENV=production python -m flask --app lifeos.wsgi:app db upgrade head
 
 # Or directly with wsgi
 python lifeos/wsgi.py db upgrade
@@ -99,7 +99,7 @@ flask db current
 - [ ] Review migration file: `20251218_backend_updates_validation.py`
 - [ ] Backup production database
 - [ ] Test in staging environment
-- [ ] Apply migration: `flask db upgrade`
+- [ ] Apply migration: `python -m flask --app lifeos.wsgi:app db upgrade head`
 - [ ] Verify: `flask db current`
 - [ ] Check logs for errors
 - [ ] Verify all tables exist
@@ -216,7 +216,7 @@ flask db current
 
 1. **Deploy Migration**
    ```bash
-   flask db upgrade
+   python -m flask --app lifeos.wsgi:app db upgrade head
    ```
 
 2. **Verify Schema**
@@ -262,6 +262,6 @@ flask db current
 
 **Database Engineer Sign-Off:** ✅ **READY FOR FRONTEND BUILD**
 
-**Next Phase:** Frontend Integration  
-**Timestamp:** 2025-12-18  
+**Next Phase:** Frontend Integration
+**Timestamp:** 2025-12-18
 **Migration Chain:** 17 historical + 1 validation = **Complete LifeOS Backend Schema**

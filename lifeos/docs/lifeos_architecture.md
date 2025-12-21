@@ -972,7 +972,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - Tagging: `lifeos:<sha>`, `lifeos:<semver>`, `lifeos:latest`
 
 **Deployment Flow:**
-1. Pre-deploy: Run migrations (`flask db upgrade head`) in separate job
+1. Pre-deploy: Run migrations (`python -m flask --app lifeos.wsgi:app db upgrade head`) in separate job
 2. Deploy: Rolling update via Kubernetes/Docker Compose
 3. Post-deploy: Smoke test; rollback if fails
 

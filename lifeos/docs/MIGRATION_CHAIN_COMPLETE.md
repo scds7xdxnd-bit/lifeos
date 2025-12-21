@@ -233,7 +233,7 @@
 ### Apply Migration
 ```bash
 cd /Users/ammarhakimi/Dev/finance_app_clean
-flask db upgrade
+python -m flask --app lifeos.wsgi:app db upgrade head
 ```
 
 ### Verify
@@ -277,7 +277,7 @@ flask db downgrade 20251216_drop_legacy_habits_relationships  # Go to specific
 
 1. **Deploy Migration** (if not already done)
    ```bash
-   flask db upgrade
+   python -m flask --app lifeos.wsgi:app db upgrade head
    ```
 
 2. **Verify All Tables**

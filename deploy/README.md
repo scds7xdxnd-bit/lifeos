@@ -164,21 +164,21 @@ docker-compose down -v
 docker-compose build --no-cache
 
 # Execute command in container
-docker-compose exec lifeos-web flask db upgrade
-docker-compose exec lifeos-web flask shell
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db upgrade head
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app shell
 ```
 
 ### Database Management
 
 ```bash
 # Run migrations
-docker-compose exec lifeos-web flask db upgrade
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db upgrade head
 
 # Create new migration (after model changes)
-docker-compose exec lifeos-web flask db migrate -m "description"
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db migrate -m "description"
 
 # Downgrade migration
-docker-compose exec lifeos-web flask db downgrade
+docker-compose exec lifeos-web python -m flask --app lifeos.wsgi:app db downgrade
 
 # Check migration status
 docker-compose exec lifeos-db psql -U lifeos lifeos -c \

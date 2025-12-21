@@ -3,7 +3,7 @@
 ## Quick start
 - Create and activate a virtualenv, then install: `pip install -r lifeos/requirements.txt`
 - Copy `.env.example` to `.env` and fill secrets/paths
-- Run DB migrations: `FLASK_APP=lifeos.wsgi flask db upgrade`
+- Run DB migrations: `python -m flask --app lifeos.wsgi:app db upgrade head`
 - Seed admin and demo data: `python -m lifeos.scripts.seed_all_demo`
 - Run the app: `gunicorn -c lifeos/gunicorn.conf.py lifeos.wsgi:app` (or `python -m lifeos.wsgi` for dev)
 

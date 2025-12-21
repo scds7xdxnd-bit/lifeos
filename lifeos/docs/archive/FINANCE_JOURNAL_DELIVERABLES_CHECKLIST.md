@@ -1,7 +1,7 @@
 # Finance Journal Backend: Deliverables Checklist
 
-**Delivery Date:** 2025-12-06  
-**Status:** ✅ COMPLETE  
+**Delivery Date:** 2025-12-06
+**Status:** ✅ COMPLETE
 **Quality:** Production-grade, fully tested, fully documented
 
 ---
@@ -201,7 +201,7 @@
 ### Deployment Steps
 1. ✅ Backup production database
 2. ✅ Review migration: `20251206_finance_account_type_classification.py`
-3. ✅ Run: `flask db upgrade`
+3. ✅ Run: `python -m flask --app lifeos.wsgi:app db upgrade head`
 4. ✅ Verify indexes created
 5. ✅ Run tests: `pytest lifeos/tests/test_finance*.py`
 6. ✅ Deploy code
@@ -249,8 +249,8 @@ lifeos/docs/
 └── FINANCE_JOURNAL_QUICK_START.md (NEW: 12 pages)
 ```
 
-**Total Lines of Code:** 1,155 LOC ✅  
-**Total Documentation:** 89 pages ✅  
+**Total Lines of Code:** 1,155 LOC ✅
+**Total Documentation:** 89 pages ✅
 **Total Test Cases:** 43+ ✅
 
 ---
@@ -373,13 +373,13 @@ lifeos/docs/
 
 ## Sign-Off
 
-**Component:** Finance Journal Backend  
-**Status:** ✅ PRODUCTION READY  
-**Delivery Date:** 2025-12-06  
-**Quality Level:** Production-Grade  
-**Test Coverage:** 85%+  
-**Documentation:** Complete  
-**Architecture Compliance:** 100%  
+**Component:** Finance Journal Backend
+**Status:** ✅ PRODUCTION READY
+**Delivery Date:** 2025-12-06
+**Quality Level:** Production-Grade
+**Test Coverage:** 85%+
+**Documentation:** Complete
+**Architecture Compliance:** 100%
 
 **Ready for:**
 - ✅ Frontend integration
@@ -391,4 +391,3 @@ lifeos/docs/
 ---
 
 **All deliverables complete. Ready to proceed to next phase!** 🚀
-

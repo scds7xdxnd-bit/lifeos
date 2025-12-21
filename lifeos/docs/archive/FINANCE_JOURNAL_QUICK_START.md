@@ -1,7 +1,7 @@
 # Finance Journal Backend: Quick Start Guide
 
-**For:** Backend developers integrating with journal/account features  
-**Time to understand:** 5 minutes  
+**For:** Backend developers integrating with journal/account features
+**Time to understand:** 5 minutes
 **Time to integrate:** 10 minutes
 
 ---
@@ -49,7 +49,7 @@ All are production-ready, fully tested, and event-driven.
 
 ### For Backend Team (Post-Implementation)
 
-- [ ] Apply migration: `flask db upgrade`
+- [ ] Apply migration: `python -m flask --app lifeos.wsgi:app db upgrade head`
 - [ ] Run tests: `pytest lifeos/tests/test_finance*.py -v`
 - [ ] Verify indexes created in DB
 - [ ] Check outbox queue (should be empty after worker runs)
@@ -309,7 +309,7 @@ pytest lifeos/tests/test_finance*.py -v --cov=lifeos/domains/finance
 
 ```bash
 # 1. Apply migration
-flask db upgrade
+python -m flask --app lifeos.wsgi:app db upgrade head
 
 # 2. Start server
 flask run
@@ -410,4 +410,3 @@ curl -X GET 'http://localhost:5000/finance/accounts/subtypes/asset'
 ---
 
 **You're all set! Start integrating and let us know if you hit any blockers.** 🎉
-

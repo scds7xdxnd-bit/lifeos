@@ -219,7 +219,7 @@ Future: Calendar settings page for connecting Google/Apple calendars. The `sourc
 ```bash
 # Run migration
 cd lifeos
-flask db upgrade 20251206_calendar_initial
+python -m flask --app lifeos.wsgi:app db upgrade 20251206_calendar_initial
 ```
 
 The migration creates:

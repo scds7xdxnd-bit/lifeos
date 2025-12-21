@@ -1,7 +1,7 @@
 # LifeOS CI/CD Architecture Specification
 
-_Last updated: 2025-12-07_  
-_Owner: Architect_  
+_Last updated: 2025-12-07_
+_Owner: Architect_
 _Implementer: DevOps Team_
 
 ---
@@ -182,7 +182,7 @@ finance_app_clean/
 ├── .github/
 │   └── workflows/
 │       ├── lifeos-pr.yml              # PR/branch pipeline
-│       ├── lifeos-main.yml            # Main/develop pipeline  
+│       ├── lifeos-main.yml            # Main/develop pipeline
 │       ├── lifeos-release.yml         # Release/tag pipeline
 │       ├── lifeos-nightly.yml         # Nightly scheduled pipeline
 │       └── _reusable-test.yml         # Reusable test workflow (DRY)
@@ -846,7 +846,7 @@ skips = ["B101"]  # assert usage in tests
 │                                                                              │
 │  Main Pipeline (Staging Deploy):                                             │
 │  ┌─────────────────────────────────────────────────────────────┐            │
-│  │ 1. Run `flask db upgrade head` against staging Postgres     │            │
+│  │ 1. Run `python -m flask --app lifeos.wsgi:app db upgrade head` against staging Postgres     │            │
 │  │ 2. If fails → abort deployment, notify DB team              │            │
 │  │ 3. If succeeds → proceed to app deployment                  │            │
 │  └─────────────────────────────────────────────────────────────┘            │
@@ -953,7 +953,7 @@ strategy:
 ```
 1. PRE-DEPLOY (separate job)
    - Pull latest image
-   - Run: flask db upgrade head (against target DB)
+   - Run: python -m flask --app lifeos.wsgi:app db upgrade head (against target DB)
    - If fails → ABORT, notify, do NOT proceed
 
 2. DEPLOY (rolling update)
@@ -1191,6 +1191,6 @@ jobs:
 
 ---
 
-_Document version: 1.0_  
-_Approved by: LifeOS Architect_  
+_Document version: 1.0_
+_Approved by: LifeOS Architect_
 _Implementation owner: DevOps Team_

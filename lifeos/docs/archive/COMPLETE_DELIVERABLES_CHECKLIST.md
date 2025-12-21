@@ -1,7 +1,7 @@
 # LifeOS Database Migration: Complete Deliverables
 
-**Date:** 2025-12-18  
-**Status:** ✅ COMPLETE & READY FOR FRONTEND BUILD  
+**Date:** 2025-12-18
+**Status:** ✅ COMPLETE & READY FOR FRONTEND BUILD
 **Migration ID:** `20251218_backend_updates_validation`
 
 ---
@@ -216,8 +216,7 @@
 ### Quick Start
 ```bash
 cd /Users/ammarhakimi/Dev/finance_app_clean
-flask db upgrade
-flask db current  # Verify: should show 20251218_backend_updates_validation
+python -m flask --app lifeos.wsgi:app db upgrade flask db current  # Verify: should show 20251218_backend_updates_validation
 ```
 
 ### Full Verification
@@ -235,7 +234,7 @@ flask shell
 pg_dump production_db > backup_20251218.sql
 
 # 2. Apply migration
-FLASK_ENV=production flask db upgrade
+FLASK_ENV=production python -m flask --app lifeos.wsgi:app db upgrade head
 
 # 3. Verify
 FLASK_ENV=production flask db current
@@ -292,7 +291,7 @@ Reference: `/lifeos/docs/FINANCE_JOURNAL_API_REFERENCE.md`
 ## 📞 SUPPORT RESOURCES
 
 ### If Migrating in Development
-- Run: `flask db upgrade`
+- Run: `python -m flask --app lifeos.wsgi:app db upgrade head`
 - Check: `flask db current`
 - Debug: Check migration file and logs
 
@@ -331,16 +330,16 @@ Reference: `/lifeos/docs/FINANCE_JOURNAL_API_REFERENCE.md`
 
 ## 🏁 FINAL STATUS
 
-✅ **Migration Generated:** `20251218_backend_updates_validation`  
-✅ **File Location:** `/lifeos/migrations/versions/20251218_backend_updates_validation.py`  
-✅ **Documentation:** 4 new files + 1 updated file  
-✅ **Quality:** Validated & tested  
-✅ **Deployment:** Ready immediately  
-✅ **Frontend:** Ready to integrate  
-✅ **Production:** Safe to deploy  
+✅ **Migration Generated:** `20251218_backend_updates_validation`
+✅ **File Location:** `/lifeos/migrations/versions/20251218_backend_updates_validation.py`
+✅ **Documentation:** 4 new files + 1 updated file
+✅ **Quality:** Validated & tested
+✅ **Deployment:** Ready immediately
+✅ **Frontend:** Ready to integrate
+✅ **Production:** Safe to deploy
 
 ---
 
-**Signed Off By:** Database Engineer  
-**Date:** 2025-12-18  
+**Signed Off By:** Database Engineer
+**Date:** 2025-12-18
 **Status:** ✅ **READY FOR FRONTEND BUILD**
