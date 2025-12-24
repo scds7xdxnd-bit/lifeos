@@ -188,7 +188,7 @@
       }
       schedEmpty.style.display = 'none';
       items.forEach((row) => {
-        const name = accountMap[row.account_id]?.name || `Account ${row.account_id}`;
+        const name = row.account_name || accountMap[row.account_id]?.name || `Account ${row.account_id}`;
         const div = document.createElement('div');
         div.style.border = '1px solid #e0e5ec';
         div.style.borderRadius = '8px';

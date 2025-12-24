@@ -18,7 +18,7 @@ from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 MOOD_MIN = -5
-MOOD_MAX = 5
+MOOD_MAX = 10
 
 
 def create_entry(

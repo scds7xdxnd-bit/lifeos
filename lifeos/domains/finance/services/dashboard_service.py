@@ -54,10 +54,12 @@ def get_dashboard(user_id: int) -> dict:
         .limit(10)
         .all()
     )
+    account_lookup = {acct.id: acct.name for acct in accounts}
     upcoming_schedule = [
         {
             "id": r.id,
             "account_id": r.account_id,
+            "account_name": account_lookup.get(r.account_id),
             "event_date": r.event_date.isoformat(),
             "amount": float(r.amount),
             "memo": r.memo,

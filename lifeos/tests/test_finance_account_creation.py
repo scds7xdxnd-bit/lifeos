@@ -156,6 +156,25 @@ class TestSearchAccounts:
             assert "Checking Account" in account_names
             assert "Savings Account" in account_names
 
+    def test_search_fallback_by_name(self, app, setup_accounts):
+        """Fallback search should match legacy names when normalized values drift."""
+        with app.app_context():
+            data = setup_accounts
+            legacy = Account(
+                user_id=data["user_id"],
+                category_id=data["accounts"][0].category_id,
+                name="Legacy Checking",
+                account_type="asset",
+                account_subtype="bank",
+                normalized_name="legacy  checking",
+                is_active=True,
+            )
+            db.session.add(legacy)
+            db.session.commit()
+
+            results = search_accounts(data["user_id"], "legacy checking")
+            assert any(r.name == "Legacy Checking" for r in results)
+
     def test_search_inactive_excluded(self, app, setup_accounts):
         """Test that inactive accounts are excluded from search."""
         with app.app_context():

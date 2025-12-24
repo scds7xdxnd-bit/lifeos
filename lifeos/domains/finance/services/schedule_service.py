@@ -55,6 +55,7 @@ def add_schedule_row(
         },
         user_id=user_id,
     )
+    recompute_daily_balances(user_id, commit=False)
     db.session.commit()
     return row
 
@@ -85,6 +86,7 @@ def update_schedule_row(user_id: int, row_id: int, **fields) -> MoneyScheduleRow
         {"row_id": row.id, "user_id": user_id, "fields": payload_fields},
         user_id=user_id,
     )
+    recompute_daily_balances(user_id, commit=False)
     db.session.commit()
     return row
 
@@ -99,6 +101,7 @@ def delete_schedule_row(user_id: int, row_id: int) -> bool:
         {"row_id": row_id, "user_id": user_id},
         user_id=user_id,
     )
+    recompute_daily_balances(user_id, commit=False)
     db.session.commit()
     return True
 
@@ -107,8 +110,9 @@ def list_schedule_rows(user_id: int) -> List[MoneyScheduleRow]:
     return MoneyScheduleRow.query.filter_by(user_id=user_id).order_by(MoneyScheduleRow.event_date.asc()).all()
 
 
-def recompute_daily_balances(user_id: int) -> Dict[str, float]:
+def recompute_daily_balances(user_id: int, commit: bool = True) -> Dict[str, float]:
     """Aggregate scheduled events into daily balances."""
+    db.session.flush()
     rows = MoneyScheduleRow.query.filter_by(user_id=user_id).all()
     totals: Dict[str, float] = defaultdict(float)
     for row in rows:
@@ -116,10 +120,11 @@ def recompute_daily_balances(user_id: int) -> Dict[str, float]:
     MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).delete()
     for date_str, amount in totals.items():
         db.session.add(MoneyScheduleDailyBalance(user_id=user_id, as_of=date.fromisoformat(date_str), balance=amount))
-    db.session.commit()
     enqueue_outbox(
         FINANCE_SCHEDULE_RECOMPUTED,
         {"user_id": user_id, "days": len(totals)},
         user_id=user_id,
     )
+    if commit:
+        db.session.commit()
     return totals

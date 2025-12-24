@@ -40,6 +40,12 @@ from lifeos.core.insights.ml.replay_contracts import (
     list_gold_replay_datasets,
     list_replay_determinism_contracts,
 )
+from lifeos.core.insights.ml.stability_contracts import (
+    PHASE3B1_STABILITY_CONTRACT,
+    StabilityPatchContract,
+    get_phase3b1_stability_contract,
+    list_stability_contracts,
+)
 
 __all__ = [
     "REQUIRED_ML_LOGGING_FIELDS",
@@ -59,6 +65,10 @@ __all__ = [
     "PHASE3B_SLO_METRICS",
     "get_phase3b_slo_metric",
     "list_phase3b_slo_metrics",
+    "StabilityPatchContract",
+    "PHASE3B1_STABILITY_CONTRACT",
+    "get_phase3b1_stability_contract",
+    "list_stability_contracts",
     "embed_text",
     "extract_event_features",
     "cosine_similarity",

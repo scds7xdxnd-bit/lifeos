@@ -242,11 +242,11 @@ def search_accounts(user_id: int, query: str, limit: int = 20) -> List[Account]:
 
     normalized_query = _normalize_name(query)
 
+    base_query = Account.query.filter(Account.user_id == user_id).filter(Account.is_active.is_(True))
+
     # Prefix matches (ordered first, newest first)
     prefix_matches = (
-        Account.query.filter(Account.user_id == user_id)
-        .filter(Account.is_active.is_(True))
-        .filter(Account.normalized_name.startswith(normalized_query))
+        base_query.filter(Account.normalized_name.startswith(normalized_query))
         .order_by(Account.created_at.desc())
         .limit(limit)
         .all()
@@ -258,16 +258,28 @@ def search_accounts(user_id: int, query: str, limit: int = 20) -> List[Account]:
     # Substring matches (fill remaining slots)
     remaining = limit - len(prefix_matches)
     substring_matches = (
-        Account.query.filter(Account.user_id == user_id)
-        .filter(Account.is_active.is_(True))
-        .filter(Account.normalized_name.contains(normalized_query))
+        base_query.filter(Account.normalized_name.contains(normalized_query))
         .filter(~Account.normalized_name.startswith(normalized_query))
         .order_by(Account.created_at.desc())
         .limit(remaining)
         .all()
     )
 
-    return prefix_matches + substring_matches
+    results = prefix_matches + substring_matches
+    if len(results) >= limit:
+        return results[:limit]
+
+    remaining = limit - len(results)
+    tokens = re.findall(r"[a-z0-9]+", normalized_query)
+    if not tokens:
+        return results
+    pattern = "%" + "%".join(tokens) + "%"
+    fallback_query = base_query.filter(Account.name.ilike(pattern))
+    if results:
+        fallback_query = fallback_query.filter(~Account.id.in_([acc.id for acc in results]))
+    fallback_matches = fallback_query.order_by(Account.created_at.desc()).limit(remaining).all()
+
+    return results + fallback_matches
 
 
 def get_suggested_accounts(user_id: int, query: str, limit: int = 10, include_ml: bool = True) -> List[dict]:

@@ -20,7 +20,14 @@
     <button type="button" class="text-link" id="{{ component_id }}-log-toggle">Log update</button>
     <button type="button" class="text-link" id="{{ component_id }}-summary-toggle">View summaries</button>
   </div>
-
+  <div id="{{ component_id }}-summary-controls" style="margin-top:0.75rem; display:none;">
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <input type="date" id="{{ component_id }}-daily-date">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-daily-btn">Daily summary</button>
+      <input type="date" id="{{ component_id }}-weekly-start">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-weekly-btn">Weekly summary</button>
+    </div>
+  </div>
   <div id="{{ component_id }}-summary" style="margin-top:0.75rem; display:none; color:#1f2430;"></div>
   <div id="{{ component_id }}-recent" style="margin-top:0.75rem; display:grid; gap:0.5rem;"></div>
 
@@ -82,14 +89,6 @@
         <span class="auth-status" id="{{ component_id }}-nutrition-status"></span>
       </div>
     </form>
-  </div>
-  <div id="{{ component_id }}-summary-controls" style="margin-top:0.75rem; display:none;">
-    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-      <input type="date" id="{{ component_id }}-daily-date">
-      <button type="button" class="btn btn-secondary" id="{{ component_id }}-daily-btn">Daily summary</button>
-      <input type="date" id="{{ component_id }}-weekly-start">
-      <button type="button" class="btn btn-secondary" id="{{ component_id }}-weekly-btn">Weekly summary</button>
-    </div>
   </div>
 </div>
 

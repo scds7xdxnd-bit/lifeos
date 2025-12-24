@@ -87,4 +87,5 @@ def test_dashboard_api(app, client):
     assert data["accounts"]
     assert data["recent_transactions"]
     assert data["upcoming_schedule"]
+    assert data["upcoming_schedule"][0]["account_name"] == "Cash"
     assert data["forecast"]
