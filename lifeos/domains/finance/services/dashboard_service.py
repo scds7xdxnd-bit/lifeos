@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import List
 
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.finance.models.accounting_models import Account, Transaction
 from lifeos.domains.finance.models.receivable_models import ReceivableTracker
 from lifeos.domains.finance.models.schedule_models import (
@@ -16,8 +17,15 @@ from lifeos.domains.finance.services.trial_balance_service import (
     net_balance_for_account,
 )
 
+FINANCE_READ_CACHE_SCOPE = "finance.reads"
+
 
 def get_dashboard(user_id: int) -> dict:
+    today = dt.date.today()
+    cache_key = {"view": "dashboard", "as_of": today.isoformat()}
+    cached = read_cache.get(FINANCE_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     # Balances per account
     accounts: List[Account] = (
         Account.query.filter_by(user_id=user_id).order_by(Account.code.asc().nullsfirst(), Account.name.asc()).all()
@@ -47,7 +55,6 @@ def get_dashboard(user_id: int) -> dict:
     ]
 
     # Upcoming schedule rows
-    today = dt.date.today()
     rows = (
         MoneyScheduleRow.query.filter(MoneyScheduleRow.user_id == user_id, MoneyScheduleRow.event_date >= today)
         .order_by(MoneyScheduleRow.event_date.asc())
@@ -85,10 +92,12 @@ def get_dashboard(user_id: int) -> dict:
         running += balances.get(day, 0.0)
         forecast.append({"date": day.isoformat(), "projected_balance": round(running, 2)})
 
-    return {
+    payload = {
         "accounts": balance_rows,
         "recent_transactions": recent_transactions,
         "upcoming_schedule": upcoming_schedule,
         "receivables_total": receivable_total,
         "forecast": forecast,
     }
+    read_cache.set(FINANCE_READ_CACHE_SCOPE, user_id, cache_key, payload)
+    return payload

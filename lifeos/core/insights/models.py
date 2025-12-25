@@ -15,6 +15,7 @@ class InsightRecord(db.Model):
         db.Index("ix_insight_record_user_created_at", "user_id", "created_at"),
         db.Index("ix_insight_record_user_band_created", "user_id", "confidence_band", "created_at"),
         db.Index("ix_insight_record_user_routing_created", "user_id", "routing", "created_at"),
+        db.Index("ix_insight_record_user_event_type_created", "user_id", "event_type", "created_at"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)

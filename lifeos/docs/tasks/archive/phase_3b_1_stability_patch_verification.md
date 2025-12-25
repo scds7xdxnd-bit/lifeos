@@ -3,7 +3,7 @@
 **Audience:** Architecture, Backend, Frontend, QA, DevOps, DB
 **Owner:** LifeOS Architecture
 **Predecessor Phase:** Phase 3b - Interface & Contract Hardening
-**Status:** Mandatory Stabilization Gate
+**Status:** Completed (mini soak passed; Phase 3b formally closed)
 **Duration:** Short, surgical (days, not weeks)
 
 ---
@@ -240,3 +240,12 @@ Once Phase 3b.1 closes:
 - Major UI work (Phase 4) can proceed without contaminating guarantees
 
 Treat this phase as a surgical correction, not a new direction.
+
+---
+
+## 8. Completion Record
+
+- Mini soak completed: 2025-12-25
+- Journal write, finance account search, and schedule/forecast regressions verified fixed
+- Phase 3b metrics clean: projection correctness errors 0, determinism failures 0, contract violations 0, metrics present
+- Phase 3b formally closed

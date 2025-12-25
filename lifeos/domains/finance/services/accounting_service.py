@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, List, Optional, Tuple
 
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.finance.events import (
     FINANCE_ACCOUNT_CATEGORY_UPDATED,
     FINANCE_ACCOUNT_CREATED,
@@ -21,6 +22,8 @@ from lifeos.domains.finance.models.accounting_models import (
 from lifeos.domains.finance.services.suggestion_service import suggest_accounts
 from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
+
+FINANCE_READ_CACHE_SCOPE = "finance.reads"
 
 MAX_DESCRIPTION_LENGTH = 512
 MAX_JOURNAL_LINES = 100
@@ -157,6 +160,7 @@ def _create_journal_entry(
         user_id=user_id,
     )
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return entry, debit_total, credit_total
 
 
@@ -392,6 +396,7 @@ def create_custom_account_category(
             ).update({"is_default": False})
             existing.is_default = True
             db.session.commit()
+            read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
         return existing
 
     code = _generate_category_code(user_id, base_type, slug)
@@ -413,6 +418,7 @@ def create_custom_account_category(
         ).update({"is_default": False})
     db.session.add(category)
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return category
 
 
@@ -519,6 +525,7 @@ def create_account(
     )
 
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return account
 
 
@@ -561,6 +568,7 @@ def update_account_category(
     )
 
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return account
 
 

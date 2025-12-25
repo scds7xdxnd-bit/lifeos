@@ -30,6 +30,18 @@ CONTRACT_VIOLATIONS_TOTAL = Counter(
     "API contract violations",
 )
 
+READ_CACHE_HITS_TOTAL = Counter(
+    "lifeos_read_cache_hits_total",
+    "Read-through cache hits",
+    ["scope"],
+)
+
+READ_CACHE_MISSES_TOTAL = Counter(
+    "lifeos_read_cache_misses_total",
+    "Read-through cache misses",
+    ["scope"],
+)
+
 
 def record_insight_latency_ms(latency_ms: float) -> None:
     """Record insight latency in milliseconds."""
@@ -56,3 +68,13 @@ def record_replay_determinism_failure() -> None:
 def record_contract_violation() -> None:
     """Record an API contract violation."""
     CONTRACT_VIOLATIONS_TOTAL.inc()
+
+
+def record_read_cache_hit(scope: str) -> None:
+    """Record a read cache hit by scope."""
+    READ_CACHE_HITS_TOTAL.labels(scope=scope).inc()
+
+
+def record_read_cache_miss(scope: str) -> None:
+    """Record a read cache miss by scope."""
+    READ_CACHE_MISSES_TOTAL.labels(scope=scope).inc()

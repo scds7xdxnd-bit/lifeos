@@ -158,6 +158,105 @@
             "legendFormat": "Sent/sec"
           }
         ]
+      },
+      {
+        "id": 10,
+        "title": "Read API Request Rate (GET)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{method='GET'}[5m])) by (handler)",
+            "legendFormat": "{{ handler }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Requests/sec",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Read API Latency (GET p95/p99)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{method='GET'}[5m])) by (le))",
+            "legendFormat": "p95 GET"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{method='GET'}[5m])) by (le))",
+            "legendFormat": "p99 GET"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Duration (s)",
+            "format": "s"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Read Cache Hit Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "100 * sum(rate(lifeos_read_cache_hits_total[5m])) / clamp_min(sum(rate(lifeos_read_cache_hits_total[5m])) + sum(rate(lifeos_read_cache_misses_total[5m])), 0.001)",
+            "legendFormat": "Hit Rate"
+          }
+        ],
+        "fieldConfig": {
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 60, "color": "yellow" },
+              { "value": 80, "color": "green" }
+            ]
+          }
+        }
+      },
+      {
+        "id": 13,
+        "title": "Read Cache Hits / Misses (rate)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "lifeos:read_cache_hits:rate5m",
+            "legendFormat": "{{ scope }} hits"
+          },
+          {
+            "expr": "lifeos:read_cache_misses:rate5m",
+            "legendFormat": "{{ scope }} misses"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Ops/sec",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Read Cache Hit Rate by Scope",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "lifeos:read_cache_hit_rate:percent",
+            "legendFormat": "{{ scope }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Hit Rate %",
+            "format": "percent"
+          }
+        ]
       }
     ],
     "refresh": "30s",

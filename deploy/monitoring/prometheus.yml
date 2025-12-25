@@ -5,13 +5,6 @@ global:
     monitor: 'lifeos-monitor'
     environment: '{{ ENVIRONMENT }}'
 
-# Alerting configuration
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - alertmanager:9093
-
 # Load rules for alert conditions
 rule_files:
   - 'rules.yml'
@@ -27,7 +20,9 @@ scrape_configs:
   - job_name: 'lifeos'
     static_configs:
       - targets:
+          - 'lifeos-web:8000'
           - 'host.docker.internal:5001'
+          - 'host.docker.internal:8000'
 
   # StatsD Exporter (collects application metrics)
   - job_name: 'statsd-exporter'
@@ -65,15 +60,6 @@ scrape_configs:
         regex: 'container_.*'
         action: keep
     scrape_interval: 30s
-
-  # Docker daemon metrics
-  - job_name: 'docker'
-    static_configs:
-      - targets: ['unix:///var/run/docker.sock']
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: instance
-        replacement: 'docker-daemon'
 
 # Service discovery for dynamic environments (optional)
 # Uncomment for Kubernetes or Consul service discovery

@@ -169,6 +169,22 @@ groups:
       - record: lifeos:cache_hit_rate:ratio
         expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)
 
+      # Read cache metrics (Phase 3c-1)
+      - record: lifeos:read_cache_hits:rate5m
+        expr: sum(rate(lifeos_read_cache_hits_total[5m])) by (scope)
+
+      - record: lifeos:read_cache_misses:rate5m
+        expr: sum(rate(lifeos_read_cache_misses_total[5m])) by (scope)
+
+      - record: lifeos:read_cache_hit_rate:percent
+        expr: |
+          100 * sum(rate(lifeos_read_cache_hits_total[5m])) by (scope)
+          / clamp_min(
+            sum(rate(lifeos_read_cache_hits_total[5m])) by (scope)
+            + sum(rate(lifeos_read_cache_misses_total[5m])) by (scope),
+            0.001
+          )
+
       # Container resource usage
       - record: lifeos:container_cpu:percent
         expr: rate(container_cpu_usage_seconds_total{container=~"lifeos-.*"}[5m]) * 100

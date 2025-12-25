@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Dict, List
 
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.finance.events import (
     FINANCE_SCHEDULE_CREATED,
     FINANCE_SCHEDULE_DELETED,
@@ -19,6 +20,8 @@ from lifeos.domains.finance.models.schedule_models import (
 )
 from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
+
+FINANCE_READ_CACHE_SCOPE = "finance.reads"
 
 
 def _validate_account(user_id: int, account_id: int) -> None:
@@ -57,6 +60,7 @@ def add_schedule_row(
     )
     recompute_daily_balances(user_id, commit=False)
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return row
 
 
@@ -88,6 +92,7 @@ def update_schedule_row(user_id: int, row_id: int, **fields) -> MoneyScheduleRow
     )
     recompute_daily_balances(user_id, commit=False)
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return row
 
 
@@ -103,6 +108,7 @@ def delete_schedule_row(user_id: int, row_id: int) -> bool:
     )
     recompute_daily_balances(user_id, commit=False)
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return True
 
 

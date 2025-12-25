@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-15 (v2.8 — Phase 3b complete; interface contracts frozen)_
+_Last updated: 2025-12-25 (v2.9 — Phase 3b.1 complete; Phase 3b formally closed)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2025-12-14)
+# 0. Implementation Status (as of 2025-12-25)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -36,6 +36,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 3a Cross-Domain Intelligence Hardening**: Complete; replay determinism, confidence routing, and governance tests enforced. Telemetry checks require admin `AUTH_TOKEN`.
 - **Phase 3a.5 Domain UX & Semantic Surface Alignment**: Complete; DSDs approved, read/write boundaries and interaction patterns normalized, finance surfaces aligned to read-first intent.
 - **Phase 3b Interface & Contract Hardening**: Complete; versioned API contracts, read-only guardrails, DSD alignment tests, and SLO alerts enforced.
+- **Phase 3b.1 Stability Patch & Verification**: Complete; journal write, finance account search, and schedule/forecast regressions fixed and verified; mini soak clean; Phase 3b formally closed.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -134,7 +135,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3c track selection (scaling/broker/multi-device) based on trigger signals; Phase 3b is complete.
+- Active: Phase 3c track selection (scaling/broker/multi-device) based on trigger signals; Phase 3b formally closed after Phase 3b.1 stabilization gate.
 - Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
@@ -1093,20 +1094,22 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.8 (Phase 3b complete; interface contracts frozen; session scaffold + admin reset stub): 2025-12-15. Author: LifeOS Architect._
+_Constitution v2.9 (Phase 3b.1 complete; Phase 3b formally closed; session scaffold + admin reset stub): 2025-12-25. Author: LifeOS Architect._
 
-**Sprint Summary (2025-12-15):**
+**Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
 - ✅ Phase 2.5 task archived; semantic/insight contract registries enforced by tests
 - ✅ Tasks Hub active with archived UX alignment and auth refactor tasks
 - ✅ Session lifecycle scaffold remains interface-only; admin reset minimal path allowed; login issue quarantined to Phase 3c
+- ✅ Phase 3b.1 stabilization gate complete; mini soak clean; Phase 3b formally closed
 
-**Phase Summary (2025-12-15):**
+**Phase Summary (2025-12-25):**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
 - ✅ Phase 3a.5 complete: DSDs approved across all domains; read-first patterns enforced; finance surfaces stabilized
 - ✅ QA sweep green; telemetry smoke check requires admin `AUTH_TOKEN`
 - ✅ Phase 3b complete: versioned API contracts, read-only guardrails, DSD alignment tests, SLOs and alerts live
 - ✅ Phase 3b ops checks green; /metrics exposes Phase 3b SLO metrics; contract smoke tests green
+- ✅ Phase 3b.1 complete: core write-path regressions fixed; verification mini soak clean; Phase 3b formally closed
 
 ---
 

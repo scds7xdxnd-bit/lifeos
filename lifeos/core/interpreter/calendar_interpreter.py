@@ -16,6 +16,7 @@ from lifeos.core.interpreter.constants import (
 )
 from lifeos.core.interpreter.domain_adapters import get_adapter
 from lifeos.core.interpreter.inference_emitter import emit_inference_event
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.calendar.events import CALENDAR_INTERPRETATION_CREATED
 from lifeos.domains.calendar.models.calendar_event import (
     CalendarEvent,
@@ -23,6 +24,8 @@ from lifeos.domains.calendar.models.calendar_event import (
 )
 from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
+
+CALENDAR_READ_CACHE_SCOPE = "calendar.views"
 
 
 class CalendarInterpreter:
@@ -121,6 +124,7 @@ class CalendarInterpreter:
                 interpretations.append(interpretation)
 
         db.session.commit()
+        read_cache.bump(CALENDAR_READ_CACHE_SCOPE, event.user_id)
         return interpretations
 
     def _create_interpretation(

@@ -13,7 +13,10 @@ from lifeos.core.insights.models import InsightRecord
 from lifeos.core.insights.routing import enforce_confidence_routing
 from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.core.insights.telemetry import insight_telemetry
+from lifeos.core.read_cache import read_cache
 from lifeos.extensions import db
+
+INSIGHTS_READ_CACHE_SCOPE = "insights.reads"
 
 
 def persist_insights(
@@ -49,6 +52,7 @@ def persist_insights(
         saved.append(rec)
     if saved:
         db.session.commit()
+        read_cache.bump(INSIGHTS_READ_CACHE_SCOPE, event.user_id)
     return saved
 
 

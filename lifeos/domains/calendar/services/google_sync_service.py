@@ -10,9 +10,13 @@ from urllib.parse import urlencode
 import requests
 from flask import current_app
 
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.calendar.models.calendar_event import CalendarEvent
 from lifeos.domains.calendar.models.oauth_token import CalendarOAuthToken
-from lifeos.domains.calendar.services.calendar_service import create_calendar_event
+from lifeos.domains.calendar.services.calendar_service import (
+    CALENDAR_READ_CACHE_SCOPE,
+    create_calendar_event,
+)
 from lifeos.extensions import db
 
 logger = logging.getLogger(__name__)
@@ -390,6 +394,8 @@ def sync_google_calendar(user_id: int) -> Dict[str, int]:
     token.last_sync_at = datetime.utcnow()
     token.error_message = None
     db.session.commit()
+    if stats["updated"] or stats["deleted"]:
+        read_cache.bump(CALENDAR_READ_CACHE_SCOPE, user_id)
 
     logger.info(f"Google Calendar sync for user {user_id}: {stats}")
     return stats

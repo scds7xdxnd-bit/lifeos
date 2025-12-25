@@ -55,6 +55,15 @@ class BaseConfig:
         "yes",
     )
 
+    READ_CACHE_ENABLED = os.environ.get("READ_CACHE_ENABLED", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    READ_CACHE_DEFAULT_TTL_SECONDS = int(os.environ.get("READ_CACHE_DEFAULT_TTL_SECONDS", "30"))
+    READ_CACHE_VERSION_TTL_SECONDS = int(os.environ.get("READ_CACHE_VERSION_TTL_SECONDS", "86400"))
+    READ_CACHE_REDIS_URL = os.environ.get("READ_CACHE_REDIS_URL", os.environ.get("REDIS_URL", ""))
+
     STATIC_CACHE_MAX_AGE = int(os.environ.get("STATIC_CACHE_MAX_AGE", "3600"))
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
     UPLOAD_ALLOWED_EXTENSIONS = set(
@@ -100,6 +109,7 @@ class TestingConfig(BaseConfig):
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
+    READ_CACHE_ENABLED = False
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_COOKIE_CSRF_PROTECT = False
 
