@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-25 (v2.9 — Phase 3b.1 complete; Phase 3b formally closed)_
+_Last updated: 2025-12-25 (v2.11 — Phase 4 verification-complete; calendar time-canvas UI)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -13,7 +13,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Event System**: In-process event bus, event catalog per domain, event_record audit table
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
-- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251223_insight_routing_columns`)
+- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251224_insight_feed_indexes`)
 - **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live. Latest runs: PR workflow reported 24 passed / 10 xfailed / 497 errors (needs investigation on selective job), main workflow reported 515 passed / 6 deselected / 10 xfailed (green).
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
@@ -37,6 +37,8 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 3a.5 Domain UX & Semantic Surface Alignment**: Complete; DSDs approved, read/write boundaries and interaction patterns normalized, finance surfaces aligned to read-first intent.
 - **Phase 3b Interface & Contract Hardening**: Complete; versioned API contracts, read-only guardrails, DSD alignment tests, and SLO alerts enforced.
 - **Phase 3b.1 Stability Patch & Verification**: Complete; journal write, finance account search, and schedule/forecast regressions fixed and verified; mini soak clean; Phase 3b formally closed.
+- **Phase 3c-1 Read & Throughput Scaling**: Complete; read-through cache, cache observability, read-load verification, and invalidation audit completed; Phase 4 unblocked.
+- **Phase 4 Calendar Time-Canvas UI**: Verification-complete; feature-flagged calendar time-canvas renderer aligned to Apple-style interaction grammar with snapshots and QA sign-off.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -135,7 +137,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3c track selection (scaling/broker/multi-device) based on trigger signals; Phase 3b formally closed after Phase 3b.1 stabilization gate.
+- Active: Phase 3c-2/3c-3 remain trigger-driven; Phase 5 and future work unblocked after Phase 4 verification-complete.
 - Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
@@ -1094,7 +1096,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.9 (Phase 3b.1 complete; Phase 3b formally closed; session scaffold + admin reset stub): 2025-12-25. Author: LifeOS Architect._
+_Constitution v2.11 (Phase 4 verification-complete; calendar time-canvas UI; session scaffold + admin reset stub): 2025-12-25. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1102,6 +1104,8 @@ _Constitution v2.9 (Phase 3b.1 complete; Phase 3b formally closed; session scaff
 - ✅ Tasks Hub active with archived UX alignment and auth refactor tasks
 - ✅ Session lifecycle scaffold remains interface-only; admin reset minimal path allowed; login issue quarantined to Phase 3c
 - ✅ Phase 3b.1 stabilization gate complete; mini soak clean; Phase 3b formally closed
+- ✅ Phase 3c-1 read scaling complete; cache strategy Option A verified; read-load verification passed
+- ✅ Phase 4 calendar time-canvas UI verification complete; snapshots captured; QA sign-off recorded
 
 **Phase Summary (2025-12-25):**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
@@ -1110,6 +1114,8 @@ _Constitution v2.9 (Phase 3b.1 complete; Phase 3b formally closed; session scaff
 - ✅ Phase 3b complete: versioned API contracts, read-only guardrails, DSD alignment tests, SLOs and alerts live
 - ✅ Phase 3b ops checks green; /metrics exposes Phase 3b SLO metrics; contract smoke tests green
 - ✅ Phase 3b.1 complete: core write-path regressions fixed; verification mini soak clean; Phase 3b formally closed
+- ✅ Phase 3c-1 complete: read-through cache and observability in place; read-load harness clean; cache invalidation audit complete
+- ✅ Phase 4 verification-complete: calendar time-canvas UI delivered under feature flag; QA snapshots captured; metrics remained green
 
 ---
 

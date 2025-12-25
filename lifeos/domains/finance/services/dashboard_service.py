@@ -5,8 +5,10 @@ from __future__ import annotations
 import datetime as dt
 from typing import List
 
+from sqlalchemy.orm import selectinload
+
 from lifeos.core.read_cache import read_cache
-from lifeos.domains.finance.models.accounting_models import Account, Transaction
+from lifeos.domains.finance.models.accounting_models import Account, JournalEntry
 from lifeos.domains.finance.models.receivable_models import ReceivableTracker
 from lifeos.domains.finance.models.schedule_models import (
     MoneyScheduleDailyBalance,
@@ -42,17 +44,25 @@ def get_dashboard(user_id: int) -> dict:
     ]
 
     # Recent transactions
-    txns = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.occurred_at.desc()).limit(10).all()
-    recent_transactions = [
-        {
-            "id": t.id,
-            "amount": float(t.amount),
-            "description": t.description,
-            "occurred_at": t.occurred_at.isoformat() if t.occurred_at else None,
-            "journal_entry_id": t.journal_entry_id,
-        }
-        for t in txns
-    ]
+    entries = (
+        JournalEntry.query.filter_by(user_id=user_id)
+        .options(selectinload(JournalEntry.lines))
+        .order_by(JournalEntry.posted_at.desc())
+        .limit(10)
+        .all()
+    )
+    recent_transactions = []
+    for entry in entries:
+        total = float(sum((line.debit or 0) for line in entry.lines))
+        recent_transactions.append(
+            {
+                "id": entry.id,
+                "amount": total,
+                "description": entry.description,
+                "occurred_at": entry.posted_at.isoformat() if entry.posted_at else None,
+                "journal_entry_id": entry.id,
+            }
+        )
 
     # Upcoming schedule rows
     rows = (

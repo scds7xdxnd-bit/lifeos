@@ -1,0 +1,220 @@
+{
+  "cases": [
+    {
+      "id": "day_basic_overlap",
+      "view": "day",
+      "date": "2025-03-10",
+      "description": "Two overlapping timed events plus one non-overlapping event.",
+      "events": [
+        {
+          "title": "Deep Work",
+          "start": "2025-03-10T09:00:00",
+          "end": "2025-03-10T10:30:00",
+          "all_day": false
+        },
+        {
+          "title": "Design Review",
+          "start": "2025-03-10T09:30:00",
+          "end": "2025-03-10T11:00:00",
+          "all_day": false
+        },
+        {
+          "title": "Lunch",
+          "start": "2025-03-10T12:00:00",
+          "end": "2025-03-10T12:30:00",
+          "all_day": false
+        }
+      ],
+      "expected": {
+        "overlap_columns": 2,
+        "all_day_count": 0,
+        "overflow": false
+      }
+    },
+    {
+      "id": "day_all_day_stack",
+      "view": "day",
+      "date": "2025-03-11",
+      "description": "Multiple all-day events with one timed event.",
+      "events": [
+        {
+          "title": "Release Day",
+          "start": "2025-03-11",
+          "end": "2025-03-11",
+          "all_day": true
+        },
+        {
+          "title": "Team Offsite",
+          "start": "2025-03-11",
+          "end": "2025-03-11",
+          "all_day": true
+        },
+        {
+          "title": "One-on-one",
+          "start": "2025-03-11T15:00:00",
+          "end": "2025-03-11T15:30:00",
+          "all_day": false
+        }
+      ],
+      "expected": {
+        "all_day_count": 2,
+        "overflow": false
+      }
+    },
+    {
+      "id": "week_overlap_dense",
+      "view": "week",
+      "date": "2025-03-12",
+      "description": "Three overlapping timed events in a single day.",
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2025-03-12T10:00:00",
+          "end": "2025-03-12T10:30:00",
+          "all_day": false
+        },
+        {
+          "title": "Roadmap Review",
+          "start": "2025-03-12T10:00:00",
+          "end": "2025-03-12T11:00:00",
+          "all_day": false
+        },
+        {
+          "title": "Customer Call",
+          "start": "2025-03-12T10:15:00",
+          "end": "2025-03-12T11:30:00",
+          "all_day": false
+        }
+      ],
+      "expected": {
+        "overlap_columns": 3
+      }
+    },
+    {
+      "id": "week_all_day_overflow",
+      "view": "week",
+      "date": "2025-03-13",
+      "description": "All-day row overflow triggers +N more.",
+      "events": [
+        {
+          "title": "All-day 1",
+          "start": "2025-03-13",
+          "end": "2025-03-13",
+          "all_day": true
+        },
+        {
+          "title": "All-day 2",
+          "start": "2025-03-13",
+          "end": "2025-03-13",
+          "all_day": true
+        },
+        {
+          "title": "All-day 3",
+          "start": "2025-03-13",
+          "end": "2025-03-13",
+          "all_day": true
+        },
+        {
+          "title": "All-day 4",
+          "start": "2025-03-13",
+          "end": "2025-03-13",
+          "all_day": true
+        },
+        {
+          "title": "All-day 5",
+          "start": "2025-03-13",
+          "end": "2025-03-13",
+          "all_day": true
+        },
+        {
+          "title": "All-day 6",
+          "start": "2025-03-13",
+          "end": "2025-03-13",
+          "all_day": true
+        }
+      ],
+      "expected": {
+        "overflow": true
+      }
+    },
+    {
+      "id": "month_multi_day_bars",
+      "view": "month",
+      "date": "2025-03-01",
+      "description": "Multi-day bars span across weeks.",
+      "events": [
+        {
+          "title": "Quarter Planning",
+          "start": "2025-03-03",
+          "end": "2025-03-07",
+          "all_day": true
+        },
+        {
+          "title": "Conference",
+          "start": "2025-03-10",
+          "end": "2025-03-14",
+          "all_day": true
+        }
+      ],
+      "expected": {
+        "multi_day_bars": 2
+      }
+    },
+    {
+      "id": "month_overflow",
+      "view": "month",
+      "date": "2025-03-15",
+      "description": "Month cell overflow shows +N more.",
+      "events": [
+        { "title": "Event 1", "start": "2025-03-15", "end": "2025-03-15", "all_day": true },
+        { "title": "Event 2", "start": "2025-03-15", "end": "2025-03-15", "all_day": true },
+        { "title": "Event 3", "start": "2025-03-15", "end": "2025-03-15", "all_day": true },
+        { "title": "Event 4", "start": "2025-03-15", "end": "2025-03-15", "all_day": true },
+        { "title": "Event 5", "start": "2025-03-15", "end": "2025-03-15", "all_day": true }
+      ],
+      "expected": {
+        "overflow": true
+      }
+    },
+    {
+      "id": "dst_forward_day",
+      "view": "day",
+      "date": "2025-03-09",
+      "description": "DST forward day (spring forward).",
+      "events": [
+        {
+          "title": "Pre-DST Block",
+          "start": "2025-03-09T01:00:00",
+          "end": "2025-03-09T03:00:00",
+          "all_day": false
+        }
+      ],
+      "expected": {
+        "dst_behavior": "no_visual_compression"
+      }
+    },
+    {
+      "id": "dst_fall_back_day",
+      "view": "day",
+      "date": "2025-11-02",
+      "description": "DST fall-back day (repeat hour).",
+      "events": [
+        {
+          "title": "Early Hour",
+          "start": "2025-11-02T01:00:00",
+          "end": "2025-11-02T01:30:00",
+          "all_day": false
+        },
+        {
+          "title": "Late Hour",
+          "start": "2025-11-02T01:30:00",
+          "end": "2025-11-02T02:00:00",
+          "all_day": false
+        }
+      ],
+      "expected": {
+        "dst_behavior": "stable_order"
+      }
+    }
+  ]
+}
