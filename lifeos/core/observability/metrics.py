@@ -42,6 +42,23 @@ READ_CACHE_MISSES_TOTAL = Counter(
     ["scope"],
 )
 
+HTTP_REQUEST_LATENCY_SECONDS = Histogram(
+    "lifeos_http_request_latency_seconds",
+    "HTTP request latency in seconds",
+    ["method", "route", "status_code"],
+    buckets=(0.05, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0),
+)
+
+EVENT_DISPATCH_LATENCY_SECONDS = Histogram(
+    "lifeos_event_dispatch_latency_seconds",
+    "In-process event dispatch latency in seconds",
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0),
+)
+
+# Pre-register a default label set so histograms appear even without traffic.
+HTTP_REQUEST_LATENCY_SECONDS.labels(method="GET", route="unknown", status_code="200")
+EVENT_DISPATCH_LATENCY_SECONDS.observe(0)
+
 
 def record_insight_latency_ms(latency_ms: float) -> None:
     """Record insight latency in milliseconds."""
@@ -78,3 +95,26 @@ def record_read_cache_hit(scope: str) -> None:
 def record_read_cache_miss(scope: str) -> None:
     """Record a read cache miss by scope."""
     READ_CACHE_MISSES_TOTAL.labels(scope=scope).inc()
+
+
+def record_http_request_latency_seconds(
+    duration_seconds: float,
+    method: str,
+    route: str,
+    status_code: str,
+) -> None:
+    """Record HTTP request latency in seconds."""
+    if duration_seconds is None:
+        return
+    HTTP_REQUEST_LATENCY_SECONDS.labels(
+        method=method or "unknown",
+        route=route or "unknown",
+        status_code=status_code or "0",
+    ).observe(max(0.0, duration_seconds))
+
+
+def record_event_dispatch_latency_seconds(duration_seconds: float) -> None:
+    """Record in-process event dispatch latency in seconds."""
+    if duration_seconds is None:
+        return
+    EVENT_DISPATCH_LATENCY_SECONDS.observe(max(0.0, duration_seconds))

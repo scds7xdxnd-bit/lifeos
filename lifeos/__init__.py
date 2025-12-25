@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from flask import Flask, redirect, url_for
+from flask import Flask, g, redirect, request, url_for
 from sqlalchemy.engine import processors
 
 from lifeos.config import config_by_name
@@ -118,6 +119,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     _register_blueprints(app)
     _register_error_handlers(app)
     _register_auth_handlers(app)
+    _register_observability_handlers(app)
 
     # Attach shared engines
     app.extensions["event_bus"] = event_bus
@@ -268,6 +270,28 @@ def _register_auth_handlers(app: Flask) -> None:
     @app.context_processor
     def inject_csrf_token():
         return {"csrf_token": generate_csrf_token}
+
+
+def _register_observability_handlers(app: Flask) -> None:
+    """Record HTTP request latency for observability."""
+    from lifeos.core.observability import record_http_request_latency_seconds
+
+    @app.before_request
+    def _record_request_start():
+        g._request_start_time = time.perf_counter()
+
+    @app.after_request
+    def _record_request_latency(response):
+        start = getattr(g, "_request_start_time", None)
+        if start is not None:
+            route = request.url_rule.rule if request.url_rule else "unknown"
+            record_http_request_latency_seconds(
+                time.perf_counter() - start,
+                method=request.method,
+                route=route,
+                status_code=str(response.status_code),
+            )
+        return response
 
 
 # WSGI entrypoint compatibility

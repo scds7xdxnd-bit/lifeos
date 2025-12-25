@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-25 (v2.11 — Phase 4 verification-complete; calendar time-canvas UI)_
+_Last updated: 2025-12-25 (v2.12 — Phase 3c-2 trigger assessment opened)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -137,7 +137,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3c-2/3c-3 remain trigger-driven; Phase 5 and future work unblocked after Phase 4 verification-complete.
+- Active: Phase 3c-2 trigger assessment (event transport scaling); Phase 3c-3 remains trigger-driven.
 - Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
@@ -1096,7 +1096,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.11 (Phase 4 verification-complete; calendar time-canvas UI; session scaffold + admin reset stub): 2025-12-25. Author: LifeOS Architect._
+_Constitution v2.12 (Phase 3c-2 trigger assessment opened; Phase 4 verification-complete; session scaffold + admin reset stub): 2025-12-25. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1106,6 +1106,7 @@ _Constitution v2.11 (Phase 4 verification-complete; calendar time-canvas UI; ses
 - ✅ Phase 3b.1 stabilization gate complete; mini soak clean; Phase 3b formally closed
 - ✅ Phase 3c-1 read scaling complete; cache strategy Option A verified; read-load verification passed
 - ✅ Phase 4 calendar time-canvas UI verification complete; snapshots captured; QA sign-off recorded
+- 🟡 Phase 3c-2 trigger assessment opened; broker scaling pending signal validation
 
 **Phase Summary (2025-12-25):**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
@@ -1116,6 +1117,7 @@ _Constitution v2.11 (Phase 4 verification-complete; calendar time-canvas UI; ses
 - ✅ Phase 3b.1 complete: core write-path regressions fixed; verification mini soak clean; Phase 3b formally closed
 - ✅ Phase 3c-1 complete: read-through cache and observability in place; read-load harness clean; cache invalidation audit complete
 - ✅ Phase 4 verification-complete: calendar time-canvas UI delivered under feature flag; QA snapshots captured; metrics remained green
+- 🟡 Phase 3c-2 assessment opened: collecting outbox and dispatch telemetry before broker selection
 
 ---
 
