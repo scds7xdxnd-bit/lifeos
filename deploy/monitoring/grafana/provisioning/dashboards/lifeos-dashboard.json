@@ -1,318 +1,428 @@
 {
-  "dashboard": {
-    "title": "LifeOS Application Monitoring",
-    "description": "Core LifeOS application metrics and health",
-    "tags": ["lifeos", "production"],
-    "timezone": "utc",
-    "panels": [
-      {
-        "id": 1,
-        "title": "Request Rate (5m)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(http_requests_total[5m])",
-            "legendFormat": "{{ handler }}"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Requests/sec",
-            "format": "short"
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "title": "Response Time (p95)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "p95"
-          },
-          {
-            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "p99"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Duration (s)",
-            "format": "s"
-          }
-        ]
-      },
-      {
-        "id": 3,
-        "title": "Error Rate",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(http_requests_total{status=~'5..'}[5m])",
-            "legendFormat": "5xx Errors"
-          },
-          {
-            "expr": "rate(http_requests_total{status=~'4..'}[5m])",
-            "legendFormat": "4xx Errors"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Requests/sec",
-            "format": "short"
-          }
-        ]
-      },
-      {
-        "id": 4,
-        "title": "Database Connections",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "pg_stat_activity_count",
-            "legendFormat": "Active"
-          }
-        ],
-        "colorMode": "value"
-      },
-      {
-        "id": 5,
-        "title": "Cache Hit Rate",
-        "type": "gauge",
-        "targets": [
-          {
-            "expr": "redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)",
-            "legendFormat": "Hit Rate"
-          }
-        ],
-        "fieldConfig": {
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "value": 0, "color": "red" },
-              { "value": 0.6, "color": "yellow" },
-              { "value": 0.8, "color": "green" }
-            ]
-          }
+  "title": "LifeOS Application Monitoring",
+  "description": "Core LifeOS application metrics and health",
+  "tags": [
+    "lifeos",
+    "production"
+  ],
+  "timezone": "utc",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate (5m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_http_request_latency_seconds_count[5m]))",
+          "legendFormat": "requests"
         }
-      },
-      {
-        "id": 6,
-        "title": "Outbox Messages Pending",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "platform_outbox_pending_messages",
-            "legendFormat": "Pending"
-          }
-        ]
-      },
-      {
-        "id": 7,
-        "title": "Container CPU Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(container_cpu_usage_seconds_total{container=~'lifeos-.*'}[5m]) * 100",
-            "legendFormat": "{{ container }}"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "CPU %",
-            "format": "percent"
-          }
-        ]
-      },
-      {
-        "id": 8,
-        "title": "Container Memory Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "(container_memory_usage_bytes{container=~'lifeos-.*'} / container_spec_memory_limit_bytes) * 100",
-            "legendFormat": "{{ container }}"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Memory %",
-            "format": "percent"
-          }
-        ]
-      },
-      {
-        "id": 9,
-        "title": "Worker Processing Lag",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "increase(platform_outbox_dispatch_errors_total[5m])",
-            "legendFormat": "Errors"
-          },
-          {
-            "expr": "rate(platform_outbox_messages_sent_total[5m])",
-            "legendFormat": "Sent/sec"
-          }
-        ]
-      },
-      {
-        "id": 10,
-        "title": "Read API Request Rate (GET)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "sum(rate(http_requests_total{method='GET'}[5m])) by (handler)",
-            "legendFormat": "{{ handler }}"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Requests/sec",
-            "format": "short"
-          }
-        ]
-      },
-      {
-        "id": 11,
-        "title": "Read API Latency (GET p95/p99)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{method='GET'}[5m])) by (le))",
-            "legendFormat": "p95 GET"
-          },
-          {
-            "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{method='GET'}[5m])) by (le))",
-            "legendFormat": "p99 GET"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Duration (s)",
-            "format": "s"
-          }
-        ]
-      },
-      {
-        "id": 12,
-        "title": "Read Cache Hit Rate",
-        "type": "gauge",
-        "targets": [
-          {
-            "expr": "100 * sum(rate(lifeos_read_cache_hits_total[5m])) / clamp_min(sum(rate(lifeos_read_cache_hits_total[5m])) + sum(rate(lifeos_read_cache_misses_total[5m])), 0.001)",
-            "legendFormat": "Hit Rate"
-          }
-        ],
-        "fieldConfig": {
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "value": 0, "color": "red" },
-              { "value": 60, "color": "yellow" },
-              { "value": 80, "color": "green" }
-            ]
-          }
+      ],
+      "yaxes": [
+        {
+          "label": "Requests/sec",
+          "format": "short"
         }
-      },
-      {
-        "id": 13,
-        "title": "Read Cache Hits / Misses (rate)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "lifeos:read_cache_hits:rate5m",
-            "legendFormat": "{{ scope }} hits"
-          },
-          {
-            "expr": "lifeos:read_cache_misses:rate5m",
-            "legendFormat": "{{ scope }} misses"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Ops/sec",
-            "format": "short"
-          }
-        ]
-      },
-      {
-        "id": 14,
-        "title": "Read Cache Hit Rate by Scope",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "lifeos:read_cache_hit_rate:percent",
-            "legendFormat": "{{ scope }}"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Hit Rate %",
-            "format": "percent"
-          }
-        ]
-      },
-      {
-        "id": 15,
-        "title": "HTTP Request Latency (LifeOS p50/p95/p99)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.5, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
-            "legendFormat": "p50"
-          },
-          {
-            "expr": "histogram_quantile(0.95, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
-            "legendFormat": "p95"
-          },
-          {
-            "expr": "histogram_quantile(0.99, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
-            "legendFormat": "p99"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Duration (s)",
-            "format": "s"
-          }
-        ]
-      },
-      {
-        "id": 16,
-        "title": "Event Dispatch Latency (p50/p95/p99)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.5, sum(rate(lifeos_event_dispatch_latency_seconds_bucket[5m])) by (le))",
-            "legendFormat": "p50"
-          },
-          {
-            "expr": "histogram_quantile(0.95, sum(rate(lifeos_event_dispatch_latency_seconds_bucket[5m])) by (le))",
-            "legendFormat": "p95"
-          },
-          {
-            "expr": "histogram_quantile(0.99, sum(rate(lifeos_event_dispatch_latency_seconds_bucket[5m])) by (le))",
-            "legendFormat": "p99"
-          }
-        ],
-        "yaxes": [
-          {
-            "label": "Duration (s)",
-            "format": "s"
-          }
-        ]
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Response Time (p95/p99)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Duration (s)",
+          "format": "s"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_http_request_latency_seconds_count{status_code=~\"5..\"}[5m]))",
+          "legendFormat": "5xx Errors"
+        },
+        {
+          "expr": "sum(rate(lifeos_http_request_latency_seconds_count{status_code=~\"4..\"}[5m]))",
+          "legendFormat": "4xx Errors"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Requests/sec",
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Projection Correctness Errors (5m)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "increase(lifeos_projection_correctness_errors_total[5m])",
+          "legendFormat": "errors"
+        }
+      ],
+      "colorMode": "value"
+    },
+    {
+      "id": 5,
+      "title": "Cache Hit Rate",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_read_cache_hits_total[5m])) / clamp_min(sum(rate(lifeos_read_cache_hits_total[5m])) + sum(rate(lifeos_read_cache_misses_total[5m])), 0.001)",
+          "legendFormat": "hit_rate"
+        }
+      ],
+      "fieldConfig": {
+        "max": 1,
+        "min": 0,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {
+              "value": 0,
+              "color": "red"
+            },
+            {
+              "value": 0.6,
+              "color": "yellow"
+            },
+            {
+              "value": 0.8,
+              "color": "green"
+            }
+          ]
+        }
       }
-    ],
-    "refresh": "30s",
-    "time": {
-      "from": "now-1h",
-      "to": "now"
+    },
+    {
+      "id": 6,
+      "title": "Contract Violations (15m)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "increase(lifeos_contract_violations_total[15m])",
+          "legendFormat": "violations"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Container CPU Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total{container=~'lifeos-.*'}[5m]) * 100",
+          "legendFormat": "{{ container }}"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "CPU %",
+          "format": "percent"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Container Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "(container_memory_usage_bytes{container=~'lifeos-.*'} / container_spec_memory_limit_bytes) * 100",
+          "legendFormat": "{{ container }}"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Memory %",
+          "format": "percent"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Projection vs Replay Errors (5m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "increase(lifeos_projection_correctness_errors_total[5m])",
+          "legendFormat": "projection_errors"
+        },
+        {
+          "expr": "increase(lifeos_replay_determinism_failures_total[5m])",
+          "legendFormat": "replay_failures"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Read API Request Rate (GET)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_http_request_latency_seconds_count{method=\"GET\"}[5m])) by (route)",
+          "legendFormat": "{{ route }}"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Requests/sec",
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Read API Latency (GET p95/p99)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(lifeos_http_request_latency_seconds_bucket{method=\"GET\"}[5m])) by (le))",
+          "legendFormat": "p95 GET"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(lifeos_http_request_latency_seconds_bucket{method=\"GET\"}[5m])) by (le))",
+          "legendFormat": "p99 GET"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Duration (s)",
+          "format": "s"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Read Cache Hit Rate",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "100 * sum(rate(lifeos_read_cache_hits_total[5m])) / clamp_min(sum(rate(lifeos_read_cache_hits_total[5m])) + sum(rate(lifeos_read_cache_misses_total[5m])), 0.001)",
+          "legendFormat": "Hit Rate"
+        }
+      ],
+      "fieldConfig": {
+        "max": 100,
+        "min": 0,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {
+              "value": 0,
+              "color": "red"
+            },
+            {
+              "value": 60,
+              "color": "yellow"
+            },
+            {
+              "value": 80,
+              "color": "green"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Read Cache Hits / Misses (rate)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:read_cache_hits:rate5m",
+          "legendFormat": "{{ scope }} hits"
+        },
+        {
+          "expr": "lifeos:read_cache_misses:rate5m",
+          "legendFormat": "{{ scope }} misses"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Ops/sec",
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Read Cache Hit Rate by Scope",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:read_cache_hit_rate:percent",
+          "legendFormat": "{{ scope }}"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Hit Rate %",
+          "format": "percent"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "HTTP Request Latency (LifeOS p50/p95/p99)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(lifeos_http_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Duration (s)",
+          "format": "s"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Event Dispatch Latency (p50/p95/p99)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(lifeos_event_dispatch_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(lifeos_event_dispatch_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(lifeos_event_dispatch_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Duration (s)",
+          "format": "s"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "LifeOS Up",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "up{job=\"lifeos\"}",
+          "legendFormat": "up"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Scrape Samples (LifeOS)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "scrape_samples_scraped{job=\"lifeos\"}",
+          "legendFormat": "samples"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "HTTP 5xx Error Ratio (%)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "100 * sum(rate(lifeos_http_request_latency_seconds_count{status_code=~\"5..\"}[5m])) / clamp_min(sum(rate(lifeos_http_request_latency_seconds_count[5m])), 0.001)",
+          "legendFormat": "5xx %"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Percent",
+          "format": "percent"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "Replay Determinism Failures (5m)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "increase(lifeos_replay_determinism_failures_total[5m])",
+          "legendFormat": "failures"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Projection Correctness Checks (5m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "increase(lifeos_projection_correctness_total[5m])",
+          "legendFormat": "checks"
+        }
+      ],
+      "yaxes": [
+        {
+          "label": "Count",
+          "format": "short"
+        }
+      ]
     }
+  ],
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "id": null,
+  "uid": "lifeos",
+  "schemaVersion": 38,
+  "version": 1,
+  "editable": true,
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "templating": {
+    "list": []
   }
 }

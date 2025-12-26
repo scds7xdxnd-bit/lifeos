@@ -2,7 +2,7 @@
 
 **Audience:** Architecture, Backend, Frontend, DB, QA, DevOps, ML (stub only)
 **Owner:** LifeOS Architecture
-**Status:** Approved to Open
+**Status:** Completed (verification gate passed)
 **Preconditions:** Phase 4 (Calendar UI) closed and signed off
 **Nature:** Meaning infrastructure (no intelligence yet)
 
@@ -258,6 +258,14 @@ All system copy must:
 n- Regression tests for proposal lifecycle
 - Golden fixtures for interpretation output
 
+### Troubleshooting
+
+- `GET /api/v1/insights/proposals` returns 404 when the Phase 5a backend routes are not deployed or the server is still running an older build. Restart the backend and confirm the API v1 insights blueprint is registered.
+
+### Rationale (Phase 5a proposals routing)
+
+- The UI calls `/api/v1/insights/proposals`. A 404 means the v1 blueprint did not load (stale server or partial deploy). The fallback registration mirrors the legacy insights blueprint under `/api/v1/insights` only when the v1 route is missing, keeping the UI unblocked without changing contracts or bypassing auth/read-only guards.
+
 ### DevOps
 
 - Background jobs for interpretation runs
@@ -312,3 +320,13 @@ If done poorly:
 - No amount of ML will save the system
 
 Treat this phase as foundational, not experimental.
+
+---
+
+## 12. Completion Record
+
+- **Date:** 2025-12-26
+- **Routing/registration:** Proposals endpoints fixed; incident recorded in `lifeos/docs/ops/monitoring_postmortem.md`
+- **QA:** Phase 5a proposal lifecycle tests green (propose -> accept/reject/correct -> undo + reproposal block)
+- **Command:** `test_phase_5a_interpretation_type_alignment.py`
+- **Result:** 19 passed, 1 xfailed, 5 warnings

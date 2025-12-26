@@ -56,6 +56,7 @@ COPY --chown=lifeos:lifeos lifeos /app/lifeos
 COPY --chown=lifeos:lifeos migrations /app/migrations
 COPY --chown=lifeos:lifeos alembic.ini /app/alembic.ini
 COPY --chown=lifeos:lifeos deploy /app/deploy
+COPY --chown=lifeos:lifeos scripts /app/scripts
 
 # Prepare application directories
 RUN chmod +x /app/deploy/scripts/*.sh && \

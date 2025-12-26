@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-25 (v2.12 — Phase 3c-2 trigger assessment opened)_
+_Last updated: 2025-12-26 (v2.13 — Phase 5a complete; proposal substrate verified)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -39,6 +39,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 3b.1 Stability Patch & Verification**: Complete; journal write, finance account search, and schedule/forecast regressions fixed and verified; mini soak clean; Phase 3b formally closed.
 - **Phase 3c-1 Read & Throughput Scaling**: Complete; read-through cache, cache observability, read-load verification, and invalidation audit completed; Phase 4 unblocked.
 - **Phase 4 Calendar Time-Canvas UI**: Verification-complete; feature-flagged calendar time-canvas renderer aligned to Apple-style interaction grammar with snapshots and QA sign-off.
+- **Phase 5a Insight Substrate & Proposal Infrastructure**: Complete; timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -137,7 +138,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3c-2 trigger assessment (event transport scaling); Phase 3c-3 remains trigger-driven.
+- Active: Phase 3c-2 trigger assessment (event transport scaling) remains deferred; Phase 5b readiness can be evaluated now that Phase 5a is complete.
 - Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
@@ -1096,7 +1097,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.12 (Phase 3c-2 trigger assessment opened; Phase 4 verification-complete; session scaffold + admin reset stub): 2025-12-25. Author: LifeOS Architect._
+_Constitution v2.13 (Phase 5a complete; proposal substrate verified; session scaffold + admin reset stub): 2025-12-26. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1107,6 +1108,7 @@ _Constitution v2.12 (Phase 3c-2 trigger assessment opened; Phase 4 verification-
 - ✅ Phase 3c-1 read scaling complete; cache strategy Option A verified; read-load verification passed
 - ✅ Phase 4 calendar time-canvas UI verification complete; snapshots captured; QA sign-off recorded
 - 🟡 Phase 3c-2 trigger assessment opened; broker scaling pending signal validation
+- ✅ Phase 5a complete: timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete
 
 **Phase Summary (2025-12-25):**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
@@ -1118,6 +1120,7 @@ _Constitution v2.12 (Phase 3c-2 trigger assessment opened; Phase 4 verification-
 - ✅ Phase 3c-1 complete: read-through cache and observability in place; read-load harness clean; cache invalidation audit complete
 - ✅ Phase 4 verification-complete: calendar time-canvas UI delivered under feature flag; QA snapshots captured; metrics remained green
 - 🟡 Phase 3c-2 assessment opened: collecting outbox and dispatch telemetry before broker selection
+- ✅ Phase 5a complete: proposal substrate shipped; proposals endpoint fixed; QA lifecycle tests green
 
 ---
 

@@ -1,18 +1,19 @@
 {% extends "layouts/base.html" %}
 {% block content %}
-<div class="container" style="max-width:900px; margin:0 auto; padding:32px;">
+<div class="container" style="max-width:920px; margin:0 auto; padding:32px;">
   <div class="card">
-    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <div class="insights-header">
       <div>
-        <h2 style="margin:0;">Review Queue</h2>
-        <p id="insights-lede" style="color:#5b6470; margin:0;">What should I review now?</p>
+        <h2 style="margin:0;">Proposal Review</h2>
+        <p id="insights-lede" class="insights-lede">It looks like these moments may belong in your relationships log.</p>
       </div>
       <button type="button" class="btn" id="insights-review-btn">Review next</button>
     </div>
+    <div class="insights-context">System proposals are never applied until you confirm.</div>
     <div id="insights-status" class="auth-status" style="margin-top:0.5rem;"></div>
   </div>
-  <div id="insights-list" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;"></div>
-  <div id="insights-empty" style="color:#5b6470; display:none;">Nothing to review right now.</div>
+  <div id="insights-list" class="proposal-list"></div>
+  <div id="insights-empty" class="proposal-empty" style="display:none;">No pending proposals right now.</div>
 </div>
 <script>
   (() => {
@@ -29,7 +30,7 @@
       list.innerHTML = '';
       empty.style.display = 'none';
       reviewBtn.disabled = true;
-      setStatus('Please sign in to view your review queue.', 'error');
+      setStatus('Please sign in to review proposals.', 'error');
     };
     const getAuthHeaders = (extra = {}) => {
       const headers = lifeosAuth.authHeaders(extra);
@@ -48,6 +49,26 @@
       }
       return '';
     };
+    const formatType = (value) => {
+      if (!value) return 'Proposal';
+      if (value === 'calendar.relationship.interaction') return 'Relationship interaction';
+      return value.replace(/\./g, ' ');
+    };
+    const formatConfidence = (value) => {
+      if (value === null || value === undefined) return '—';
+      const num = Number(value);
+      if (Number.isNaN(num)) return '—';
+      return `${Math.round(num * 100)}%`;
+    };
+    const formatWrite = (write) => {
+      if (!write) return 'A related record would be written.';
+      if (write.action === 'relationships.log_interaction') {
+        const person = write.person_id ? `Person #${write.person_id}` : 'a person';
+        const method = write.method ? ` · ${write.method}` : '';
+        return `Log interaction with ${person}${method}.`;
+      }
+      return `${write.action || 'proposed action'}`;
+    };
     const render = (items) => {
       list.innerHTML = '';
       if (!items.length) {
@@ -57,26 +78,128 @@
       }
       empty.style.display = 'none';
       reviewBtn.disabled = false;
-      items.forEach(ins => {
+      items.forEach((ins) => {
         const card = document.createElement('div');
-        card.style.border = '1px solid #e0e5ec';
-        card.style.borderRadius = '10px';
-        card.style.padding = '12px 14px';
-        card.style.background = '#fff';
+        card.className = 'proposal-card';
         card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
-            <strong>${ins.insight_type || 'Insight'}</strong>
-            <span style="font-size:0.8rem; color:${ins.severity === 'warning' ? '#b3352f' : '#5b6470'}">${ins.severity || 'info'}</span>
+          <div class="proposal-header">
+            <div>
+              <div class="proposal-title">${formatType(ins.interpretation_type)}</div>
+              <div class="proposal-subtle">Proposed from calendar activity</div>
+            </div>
+            <div class="proposal-pills">
+              <span class="proposal-pill">Confidence ${formatConfidence(ins.confidence)}</span>
+              <span class="proposal-pill proposal-pill--status">${ins.status || 'proposed'}</span>
+            </div>
           </div>
-          <div style="margin-top:6px;">${ins.message || ''}</div>
-          <div style="margin-top:4px; font-size:0.8rem; color:#5b6470;">${ins.created_at ? new Date(ins.created_at).toLocaleString() : ''}</div>
+          <div class="proposal-evidence">${ins.evidence || 'It looks like this calendar event suggests a relationship interaction.'}</div>
+          <div class="proposal-section">
+            <div class="proposal-label">Proposed action</div>
+            <div class="proposal-body">${formatWrite((ins.proposed_writes || [])[0])}</div>
+          </div>
+          ${(ins.input_event_ids || []).length ? `
+            <div class="proposal-section proposal-section--sources">
+              <div class="proposal-label">Source events</div>
+              <div class="proposal-chips">
+                ${(ins.input_event_ids || []).map(id => `<span class="proposal-chip">${id}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          <div class="proposal-actions">
+            <button type="button" class="btn" data-action="accept">Accept</button>
+            <button type="button" class="btn btn-secondary" data-action="reject">Reject</button>
+            <button type="button" class="text-link" data-action="correct">Correct details</button>
+          </div>
+          <div class="proposal-correction">
+            <div class="proposal-label">Correction details</div>
+            <div class="proposal-form">
+              <div class="field">
+                <label>Person ID</label>
+                <input type="number" class="input" data-field="person_id" placeholder="Optional">
+              </div>
+              <div class="field">
+                <label>Method</label>
+                <input type="text" class="input" data-field="method" placeholder="meeting / call / meal">
+              </div>
+              <div class="field">
+                <label>Notes</label>
+                <input type="text" class="input" data-field="notes" placeholder="Optional">
+              </div>
+            </div>
+            <div class="proposal-actions">
+              <button type="button" class="btn" data-action="apply-correction">Apply correction</button>
+              <button type="button" class="btn btn-secondary" data-action="cancel-correction">Cancel</button>
+            </div>
+          </div>
         `;
-        card.id = `insight-${ins.id}`;
+        card.id = `proposal-${ins.id}`;
+        const actions = card.querySelectorAll('[data-action]');
+        const correctionFields = {
+          person_id: card.querySelector('[data-field="person_id"]'),
+          method: card.querySelector('[data-field="method"]'),
+          notes: card.querySelector('[data-field="notes"]'),
+        };
+        const write = (ins.proposed_writes || [])[0] || {};
+        if (write.person_id && correctionFields.person_id) {
+          correctionFields.person_id.value = write.person_id;
+        }
+        if (write.method && correctionFields.method) {
+          correctionFields.method.value = write.method;
+        }
+        if (write.notes && correctionFields.notes) {
+          correctionFields.notes.value = write.notes;
+        }
+        actions.forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const action = btn.dataset.action;
+            if (action === 'correct') {
+              card.classList.add('is-correcting');
+              return;
+            }
+            if (action === 'cancel-correction') {
+              card.classList.remove('is-correcting');
+              return;
+            }
+            let payload = {};
+            if (action === 'accept') payload = { action: 'accepted' };
+            if (action === 'reject') payload = { action: 'rejected' };
+            if (action === 'apply-correction') {
+              payload = {
+                action: 'corrected',
+                person_id: correctionFields.person_id?.value ? Number(correctionFields.person_id.value) : undefined,
+                method: correctionFields.method?.value?.trim() || undefined,
+                notes: correctionFields.notes?.value?.trim() || undefined,
+              };
+            }
+            try {
+              setStatus('Saving response…');
+              const res = await fetch(`/api/v1/insights/proposals/${ins.id}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify(payload),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok || data.ok === false) {
+                const contractError = resolveContractError(data, res);
+                setStatus(contractError || 'Unable to save response.', 'error');
+                return;
+              }
+              card.remove();
+              setStatus('');
+              if (!list.querySelector('.proposal-card')) {
+                empty.style.display = 'block';
+                reviewBtn.disabled = true;
+              }
+            } catch (err) {
+              setStatus('Unable to save response.', 'error');
+            }
+          });
+        });
         list.appendChild(card);
       });
     };
     reviewBtn?.addEventListener('click', () => {
-      const first = list.querySelector('div[id^="insight-"]');
+      const first = list.querySelector('div[id^="proposal-"]');
       if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
@@ -86,10 +209,14 @@
         return;
       }
       setStatus('');
-      fetch('/api/v1/insights/review', { headers: getAuthHeaders() })
+      fetch('/api/v1/insights/proposals?status=proposed', { headers: getAuthHeaders() })
         .then(async (res) => {
           if (res.status === 401) {
             setLoggedOutState();
+            return null;
+          }
+          if (res.status === 404) {
+            setStatus('Proposals API not available. Confirm the Phase 5a backend is deployed.', 'error');
             return null;
           }
           const data = await res.json().catch(() => ({}));

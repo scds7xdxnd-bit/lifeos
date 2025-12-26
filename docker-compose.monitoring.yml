@@ -140,10 +140,10 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.47.0
     container_name: lifeos-cadvisor
     command:
-      - "--enable_metrics=cpu,memory,network,process,disk,fs"
+      - "--enable_metrics=cpu,memory,network,process,disk"
       - "--housekeeping_interval=30s"
       - "--disable_metrics=advtcp,tcp,udp,percpu,sched,hugetlb"
-      - "--log_level=info"
+      - "-logtostderr"
     ports:
       - "8080:8080"
     volumes:

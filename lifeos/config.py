@@ -84,6 +84,22 @@ class BaseConfig:
     ENABLE_ML = os.environ.get("ENABLE_ML", "true").lower() in ("1", "true", "yes")
     MLSUGGESTER_MODEL_DIR = os.environ.get("MLSUGGESTER_MODEL_DIR", "flask_app")
 
+    ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ENABLE_INTERPRETATION_RELATIONSHIP = os.environ.get("ENABLE_INTERPRETATION_RELATIONSHIP", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ENABLE_INTERPRETATION_OBLIGATION = os.environ.get("ENABLE_INTERPRETATION_OBLIGATION", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
     # Google Calendar OAuth
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")

@@ -1139,3 +1139,144 @@ select:focus {
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* Insights proposals */
+.insights-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.insights-lede {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.insights-context {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 0.35rem;
+}
+
+.proposal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.proposal-empty {
+  color: var(--text-muted);
+  margin-top: 16px;
+}
+
+.proposal-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--surface-card);
+  display: grid;
+  gap: 10px;
+}
+
+.proposal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.proposal-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.proposal-subtle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.proposal-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.proposal-pill {
+  background: var(--bg-secondary);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  color: var(--text-strong);
+}
+
+.proposal-pill--status {
+  text-transform: capitalize;
+}
+
+.proposal-evidence {
+  font-size: 0.95rem;
+  color: var(--text-strong);
+}
+
+.proposal-section {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.proposal-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.proposal-body {
+  font-size: 0.9rem;
+  color: var(--text-strong);
+}
+
+.proposal-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.proposal-chip {
+  background: var(--bg-secondary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--text-strong);
+}
+
+.proposal-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.proposal-correction {
+  display: none;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.75rem;
+  gap: 0.75rem;
+}
+
+.proposal-form {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.proposal-card.is-correcting .proposal-actions {
+  display: none;
+}
+
+.proposal-card.is-correcting .proposal-correction {
+  display: grid;
+}
