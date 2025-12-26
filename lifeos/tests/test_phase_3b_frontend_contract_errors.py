@@ -24,9 +24,10 @@ def _assert_contract_resolver(html: str) -> None:
     assert "Read-only contract violation detected" in html
 
 
-def test_insights_proposals_contract_errors():
+def test_insights_contract_endpoints_have_contract_resolver():
     html = _read("lifeos/templates/insights/index.html")
     _assert_contract_resolver(html)
+    assert "/api/v1/insights/feed" in html
     assert "/api/v1/insights/proposals" in html
 
 

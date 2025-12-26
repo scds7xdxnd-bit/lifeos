@@ -4,33 +4,56 @@
   <div class="card">
     <div class="insights-header">
       <div>
-        <h2 style="margin:0;">Proposal Review</h2>
-        <p id="insights-lede" class="insights-lede">It looks like these moments may belong in your relationships log.</p>
+        <h2 style="margin:0;" id="insights-title">Insight Feed</h2>
+        <p id="insights-lede" class="insights-lede">Based on recent activity, these patterns are worth noting.</p>
       </div>
-      <button type="button" class="btn" id="insights-review-btn">Review next</button>
+      <div class="insights-actions">
+        <div class="insights-tabs" role="tablist">
+          <button type="button" class="insights-tab active" data-view="feed" role="tab" aria-selected="true">Feed</button>
+          <button type="button" class="insights-tab" data-view="proposals" role="tab" aria-selected="false">Proposals</button>
+        </div>
+        <button type="button" class="btn" id="insights-review-btn">Refresh feed</button>
+      </div>
     </div>
-    <div class="insights-context">System proposals are never applied until you confirm.</div>
+    <div id="insights-context" class="insights-context">Insights are read-only observations. Nothing is changed automatically.</div>
     <div id="insights-status" class="auth-status" style="margin-top:0.5rem;"></div>
   </div>
-  <div id="insights-list" class="proposal-list"></div>
-  <div id="insights-empty" class="proposal-empty" style="display:none;">No pending proposals right now.</div>
+  <div id="insights-feed" class="insights-panel">
+    <div id="insights-feed-list" class="insight-feed-list"></div>
+    <div id="insights-feed-empty" class="insight-empty" style="display:none;">No insights to show yet.</div>
+  </div>
+  <div id="insights-proposals" class="insights-panel" style="display:none;">
+    <div id="insights-list" class="proposal-list"></div>
+    <div id="insights-empty" class="proposal-empty" style="display:none;">No pending proposals right now.</div>
+  </div>
 </div>
 <script>
   (() => {
-    const list = document.getElementById('insights-list');
-    const empty = document.getElementById('insights-empty');
+    const feedPanel = document.getElementById('insights-feed');
+    const feedList = document.getElementById('insights-feed-list');
+    const feedEmpty = document.getElementById('insights-feed-empty');
+    const proposalsPanel = document.getElementById('insights-proposals');
+    const proposalsList = document.getElementById('insights-list');
+    const proposalsEmpty = document.getElementById('insights-empty');
     const reviewBtn = document.getElementById('insights-review-btn');
     const statusEl = document.getElementById('insights-status');
+    const titleEl = document.getElementById('insights-title');
+    const ledeEl = document.getElementById('insights-lede');
+    const contextEl = document.getElementById('insights-context');
+    const tabs = Array.from(document.querySelectorAll('.insights-tab'));
+    let activeView = 'feed';
     const setStatus = (msg, tone = '') => {
       if (!statusEl) return;
       statusEl.textContent = msg || '';
       if (tone) statusEl.dataset.tone = tone; else statusEl.removeAttribute('data-tone');
     };
     const setLoggedOutState = () => {
-      list.innerHTML = '';
-      empty.style.display = 'none';
+      feedList.innerHTML = '';
+      proposalsList.innerHTML = '';
+      feedEmpty.style.display = 'none';
+      proposalsEmpty.style.display = 'none';
       reviewBtn.disabled = true;
-      setStatus('Please sign in to review proposals.', 'error');
+      setStatus('Please sign in to view insights.', 'error');
     };
     const getAuthHeaders = (extra = {}) => {
       const headers = lifeosAuth.authHeaders(extra);
@@ -49,16 +72,73 @@
       }
       return '';
     };
+
+    const insightCopy = {
+      feed: {
+        title: 'Insight Feed',
+        lede: 'Based on recent activity, these patterns are worth noting.',
+        context: 'Insights are read-only observations. Nothing is changed automatically.',
+        actionLabel: 'Refresh feed',
+      },
+      proposals: {
+        title: 'Proposal Review',
+        lede: 'It looks like these moments may belong in your relationships log.',
+        context: 'System proposals are never applied until you confirm.',
+        actionLabel: 'Review next',
+      },
+    };
+
     const formatType = (value) => {
       if (!value) return 'Proposal';
       if (value === 'calendar.relationship.interaction') return 'Relationship interaction';
-      return value.replace(/\./g, ' ');
+      return value.replace(/_/g, ' ').replace(/\./g, ' · ');
     };
     const formatConfidence = (value) => {
       if (value === null || value === undefined) return '—';
       const num = Number(value);
       if (Number.isNaN(num)) return '—';
       return `${Math.round(num * 100)}%`;
+    };
+    const confidenceLabel = (value) => {
+      const num = Number(value);
+      if (Number.isNaN(num)) return 'Unknown';
+      if (num >= 0.7) return 'High';
+      if (num >= 0.5) return 'Moderate';
+      return 'Low';
+    };
+    const formatInsightType = (value) => {
+      if (!value) return 'System insight';
+      return value.replace(/_/g, ' ').replace(/\./g, ' · ');
+    };
+    const formatFeatureKey = (key) => {
+      const labels = {
+        'calendar.obligation.count': 'Calendar obligations',
+        'calendar.event.count': 'Calendar events',
+        'calendar.event.late_night.count': 'Late-night events',
+        'finance.transaction.count': 'Finance transactions',
+        'finance.spend.total': 'Recent spend',
+        'journal.entry.count': 'Journal entries',
+        'journal.stress.count': 'Stress-tagged entries',
+        'habits.log.count': 'Habit check-ins',
+        'health.sleep_low.count': 'Low-sleep signals',
+        'relationships.interaction.count': 'Relationship interactions',
+        'projects.task.completed.count': 'Projects completed',
+      };
+      return labels[key] || key.replace(/_/g, ' ');
+    };
+    const formatFeatureValue = (key, value) => {
+      if (value === null || value === undefined) return '—';
+      if (key.includes('total')) return `$${Number(value).toFixed(2)}`;
+      return Number(value).toFixed(0);
+    };
+    const trackInsightAction = (insight, action) => {
+      if (!window.lifeosTelemetry?.track) return;
+      window.lifeosTelemetry.track('insights.action', {
+        action,
+        insight_id: insight.id,
+        insight_type: insight.insight_type,
+        confidence: insight?.data?.confidence,
+      });
     };
     const formatWrite = (write) => {
       if (!write) return 'A related record would be written.';
@@ -69,14 +149,77 @@
       }
       return `${write.action || 'proposed action'}`;
     };
-    const render = (items) => {
-      list.innerHTML = '';
+
+    const renderFeed = (items) => {
+      feedList.innerHTML = '';
       if (!items.length) {
-        empty.style.display = 'block';
+        feedEmpty.style.display = 'block';
+        return;
+      }
+      feedEmpty.style.display = 'none';
+      items.forEach((ins) => {
+        const data = ins.data || {};
+        const snapshot = data.feature_snapshot || {};
+        const metrics = Object.keys(snapshot).map((key) => `
+          <div class="insight-metric">
+            <span>${formatFeatureKey(key)}</span>
+            <strong>${formatFeatureValue(key, snapshot[key])}</strong>
+          </div>
+        `).join('');
+        const confidence = formatConfidence(data.confidence);
+        const confidenceText = confidence === '—' ? 'Confidence unavailable' : `Confidence ${confidence} · ${confidenceLabel(data.confidence)}`;
+        const windowLabel = data.window_days ? `last ${data.window_days} days` : 'a recent window';
+        const createdAt = ins.created_at ? new Date(ins.created_at).toLocaleString() : '';
+        const card = document.createElement('div');
+        card.className = 'insight-card';
+        card.innerHTML = `
+          <div class="insight-header">
+            <div>
+              <div class="insight-type">${formatInsightType(ins.insight_type)}</div>
+              <div class="insight-title">${ins.message || data.detail || 'Insight'}</div>
+            </div>
+            <div class="insight-meta">
+              <span class="insight-pill">${ins.severity || 'info'}</span>
+              <span class="insight-pill">${confidenceText}</span>
+            </div>
+          </div>
+          ${data.detail ? `<div class="insight-detail">${data.detail}</div>` : ''}
+          <div class="insight-evidence">
+            <div class="insight-label">Based on</div>
+            <div class="insight-metrics">
+              ${metrics || `<span class="insight-empty-metric">Cross-domain signals from ${windowLabel}.</span>`}
+            </div>
+          </div>
+          <div class="insight-footer">
+            <div class="insight-time">${createdAt ? `${createdAt} · ` : ''}${windowLabel}</div>
+            <div class="insight-actions">
+              <button type="button" class="text-link" data-action="snooze">Snooze</button>
+              <button type="button" class="text-link" data-action="dismiss">Dismiss</button>
+            </div>
+          </div>
+        `;
+        card.querySelectorAll('[data-action]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            trackInsightAction(ins, action);
+            card.remove();
+            if (!feedList.querySelector('.insight-card')) {
+              feedEmpty.style.display = 'block';
+            }
+          });
+        });
+        feedList.appendChild(card);
+      });
+    };
+
+    const renderProposals = (items) => {
+      proposalsList.innerHTML = '';
+      if (!items.length) {
+        proposalsEmpty.style.display = 'block';
         reviewBtn.disabled = true;
         return;
       }
-      empty.style.display = 'none';
+      proposalsEmpty.style.display = 'none';
       reviewBtn.disabled = false;
       items.forEach((ins) => {
         const card = document.createElement('div');
@@ -195,15 +338,56 @@
             }
           });
         });
-        list.appendChild(card);
+        proposalsList.appendChild(card);
       });
     };
     reviewBtn?.addEventListener('click', () => {
-      const first = list.querySelector('div[id^="proposal-"]');
+      if (activeView === 'feed') {
+        loadFeed();
+        return;
+      }
+      const first = proposalsList.querySelector('div[id^="proposal-"]');
       if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
-    const loadInsights = () => {
+    const loadFeed = () => {
+      if (!isAuthed()) {
+        setLoggedOutState();
+        return;
+      }
+      setStatus('');
+      fetch('/api/v1/insights/feed', { headers: getAuthHeaders() })
+        .then(async (res) => {
+          if (res.status === 401) {
+            setLoggedOutState();
+            return null;
+          }
+          if (res.status === 404) {
+            setStatus('Insights feed is not available. Confirm the Phase 5b backend is deployed.', 'error');
+            return null;
+          }
+          const data = await res.json().catch(() => ({}));
+          const contractError = resolveContractError(data, res);
+          if (contractError) {
+            setStatus(contractError, 'error');
+            return null;
+          }
+          if (!res.ok || data.ok === false) {
+            setStatus('Unable to load items right now.', 'error');
+            return null;
+          }
+          return data;
+        })
+        .then((data) => {
+          if (!data) return;
+          renderFeed(data.items || []);
+        })
+        .catch(() => {
+          setStatus('Unable to load items right now.', 'error');
+        });
+    };
+
+    const loadProposals = () => {
       if (!isAuthed()) {
         setLoggedOutState();
         return;
@@ -233,25 +417,57 @@
         })
         .then((data) => {
           if (!data) return;
-          render(data.items || []);
+          renderProposals(data.items || []);
         })
         .catch(() => {
           setStatus('Unable to load items right now.', 'error');
         });
     };
 
+    const setView = (view) => {
+      activeView = view;
+      const copy = insightCopy[view] || insightCopy.feed;
+      if (titleEl) titleEl.textContent = copy.title;
+      if (ledeEl) ledeEl.textContent = copy.lede;
+      if (contextEl) contextEl.textContent = copy.context;
+      if (reviewBtn) reviewBtn.textContent = copy.actionLabel;
+      tabs.forEach((tab) => {
+        const selected = tab.dataset.view === view;
+        tab.classList.toggle('active', selected);
+        tab.setAttribute('aria-selected', String(selected));
+      });
+      feedPanel.style.display = view === 'feed' ? 'block' : 'none';
+      proposalsPanel.style.display = view === 'proposals' ? 'block' : 'none';
+      if (view === 'feed') {
+        loadFeed();
+      } else {
+        loadProposals();
+      }
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const view = tab.dataset.view || 'feed';
+        setView(view);
+      });
+    });
+
     window.addEventListener('lifeos:auth-changed', (e) => {
       if (e.detail?.loggedIn) {
-        loadInsights();
+        if (activeView === 'feed') {
+          loadFeed();
+        } else {
+          loadProposals();
+        }
       } else {
         setLoggedOutState();
       }
     });
 
     if (window.lifeosAuthReady?.then) {
-      window.lifeosAuthReady.finally(loadInsights);
+      window.lifeosAuthReady.finally(() => setView(activeView));
     } else {
-      loadInsights();
+      setView(activeView);
     }
   })();
 </script>

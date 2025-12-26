@@ -20,7 +20,9 @@
         const t = getTokens();
         const headers = Object.assign({}, extra);
         if (t.access_token) headers["Authorization"] = "Bearer " + t.access_token;
-        if (t.csrf_token) headers["X-CSRF-Token"] = t.csrf_token;
+        const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        const csrfToken = metaCsrf || t.csrf_token;
+        if (csrfToken && !headers["X-CSRF-Token"]) headers["X-CSRF-Token"] = csrfToken;
         return headers;
       }
       const lifeosTelemetry = (() => {

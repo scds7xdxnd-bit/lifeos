@@ -240,7 +240,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(bioStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A biometric entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A biometric entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(bioStatus, copy, 'error');
       }
     });
 
@@ -270,7 +276,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(workoutStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A workout entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A workout entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(workoutStatus, copy, 'error');
       }
     });
 
@@ -300,7 +312,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(nutritionStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A nutrition entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A nutrition entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(nutritionStatus, copy, 'error');
       }
     });
 

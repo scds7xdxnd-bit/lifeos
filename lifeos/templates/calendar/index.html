@@ -232,11 +232,37 @@
     return `${y}-${m}-${day}`;
   };
 
+  const parseLocalDate = (dateStr) => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-').map((part) => parseInt(part, 10));
+    if (parts.length < 3 || parts.some((part) => Number.isNaN(part))) {
+      return null;
+    }
+    const [year, month, day] = parts;
+    return new Date(year, month - 1, day);
+  };
+
   const parseLocalDateTime = (isoStr) => {
     if (!isoStr) return null;
-    // Remove trailing Z/offset so we treat it as provided (naive) local time
-    const cleaned = isoStr.replace(/Z$/, '');
-    return new Date(cleaned);
+    // Remove timezone suffix so we treat provided timestamps as local-naive.
+    const cleaned = isoStr.replace(/([+-]\d{2}:?\d{2}|Z)$/, '');
+    const [datePart, timePartRaw] = cleaned.split('T');
+    const base = parseLocalDate(datePart);
+    if (!base) return null;
+    if (!timePartRaw) return base;
+    const [timePart, fractional] = timePartRaw.split('.');
+    const timeParts = timePart.split(':');
+    const hours = parseInt(timeParts[0] || '0', 10);
+    const minutes = parseInt(timeParts[1] || '0', 10);
+    const seconds = parseInt(timeParts[2] || '0', 10);
+    let ms = 0;
+    if (fractional) {
+      const normalized = fractional.padEnd(3, '0').slice(0, 3);
+      const parsed = parseInt(normalized, 10);
+      ms = Number.isNaN(parsed) ? 0 : parsed;
+    }
+    base.setHours(hours, minutes, seconds, ms);
+    return base;
   };
 
   const pad2 = (num) => String(num).padStart(2, '0');
@@ -299,11 +325,17 @@
     return `${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}`;
   };
 
-  const toLocalDate = (dateStr, timeParts) => new Date(`${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}:00`);
+  const toLocalDate = (dateStr, timeParts) => {
+    const base = parseLocalDate(dateStr);
+    if (!base || !timeParts) return null;
+    base.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+    return base;
+  };
 
   const formatDateLabel = (dateStr) => {
     if (!dateStr) return '';
-    const dateObj = new Date(`${dateStr}T00:00`);
+    const dateObj = parseLocalDate(dateStr);
+    if (!dateObj) return '';
     return dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
   const addDays = (dateObj, days) => {
@@ -497,7 +529,8 @@
 
   const getWeekStart = (d) => {
     const weekStart = new Date(d);
-    weekStart.setDate(d.getDate() - d.getDay());
+    const dayOffset = (d.getDay() + 6) % 7;
+    weekStart.setDate(d.getDate() - dayOffset);
     return weekStart;
   };
 
@@ -784,6 +817,15 @@
     if (viewEndRaw && (viewEndRaw.getHours() || viewEndRaw.getMinutes() || viewEndRaw.getSeconds() || viewEndRaw.getMilliseconds())) {
       viewEnd = addDays(viewEnd, 1);
     }
+    const startOffset = (viewStart.getDay() + 6) % 7;
+    if (startOffset) {
+      viewStart = addDays(viewStart, -startOffset);
+    }
+    const totalDays = dayDiff(viewStart, viewEnd);
+    const remainder = totalDays % 7;
+    if (remainder !== 0) {
+      viewEnd = addDays(viewEnd, 7 - remainder);
+    }
     const days = [];
     for (let d = new Date(viewStart); d < viewEnd; d.setDate(d.getDate() + 1)) {
       days.push(new Date(d));
@@ -836,7 +878,7 @@
     monthOverflowMap = eventsByDay;
 
     let html = '<div class="cal-month-header">';
-    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach((d) => {
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach((d) => {
       html += `<div class="cal-month-header-cell">${d}</div>`;
     });
     html += '</div>';
@@ -1332,7 +1374,11 @@
     const byId = new Map();
     ledgerEvents.forEach((e) => byId.set(e.id, e));
     newEvents.forEach((e) => byId.set(e.id, e));
-    ledgerEvents = Array.from(byId.values()).sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    ledgerEvents = Array.from(byId.values()).sort((a, b) => {
+      const aTime = parseLocalDateTime(a.start_time);
+      const bTime = parseLocalDateTime(b.start_time);
+      return (aTime?.getTime() || 0) - (bTime?.getTime() || 0);
+    });
   };
 
   const renderLedger = () => {
@@ -1778,7 +1824,7 @@
         eventEndDateInput.focus();
         return;
       }
-      const endDateObj = new Date(`${endDateRaw}T00:00`);
+      const endDateObj = parseLocalDate(endDateRaw);
       endDateObj.setDate(endDateObj.getDate() + 1);
       endTimeString = `${localDateKey(endDateObj)}T00:00`;
     } else {

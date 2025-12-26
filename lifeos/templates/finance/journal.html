@@ -1,19 +1,6 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 <div class="container" style="max-width: 1100px; margin: 0 auto; display: grid; gap: 1rem; padding: 1rem 0;">
-  <div class="card">
-    <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-      <div>
-        <div class="meta">Finance Journal</div>
-        <h2 style="margin:0;">What changed and needs review?</h2>
-        <p style="margin:0; color:#5b6470;">Entries are read-first. Post only when ready.</p>
-      </div>
-      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-        <button type="button" class="btn" id="journal-review-btn">Review entries</button>
-        <button type="button" class="btn btn-secondary" id="journal-new-entry-btn">New entry</button>
-      </div>
-    </div>
-  </div>
 
   {% include "components/journal_entry_form_v2.html" %}
 
@@ -33,7 +20,6 @@
     const journalEmpty = document.getElementById('journal-empty');
     const entriesRefresh = document.getElementById('journal-entries-refresh-btn');
     const reviewBtn = document.getElementById('journal-review-btn');
-    const newEntryBtn = document.getElementById('journal-new-entry-btn');
     const formToggle = document.getElementById('journal-form-toggle');
     const detailsCache = new Map();
 
@@ -193,10 +179,6 @@
       if (!ensureAuth()) return;
       const first = journalList.querySelector('div');
       if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-    newEntryBtn?.addEventListener('click', () => {
-      if (!ensureAuth()) return;
-      formToggle?.click();
     });
     window.addEventListener('journal:entry-posted', fetchEntries);
     window.addEventListener('lifeos:auth-changed', (e) => {

@@ -16,13 +16,11 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # LifeOS Web Application (host machine)
+  # LifeOS Web Application (Docker network)
   - job_name: 'lifeos'
     static_configs:
       - targets:
-          - 'lifeos-web:8000'
-          - 'host.docker.internal:5001'
-          - 'host.docker.internal:8000'
+          - 'web:8000'
 
   # StatsD Exporter (collects application metrics)
   - job_name: 'statsd-exporter'

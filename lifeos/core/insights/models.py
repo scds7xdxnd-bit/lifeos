@@ -27,5 +27,7 @@ class InsightRecord(db.Model):
     severity: Mapped[str] = mapped_column(db.String(16), default="info")
     confidence_band: Mapped[str | None] = mapped_column(db.String(32), nullable=True)
     routing: Mapped[str | None] = mapped_column(db.String(32), nullable=True)
+    priority: Mapped[int] = mapped_column(db.Integer, nullable=False, default=50)
+    delivery_policy: Mapped[str] = mapped_column(db.String(32), nullable=False, default="feed")
     data: Mapped[dict] = mapped_column(db.JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)

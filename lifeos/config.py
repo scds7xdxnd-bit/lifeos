@@ -84,6 +84,16 @@ class BaseConfig:
     ENABLE_ML = os.environ.get("ENABLE_ML", "true").lower() in ("1", "true", "yes")
     MLSUGGESTER_MODEL_DIR = os.environ.get("MLSUGGESTER_MODEL_DIR", "flask_app")
 
+    ENABLE_PHASE5B_INSIGHTS = os.environ.get("ENABLE_PHASE5B_INSIGHTS", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    _phase5b_insight_types = [
+        item.strip() for item in os.environ.get("PHASE5B_INSIGHT_TYPES", "").split(",") if item.strip()
+    ]
+    PHASE5B_INSIGHT_TYPES = _phase5b_insight_types or None
+
     ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
         "1",
         "true",

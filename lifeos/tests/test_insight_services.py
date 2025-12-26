@@ -54,6 +54,8 @@ def test_persist_insights_saves_records_with_defaults(app):
                 "message": "second insight",
                 "severity": "warning",
                 "context": {"foo": "bar"},
+                "priority": 80,
+                "delivery_policy": "inbox",
             },
         ]
 
@@ -66,10 +68,14 @@ def test_persist_insights_saves_records_with_defaults(app):
         assert first.event_type == event.event_type
         assert first.kind == "generic"
         assert first.severity == "info"
+        assert first.priority == 50
+        assert first.delivery_policy == "feed"
         assert first.message == "first insight"
         assert first.data == {"confidence_band": "informational", "routing": "display"}
         assert second.kind == "alert"
         assert second.severity == "warning"
+        assert second.priority == 80
+        assert second.delivery_policy == "inbox"
         assert second.data == {
             "foo": "bar",
             "confidence_band": "informational",

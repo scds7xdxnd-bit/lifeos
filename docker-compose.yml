@@ -2,6 +2,7 @@
 # Includes: Web App, PostgreSQL, Redis, Async Worker, Monitoring
 
 x-common-env: &common-env
+  PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   APP_ENV: ${APP_ENV:-production}
   FLASK_APP: lifeos.wsgi
   SECRET_KEY: ${SECRET_KEY:-change-me}
@@ -11,6 +12,8 @@ x-common-env: &common-env
   TEST_DATABASE_URL: ${TEST_DATABASE_URL:-sqlite:///instance/test.db}
   REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
   ENABLE_ML: ${ENABLE_ML:-true}
+  ENABLE_PHASE5B_INSIGHTS: ${ENABLE_PHASE5B_INSIGHTS:-true}
+  PHASE5B_INSIGHT_TYPES: ${PHASE5B_INSIGHT_TYPES:-}
   ENABLE_TIMELINE_INGESTION: ${ENABLE_TIMELINE_INGESTION:-true}
   ENABLE_INTERPRETATION_RELATIONSHIP: ${ENABLE_INTERPRETATION_RELATIONSHIP:-true}
   ENABLE_INTERPRETATION_OBLIGATION: ${ENABLE_INTERPRETATION_OBLIGATION:-false}
@@ -33,6 +36,7 @@ services:
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
       GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
       GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+      GUNICORN_RELOAD: ${GUNICORN_RELOAD:-true}
       GUNICORN_LOGLEVEL: ${GUNICORN_LOGLEVEL:-info}
       GUNICORN_LOGCONFIG: ${GUNICORN_LOGCONFIG:-/app/deploy/logging.conf}
       STATSD_HOST: ${STATSD_HOST:-statsd-exporter}
@@ -40,6 +44,7 @@ services:
       STATSD_PREFIX: ${STATSD_PREFIX:-lifeos}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
     volumes:
+      - .:/app
       - lifeos-instance:/app/instance
       - lifeos-logs:/app/logs
     depends_on:
@@ -202,6 +207,42 @@ services:
         max-size: "50m"
         max-file: "5"
         labels: "service=lifeos-interpretation-runner"
+
+  phase5b-runner:
+    profiles:
+      - phase5b
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: lifeos-web:${APP_VERSION:-latest}
+    container_name: lifeos-phase5b-runner
+    command:
+      - "python"
+      - "/app/scripts/ops/phase5b_insight_runner.py"
+      - "--loop"
+      - "--interval-seconds"
+      - "${PHASE5B_RUN_INTERVAL:-300}"
+      - "--since-minutes"
+      - "${PHASE5B_RUN_SINCE_MINUTES:-1440}"
+      - "--limit"
+      - "${PHASE5B_RUN_LIMIT:-1000}"
+    environment:
+      <<: *common-env
+    volumes:
+      - lifeos-instance:/app/instance
+      - lifeos-logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-phase5b-runner"
 
   # Monitoring Stack
   prometheus:
