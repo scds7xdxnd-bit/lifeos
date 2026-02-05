@@ -2,17 +2,29 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+import hashlib
+import json
+from datetime import datetime
+
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
+from lifeos.core.auth.csrf import validate_csrf_token
+from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
-from lifeos.core.insights.schemas import InsightsFeedQuery, InterpretationDecisionRequest
+from lifeos.core.insights.schemas import (
+    ALLOWED_INSIGHT_FEEDBACK_ACTIONS,
+    InsightFeedbackRequest,
+    InsightsFeedQuery,
+    InterpretationDecisionRequest,
+)
 from lifeos.core.insights.services import list_insights_feed
-from lifeos.core.insights.substrate_models import Interpretation
+from lifeos.core.insights.substrate_models import Interpretation, UserFeedbackEvent
 from lifeos.core.insights.substrate_service import decide_interpretation, list_interpretations
 from lifeos.core.read_cache import read_cache
 from lifeos.core.utils.decorators import csrf_protected, read_only_endpoint
+from lifeos.extensions import db
 from lifeos.readmodels.projections.review_queue import fetch_review_queue_projection
 
 api_v1_insights_bp = Blueprint("insights_api_v1", __name__)
@@ -161,6 +173,87 @@ def decide_proposal_v1(interpretation_id: int):
     return jsonify({"ok": True, "interpretation": _serialize_interpretation(interpretation)})
 
 
+@api_v1_insights_bp.post("/feedback")
+@jwt_required()
+def record_insight_feedback_v1():
+    if not _feedback_csrf_allowed():
+        return jsonify({"ok": False, "error": "csrf_failed"}), 403
+    payload = request.get_json(silent=True) or {}
+    if "action" not in payload and "feedback_type" in payload:
+        payload["action"] = payload.get("feedback_type")
+    if "action" not in payload and "action_type" in payload:
+        payload["action"] = payload.get("action_type")
+
+    try:
+        data = InsightFeedbackRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+
+    user_id = int(get_jwt_identity())
+    action = (data.action or data.feedback_type or "").strip().lower()
+    if action not in ALLOWED_INSIGHT_FEEDBACK_ACTIONS:
+        return jsonify({"ok": False, "error": "invalid_action"}), 400
+
+    insight_id = data.insight_id
+    insight_type = (data.insight_type or "").strip() or None
+    insight_record = None
+    if insight_id is not None:
+        insight_record = InsightRecord.query.filter_by(id=insight_id, user_id=user_id).first()
+        if not insight_record:
+            return jsonify({"ok": False, "error": "not_found"}), 404
+        insight_type = insight_type or insight_record.kind
+    if not insight_id and not insight_type:
+        return jsonify({"ok": False, "error": "invalid_insight"}), 400
+
+    context = data.context or {}
+    fingerprint = _feedback_fingerprint(
+        user_id=user_id,
+        insight_id=insight_id,
+        insight_type=insight_type,
+        action=action,
+        context=context,
+    )
+    existing = UserFeedbackEvent.query.filter_by(
+        user_id=user_id,
+        feedback_type=action,
+        fingerprint=fingerprint,
+    ).first()
+    if existing:
+        return jsonify({"ok": True, "feedback_id": existing.id, "deduped": True}), 200
+
+    feedback_payload = {
+        "insight_id": insight_id,
+        "insight_type": insight_type,
+        "action": action,
+        "reason": (data.reason or "").strip() or None,
+        "context": context,
+        "client_timestamp": data.timestamp,
+    }
+    feedback = UserFeedbackEvent(
+        user_id=user_id,
+        interpretation_id=None,
+        feedback_type=action,
+        fingerprint=fingerprint,
+        payload=feedback_payload,
+    )
+    db.session.add(feedback)
+    db.session.flush()
+
+    event_payload = {
+        "feedback_id": feedback.id,
+        "insight_id": insight_id,
+        "insight_type": insight_type,
+        "action": action,
+        "reason": feedback_payload["reason"],
+        "context": context,
+        "client_timestamp": data.timestamp,
+        "recorded_at": datetime.utcnow().isoformat(),
+    }
+    db.session.add(EventRecord(event_type="insights.action", payload=event_payload, user_id=user_id))
+    db.session.commit()
+    return jsonify({"ok": True, "feedback_id": feedback.id}), 201
+
+
 def _serialize_interpretation(item: Interpretation) -> dict:
     return {
         "id": item.id,
@@ -175,3 +268,36 @@ def _serialize_interpretation(item: Interpretation) -> dict:
         "created_at": item.created_at.isoformat() if item.created_at else None,
         "decided_at": item.decided_at.isoformat() if item.decided_at else None,
     }
+
+
+def _feedback_fingerprint(
+    *,
+    user_id: int,
+    insight_id: int | None,
+    insight_type: str | None,
+    action: str,
+    context: dict,
+) -> str:
+    payload = {
+        "user_id": user_id,
+        "insight_id": insight_id,
+        "insight_type": insight_type,
+        "action": action,
+        "window_end": context.get("window_end"),
+        "window_days": context.get("window_days"),
+    }
+    if context:
+        context_hash = hashlib.sha256(json.dumps(context, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        payload["context_hash"] = context_hash
+    encoded = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _feedback_csrf_allowed() -> bool:
+    if not current_app.config.get("WTF_CSRF_ENABLED", True):
+        return True
+    token = request.headers.get("X-CSRF-Token")
+    if validate_csrf_token(token or ""):
+        return True
+    auth_header = request.headers.get("Authorization") or ""
+    return auth_header.startswith("Bearer ")

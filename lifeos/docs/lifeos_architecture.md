@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-26 (v2.13 — Phase 5a complete; proposal substrate verified)_
+_Last updated: 2026-02-05 (v2.14 — Phase 5b complete; deterministic insights verified)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2025-12-25)
+# 0. Implementation Status (as of 2026-02-05)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -40,6 +40,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 3c-1 Read & Throughput Scaling**: Complete; read-through cache, cache observability, read-load verification, and invalidation audit completed; Phase 4 unblocked.
 - **Phase 4 Calendar Time-Canvas UI**: Verification-complete; feature-flagged calendar time-canvas renderer aligned to Apple-style interaction grammar with snapshots and QA sign-off.
 - **Phase 5a Insight Substrate & Proposal Infrastructure**: Complete; timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete.
+- **Phase 5b Deterministic Cross-Domain Insights**: Complete; feature computation, insight registry, rule emission, feed visibility, and feedback capture verified; QA sign-off recorded.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -138,7 +139,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3c-2 trigger assessment (event transport scaling) remains deferred; Phase 5b readiness can be evaluated now that Phase 5a is complete.
+- Active: Phase 3c-2 trigger assessment (event transport scaling) remains deferred; Phase 5c readiness can be evaluated now that Phase 5b is complete.
 - Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
@@ -1097,7 +1098,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.13 (Phase 5a complete; proposal substrate verified; session scaffold + admin reset stub): 2025-12-26. Author: LifeOS Architect._
+_Constitution v2.14 (Phase 5b complete; deterministic insights verified; session scaffold + admin reset stub): 2026-02-05. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1109,6 +1110,7 @@ _Constitution v2.13 (Phase 5a complete; proposal substrate verified; session sca
 - ✅ Phase 4 calendar time-canvas UI verification complete; snapshots captured; QA sign-off recorded
 - 🟡 Phase 3c-2 trigger assessment opened; broker scaling pending signal validation
 - ✅ Phase 5a complete: timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete
+- ✅ Phase 5b complete: deterministic cross-domain insight rules, feature computation, feed visibility, and feedback capture verified
 
 **Phase Summary (2025-12-25):**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
@@ -1121,6 +1123,7 @@ _Constitution v2.13 (Phase 5a complete; proposal substrate verified; session sca
 - ✅ Phase 4 verification-complete: calendar time-canvas UI delivered under feature flag; QA snapshots captured; metrics remained green
 - 🟡 Phase 3c-2 assessment opened: collecting outbox and dispatch telemetry before broker selection
 - ✅ Phase 5a complete: proposal substrate shipped; proposals endpoint fixed; QA lifecycle tests green
+- ✅ Phase 5b complete: rule-based insights emitted and verified; Phase 5c entry gate eligible
 
 ---
 

@@ -3,7 +3,7 @@
 **Audience:** Architecture, Backend, Frontend, DB, QA, DevOps, ML (rules-only)
 **Owner:** LifeOS Architecture
 **Preconditions:** Phase 5a (Insight Substrate & Proposal Infrastructure) complete and signed off
-**Status:** Approved to Open
+**Status:** Completed (verification gate passed)
 **Nature:** Meaning expansion (deterministic, explainable, non-autonomous)
 
 ---
@@ -348,6 +348,90 @@ Reason: Phase 5b runner crashes during insight persistence; feed non-empty verif
 
 ---
 
+## QA Verification (2026-02-05)
+
+**Phase 5b Test Suite (non-ML)**
+
+Command:
+```bash
+python3 -m pytest lifeos/tests/test_phase5b_feature_service.py \
+  lifeos/tests/test_phase5b_registry.py \
+  lifeos/tests/test_phase5b_rules.py \
+  lifeos/tests/test_insight_services.py
+```
+Result: ✅ 17 passed
+
+**Phase 5a Regression (proposal flows)**
+
+Command:
+```bash
+python3 -m pytest lifeos/tests/test_phase5a_insight_substrate_proposals.py
+```
+Result: ✅ 15 passed, 1 xfailed (expected), 5 warnings
+
+**Seeded-data runner verification + determinism**
+
+Seeded acceptance events for user `phase5b.acceptance.20260205091322@example.com` (user_id=11).
+
+Run #1:
+```bash
+PYTHONPATH=. python3 scripts/ops/phase5b_insight_runner.py --mode both --since-minutes 180 --limit 500 --user-id 11
+```
+Result: ✅ `features stored for users=1` and `insights processed=13 emitted=6`
+
+Run #2 (same inputs):
+```bash
+PYTHONPATH=. python3 scripts/ops/phase5b_insight_runner.py --mode insights --since-minutes 180 --limit 500 --user-id 11
+```
+Result: ✅ `processed=13 emitted=0` (deterministic output + duplicate suppression)
+
+**Insight correctness**
+
+- 6 cross-domain insight types emitted (>=5 required).
+- All records have `confidence_band=informational`, `routing=display`, `delivery_policy=feed`.
+- Insight context includes `detail`, `feature_snapshot`, `confidence`, `window_days`, `window_end`.
+
+**Feed visibility**
+
+- API: `GET /api/v1/insights/feed` with JWT returned 200 and 6 items.
+- UI: `GET /insights` returned 200 and rendered without error.
+
+**Insight feedback capture (end-to-end)**
+
+Call feedback endpoint:
+```bash
+POST /api/v1/insights/feedback
+{ "insight_id": <id>, "action": "dismiss", "reason": "qa acceptance", "timestamp": "<iso>", "context": {"source":"qa"} }
+```
+Results:
+- First call: 201, `feedback_id` created
+- Second identical call: 200, `deduped=true` (idempotent)
+- DB: `user_feedback_event` row present for user_id=11, feedback_type=`dismiss`
+- Event log: `EventRecord` emitted with `event_type="insights.action"`
+
+### QA Sign-off (2026-02-05)
+
+Status: **APPROVED**
+Notes: Phase 5b acceptance validation complete; deterministic runner, feed visibility, feedback capture, and Phase 5a regressions verified. Phase 5b exit gate satisfied.
+
+### Frontend Verification (2026-02-05)
+
+- `/insights` shows ≥1 feed item.
+- Confidence renders as “confidence unavailable” when missing; evidence renders correctly.
+- Dismiss/Snooze triggers `POST /api/v1/insights/feedback` with no console errors.
+
+Frontend sign-off: **Phase 5b insights are visible and feedback actions emit successfully.**
+
+---
+
+## 13. Completion Record
+
+- **Date:** 2026-02-05
+- **QA:** Approved (see QA Verification 2026-02-05)
+- **Determinism:** Runner duplicate suppression verified (processed=13, emitted=0 on second run)
+- **Feed:** `/api/v1/insights/feed` returned 6 items; UI rendered without error
+- **Feedback:** `/api/v1/insights/feedback` idempotent; `user_feedback_event` recorded
+
 ## DevOps Runtime Verification (Local)
 
 **Timestamp:** 2025-12-26T18:35:34Z
@@ -375,3 +459,33 @@ Output:
 **Status**
 - Runner executes without error, feature computation runs.
 - No insights persisted for the 60-minute window; likely requires seed data or broader window to trigger Phase 5b rules.
+
+### DevOps Runtime Verification (Local) — Follow-up
+
+**Timestamp:** 2026-02-05T09:22:38Z
+**Environment:** local dev (`PYTHONPATH=.` with `.venv`)
+
+**Runner (one-shot)**
+```bash
+PYTHONPATH=. ./.venv/bin/python scripts/ops/phase5b_insight_runner.py --mode both --since-minutes 180 --limit 500
+```
+Output:
+- `phase5b: features stored for users=11 window_days=30`
+- `phase5b: insights processed=13 emitted=0 since_minutes=180 limit=500`
+
+**Observability snapshot**
+```bash
+PYTHONPATH=. ./.venv/bin/python scripts/ops/phase5b_insight_observability.py --since-hours 24
+```
+Output (insight counts by type):
+- `finance_calendar_obligation_risk: 1`
+- `finance_journal_stress_spike: 1`
+- `journal_habit_reflection_link: 1`
+- `calendar_relationship_gap: 1`
+- `calendar_project_late_night_slippage: 1`
+- `habits_health_sleep_consistency: 1`
+
+Insight action counts: `(none recorded; telemetry ingestion not configured)`
+
+**Phase 3b/3c metrics**
+- `/metrics` not reachable at `http://127.0.0.1:8000/metrics` (connection refused), so green checks not verified in this run.

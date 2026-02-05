@@ -62,3 +62,17 @@ Notes:
 - Runner is gated by `ENABLE_PHASE5B_INSIGHTS`.
 - Insight counts are non-zero for at least 5 types.
 - No Phase 3/4 alert noise (determinism/projection/contract violation alerts remain green).
+
+## Execution Checklist
+
+- Phase 5b runner starts and loops without runtime errors.
+- Feature aggregation executes for supported event types and persists to `features_daily`.
+- Rule registry executes deterministically for the same input window.
+- Insights persist to `insight_record` with confidence band + routing.
+- Duplicate suppression blocks re-emitting the same insight window.
+- `/api/v1/insights/feed` returns populated data with no contract changes.
+
+## Notes on Fixes Applied
+
+- Outbox dispatch now materializes `event_record` rows before publish to ensure feature aggregation and runner queries have data.
+- Manual transaction creation now persists `finance_transaction` and emits `finance.transaction.created` via outbox.

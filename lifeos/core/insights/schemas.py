@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 
 ALLOWED_INFERENCE_STATUSES = {"inferred", "confirmed", "rejected", "ambiguous", "ignored"}
 ALLOWED_INTERPRETATION_ACTIONS = {"accepted", "rejected", "corrected"}
+ALLOWED_INSIGHT_FEEDBACK_ACTIONS = {"dismiss", "snooze", "act"}
 
 
 class InsightsFeedQuery(BaseModel):
@@ -85,3 +86,15 @@ class InterpretationDecisionRequest(BaseModel):
         if normalized not in ALLOWED_INTERPRETATION_ACTIONS:
             raise ValueError("invalid_action")
         return normalized
+
+
+class InsightFeedbackRequest(BaseModel):
+    """Feedback payload for insight actions (dismiss/snooze/act)."""
+
+    insight_id: Optional[int] = None
+    insight_type: Optional[str] = None
+    action: Optional[str] = None
+    feedback_type: Optional[str] = None
+    reason: Optional[str] = None
+    timestamp: Optional[str] = None
+    context: Optional[dict] = None

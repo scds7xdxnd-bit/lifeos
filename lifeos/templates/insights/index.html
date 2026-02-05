@@ -140,6 +140,30 @@
         confidence: insight?.data?.confidence,
       });
     };
+    const sendInsightFeedback = async (insight, action) => {
+      if (!isAuthed()) return;
+      const payload = {
+        insight_id: insight?.id,
+        insight_type: insight?.insight_type,
+        feedback_type: action,
+        action,
+        context: {
+          window_end: insight?.data?.window_end,
+          window_days: insight?.data?.window_days,
+          confidence: insight?.data?.confidence,
+          feature_snapshot: insight?.data?.feature_snapshot,
+        },
+      };
+      try {
+        await fetch('/api/v1/insights/feedback', {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload),
+        });
+      } catch (_) {
+        // Feedback is best-effort; keep UI responsive even if the backend is unavailable.
+      }
+    };
     const formatWrite = (write) => {
       if (!write) return 'A related record would be written.';
       if (write.action === 'relationships.log_interaction') {
@@ -202,6 +226,7 @@
           btn.addEventListener('click', () => {
             const action = btn.dataset.action;
             trackInsightAction(ins, action);
+            sendInsightFeedback(ins, action);
             card.remove();
             if (!feedList.querySelector('.insight-card')) {
               feedEmpty.style.display = 'block';
