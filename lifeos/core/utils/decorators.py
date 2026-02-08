@@ -10,7 +10,7 @@ from flask_jwt_extended import get_jwt, verify_jwt_in_request
 from flask_jwt_extended.exceptions import JWTExtendedException
 from sqlalchemy import event as sa_event
 
-from lifeos.core.auth.csrf import validate_csrf_token
+from lifeos.core.auth.csrf import get_session_csrf_token, get_session_id, validate_csrf_token
 from lifeos.extensions import db
 
 F = TypeVar("F", bound=Callable)
@@ -48,6 +48,19 @@ def csrf_protected(fn: F) -> F:
             return fn(*args, **kwargs)
         token = request.headers.get("X-CSRF-Token")
         if not validate_csrf_token(token or ""):
+            expected = get_session_csrf_token()
+            current_app.logger.warning(
+                "csrf_failed",
+                extra={
+                    "event": "csrf_failed",
+                    "session_id": get_session_id(),
+                    "expected_csrf": expected,
+                    "received_csrf": token,
+                    "build_id": current_app.config.get("BUILD_ID"),
+                    "path": request.path,
+                    "method": request.method,
+                },
+            )
             return jsonify({"ok": False, "error": "csrf_failed"}), 403
         return fn(*args, **kwargs)
 

@@ -4,17 +4,20 @@ from __future__ import annotations
 
 import hashlib
 import json
+import uuid
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
-from lifeos.core.auth.csrf import validate_csrf_token
+from lifeos.core.auth.csrf import get_session_csrf_token, get_session_id, validate_csrf_token
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
+from lifeos.core.insights.personalization import personalization_enabled
 from lifeos.core.insights.schemas import (
     ALLOWED_INSIGHT_FEEDBACK_ACTIONS,
+    ALLOWED_INSIGHT_FEEDBACK_REASONS,
     InsightFeedbackRequest,
     InsightsFeedQuery,
     InterpretationDecisionRequest,
@@ -55,6 +58,7 @@ def insights_feed_v1():
         "status": filters.status,
         "start_date": filters.start_date.isoformat() if filters.start_date else None,
         "end_date": filters.end_date.isoformat() if filters.end_date else None,
+        "personalization": personalization_enabled(),
     }
     cached = read_cache.get(INSIGHTS_READ_CACHE_SCOPE, user_id, cache_key)
     if cached is not None:
@@ -206,12 +210,23 @@ def record_insight_feedback_v1():
         return jsonify({"ok": False, "error": "invalid_insight"}), 400
 
     context = data.context or {}
+    reason = (data.reason or data.feedback_reason or "").strip().lower() or None
+    if reason and reason not in ALLOWED_INSIGHT_FEEDBACK_REASONS:
+        return jsonify({"ok": False, "error": "invalid_reason"}), 400
+
+    session_id = (data.session_id or request.headers.get("X-Session-Id") or "").strip() or None
+    request_id = (data.request_id or request.headers.get("X-Request-Id") or str(uuid.uuid4())).strip()
+    idempotency_key = (
+        data.idempotency_key or request.headers.get("Idempotency-Key") or ""
+    ).strip() or _default_idempotency_key(user_id, insight_id, insight_type, action, context)
+
     fingerprint = _feedback_fingerprint(
         user_id=user_id,
         insight_id=insight_id,
         insight_type=insight_type,
         action=action,
         context=context,
+        idempotency_key=idempotency_key,
     )
     existing = UserFeedbackEvent.query.filter_by(
         user_id=user_id,
@@ -225,9 +240,12 @@ def record_insight_feedback_v1():
         "insight_id": insight_id,
         "insight_type": insight_type,
         "action": action,
-        "reason": (data.reason or "").strip() or None,
+        "reason": reason,
         "context": context,
         "client_timestamp": data.timestamp,
+        "idempotency_key": idempotency_key,
+        "session_id": session_id,
+        "request_id": request_id,
     }
     feedback = UserFeedbackEvent(
         user_id=user_id,
@@ -244,12 +262,15 @@ def record_insight_feedback_v1():
         "insight_id": insight_id,
         "insight_type": insight_type,
         "action": action,
-        "reason": feedback_payload["reason"],
+        "reason": reason,
         "context": context,
         "client_timestamp": data.timestamp,
+        "session_id": session_id,
+        "request_id": request_id,
+        "idempotency_key": idempotency_key,
         "recorded_at": datetime.utcnow().isoformat(),
     }
-    db.session.add(EventRecord(event_type="insights.action", payload=event_payload, user_id=user_id))
+    db.session.add(EventRecord(event_type=_feedback_event_type(action), payload=event_payload, user_id=user_id))
     db.session.commit()
     return jsonify({"ok": True, "feedback_id": feedback.id}), 201
 
@@ -277,6 +298,7 @@ def _feedback_fingerprint(
     insight_type: str | None,
     action: str,
     context: dict,
+    idempotency_key: str | None = None,
 ) -> str:
     payload = {
         "user_id": user_id,
@@ -285,6 +307,7 @@ def _feedback_fingerprint(
         "action": action,
         "window_end": context.get("window_end"),
         "window_days": context.get("window_days"),
+        "idempotency_key": idempotency_key,
     }
     if context:
         context_hash = hashlib.sha256(json.dumps(context, sort_keys=True, default=str).encode("utf-8")).hexdigest()
@@ -299,5 +322,51 @@ def _feedback_csrf_allowed() -> bool:
     token = request.headers.get("X-CSRF-Token")
     if validate_csrf_token(token or ""):
         return True
-    auth_header = request.headers.get("Authorization") or ""
-    return auth_header.startswith("Bearer ")
+    current_app.logger.warning(
+        "csrf_failed",
+        extra={
+            "event": "csrf_failed",
+            "session_id": get_session_id(),
+            "expected_csrf": get_session_csrf_token(),
+            "received_csrf": token,
+            "build_id": current_app.config.get("BUILD_ID"),
+            "path": request.path,
+            "method": request.method,
+        },
+    )
+    return False
+
+
+def _feedback_event_type(action: str) -> str:
+    mapping = {
+        "viewed": "insight_viewed",
+        "dismiss": "insight_dismissed",
+        "dismissed": "insight_dismissed",
+        "snooze": "insight_dismissed",
+        "saved": "insight_saved",
+        "shared": "insight_shared",
+        "feedback_positive": "insight_feedback_positive",
+        "feedback_negative": "insight_feedback_negative",
+        "reported_issue": "insight_reported_issue",
+        "act": "insight_feedback_positive",
+    }
+    return mapping.get(action, "insight_dismissed")
+
+
+def _default_idempotency_key(
+    user_id: int,
+    insight_id: int | None,
+    insight_type: str | None,
+    action: str,
+    context: dict,
+) -> str:
+    payload = {
+        "user_id": user_id,
+        "insight_id": insight_id,
+        "insight_type": insight_type,
+        "action": action,
+        "window_end": context.get("window_end"),
+        "window_days": context.get("window_days"),
+    }
+    encoded = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()

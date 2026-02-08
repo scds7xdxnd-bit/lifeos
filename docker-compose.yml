@@ -5,8 +5,9 @@ x-common-env: &common-env
   PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   APP_ENV: ${APP_ENV:-production}
   FLASK_APP: lifeos.wsgi
-  SECRET_KEY: ${SECRET_KEY:-change-me}
-  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-too}
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY not set}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY not set}
+  BUILD_ID: ${BUILD_ID:-local-dev}
   PYTHONPATH: /app
   DATABASE_URL: ${DATABASE_URL:-postgresql://lifeos:lifeos@db:5432/lifeos}
   TEST_DATABASE_URL: ${TEST_DATABASE_URL:-sqlite:///instance/test.db}

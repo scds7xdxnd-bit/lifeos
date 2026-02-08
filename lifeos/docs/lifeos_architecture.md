@@ -686,6 +686,18 @@ Event: finance.transaction.created {amount: $5000, category: "Groceries", ...}
 - Cookies secure: `SESSION_COOKIE_SECURE` = true in prod (HTTPS only)
 - SameSite flags: `SESSION_COOKIE_SAMESITE = Lax` (or Strict)
 
+**Auth & CSRF Authority Note (Binding):**
+- **Canonical CSRF source:** the server-issued, session-bound CSRF token (WTF/Flask session). This is the only valid authority.
+- **Forbidden CSRF sources:** localStorage/sessionStorage, client-generated tokens, cached/overridden meta tags, or any token not minted by the current server session.
+- **Invariant:** `X-CSRF-Token` (or equivalent header) **must equal** the session CSRF token for the active session. Mismatch == 403.
+
+**Secret Stability (Binding):**
+- **Must be fixed per environment:** `SECRET_KEY`, `JWT_SECRET_KEY` (and any explicit CSRF secret if configured).
+- **Forbidden:** randomizing these on restart while keeping cookies/sessions alive. Rotation requires coordinated cookie invalidation and re-login.
+
+**Build Identity (Required Observability):**
+- Backend **must expose build identity** (commit SHA) in a stable location (e.g., `/health` response or `X-LifeOS-Build` header) to detect build drift.
+
 **Rate Limiting:**
 - Handled by `Flask-Limiter` using `redis://` backend (or memory:// for dev)
 - Default: `RATELIMIT_DEFAULT = "200/hour"` (configurable per route)

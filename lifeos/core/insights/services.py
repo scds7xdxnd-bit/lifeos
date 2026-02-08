@@ -10,6 +10,7 @@ from sqlalchemy import desc, nullslast, or_
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
+from lifeos.core.insights.personalization import rank_insights
 from lifeos.core.insights.routing import enforce_confidence_routing
 from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.core.insights.telemetry import insight_telemetry
@@ -130,10 +131,12 @@ def list_insights_feed(
         start = (page - 1) * per_page
         end = start + per_page
         items = filtered_items[start:end]
+        items = rank_insights(user_id, items, context={"filters": filters})
         return items, total, page, pages
 
     total = query.count()
     pages = ceil(total / per_page) if total else 0
 
     items = query.offset((page - 1) * per_page).limit(per_page).all()
+    items = rank_insights(user_id, items, context={"filters": filters})
     return items, total, page, pages

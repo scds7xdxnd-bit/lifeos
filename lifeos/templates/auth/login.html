@@ -119,7 +119,6 @@
           window.setTokens({
             access_token: payload.access_token,
             refresh_token: payload.refresh_token,
-            csrf_token: payload.csrf_token,
             user: payload.user,
           });
         }
@@ -153,7 +152,6 @@
           window.setTokens({
             access_token: body.access_token,
             refresh_token: body.refresh_token,
-            csrf_token: body.csrf_token,
             user: body.user,
           });
           setStatus('Account created and logged in.', 'success');

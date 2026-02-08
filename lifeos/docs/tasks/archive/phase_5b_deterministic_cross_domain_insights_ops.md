@@ -54,8 +54,8 @@ python scripts/ops/phase5b_insight_observability.py --since-hours 24
 Notes:
 
 - Insight counts read from `insight_record.kind`.
-- Action counts look for `event_record.event_type == "insights.action"`.
-- If action counts are empty, ensure the telemetry ingestion endpoint is configured and persisting events.
+- Action counts look for `event_record.event_type` in `insight_*` (canonical) or legacy `insights.action`.
+- If action counts are empty, ensure `/api/v1/insights/feedback` or telemetry ingestion is persisting events.
 
 ## Verification Checklist
 

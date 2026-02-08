@@ -30,6 +30,13 @@ class BaseConfig:
     """Base configuration loaded for all environments."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
+    BUILD_ID = (
+        os.environ.get("LIFEOS_BUILD_ID")
+        or os.environ.get("BUILD_ID")
+        or os.environ.get("GIT_SHA")
+        or os.environ.get("COMMIT_SHA")
+        or "unknown"
+    )
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///instance/lifeos.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
@@ -95,6 +102,11 @@ class BaseConfig:
     PHASE5B_INSIGHT_TYPES = _phase5b_insight_types or None
 
     ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    PERSONALIZATION_ENABLED = os.environ.get("PERSONALIZATION_ENABLED", "false").lower() in (
         "1",
         "true",
         "yes",

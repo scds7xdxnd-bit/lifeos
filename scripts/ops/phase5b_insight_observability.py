@@ -27,17 +27,29 @@ def _count_insights(since_hours: int) -> dict[str, int]:
 
 def _count_actions(since_hours: int) -> dict[str, int]:
     cutoff = datetime.utcnow() - timedelta(hours=since_hours)
+    action_types = {
+        "insights.action",
+        "insight_viewed",
+        "insight_dismissed",
+        "insight_saved",
+        "insight_shared",
+        "insight_feedback_positive",
+        "insight_feedback_negative",
+        "insight_reported_issue",
+    }
     rows = (
         EventRecord.query.filter(EventRecord.created_at >= cutoff)
-        .filter(EventRecord.event_type == "insights.action")
-        .with_entities(EventRecord.payload)
+        .filter(EventRecord.event_type.in_(list(action_types)))
+        .with_entities(EventRecord.event_type, EventRecord.payload)
         .all()
     )
     counter: Counter[str] = Counter()
-    for (payload,) in rows:
+    for (event_type, payload) in rows:
         action = None
         if isinstance(payload, dict):
             action = payload.get("action")
+        if not action:
+            action = event_type.replace("insight_", "")
         counter[str(action or "unknown")] += 1
     return dict(counter)
 

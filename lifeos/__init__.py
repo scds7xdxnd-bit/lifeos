@@ -143,7 +143,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
     @app.get("/health")
     def health():
-        return {"ok": True}, 200
+        return {"ok": True, "build_id": app.config.get("BUILD_ID")}, 200
 
     @app.get("/api/v1/ping")
     def ping():
@@ -283,6 +283,8 @@ def _register_observability_handlers(app: Flask) -> None:
     """Record HTTP request latency for observability."""
     from lifeos.core.observability import record_http_request_latency_seconds
 
+    build_id = app.config.get("BUILD_ID")
+
     @app.before_request
     def _record_request_start():
         g._request_start_time = time.perf_counter()
@@ -298,6 +300,8 @@ def _register_observability_handlers(app: Flask) -> None:
                 route=route,
                 status_code=str(response.status_code),
             )
+        if build_id:
+            response.headers["X-LifeOS-Build"] = build_id
         return response
 
 
