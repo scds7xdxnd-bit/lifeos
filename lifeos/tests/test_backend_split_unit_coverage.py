@@ -37,6 +37,13 @@ def _ensure_user(email: str) -> User:
     return user
 
 
+def test_ensure_user_returns_existing_user(app):
+    with app.app_context():
+        first = _ensure_user("ensure-user-existing@example.com")
+        second = _ensure_user("ensure-user-existing@example.com")
+        assert second.id == first.id
+
+
 def test_admin_debug_timeline_events_invalid_limit_returns_400(app, client):
     with app.app_context():
         user = _ensure_user("admin-debug-limit@example.com")
@@ -117,7 +124,7 @@ def test_insights_feed_uses_cache_hit(app, client, monkeypatch):
     monkeypatch.setattr(insights_api.read_cache, "get", lambda scope, uid, key: cached_payload)
 
     def _should_not_run(*args, **kwargs):
-        raise AssertionError("list_insights_feed should not run on cache hit")
+        raise AssertionError("list_insights_feed should not run on cache hit")  # pragma: no cover
 
     monkeypatch.setattr(insights_api, "list_insights_feed", _should_not_run)
 
@@ -428,7 +435,7 @@ def test_calendar_service_cache_hits_return_cached_payloads(app, monkeypatch):
                 return store.get(("month", str(key["year"]), str(key["month"])))
             if key.get("view") == "ledger":
                 return store.get(("ledger", key["anchor"]))
-            return None
+            return None  # pragma: no cover
 
         monkeypatch.setattr(calendar_service.read_cache, "get", _fake_get)
 
