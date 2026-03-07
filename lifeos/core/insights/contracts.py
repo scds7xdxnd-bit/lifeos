@@ -116,6 +116,66 @@ INSIGHT_CONTRACTS: dict[str, InsightContract] = {
         },
         allowed_actions=["review_only"],
     ),
+    "finance_calendar_obligation_risk": InsightContract(
+        name="finance_calendar_obligation_risk",
+        description="Cross-domain note linking calendar obligations and recent spend.",
+        required_evidence=["calendar.event.created", "finance.transaction.created"],
+        disallowed_evidence=[],
+        confidence_bands={
+            "informational": "Surface as a neutral heads-up with no recommendation.",
+        },
+        allowed_actions=["display"],
+    ),
+    "finance_journal_stress_spike": InsightContract(
+        name="finance_journal_stress_spike",
+        description="Cross-domain note linking journal stress signals and spending.",
+        required_evidence=["journal.entry.created", "finance.transaction.created"],
+        disallowed_evidence=[],
+        confidence_bands={
+            "informational": "Surface as an observational note only.",
+        },
+        allowed_actions=["display"],
+    ),
+    "journal_habit_reflection_link": InsightContract(
+        name="journal_habit_reflection_link",
+        description="Cross-domain note linking journal reflection and habit adherence.",
+        required_evidence=["journal.entry.created", "habits.habit.logged"],
+        disallowed_evidence=[],
+        confidence_bands={
+            "informational": "Summarize recent reflection and habit activity.",
+        },
+        allowed_actions=["display"],
+    ),
+    "calendar_relationship_gap": InsightContract(
+        name="calendar_relationship_gap",
+        description="Cross-domain note highlighting calendar activity without recent interactions.",
+        required_evidence=["calendar.event.created", "relationships.interaction.logged"],
+        disallowed_evidence=[],
+        confidence_bands={
+            "informational": "Surface as a neutral reminder with no directive language.",
+        },
+        allowed_actions=["display"],
+    ),
+    "calendar_project_late_night_slippage": InsightContract(
+        name="calendar_project_late_night_slippage",
+        description="Cross-domain note linking late-night calendar activity and project completion gaps.",
+        required_evidence=["calendar.event.created", "projects.task.completed"],
+        disallowed_evidence=[],
+        confidence_bands={
+            "informational": "Surface as an observational note only.",
+        },
+        allowed_actions=["display"],
+    ),
+    "habits_health_sleep_consistency": InsightContract(
+        name="habits_health_sleep_consistency",
+        description="Cross-domain note linking habit logs with low-sleep signals.",
+        required_evidence=["habits.habit.logged", "health.metric.updated"],
+        disallowed_evidence=[],
+        confidence_bands={
+            "informational": "Summarize recent habit and sleep signals.",
+        },
+        allowed_actions=["display"],
+    ),
 }
 
 

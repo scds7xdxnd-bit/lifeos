@@ -12,6 +12,7 @@ from lifeos.core.insights.rules import (
     finance_rules,
     habit_rules,
     health_rules,
+    phase5b_rules,
     project_rules,
     skill_rules,
 )
@@ -25,6 +26,7 @@ RULES = [
     ("skill_rules", skill_rules.apply_rules),
     ("project_rules", project_rules.apply_rules),
     ("cross_rules", cross_rules.apply_rules),
+    ("phase5b_rules", phase5b_rules.apply_rules),
 ]
 
 
@@ -45,10 +47,13 @@ class InsightsEngine:
     def __init__(self) -> None:
         # Subscribe to high-value event streams
         for event_type in (
+            "calendar.event.created",
             "finance.transaction.created",
             "finance.journal.posted",
+            "journal.entry.created",
             "habits.habit.logged",
             "health.metric.updated",
+            "relationships.interaction.logged",
             "skills.practice.logged",
             "projects.task.completed",
         ):

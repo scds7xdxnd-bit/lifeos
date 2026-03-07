@@ -15,6 +15,7 @@ class InsightRecord(db.Model):
         db.Index("ix_insight_record_user_created_at", "user_id", "created_at"),
         db.Index("ix_insight_record_user_band_created", "user_id", "confidence_band", "created_at"),
         db.Index("ix_insight_record_user_routing_created", "user_id", "routing", "created_at"),
+        db.Index("ix_insight_record_user_event_type_created", "user_id", "event_type", "created_at"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -26,5 +27,7 @@ class InsightRecord(db.Model):
     severity: Mapped[str] = mapped_column(db.String(16), default="info")
     confidence_band: Mapped[str | None] = mapped_column(db.String(32), nullable=True)
     routing: Mapped[str | None] = mapped_column(db.String(32), nullable=True)
+    priority: Mapped[int] = mapped_column(db.Integer, nullable=False, default=50)
+    delivery_policy: Mapped[str] = mapped_column(db.String(32), nullable=False, default="feed")
     data: Mapped[dict] = mapped_column(db.JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
