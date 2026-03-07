@@ -137,13 +137,13 @@
   };
 
   backLink?.addEventListener('click', (e) => {
-    if (!lifeosAuth.getTokens().access_token) {
+    if (!lifeosAuth.isAuthenticated()) {
       e.preventDefault();
     }
   });
 
   const ensureAuth = () => {
-    const authed = !!lifeosAuth.getTokens().access_token;
+    const authed = lifeosAuth.isAuthenticated();
     [reloadBtn, domainFilter].forEach(el => { if (el) el.disabled = !authed; });
     if (backLink) {
       backLink.setAttribute('aria-disabled', String(!authed));
