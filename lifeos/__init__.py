@@ -289,8 +289,9 @@ def _register_auth_handlers(app: Flask) -> None:
         sec_fetch_site = request.headers.get("Sec-Fetch-Site")
         if sec_fetch_site:
             return sec_fetch_site == "same-origin"
-        # No browser-origin hints (e.g., test client): treat as same-origin.
-        return True
+        # No browser-origin hints usually means non-browser API clients or tests.
+        # Mixed-auth rejection is only for browser same-origin flows.
+        return False
 
     @login_manager.user_loader
     def _load_user(user_id: str):
