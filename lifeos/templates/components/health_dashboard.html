@@ -20,7 +20,14 @@
     <button type="button" class="text-link" id="{{ component_id }}-log-toggle">Log update</button>
     <button type="button" class="text-link" id="{{ component_id }}-summary-toggle">View summaries</button>
   </div>
-
+  <div id="{{ component_id }}-summary-controls" style="margin-top:0.75rem; display:none;">
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <input type="date" id="{{ component_id }}-daily-date">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-daily-btn">Daily summary</button>
+      <input type="date" id="{{ component_id }}-weekly-start">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-weekly-btn">Weekly summary</button>
+    </div>
+  </div>
   <div id="{{ component_id }}-summary" style="margin-top:0.75rem; display:none; color:#1f2430;"></div>
   <div id="{{ component_id }}-recent" style="margin-top:0.75rem; display:grid; gap:0.5rem;"></div>
 
@@ -83,14 +90,6 @@
       </div>
     </form>
   </div>
-  <div id="{{ component_id }}-summary-controls" style="margin-top:0.75rem; display:none;">
-    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-      <input type="date" id="{{ component_id }}-daily-date">
-      <button type="button" class="btn btn-secondary" id="{{ component_id }}-daily-btn">Daily summary</button>
-      <input type="date" id="{{ component_id }}-weekly-start">
-      <button type="button" class="btn btn-secondary" id="{{ component_id }}-weekly-btn">Weekly summary</button>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -129,7 +128,7 @@
     };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
+      const authed = lifeosAuth.isAuthenticated();
       [bioForm, workoutForm, nutritionForm].forEach((form) => {
         Array.from(form?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
       });
@@ -241,7 +240,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(bioStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A biometric entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A biometric entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(bioStatus, copy, 'error');
       }
     });
 
@@ -271,7 +276,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(workoutStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A workout entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A workout entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(workoutStatus, copy, 'error');
       }
     });
 
@@ -301,7 +312,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(nutritionStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A nutrition entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A nutrition entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(nutritionStatus, copy, 'error');
       }
     });
 
