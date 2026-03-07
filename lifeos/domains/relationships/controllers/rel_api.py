@@ -47,7 +47,10 @@ def create_person():
     try:
         data = PersonCreate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     try:
         person = services.create_person(user_id=user_id, **data.model_dump())
@@ -77,9 +80,16 @@ def update_person(person_id: int):
     try:
         data = PersonUpdate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
-    person = services.update_person(user_id, person_id, **{k: v for k, v in data.model_dump().items() if v is not None})
+    person = services.update_person(
+        user_id,
+        person_id,
+        **{k: v for k, v in data.model_dump().items() if v is not None},
+    )
     if not person:
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True, "person": map_person(person)})
@@ -119,10 +129,20 @@ def log_interaction(person_id: int):
     try:
         data = InteractionCreate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
     try:
-        interaction = services.log_interaction(user_id, person_id, date_value=data.date, method=data.method, notes=data.notes, sentiment=data.sentiment)
+        interaction = services.log_interaction(
+            user_id,
+            person_id,
+            date_value=data.date,
+            method=data.method,
+            notes=data.notes,
+            sentiment=data.sentiment,
+        )
     except ValueError as exc:
         if str(exc) == "not_found":
             return jsonify({"ok": False, "error": "not_found"}), 404
@@ -138,9 +158,16 @@ def update_interaction(interaction_id: int):
     try:
         data = InteractionUpdate.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return (
+            jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}),
+            400,
+        )
     user_id = int(get_jwt_identity())
-    interaction = services.edit_interaction(user_id, interaction_id, **{k: v for k, v in data.model_dump().items() if v is not None})
+    interaction = services.edit_interaction(
+        user_id,
+        interaction_id,
+        **{k: v for k, v in data.model_dump().items() if v is not None},
+    )
     if not interaction:
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True, "interaction": map_interaction(interaction)})
@@ -167,7 +194,9 @@ def reconnect():
     payload = [
         {
             "person": map_person(item["person"]),
-            "last_interaction_date": item["last_interaction_date"].isoformat() if item["last_interaction_date"] else None,
+            "last_interaction_date": (
+                item["last_interaction_date"].isoformat() if item["last_interaction_date"] else None
+            ),
             "days_since": item["days_since"],
         }
         for item in candidates

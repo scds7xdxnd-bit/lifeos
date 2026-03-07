@@ -8,7 +8,12 @@ pytestmark = pytest.mark.ml
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.domains.finance.events import FINANCE_ML_SUGGEST_ACCOUNTS
-from lifeos.domains.finance.ml.ranker_client import RANKER_MODEL_NAME, RANKER_MODEL_VERSION, RANKER_PAYLOAD_VERSION, predict_account
+from lifeos.domains.finance.ml.ranker_client import (
+    RANKER_MODEL_NAME,
+    RANKER_MODEL_VERSION,
+    RANKER_PAYLOAD_VERSION,
+    predict_account,
+)
 from lifeos.domains.finance.models.accounting_models import Account, AccountCategory
 from lifeos.domains.finance.services.suggestion_service import suggest_accounts
 from lifeos.core.users.models import User
@@ -29,7 +34,14 @@ def _seed_accounts(user_id: int) -> None:
     db.session.flush()
     db.session.add_all(
         [
-            Account(user_id=user_id, category_id=category.id, name="Cash", account_type="asset", normalized_name="cash", code="101"),
+            Account(
+                user_id=user_id,
+                category_id=category.id,
+                name="Cash",
+                account_type="asset",
+                normalized_name="cash",
+                code="101",
+            ),
             Account(
                 user_id=user_id,
                 category_id=category.id,

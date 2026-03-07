@@ -1,0 +1,1211 @@
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+
+{
+    "report_meta": {
+        "scan_target": "files",
+        "scanned": [
+            "lifeos/requirements.txt"
+        ],
+        "scanned_full_path": [
+            "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+        ],
+        "target_languages": [
+            "python"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "audit_and_monitor": false,
+        "api_key": false,
+        "account": "",
+        "local_database_path": null,
+        "safety_version": "3.7.0",
+        "timestamp": "2025-12-10 22:49:18",
+        "packages_found": 19,
+        "vulnerabilities_found": 0,
+        "vulnerabilities_ignored": 8,
+        "remediations_recommended": 0,
+        "telemetry": {
+            "safety_options": {
+                "files": {
+                    "--file": 1
+                },
+                "output": {
+                    "--output": 1
+                }
+            },
+            "safety_version": "3.7.0",
+            "safety_source": "cli",
+            "os_type": "Darwin",
+            "os_release": "25.0.0",
+            "os_description": "macOS-26.0.1-arm64-arm-64bit",
+            "python_version": "3.10.11",
+            "safety_command": "check"
+        },
+        "git": {
+            "branch": "test/branch-protection",
+            "tag": "",
+            "commit": "64e91cd0009a42e9629c11d67168fe66d727fc24",
+            "dirty": "True",
+            "origin": "https://github.com/scds7xdxnd-bit/lifeos.git"
+        },
+        "project": null,
+        "json_version": "1.1",
+        "remediations_attempted": 0,
+        "remediations_completed": 0,
+        "remediation_mode": "NON_INTERACTIVE"
+    },
+    "scanned_packages": {
+        "flask": {
+            "name": "flask",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask>=3.0,<4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask",
+                    "specifier": "<4,>=3.0",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "flask-sqlalchemy": {
+            "name": "flask-sqlalchemy",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask-SQLAlchemy>=3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask-SQLAlchemy",
+                    "specifier": ">=3.1",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "flask-migrate": {
+            "name": "flask-migrate",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask-Migrate>=4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask-Migrate",
+                    "specifier": ">=4.0",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "flask-jwt-extended": {
+            "name": "flask-jwt-extended",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask-JWT-Extended>=4.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask-JWT-Extended",
+                    "specifier": ">=4.6",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "flask-limiter": {
+            "name": "flask-limiter",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask-Limiter>=3.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask-Limiter",
+                    "specifier": ">=3.5",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "flask-bcrypt": {
+            "name": "flask-bcrypt",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask-Bcrypt>=1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask-Bcrypt",
+                    "specifier": ">=1.0",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "flask-login": {
+            "name": "flask-login",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask-Login>=0.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask-Login",
+                    "specifier": ">=0.6",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "alembic": {
+            "name": "alembic",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Alembic>=1.13",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Alembic",
+                    "specifier": ">=1.13",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "gunicorn": {
+            "name": "gunicorn",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "gunicorn>=21.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "gunicorn",
+                    "specifier": ">=21.2",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "pydantic": {
+            "name": "pydantic",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "pydantic>=2.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic",
+                    "specifier": ">=2.5",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "defusedxml": {
+            "name": "defusedxml",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "defusedxml>=0.7",
+                    "extras": [],
+                    "marker": null,
+                    "name": "defusedxml",
+                    "specifier": ">=0.7",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "pytest": {
+            "name": "pytest",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "pytest>=8.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest",
+                    "specifier": ">=8.2",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "rich": {
+            "name": "rich",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "rich>=13.7",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rich",
+                    "specifier": ">=13.7",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "email-validator": {
+            "name": "email-validator",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "email-validator>=2.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "email-validator",
+                    "specifier": ">=2.1",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "joblib": {
+            "name": "joblib",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "joblib>=1.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "joblib",
+                    "specifier": ">=1.3",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "python-dotenv": {
+            "name": "python-dotenv",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "python-dotenv>=1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-dotenv",
+                    "specifier": ">=1.0",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "redis": {
+            "name": "redis",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "redis>=4.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "redis",
+                    "specifier": ">=4.3",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "psycopg2-binary": {
+            "name": "psycopg2-binary",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "psycopg2-binary>=2.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "psycopg2-binary",
+                    "specifier": ">=2.9",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        },
+        "requests": {
+            "name": "requests",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "requests>=2.31",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests",
+                    "specifier": ">=2.31",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ]
+        }
+    },
+    "affected_packages": {
+        "requests": {
+            "name": "requests",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "requests>=2.31",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests",
+                    "specifier": ">=2.31",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.0.1",
+                "0.10.0",
+                "0.10.1",
+                "0.10.2",
+                "0.10.3",
+                "0.10.4",
+                "0.10.6",
+                "0.10.7",
+                "0.10.8",
+                "0.11.1",
+                "0.11.2",
+                "0.12.0",
+                "0.12.1",
+                "0.13.0",
+                "0.13.1",
+                "0.13.2",
+                "0.13.3",
+                "0.13.4",
+                "0.13.5",
+                "0.13.6",
+                "0.13.7",
+                "0.13.8",
+                "0.13.9",
+                "0.14.0",
+                "0.14.1",
+                "0.14.2",
+                "0.2.0",
+                "0.2.1",
+                "0.2.2",
+                "0.2.3",
+                "0.2.4",
+                "0.3.0",
+                "0.3.1",
+                "0.3.2",
+                "0.3.3",
+                "0.3.4",
+                "0.4.0",
+                "0.4.1",
+                "0.5.0",
+                "0.5.1",
+                "0.6.0",
+                "0.6.1",
+                "0.6.2",
+                "0.6.3",
+                "0.6.4",
+                "0.6.5",
+                "0.6.6",
+                "0.7.0",
+                "0.7.1",
+                "0.7.2",
+                "0.7.3",
+                "0.7.4",
+                "0.7.5",
+                "0.7.6",
+                "0.8.0",
+                "0.8.1",
+                "0.8.2",
+                "0.8.3",
+                "0.8.4",
+                "0.8.5",
+                "0.8.6",
+                "0.8.7",
+                "0.8.8",
+                "0.8.9",
+                "0.9.0",
+                "0.9.1",
+                "0.9.2",
+                "0.9.3",
+                "1.0.0",
+                "1.0.1",
+                "1.0.2",
+                "1.0.3",
+                "1.0.4",
+                "1.1.0",
+                "1.2.0",
+                "1.2.1",
+                "1.2.2",
+                "1.2.3",
+                "2.0.0",
+                "2.0.1",
+                "2.1.0",
+                "2.10.0",
+                "2.11.0",
+                "2.11.1",
+                "2.12.0",
+                "2.12.1",
+                "2.12.2",
+                "2.12.3",
+                "2.12.4",
+                "2.12.5",
+                "2.13.0",
+                "2.14.0",
+                "2.14.1",
+                "2.14.2",
+                "2.15.0",
+                "2.15.1",
+                "2.16.0",
+                "2.16.1",
+                "2.16.2",
+                "2.16.3",
+                "2.16.4",
+                "2.16.5",
+                "2.17.0",
+                "2.17.1",
+                "2.17.2",
+                "2.17.3",
+                "2.18.0",
+                "2.18.1",
+                "2.18.2",
+                "2.18.3",
+                "2.18.4",
+                "2.19.0",
+                "2.19.1",
+                "2.2.0",
+                "2.20.0",
+                "2.20.1",
+                "2.2.1",
+                "2.21.0",
+                "2.22.0",
+                "2.23.0",
+                "2.24.0",
+                "2.25.0",
+                "2.25.1",
+                "2.26.0",
+                "2.27.0",
+                "2.27.1",
+                "2.28.0",
+                "2.28.1",
+                "2.28.2",
+                "2.29.0",
+                "2.3.0",
+                "2.30.0",
+                "2.31.0",
+                "2.32.0",
+                "2.32.1",
+                "2.32.2",
+                "2.32.3",
+                "2.4.0",
+                "2.4.1",
+                "2.4.2",
+                "2.4.3",
+                "2.5.0",
+                "2.5.1",
+                "2.5.2",
+                "2.5.3",
+                "2.6.0",
+                "2.6.1",
+                "2.6.2",
+                "2.7.0",
+                "2.8.0",
+                "2.8.1",
+                "2.9.0",
+                "2.9.1",
+                "2.9.2"
+            ],
+            "secure_versions": [
+                "2.32.5",
+                "2.32.4"
+            ],
+            "latest_version_without_known_vulnerabilities": "2.32.5",
+            "latest_version": "2.32.5",
+            "more_info_url": "https://data.safetycli.com/p/pypi/requests/97c/"
+        },
+        "redis": {
+            "name": "redis",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "redis>=4.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "redis",
+                    "specifier": ">=4.3",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "4.2.0",
+                "4.2.0rc1",
+                "4.2.0rc2",
+                "4.2.0rc3",
+                "4.2.1",
+                "4.2.2",
+                "4.3.0",
+                "4.3.1",
+                "4.3.2",
+                "4.3.3",
+                "4.3.4",
+                "4.3.5",
+                "4.3.6",
+                "4.4.0",
+                "4.4.0rc1",
+                "4.4.0rc2",
+                "4.4.0rc3",
+                "4.4.0rc4",
+                "4.4.1",
+                "4.4.2",
+                "4.4.3",
+                "4.5.0",
+                "4.5.1",
+                "4.5.2",
+                "4.5.3"
+            ],
+            "secure_versions": [
+                "7.1.0",
+                "7.0.1",
+                "7.0.0",
+                "7.0.0b3",
+                "7.0.0b2",
+                "7.0.0b1",
+                "6.4.0",
+                "6.3.0",
+                "6.2.0",
+                "6.1.1",
+                "6.1.0",
+                "6.0.0",
+                "6.0.0b2",
+                "6.0.0b1",
+                "5.3.1",
+                "5.3.0",
+                "5.3.0b5",
+                "5.3.0b4",
+                "5.3.0b3",
+                "5.3.0b1",
+                "5.2.1",
+                "5.2.0",
+                "5.1.1",
+                "5.1.0",
+                "5.1.0b7",
+                "5.1.0b6",
+                "5.1.0b5",
+                "5.1.0b4",
+                "5.1.0b3",
+                "5.1.0b2",
+                "5.1.0b1",
+                "5.1.0a1",
+                "5.0.8",
+                "5.0.7",
+                "5.0.6",
+                "5.0.5",
+                "5.0.4",
+                "5.0.3",
+                "5.0.2",
+                "5.0.1",
+                "5.0.0",
+                "5.0.0rc2",
+                "5.0.0rc1",
+                "5.0.0b4",
+                "5.0.0b3",
+                "5.0.0b2",
+                "5.0.0b1",
+                "4.6.0",
+                "4.5.5",
+                "4.5.4",
+                "4.4.4",
+                "4.1.4",
+                "4.1.3",
+                "4.1.2",
+                "4.1.1",
+                "4.1.0",
+                "4.1.0rc2",
+                "4.1.0rc1",
+                "4.0.2",
+                "4.0.1",
+                "4.0.0",
+                "4.0.0rc2",
+                "4.0.0rc1",
+                "4.0.0b3",
+                "4.0.0b2",
+                "4.0.0b1",
+                "3.5.3",
+                "3.5.2",
+                "3.5.1",
+                "3.5.0",
+                "3.4.1",
+                "3.4.0",
+                "3.3.11",
+                "3.3.10",
+                "3.3.9",
+                "3.3.8",
+                "3.3.7",
+                "3.3.6",
+                "3.3.5",
+                "3.3.4",
+                "3.3.3",
+                "3.3.2",
+                "3.3.1",
+                "3.3.0",
+                "3.2.1",
+                "3.2.0",
+                "3.1.0",
+                "3.0.1",
+                "3.0.0.post1",
+                "3.0.0",
+                "2.10.6",
+                "2.10.5",
+                "2.10.3",
+                "2.10.2",
+                "2.10.1",
+                "2.10.0",
+                "2.9.1",
+                "2.9.0",
+                "2.8.0",
+                "2.7.6",
+                "2.7.5",
+                "2.7.4",
+                "2.7.3",
+                "2.7.2",
+                "2.7.1",
+                "2.7.0",
+                "2.6.2",
+                "2.6.1",
+                "2.6.0",
+                "2.4.13",
+                "2.4.12",
+                "2.4.11",
+                "2.4.10",
+                "2.4.9",
+                "2.4.8",
+                "2.4.7",
+                "2.4.6",
+                "2.4.5",
+                "2.4.4",
+                "2.4.3",
+                "2.4.2",
+                "2.4.1",
+                "2.4.0",
+                "2.2.4",
+                "2.2.2",
+                "2.2.0",
+                "2.0.0",
+                "1.34.1",
+                "1.34",
+                "0.6.1",
+                "0.6.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "7.1.0",
+            "latest_version": "7.1.0",
+            "more_info_url": "https://data.safetycli.com/p/pypi/redis/97c/"
+        },
+        "gunicorn": {
+            "name": "gunicorn",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "gunicorn>=21.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "gunicorn",
+                    "specifier": ">=21.2",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.1",
+                "0.10.0",
+                "0.10.1",
+                "0.11.0",
+                "0.11.1",
+                "0.11.2",
+                "0.12.0",
+                "0.12.1",
+                "0.12.2",
+                "0.13.0",
+                "0.13.1",
+                "0.13.2",
+                "0.13.3",
+                "0.13.4",
+                "0.14.0",
+                "0.14.1",
+                "0.14.2",
+                "0.14.3",
+                "0.14.4",
+                "0.14.5",
+                "0.14.6",
+                "0.15.0",
+                "0.16.0",
+                "0.16.1",
+                "0.17.0",
+                "0.17.1",
+                "0.17.2",
+                "0.17.3",
+                "0.17.4",
+                "0.2",
+                "0.2.1",
+                "0.3",
+                "0.3.1",
+                "0.3.2",
+                "0.4",
+                "0.4.1",
+                "0.4.2",
+                "0.5",
+                "0.5.1",
+                "0.6",
+                "0.6.1",
+                "0.6.2",
+                "0.6.3",
+                "0.6.4",
+                "0.6.5",
+                "0.6.6",
+                "0.7.0",
+                "0.7.1",
+                "0.7.2",
+                "0.8.0",
+                "0.8.1",
+                "0.9.0",
+                "0.9.1",
+                "17.5",
+                "18.0",
+                "19.0.0",
+                "19.1.0",
+                "19.10.0",
+                "19.1.1",
+                "19.2.0",
+                "19.2.1",
+                "19.3.0",
+                "19.4.0",
+                "19.4.1",
+                "19.4.2",
+                "19.4.3",
+                "19.4.4",
+                "19.4.5",
+                "19.5.0",
+                "19.6.0",
+                "19.7.0",
+                "19.7.1",
+                "19.8.0",
+                "19.8.1",
+                "19.9.0",
+                "20.0.0",
+                "20.0.1",
+                "20.0.2",
+                "20.0.3",
+                "20.0.4",
+                "20.1.0",
+                "21.0.0",
+                "21.0.1",
+                "21.1.0",
+                "21.2.0",
+                "22.0.0"
+            ],
+            "secure_versions": [
+                "23.0.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "23.0.0",
+            "latest_version": "23.0.0",
+            "more_info_url": "https://data.safetycli.com/p/pypi/gunicorn/97c/"
+        },
+        "flask": {
+            "name": "flask",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "Flask>=3.0,<4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Flask",
+                    "specifier": "<4,>=3.0",
+                    "url": null,
+                    "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.1",
+                "0.10",
+                "0.10.1",
+                "0.11",
+                "0.11.1",
+                "0.12",
+                "0.12.1",
+                "0.12.2",
+                "0.12.3",
+                "0.12.4",
+                "0.12.5",
+                "0.2",
+                "0.3",
+                "0.3.1",
+                "0.4",
+                "0.5",
+                "0.5.1",
+                "0.5.2",
+                "0.6",
+                "0.6.1",
+                "0.7",
+                "0.7.1",
+                "0.7.2",
+                "0.8",
+                "0.8.1",
+                "0.9",
+                "1.0",
+                "1.0.1",
+                "1.0.2",
+                "1.0.3",
+                "1.0.4",
+                "1.1.0",
+                "1.1.1",
+                "1.1.2",
+                "1.1.3",
+                "1.1.4",
+                "2.0.0",
+                "2.0.0rc1",
+                "2.0.0rc2",
+                "2.0.1",
+                "2.0.2",
+                "2.0.3",
+                "2.1.0",
+                "2.1.1",
+                "2.1.2",
+                "2.1.3",
+                "2.2.0",
+                "2.2.1",
+                "2.2.2",
+                "2.2.3",
+                "2.2.4",
+                "2.3.0",
+                "2.3.1",
+                "3.1.0"
+            ],
+            "secure_versions": [
+                "3.1.2",
+                "3.1.1",
+                "3.0.3",
+                "3.0.2",
+                "3.0.1",
+                "3.0.0",
+                "2.3.3",
+                "2.3.2",
+                "2.2.5"
+            ],
+            "latest_version_without_known_vulnerabilities": "3.1.2",
+            "latest_version": "3.1.2",
+            "more_info_url": "https://data.safetycli.com/p/pypi/flask/97c/"
+        }
+    },
+    "announcements": [
+        {
+            "type": "warning",
+            "message": "Warning: flask, flask-sqlalchemy, flask-migrate, flask-jwt-extended, flask-limiter, flask-bcrypt, flask-login, alembic, gunicorn, pydantic, defusedxml, pytest, rich, email-validator, joblib, python-dotenv, redis, psycopg2-binary and requests are unpinned. Safety by default does not report on potential vulnerabilities in unpinned packages. It is recommended to pin your dependencies unless this is a library meant for distribution. To learn more about reporting these, specifier range handling, and options for scanning unpinned packages visit https://docs.pyup.io/docs/safety-range-specs"
+        }
+    ],
+    "vulnerabilities": [],
+    "ignored_vulnerabilities": [
+        {
+            "vulnerability_id": "77680",
+            "package_name": "requests",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.32.4"
+            ],
+            "all_vulnerable_specs": [
+                "<2.32.4"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "requests>=2.31",
+                "extras": [],
+                "marker": null,
+                "name": "requests",
+                "specifier": ">=2.31",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "Requests is an HTTP library. Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs. Users should upgrade to version 2.32.4 to receive a fix. For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on one's Requests Session.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-47081",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/77680/97c"
+        },
+        {
+            "vulnerability_id": "71064",
+            "package_name": "requests",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.32.2"
+            ],
+            "all_vulnerable_specs": [
+                "<2.32.2"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "requests>=2.31",
+                "extras": [],
+                "marker": null,
+                "name": "requests",
+                "specifier": ">=2.31",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "Affected versions of Requests, when making requests through a Requests `Session`, if the first request is made with `verify=False` to disable cert verification, all subsequent requests to the same host will continue to ignore cert verification regardless of changes to the value of `verify`. This behavior will continue for the lifecycle of the connection in the connection pool. Requests 2.32.0 fixes the issue, but versions 2.32.0 and 2.32.1 were yanked due to conflicts with CVE-2024-35195 mitigation.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-35195",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/71064/97c"
+        },
+        {
+            "vulnerability_id": "53868",
+            "package_name": "redis",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=4.5.0,<4.5.3",
+                ">=4.4.0rc1,<4.4.3",
+                ">=4.2.0rc1,<4.3.6"
+            ],
+            "all_vulnerable_specs": [
+                ">=4.5.0,<4.5.3",
+                ">=4.4.0rc1,<4.4.3",
+                ">=4.2.0rc1,<4.3.6"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "redis>=4.3",
+                "extras": [],
+                "marker": null,
+                "name": "redis",
+                "specifier": ">=4.3",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "An Off-by-one flaw was found in Redis. Affected versions leave a connection open after canceling an async Redis command at an inopportune time, and can send response data to the client of an unrelated request in an off-by-one manner. \r\nNOTE: this CVE Record was initially created in response to reports about ChatGPT, however, please see CVE-2023-28859 about addressing data leakage across AsyncIO connections in general.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2023-28858",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/53868/97c"
+        },
+        {
+            "vulnerability_id": "53869",
+            "package_name": "redis",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=4.5.0,<4.5.4",
+                ">=4.2.0rc1,<4.4.4"
+            ],
+            "all_vulnerable_specs": [
+                ">=4.5.0,<4.5.4",
+                ">=4.2.0rc1,<4.4.4"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "redis>=4.3",
+                "extras": [],
+                "marker": null,
+                "name": "redis",
+                "specifier": ">=4.3",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "Redis 4.4.4 and 4.5.4 include a fix for CVE-2023-28859: Redis-py before 4.4.4 and 4.5.x before 4.5.4 leaves a connection open after canceling an async Redis command at an inopportune time, and can send response data to the client of an unrelated request. (This could, for example, happen for a non-pipeline operation.) NOTE: the solutions for CVE-2023-28859 address data leakage across AsyncIO connections in general.\r\nhttps://github.com/advisories/GHSA-8fww-64cx-x8p5",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2023-28859",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/53869/97c"
+        },
+        {
+            "vulnerability_id": "71600",
+            "package_name": "gunicorn",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<22.0.0"
+            ],
+            "all_vulnerable_specs": [
+                "<22.0.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "gunicorn>=21.2",
+                "extras": [],
+                "marker": null,
+                "name": "gunicorn",
+                "specifier": ">=21.2",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "Gunicorn fails to properly validate Transfer-Encoding headers, leading to HTTP Request Smuggling (HRS) vulnerabilities. By crafting requests with conflicting Transfer-Encoding headers, attackers can bypass security restrictions and access restricted endpoints. This issue is due to Gunicorn's handling of Transfer-Encoding headers, where it incorrectly processes requests with multiple, conflicting Transfer-Encoding headers, treating them as chunked regardless of the final encoding specified. This vulnerability allows for a range of attacks including cache poisoning, session manipulation, and data exposure.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-1135",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/71600/97c"
+        },
+        {
+            "vulnerability_id": "76244",
+            "package_name": "gunicorn",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<22.0.0"
+            ],
+            "all_vulnerable_specs": [
+                "<22.0.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "gunicorn>=21.2",
+                "extras": [],
+                "marker": null,
+                "name": "gunicorn",
+                "specifier": ">=21.2",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "Affected versions of the gunicorn package are vulnerable to HTTP Request/Response Smuggling due to improper validation of the Transfer-Encoding header that enables a TE.CL desynchronisation condition. Gunicorn\u2019s HTTP parser does not consistently enforce RFC semantics when parsing conflicting or unsupported request framing\u2014such as messages containing both Transfer-Encoding and Content-Length\u2014so the backend may fall back to Content-Length while an intermediary treats the message as chunked.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-6827",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/76244/97c"
+        },
+        {
+            "vulnerability_id": "72809",
+            "package_name": "gunicorn",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=22.0.0,<23.0.0"
+            ],
+            "all_vulnerable_specs": [
+                ">=22.0.0,<23.0.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "gunicorn>=21.2",
+                "extras": [],
+                "marker": null,
+                "name": "gunicorn",
+                "specifier": ">=21.2",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "A vulnerability in Gunicorn allowed the TolerateDangerousFraming setting to process conflicting headers (Transfer-Encoding and Content-Length) and dangerous characters in HTTP header fields. This could lead to HTTP request smuggling and header injection attacks. The issue was resolved by removing this setting and enforcing stricter header validation. \r\nNote: It happens due to an incomplete fix for CVE-2024-1135.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/72809/97c"
+        },
+        {
+            "vulnerability_id": "77323",
+            "package_name": "flask",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=3.1.0,<3.1.1"
+            ],
+            "all_vulnerable_specs": [
+                ">=3.1.0,<3.1.1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "Flask>=3.0,<4",
+                "extras": [],
+                "marker": null,
+                "name": "Flask",
+                "specifier": "<4,>=3.0",
+                "url": null,
+                "found": "/Users/ammarhakimi/Dev/finance_app_clean/lifeos/requirements.txt"
+            },
+            "advisory": "Affected versions of Flask (\u2264 3.1.0) are vulnerable to incorrect fallback key configuration in session signing, leading to stale key usage instead of the intended current key. This flaw undermines session integrity, enabling remote attackers to forge or tamper with cookies via manipulated SECRET_KEY_FALLBACKS parameters. The vulnerability exists in the itsdangerous-based signing routines within flask.sessions (fallback key list ordering).",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2025-47278",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/77323/97c"
+        }
+    ],
+    "remediations": {},
+    "remediations_results": {
+        "vulnerabilities_fixed": [],
+        "remediations_applied": {},
+        "remediations_skipped": {}
+    }
+}
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+

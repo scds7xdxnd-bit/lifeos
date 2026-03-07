@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Dict, List
+from typing import List
 
-from lifeos.domains.finance.models.accounting_models import Account, JournalEntry, Transaction
-from lifeos.domains.finance.models.receivable_models import ReceivableManualEntry, ReceivableTracker
-from lifeos.domains.finance.models.schedule_models import MoneyScheduleDailyBalance, MoneyScheduleRow
-from lifeos.domains.finance.services.trial_balance_service import calculate_trial_balance, net_balance_for_account
+from lifeos.domains.finance.models.accounting_models import Account, Transaction
+from lifeos.domains.finance.models.receivable_models import ReceivableTracker
+from lifeos.domains.finance.models.schedule_models import (
+    MoneyScheduleDailyBalance,
+    MoneyScheduleRow,
+)
+from lifeos.domains.finance.services.trial_balance_service import (
+    calculate_trial_balance,
+    net_balance_for_account,
+)
 
 
 def get_dashboard(user_id: int) -> dict:
@@ -18,17 +24,17 @@ def get_dashboard(user_id: int) -> dict:
     )
     totals = calculate_trial_balance(user_id)
     balance_rows = [
-        {"account_id": acct.id, "name": acct.name, "code": acct.code, "balance": net_balance_for_account(acct, totals)}
+        {
+            "account_id": acct.id,
+            "name": acct.name,
+            "code": acct.code,
+            "balance": net_balance_for_account(acct, totals),
+        }
         for acct in accounts
     ]
 
     # Recent transactions
-    txns = (
-        Transaction.query.filter_by(user_id=user_id)
-        .order_by(Transaction.occurred_at.desc())
-        .limit(10)
-        .all()
-    )
+    txns = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.occurred_at.desc()).limit(10).all()
     recent_transactions = [
         {
             "id": t.id,
@@ -68,8 +74,7 @@ def get_dashboard(user_id: int) -> dict:
 
     # Forecast snapshot (7-day)
     balances = {
-        row.as_of: float(row.balance)
-        for row in MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).all()
+        row.as_of: float(row.balance) for row in MoneyScheduleDailyBalance.query.filter_by(user_id=user_id).all()
     }
     forecast: List[dict] = []
     running = 0.0

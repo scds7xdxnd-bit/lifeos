@@ -13,4 +13,3 @@ def paginate(query: Query, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
     items = query.limit(per_page).offset((page - 1) * per_page).all()
     total = query.order_by(None).count()
     return {"items": items, "page": page, "per_page": per_page, "total": total}
-

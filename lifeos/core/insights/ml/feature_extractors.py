@@ -22,4 +22,3 @@ def extract_event_features(event: EventRecord) -> Dict[str, float]:
         except Exception:
             pass
     return features
-

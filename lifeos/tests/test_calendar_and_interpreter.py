@@ -69,7 +69,7 @@ class TestClassifyEvent:
         assert len(results) > 0
         workout_result = next(
             (r for r in results if r["domain"] == DOMAIN_HEALTH and r["record_type"] == RECORD_TYPE_WORKOUT),
-            None
+            None,
         )
         assert workout_result is not None
         assert workout_result["confidence_score"] >= 0.7
@@ -87,7 +87,7 @@ class TestClassifyEvent:
         assert len(results) > 0
         rel_result = next(
             (r for r in results if r["domain"] == DOMAIN_RELATIONSHIPS and r["record_type"] == RECORD_TYPE_INTERACTION),
-            None
+            None,
         )
         assert rel_result is not None
         assert rel_result["extracted_data"].get("person_name") is not None
@@ -105,7 +105,7 @@ class TestClassifyEvent:
         assert len(results) > 0
         finance_result = next(
             (r for r in results if r["domain"] == DOMAIN_FINANCE and r["record_type"] == RECORD_TYPE_TRANSACTION),
-            None
+            None,
         )
         assert finance_result is not None
 
@@ -122,7 +122,7 @@ class TestClassifyEvent:
         assert len(results) > 0
         skill_result = next(
             (r for r in results if r["domain"] == DOMAIN_SKILLS and r["record_type"] == RECORD_TYPE_PRACTICE),
-            None
+            None,
         )
         assert skill_result is not None
 

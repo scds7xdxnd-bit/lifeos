@@ -12,8 +12,18 @@ from lifeos.extensions import db
 class AccountCategory(db.Model):
     __tablename__ = "finance_account_category"
     __table_args__ = (
-        db.UniqueConstraint("user_id", "base_type", "slug", name="uq_finance_account_category_user_base_slug"),
-        db.Index("ix_finance_account_category_user_base_default", "user_id", "base_type", "is_default"),
+        db.UniqueConstraint(
+            "user_id",
+            "base_type",
+            "slug",
+            name="uq_finance_account_category_user_base_slug",
+        ),
+        db.Index(
+            "ix_finance_account_category_user_base_default",
+            "user_id",
+            "base_type",
+            "is_default",
+        ),
         db.Index("ix_finance_account_category_user_base_name", "user_id", "base_type", "name"),
     )
 
@@ -45,29 +55,17 @@ class Account(db.Model):
     code: Mapped[str] = mapped_column(db.String(32), nullable=True, index=True)
     description: Mapped[str | None] = mapped_column(db.Text)
     is_active: Mapped[bool] = mapped_column(default=True)
-    
+
     # New classification fields for journal-first workflow
-    account_type: Mapped[str] = mapped_column(
-        db.String(16),
-        nullable=False,
-        default="asset",
-        index=True
-    )
+    account_type: Mapped[str] = mapped_column(db.String(16), nullable=False, default="asset", index=True)
     # Allowed values: 'asset', 'liability', 'equity', 'income', 'expense'
-    
-    account_subtype: Mapped[str | None] = mapped_column(
-        db.String(64),
-        nullable=True
-    )
+
+    account_subtype: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
     # Examples: 'cash', 'bank', 'loan', 'credit_card', 'salary', 'investment', etc.
-    
-    normalized_name: Mapped[str] = mapped_column(
-        db.String(255),
-        nullable=False,
-        index=True
-    )
+
+    normalized_name: Mapped[str] = mapped_column(db.String(255), nullable=False, index=True)
     # Normalized (lowercase, trimmed) for fast search/typeahead
-    
+
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     # Track creation time for sorting and filtering
 
@@ -92,7 +90,9 @@ class JournalEntry(db.Model):
     description: Mapped[str | None] = mapped_column(db.Text)
     posted_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
-    lines: Mapped[list["JournalLine"]] = relationship("JournalLine", back_populates="entry", cascade="all, delete-orphan")
+    lines: Mapped[list["JournalLine"]] = relationship(
+        "JournalLine", back_populates="entry", cascade="all, delete-orphan"
+    )
 
     @property
     def is_balanced(self) -> bool:

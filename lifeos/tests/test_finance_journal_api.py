@@ -56,7 +56,12 @@ def _seed_accounts(user_id: int):
 def test_get_journal_entry_detail_includes_lines_and_totals(app, client):
     with app.app_context():
         user = create_user(
-            UserCreateRequest(email="journal-detail@example.com", password="secret123", full_name="Detail", timezone="UTC")
+            UserCreateRequest(
+                email="journal-detail@example.com",
+                password="secret123",
+                full_name="Detail",
+                timezone="UTC",
+            )
         )
         debit_account, credit_account = _seed_accounts(user.id)
         tokens = issue_tokens(user)
@@ -66,8 +71,18 @@ def test_get_journal_entry_detail_includes_lines_and_totals(app, client):
         "description": "Detail entry",
         "posted_at": datetime.utcnow().isoformat(),
         "lines": [
-            {"account_id": debit_account.id, "dc": "D", "amount": 125.5, "memo": "debit line"},
-            {"account_id": credit_account.id, "dc": "C", "amount": 125.5, "memo": "credit line"},
+            {
+                "account_id": debit_account.id,
+                "dc": "D",
+                "amount": 125.5,
+                "memo": "debit line",
+            },
+            {
+                "account_id": credit_account.id,
+                "dc": "C",
+                "amount": 125.5,
+                "memo": "credit line",
+            },
         ],
     }
     create_resp = client.post(
@@ -98,7 +113,12 @@ def test_get_journal_entry_detail_includes_lines_and_totals(app, client):
 def test_list_journal_entries_include_totals(app, client):
     with app.app_context():
         user = create_user(
-            UserCreateRequest(email="journal-list@example.com", password="secret123", full_name="List", timezone="UTC")
+            UserCreateRequest(
+                email="journal-list@example.com",
+                password="secret123",
+                full_name="List",
+                timezone="UTC",
+            )
         )
         debit_account, credit_account = _seed_accounts(user.id)
         tokens = issue_tokens(user)
@@ -108,8 +128,18 @@ def test_list_journal_entries_include_totals(app, client):
         "description": "List entry",
         "posted_at": datetime.utcnow().isoformat(),
         "lines": [
-            {"account_id": debit_account.id, "dc": "D", "amount": 75.0, "memo": "debit line"},
-            {"account_id": credit_account.id, "dc": "C", "amount": 75.0, "memo": "credit line"},
+            {
+                "account_id": debit_account.id,
+                "dc": "D",
+                "amount": 75.0,
+                "memo": "debit line",
+            },
+            {
+                "account_id": credit_account.id,
+                "dc": "C",
+                "amount": 75.0,
+                "memo": "credit line",
+            },
         ],
     }
     create_resp = client.post(

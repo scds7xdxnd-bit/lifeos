@@ -15,4 +15,3 @@ project_pages_bp = Blueprint("project_pages", __name__)
 def projects_home():
     projects = Project.query.all()
     return render_template("projects/index.html", projects=projects)
-

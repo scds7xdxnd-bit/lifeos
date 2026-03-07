@@ -405,7 +405,10 @@ class TestProjectsAPIUserIsolation:
             create_project(test_user.id, name="Test User Project")
 
             # Create another user with project
-            other_user = User(email="other-project-api@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-project-api@example.com",
+                password_hash=hash_password("secret"),
+            )
             db.session.add(other_user)
             db.session.commit()
             create_project(other_user.id, name="Other User Project")
@@ -419,7 +422,10 @@ class TestProjectsAPIUserIsolation:
     def test_cannot_access_other_user_project(self, app, client, test_user, auth_headers):
         """Cannot access another user's project detail."""
         with app.app_context():
-            other_user = User(email="other-project-api2@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-project-api2@example.com",
+                password_hash=hash_password("secret"),
+            )
             db.session.add(other_user)
             db.session.commit()
             project = create_project(other_user.id, name="Private Project")
@@ -431,7 +437,10 @@ class TestProjectsAPIUserIsolation:
     def test_cannot_update_other_user_project(self, app, client, test_user, csrf_headers):
         """Cannot update another user's project."""
         with app.app_context():
-            other_user = User(email="other-project-api3@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-project-api3@example.com",
+                password_hash=hash_password("secret"),
+            )
             db.session.add(other_user)
             db.session.commit()
             project = create_project(other_user.id, name="Protected Project")
@@ -444,7 +453,10 @@ class TestProjectsAPIUserIsolation:
     def test_cannot_create_task_in_other_user_project(self, app, client, test_user, csrf_headers):
         """Cannot create task in another user's project."""
         with app.app_context():
-            other_user = User(email="other-task-api@example.com", password_hash=hash_password("secret"))
+            other_user = User(
+                email="other-task-api@example.com",
+                password_hash=hash_password("secret"),
+            )
             db.session.add(other_user)
             db.session.commit()
             project = create_project(other_user.id, name="Other User's Project")

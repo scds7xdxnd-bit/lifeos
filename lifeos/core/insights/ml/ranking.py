@@ -23,4 +23,3 @@ def rank_candidates(query_vec: List[float], candidates: List[Tuple[Any, List[flo
         scored.append((cosine_similarity(query_vec, vec), item))
     scored.sort(key=lambda x: x[0], reverse=True)
     return [item for _score, item in scored]
-

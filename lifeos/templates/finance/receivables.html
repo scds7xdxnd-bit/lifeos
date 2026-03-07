@@ -6,38 +6,44 @@
       <div>
         <h2 style="margin:0;">Receivables</h2>
         <p style="margin:0; color:#5b6470;">Track principals and manual entries.</p>
+        <p style="margin:0.25rem 0 0; color:#7a8599; font-size:0.9rem;">Read-first overview. Log entries only when you intend to update a tracker.</p>
       </div>
-      <button type="button" class="btn btn-secondary" id="recv-reload">Reload</button>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button type="button" class="btn" id="recv-toggle-create" aria-expanded="false">New tracker</button>
+        <button type="button" class="btn btn-secondary" id="recv-reload">Refresh list</button>
+      </div>
     </div>
     <div id="recv-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage receivables.</div>
-    <form id="recv-form" style="display:grid; gap:0.5rem; margin-top:0.75rem;">
-      <div class="field">
-        <label for="recv-counterparty">Counterparty</label>
-        <input id="recv-counterparty" name="counterparty" type="text" required>
-      </div>
-      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+    <div id="recv-create-panel" style="display:none; margin-top:0.75rem;">
+      <form id="recv-form" style="display:grid; gap:0.5rem;">
         <div class="field">
-          <label for="recv-principal">Principal</label>
-          <input id="recv-principal" name="principal" type="number" step="0.01" min="0" required>
+          <label for="recv-counterparty">Counterparty</label>
+          <input id="recv-counterparty" name="counterparty" type="text" required>
         </div>
-        <div class="field">
-          <label for="recv-rate">Interest rate (%)</label>
-          <input id="recv-rate" name="interest_rate" type="number" step="0.01" min="0">
+        <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+          <div class="field">
+            <label for="recv-principal">Principal</label>
+            <input id="recv-principal" name="principal" type="number" step="0.01" min="0" required>
+          </div>
+          <div class="field">
+            <label for="recv-rate">Interest rate (%)</label>
+            <input id="recv-rate" name="interest_rate" type="number" step="0.01" min="0">
+          </div>
+          <div class="field">
+            <label for="recv-start">Start date</label>
+            <input id="recv-start" name="start_date" type="date" required>
+          </div>
+          <div class="field">
+            <label for="recv-due">Due date</label>
+            <input id="recv-due" name="due_date" type="date">
+          </div>
         </div>
-        <div class="field">
-          <label for="recv-start">Start date</label>
-          <input id="recv-start" name="start_date" type="date" required>
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+          <button type="submit" class="btn" id="recv-create">Create</button>
+          <div id="recv-status" class="auth-status"></div>
         </div>
-        <div class="field">
-          <label for="recv-due">Due date</label>
-          <input id="recv-due" name="due_date" type="date">
-        </div>
-      </div>
-      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
-        <button type="submit" class="btn" id="recv-create">Create</button>
-        <div id="recv-status" class="auth-status"></div>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 
   <div class="card">
@@ -57,6 +63,8 @@
     const statusEl = document.getElementById('recv-status');
     const loginHint = document.getElementById('recv-login-hint');
     const reloadBtn = document.getElementById('recv-reload');
+    const createToggle = document.getElementById('recv-toggle-create');
+    const createPanel = document.getElementById('recv-create-panel');
     const listEl = document.getElementById('recv-list');
     const emptyEl = document.getElementById('recv-empty');
     const countEl = document.getElementById('recv-count');
@@ -78,11 +86,37 @@
       node.textContent = msg || '';
       if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
     };
+    const resolveContractError = (body, res) => {
+      const error = body?.error;
+      if (res?.status === 409 || error === 'read_only_violation') {
+        return 'Read-only contract violation detected. Please refresh and report this issue.';
+      }
+      if (['contract_mismatch', 'contract_violation', 'schema_mismatch'].includes(error)) {
+        return 'Contract mismatch detected. Please refresh and try again.';
+      }
+      return '';
+    };
 
     const ensureAuth = () => {
       const authed = !!lifeosAuth.getTokens().access_token;
       Array.from(form?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
+      Array.from(listEl?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
+      if (createToggle) createToggle.disabled = !authed;
+      if (reloadBtn) reloadBtn.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
+      if (!authed) {
+        if (createPanel) createPanel.style.display = 'none';
+        if (createToggle) {
+          createToggle.setAttribute('aria-expanded', 'false');
+          createToggle.textContent = 'New tracker';
+        }
+        Array.from(listEl?.querySelectorAll('[data-role="entry-form"]') || []).forEach((node) => {
+          node.style.display = 'none';
+        });
+        Array.from(listEl?.querySelectorAll('[data-role="manage-only"]') || []).forEach((node) => {
+          node.style.display = 'none';
+        });
+      }
       return authed;
     };
 
@@ -110,10 +144,12 @@
             <div style="color:#5b6470; font-size:0.85rem;">Start: ${tracker.start_date || '—'} ${tracker.due_date ? '• Due ' + tracker.due_date : ''}</div>
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <button class="btn btn-secondary" data-action="delete" data-id="${tracker.id}">Delete</button>
+            <button class="btn btn-secondary" data-action="toggle-entry" data-id="${tracker.id}" aria-expanded="false">Log entry</button>
+            <button class="btn btn-secondary" data-action="toggle-manage" data-id="${tracker.id}" aria-expanded="false">Manage</button>
+            <button class="btn btn-secondary" data-action="delete" data-id="${tracker.id}" data-role="manage-only" style="display:none;">Delete</button>
           </div>
         </div>
-        <div style="margin-top:0.5rem;">
+        <div data-role="entry-form" style="margin-top:0.5rem; display:none;">
           <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Add entry</label>
           <div style="display:grid; gap:0.35rem; grid-template-columns: repeat(auto-fit, minmax(170px,1fr));">
             <input type="number" step="0.01" min="0" data-field="amount" placeholder="Amount">
@@ -137,6 +173,11 @@
       if (!entriesEl) return;
       const res = await fetch(`/api/finance/receivables/${trackerId}/entries`, { headers: lifeosAuth.authHeaders() });
       const body = await res.json().catch(() => ({}));
+      const contractError = resolveContractError(body, res);
+      if (contractError) {
+        entriesEl.innerHTML = `<div style="color:#b3352f; font-size:0.9rem;">${contractError}</div>`;
+        return;
+      }
       if (res.ok && body.ok !== false) {
         entriesEl.innerHTML = renderEntries(body.items || []);
       } else {
@@ -165,6 +206,11 @@
       setStatus('');
       const res = await fetch('/api/finance/receivables', { headers: lifeosAuth.authHeaders() });
       const body = await res.json().catch(() => ({}));
+      const contractError = resolveContractError(body, res);
+      if (contractError) {
+        setStatus(contractError, 'error');
+        return;
+      }
       if (res.ok && body.ok !== false) {
         renderTrackers(body.items || []);
       } else {
@@ -214,6 +260,26 @@
       if (!trackerId) return;
       const card = e.target.closest('[data-tracker-card]');
       const statusNode = card?.querySelector('[data-role="row-status"]');
+      const entryForm = card?.querySelector('[data-role="entry-form"]');
+      const manageOnly = card?.querySelectorAll('[data-role="manage-only"]') || [];
+
+      if (action === 'toggle-entry') {
+        if (!ensureAuth()) return;
+        const isOpen = entryForm?.style.display !== 'none';
+        if (entryForm) entryForm.style.display = isOpen ? 'none' : 'block';
+        e.target.setAttribute('aria-expanded', (!isOpen).toString());
+        e.target.textContent = isOpen ? 'Log entry' : 'Hide entry';
+        return;
+      }
+
+      if (action === 'toggle-manage') {
+        if (!ensureAuth()) return;
+        const isOpen = e.target.getAttribute('aria-expanded') === 'true';
+        manageOnly.forEach((node) => { node.style.display = isOpen ? 'none' : 'inline-flex'; });
+        e.target.setAttribute('aria-expanded', (!isOpen).toString());
+        e.target.textContent = isOpen ? 'Manage' : 'Done';
+        return;
+      }
 
       if (action === 'delete') {
         setRowStatus(statusNode, 'Deleting...');
@@ -261,6 +327,13 @@
     });
 
     reloadBtn?.addEventListener('click', fetchReceivables);
+    createToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = createPanel.style.display !== 'none';
+      createPanel.style.display = isOpen ? 'none' : 'block';
+      createToggle.setAttribute('aria-expanded', (!isOpen).toString());
+      createToggle.textContent = isOpen ? 'New tracker' : 'Hide form';
+    });
     window.addEventListener('lifeos:auth-changed', (e) => {
       ensureAuth();
       if (e.detail?.loggedIn) fetchReceivables();
@@ -269,8 +342,15 @@
         emptyEl.style.display = 'block';
       }
     });
-    ensureAuth();
-    fetchReceivables();
+    const start = () => {
+      ensureAuth();
+      fetchReceivables();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
   })();
 </script>
 {% endblock %}

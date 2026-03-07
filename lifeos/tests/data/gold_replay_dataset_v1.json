@@ -1,0 +1,54 @@
+{
+  "events": [
+    {
+      "event_type": "finance.transaction.created",
+      "user_id": null,
+      "payload": {
+        "amount": 25.0,
+        "category": "Groceries"
+      }
+    },
+    {
+      "event_type": "finance.journal.posted",
+      "user_id": null,
+      "payload": {}
+    },
+    {
+      "event_type": "habits.habit.logged",
+      "user_id": null,
+      "payload": {
+        "habit_id": 10
+      }
+    },
+    {
+      "event_type": "health.metric.updated",
+      "user_id": null,
+      "payload": {
+        "metric": "sleep_hours",
+        "value": 7
+      }
+    },
+    {
+      "event_type": "skills.practice.logged",
+      "user_id": null,
+      "payload": {
+        "duration_minutes": 30
+      }
+    },
+    {
+      "event_type": "projects.task.completed",
+      "user_id": null,
+      "payload": {
+        "task_id": 44
+      }
+    }
+  ],
+  "expected_insights": [
+    "finance_spend",
+    "journal_posted",
+    "habit_progress",
+    "health_metric",
+    "skill_practice",
+    "project_task_done"
+  ]
+}

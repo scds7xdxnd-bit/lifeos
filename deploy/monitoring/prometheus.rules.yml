@@ -116,6 +116,63 @@ groups:
           summary: "Worker Processing Errors"
           description: "Error rate is {{ $value | humanizePercentage }}"
 
+      # Phase 3b SLO alerts (insights + contracts)
+      - alert: InsightLatencyHigh
+        expr: histogram_quantile(0.95, rate(lifeos_insight_latency_seconds_bucket[5m])) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          service: lifeos-insights
+        annotations:
+          summary: "Insight latency p95 high"
+          description: "p95 insight latency is {{ $value }}s (threshold: 1.5s)"
+
+      - alert: ProjectionCorrectnessErrors
+        expr: rate(lifeos_projection_correctness_errors_total[5m]) / clamp_min(rate(lifeos_projection_correctness_total[5m]), 0.001) > 0.01
+        for: 10m
+        labels:
+          severity: critical
+          service: lifeos-projections
+        annotations:
+          summary: "Projection correctness errors detected"
+          description: "Projection correctness error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+
+      - alert: ReplayDeterminismFailures
+        expr: increase(lifeos_replay_determinism_failures_total[30m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: lifeos-replay
+        annotations:
+          summary: "Replay determinism failures"
+          description: "{{ $value }} replay determinism failures in the last 30m"
+
+      - alert: ContractViolations
+        expr: increase(lifeos_contract_violations_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: lifeos-contracts
+        annotations:
+          summary: "API contract violations"
+          description: "{{ $value }} contract violations in the last 10m"
+
+      # Phase 3b SLO metric absence (instrumentation required)
+      - alert: Phase3bSLOMetricsMissing
+        expr: |
+          absent(lifeos_insight_latency_seconds_bucket) or
+          absent(lifeos_projection_correctness_errors_total) or
+          absent(lifeos_projection_correctness_total) or
+          absent(lifeos_replay_determinism_failures_total) or
+          absent(lifeos_contract_violations_total)
+        for: 15m
+        labels:
+          severity: warning
+          service: lifeos-observability
+        annotations:
+          summary: "Phase 3b SLO metrics missing"
+          description: "One or more Phase 3b SLO metrics are missing; verify instrumentation and statsd-exporter mapping."
+
       # Container resources
       - alert: ContainerHighCPUUsage
         expr: (rate(container_cpu_usage_seconds_total{container=~"lifeos-.*"}[5m]) * 100) > 80

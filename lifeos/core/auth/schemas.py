@@ -6,7 +6,9 @@ import re
 from typing import Optional
 from zoneinfo import available_timezones
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
+
+from lifeos.core.auth.constants import SESSION_SCOPE_ALL, SESSION_SCOPE_SINGLE
 
 _PASSWORD_REGEX = re.compile(r"^(?=.*[A-Za-z])(?=.*\d).{8,}$")
 _TIMEZONES = available_timezones()
@@ -38,6 +40,30 @@ class RegisterRequest(BaseModel):
         if v not in _TIMEZONES:
             raise ValueError("invalid timezone")
         return v
+
+
+class SessionAdminResetRequest(BaseModel):
+    """Admin-only session reset payload (structure-only)."""
+
+    user_id: int
+    session_scope: str = Field(default=SESSION_SCOPE_ALL)
+    session_id: Optional[str] = None
+    reason: str = Field(min_length=1, max_length=255)
+
+    @field_validator("session_scope")
+    @classmethod
+    def validate_scope(cls, value: str) -> str:
+        if value not in (SESSION_SCOPE_ALL, SESSION_SCOPE_SINGLE):
+            raise ValueError("invalid_scope")
+        return value
+
+    @field_validator("session_id")
+    @classmethod
+    def ensure_session_id_when_single(cls, value: Optional[str], info: ValidationInfo):
+        scope = info.data.get("session_scope")
+        if scope == SESSION_SCOPE_SINGLE and not value:
+            raise ValueError("session_id_required")
+        return value
 
 
 class ForgotUsernameRequest(BaseModel):

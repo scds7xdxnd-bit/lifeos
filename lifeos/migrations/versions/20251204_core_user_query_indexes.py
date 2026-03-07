@@ -8,7 +8,6 @@ Create Date: 2025-12-04
 from __future__ import annotations
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "20251204_core_user_query_indexes"
@@ -74,7 +73,10 @@ def downgrade():
         "ix_finance_money_schedule_daily_balance_user_as_of",
         table_name="finance_money_schedule_daily_balance",
     )
-    op.drop_index("ix_finance_money_schedule_row_user_event_date", table_name="finance_money_schedule_row")
+    op.drop_index(
+        "ix_finance_money_schedule_row_user_event_date",
+        table_name="finance_money_schedule_row",
+    )
     op.drop_index("ix_finance_transaction_user_occurred_at", table_name="finance_transaction")
     op.drop_index("ix_event_record_user_event_type", table_name="event_record")
     op.drop_index("ix_event_record_user_created_at", table_name="event_record")

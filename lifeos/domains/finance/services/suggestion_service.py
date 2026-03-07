@@ -8,9 +8,16 @@ from flask import current_app
 
 from lifeos.core.events.event_service import log_event
 from lifeos.domains.finance.events import EVENT_CATALOG, FINANCE_ML_SUGGEST_ACCOUNTS
+from lifeos.domains.finance.ml.legacy_models import (
+    load_legacy_models,
+    predict_account_with_legacy,
+)
+from lifeos.domains.finance.ml.ranker_client import (
+    RANKER_PAYLOAD_VERSION,
+    RankerResult,
+    predict_account,
+)
 from lifeos.domains.finance.models.accounting_models import Account
-from lifeos.domains.finance.ml.legacy_models import load_legacy_models, predict_account_with_legacy
-from lifeos.domains.finance.ml.ranker_client import RANKER_PAYLOAD_VERSION, RankerResult, predict_account
 
 
 def suggest_accounts(user_id: int, description: str) -> List[int]:

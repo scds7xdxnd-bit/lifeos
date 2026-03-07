@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 from lifeos.core.users.preferences import get_preferences
 
 if TYPE_CHECKING:

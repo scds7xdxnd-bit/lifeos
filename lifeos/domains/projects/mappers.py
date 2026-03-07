@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from lifeos.domains.projects.models.project_models import Project, ProjectTask, ProjectTaskLog
+from lifeos.domains.projects.models.project_models import (
+    Project,
+    ProjectTask,
+    ProjectTaskLog,
+)
 
 
 def map_project(project: Project) -> dict:

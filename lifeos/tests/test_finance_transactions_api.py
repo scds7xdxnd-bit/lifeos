@@ -7,10 +7,13 @@ pytestmark = pytest.mark.integration
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.domains.finance.events import FINANCE_JOURNAL_POSTED
-from lifeos.domains.finance.models.accounting_models import AccountCategory, JournalEntry
+from lifeos.domains.finance.models.accounting_models import (
+    AccountCategory,
+    JournalEntry,
+)
 from lifeos.domains.finance.services.accounting_service import create_account
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 def _login_headers(client, email: str, password: str) -> dict[str, str]:
@@ -51,7 +54,14 @@ def _seed_accounts(user_id: int):
 
 def test_create_transaction_succeeds_and_emits_outbox(app, client):
     with app.app_context():
-        user = create_user(UserCreateRequest(email="txn@example.com", password="secret123", full_name="Txn User", timezone="UTC"))
+        user = create_user(
+            UserCreateRequest(
+                email="txn@example.com",
+                password="secret123",
+                full_name="Txn User",
+                timezone="UTC",
+            )
+        )
         debit_account, credit_account = _seed_accounts(user.id)
     headers = _login_headers(client, "txn@example.com", "secret123")
 
@@ -79,7 +89,14 @@ def test_create_transaction_succeeds_and_emits_outbox(app, client):
 
 def test_create_transaction_with_missing_account_returns_not_found(app, client):
     with app.app_context():
-        user = create_user(UserCreateRequest(email="txn-missing@example.com", password="secret123", full_name="Missing Txn", timezone="UTC"))
+        user = create_user(
+            UserCreateRequest(
+                email="txn-missing@example.com",
+                password="secret123",
+                full_name="Missing Txn",
+                timezone="UTC",
+            )
+        )
         debit_account, _ = _seed_accounts(user.id)
     headers = _login_headers(client, "txn-missing@example.com", "secret123")
 

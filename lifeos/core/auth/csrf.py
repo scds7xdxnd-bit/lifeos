@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+
 from flask import session
 
 CSRF_TOKEN_SESSION_KEY = "_csrf_token"
@@ -22,4 +23,3 @@ def validate_csrf_token(token: str) -> bool:
     if not token:
         return False
     return secrets.compare_digest(token, session.get(CSRF_TOKEN_SESSION_KEY, ""))
-

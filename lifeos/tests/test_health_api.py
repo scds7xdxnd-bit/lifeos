@@ -80,11 +80,18 @@ class TestBiometricsAPI:
         """List biometrics with date range filter."""
         with app.app_context():
             for i in range(10):
-                create_biometric_entry(test_user.id, date_value=date.today() - timedelta(days=i), weight=75.0)
+                create_biometric_entry(
+                    test_user.id,
+                    date_value=date.today() - timedelta(days=i),
+                    weight=75.0,
+                )
 
         start = (date.today() - timedelta(days=5)).isoformat()
         end = (date.today() - timedelta(days=2)).isoformat()
-        resp = client.get(f"/api/health/biometrics?start_date={start}&end_date={end}", headers=auth_headers)
+        resp = client.get(
+            f"/api/health/biometrics?start_date={start}&end_date={end}",
+            headers=auth_headers,
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True
@@ -319,7 +326,10 @@ class TestHealthSummaryAPI:
             past_date = date.today() - timedelta(days=5)
             create_biometric_entry(test_user.id, date_value=past_date, weight=74.0)
 
-        resp = client.get(f"/api/health/summary/daily?date={past_date.isoformat()}", headers=auth_headers)
+        resp = client.get(
+            f"/api/health/summary/daily?date={past_date.isoformat()}",
+            headers=auth_headers,
+        )
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["ok"] is True

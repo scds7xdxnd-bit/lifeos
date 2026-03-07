@@ -7,4 +7,3 @@ from lifeos.domains.finance.services.schedule_service import recompute_daily_bal
 
 def run(user_id: int) -> dict:
     return recompute_daily_balances(user_id)
-

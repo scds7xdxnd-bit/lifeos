@@ -7,9 +7,19 @@ pytestmark = pytest.mark.integration
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
-from lifeos.domains.finance.models.accounting_models import Account, AccountCategory, Transaction
-from lifeos.domains.finance.models.schedule_models import MoneyScheduleRow, MoneyScheduleDailyBalance
-from lifeos.domains.finance.models.receivable_models import ReceivableTracker, ReceivableManualEntry
+from lifeos.domains.finance.models.accounting_models import (
+    Account,
+    AccountCategory,
+    Transaction,
+)
+from lifeos.domains.finance.models.schedule_models import (
+    MoneyScheduleRow,
+    MoneyScheduleDailyBalance,
+)
+from lifeos.domains.finance.models.receivable_models import (
+    ReceivableTracker,
+    ReceivableManualEntry,
+)
 from lifeos.extensions import db
 
 
@@ -35,14 +45,30 @@ def _seed_finance(app):
         )
         db.session.add(cat)
         db.session.flush()
-        acct = Account(user_id=user.id, name="Cash", account_type="asset", normalized_name="cash", category=cat)
+        acct = Account(
+            user_id=user.id,
+            name="Cash",
+            account_type="asset",
+            normalized_name="cash",
+            category=cat,
+        )
         db.session.add(acct)
         db.session.flush()
-        txn = Transaction(user_id=user.id, amount=50, description="test", occurred_at=datetime.utcnow())
+        txn = Transaction(
+            user_id=user.id,
+            amount=50,
+            description="test",
+            occurred_at=datetime.utcnow(),
+        )
         db.session.add(txn)
         db.session.add(MoneyScheduleRow(user_id=user.id, account_id=acct.id, event_date=date.today(), amount=25))
         db.session.add(MoneyScheduleDailyBalance(user_id=user.id, as_of=date.today(), balance=25))
-        tracker = ReceivableTracker(user_id=user.id, counterparty="Client", principal=100, start_date=date.today())
+        tracker = ReceivableTracker(
+            user_id=user.id,
+            counterparty="Client",
+            principal=100,
+            start_date=date.today(),
+        )
         db.session.add(tracker)
         db.session.flush()
         db.session.add(ReceivableManualEntry(tracker_id=tracker.id, entry_date=date.today(), amount=50))

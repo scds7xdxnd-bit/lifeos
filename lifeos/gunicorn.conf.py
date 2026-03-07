@@ -9,4 +9,3 @@ worker_class = os.environ.get("GUNICORN_WORKER_CLASS", "gthread")
 accesslog = "-"
 errorlog = "-"
 loglevel = os.environ.get("GUNICORN_LOGLEVEL", "info")
-

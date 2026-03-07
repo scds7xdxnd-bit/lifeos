@@ -28,7 +28,13 @@ def upgrade():
         sa.Column("message", sa.Text(), nullable=False, server_default=""),
         sa.Column("severity", sa.String(length=16), nullable=False, server_default="info"),
         sa.Column("data", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now(), index=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.func.now(),
+            index=True,
+        ),
     )
     op.create_index(
         "ix_insight_record_user_created_at",

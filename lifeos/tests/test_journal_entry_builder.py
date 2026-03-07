@@ -9,10 +9,13 @@ from lifeos.core.auth.auth_service import issue_tokens
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.domains.finance.events import FINANCE_JOURNAL_POSTED
-from lifeos.domains.finance.models.accounting_models import AccountCategory, JournalEntry
+from lifeos.domains.finance.models.accounting_models import (
+    AccountCategory,
+    JournalEntry,
+)
 from lifeos.domains.finance.services.accounting_service import create_account
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 def _auth_headers(token: str, csrf_token: str | None = None) -> dict[str, str]:
@@ -60,7 +63,14 @@ def _seed_accounts(user_id: int):
 
 def test_post_journal_entry_smoke_logged_in(app, client):
     with app.app_context():
-        user = create_user(UserCreateRequest(email="journal@example.com", password="secret123", full_name="JRNL", timezone="UTC"))
+        user = create_user(
+            UserCreateRequest(
+                email="journal@example.com",
+                password="secret123",
+                full_name="JRNL",
+                timezone="UTC",
+            )
+        )
         debit_account, credit_account = _seed_accounts(user.id)
         tokens = issue_tokens(user)
     csrf_token = _prime_csrf(client)
@@ -69,8 +79,18 @@ def test_post_journal_entry_smoke_logged_in(app, client):
         "description": "Smoke journal",
         "posted_at": datetime.utcnow().isoformat(),
         "lines": [
-            {"account_id": debit_account.id, "dc": "D", "amount": 125.5, "memo": "debit line"},
-            {"account_id": credit_account.id, "dc": "C", "amount": 125.5, "memo": "credit line"},
+            {
+                "account_id": debit_account.id,
+                "dc": "D",
+                "amount": 125.5,
+                "memo": "debit line",
+            },
+            {
+                "account_id": credit_account.id,
+                "dc": "C",
+                "amount": 125.5,
+                "memo": "credit line",
+            },
         ],
     }
     resp = client.post(
@@ -98,7 +118,14 @@ def test_post_journal_entry_smoke_logged_in(app, client):
 
 def test_unbalanced_entry_rejected(app, client):
     with app.app_context():
-        user = create_user(UserCreateRequest(email="unbalanced@example.com", password="secret123", full_name="Unbalanced", timezone="UTC"))
+        user = create_user(
+            UserCreateRequest(
+                email="unbalanced@example.com",
+                password="secret123",
+                full_name="Unbalanced",
+                timezone="UTC",
+            )
+        )
         debit_account, credit_account = _seed_accounts(user.id)
         tokens = issue_tokens(user)
     csrf_token = _prime_csrf(client)

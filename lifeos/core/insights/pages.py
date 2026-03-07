@@ -9,6 +9,7 @@ insights_pages_bp = Blueprint("insights_pages", __name__, template_folder="../..
 
 
 @insights_pages_bp.get("")
+@insights_pages_bp.get("/")
 @jwt_required(optional=True)
 def insights_home():
     return render_template("insights/index.html")

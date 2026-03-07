@@ -10,4 +10,3 @@ def analyze_sentiment(content: str) -> str:
     if any(word in lowered for word in ("bad", "sad", "angry", "tired")):
         return "negative"
     return "neutral"
-
