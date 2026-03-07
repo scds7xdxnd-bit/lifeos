@@ -2,17 +2,25 @@
 # Includes: Web App, PostgreSQL, Redis, Async Worker, Monitoring
 
 x-common-env: &common-env
+  PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   APP_ENV: ${APP_ENV:-production}
   FLASK_APP: lifeos.wsgi
-  SECRET_KEY: ${SECRET_KEY:-change-me}
-  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-too}
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY not set}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY not set}
+  BUILD_ID: ${BUILD_ID:-local-dev}
+  PYTHONPATH: /app
   DATABASE_URL: ${DATABASE_URL:-postgresql://lifeos:lifeos@db:5432/lifeos}
-  TEST_DATABASE_URL: ${TEST_DATABASE_URL:-}
+  TEST_DATABASE_URL: ${TEST_DATABASE_URL:-sqlite:///instance/test.db}
   REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
   ENABLE_ML: ${ENABLE_ML:-true}
+  ENABLE_PHASE5B_INSIGHTS: ${ENABLE_PHASE5B_INSIGHTS:-true}
+  PHASE5B_INSIGHT_TYPES: ${PHASE5B_INSIGHT_TYPES:-}
+  ENABLE_TIMELINE_INGESTION: ${ENABLE_TIMELINE_INGESTION:-true}
+  ENABLE_INTERPRETATION_RELATIONSHIP: ${ENABLE_INTERPRETATION_RELATIONSHIP:-true}
+  ENABLE_INTERPRETATION_OBLIGATION: ${ENABLE_INTERPRETATION_OBLIGATION:-false}
   RATELIMIT_ENABLED: ${RATELIMIT_ENABLED:-true}
-  SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
   CALENDAR_VIEW_API_V2: ${CALENDAR_VIEW_API_V2:-true}
+  CALENDAR_TIME_CANVAS_UI: ${CALENDAR_TIME_CANVAS_UI:-false}
 
 services:
   web:
@@ -28,6 +36,7 @@ services:
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
       GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
       GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+      GUNICORN_RELOAD: ${GUNICORN_RELOAD:-true}
       GUNICORN_LOGLEVEL: ${GUNICORN_LOGLEVEL:-info}
       GUNICORN_LOGCONFIG: ${GUNICORN_LOGCONFIG:-/app/deploy/logging.conf}
       STATSD_HOST: ${STATSD_HOST:-statsd-exporter}
@@ -35,6 +44,7 @@ services:
       STATSD_PREFIX: ${STATSD_PREFIX:-lifeos}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
     volumes:
+      - .:/app
       - lifeos-instance:/app/instance
       - lifeos-logs:/app/logs
     depends_on:
@@ -161,6 +171,78 @@ services:
         max-size: "100m"
         max-file: "10"
         labels: "service=lifeos-worker"
+
+  interpretation-runner:
+    profiles:
+      - phase5a
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: lifeos-web:${APP_VERSION:-latest}
+    container_name: lifeos-interpretation-runner
+    command:
+      - "python"
+      - "/app/scripts/ops/phase5a_interpretation_runner.py"
+      - "--loop"
+      - "--interval-seconds"
+      - "${INTERPRETATION_RUN_INTERVAL:-60}"
+      - "--since-minutes"
+      - "${INTERPRETATION_RUN_SINCE_MINUTES:-60}"
+      - "--limit"
+      - "${INTERPRETATION_RUN_LIMIT:-500}"
+    environment:
+      <<: *common-env
+    volumes:
+      - lifeos-instance:/app/instance
+      - lifeos-logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-interpretation-runner"
+
+  phase5b-runner:
+    profiles:
+      - phase5b
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: lifeos-web:${APP_VERSION:-latest}
+    container_name: lifeos-phase5b-runner
+    command:
+      - "python"
+      - "/app/scripts/ops/phase5b_insight_runner.py"
+      - "--loop"
+      - "--interval-seconds"
+      - "${PHASE5B_RUN_INTERVAL:-300}"
+      - "--since-minutes"
+      - "${PHASE5B_RUN_SINCE_MINUTES:-1440}"
+      - "--limit"
+      - "${PHASE5B_RUN_LIMIT:-1000}"
+    environment:
+      <<: *common-env
+    volumes:
+      - lifeos-instance:/app/instance
+      - lifeos-logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lifeos-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=lifeos-phase5b-runner"
 
   # Monitoring Stack
   prometheus:

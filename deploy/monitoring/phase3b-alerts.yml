@@ -1,0 +1,78 @@
+groups:
+  - name: lifeos_phase3b_contracts
+    rules:
+      # -------------------------
+      # Metrics presence (hard gate)
+      # -------------------------
+      - alert: Phase3bSLOMetricsMissing
+        expr: |
+          absent(lifeos_projection_correctness_total)
+          or absent(lifeos_replay_determinism_failures_total)
+          or absent(lifeos_contract_violations_total)
+          or absent(lifeos_insight_latency_seconds_bucket)
+        for: 2m
+        labels:
+          severity: critical
+          phase: "3b"
+        annotations:
+          summary: "Phase 3b metrics missing"
+          description: "One or more required Phase 3b SLO metrics are not being scraped."
+
+      # -------------------------
+      # Projection correctness
+      # -------------------------
+      - alert: Phase3bProjectionErrors
+        expr: |
+          rate(lifeos_projection_correctness_errors_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+          phase: "3b"
+        annotations:
+          summary: "Projection correctness errors detected"
+          description: "Non-zero projection correctness errors detected in the last 5 minutes."
+
+      # -------------------------
+      # Replay determinism
+      # -------------------------
+      - alert: Phase3bReplayDeterminismFailure
+        expr: |
+          increase(lifeos_replay_determinism_failures_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          phase: "3b"
+        annotations:
+          summary: "Replay determinism failure"
+          description: "Event replay produced non-deterministic results."
+
+      # -------------------------
+      # Contract violations
+      # -------------------------
+      - alert: Phase3bContractViolation
+        expr: |
+          increase(lifeos_contract_violations_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          phase: "3b"
+        annotations:
+          summary: "API / DSD contract violation"
+          description: "A response violated a frozen Phase 3b contract."
+
+      # -------------------------
+      # Latency regression (soft signal)
+      # -------------------------
+      - alert: Phase3bInsightLatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(lifeos_insight_latency_seconds_bucket[5m])) by (le)
+          ) > 3
+        for: 10m
+        labels:
+          severity: warning
+          phase: "3b"
+        annotations:
+          summary: "Insight latency p95 elevated"
+          description: "Insight latency p95 exceeded 3 seconds for 10 minutes."
