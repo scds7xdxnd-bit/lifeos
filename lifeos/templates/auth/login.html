@@ -114,12 +114,10 @@
     try {
       const res = await postJson('/auth/login', { email, password });
       const payload = await res.json().catch(() => ({}));
-      if (res.ok && payload?.access_token) {
+      if (res.ok && payload?.ok !== false) {
         if (window.setTokens) {
           window.setTokens({
-            access_token: payload.access_token,
-            refresh_token: payload.refresh_token,
-            csrf_token: payload.csrf_token,
+            authenticated: true,
             user: payload.user,
           });
         }
@@ -151,9 +149,7 @@
       if (res.ok && body && body.ok !== false) {
         if (body.access_token && window.setTokens) {
           window.setTokens({
-            access_token: body.access_token,
-            refresh_token: body.refresh_token,
-            csrf_token: body.csrf_token,
+            authenticated: true,
             user: body.user,
           });
           setStatus('Account created and logged in.', 'success');

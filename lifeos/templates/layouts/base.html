@@ -13,14 +13,29 @@
         try { return JSON.parse(localStorage.getItem(LIFEOS_TOKEN_KEY) || "{}"); } catch (_) { return {}; }
       }
       function setTokens(tokens) {
-        localStorage.setItem(LIFEOS_TOKEN_KEY, JSON.stringify(tokens || {}));
+        const sanitized = Object.assign({}, tokens || {});
+        if ("csrf_token" in sanitized) delete sanitized.csrf_token;
+        if ("access_token" in sanitized) delete sanitized.access_token;
+        if ("refresh_token" in sanitized) delete sanitized.refresh_token;
+        localStorage.setItem(LIFEOS_TOKEN_KEY, JSON.stringify(sanitized));
+        // CSRF is session-bound; never cache or override client-side.
       }
       function clearTokens() { localStorage.removeItem(LIFEOS_TOKEN_KEY); }
-      function authHeaders(extra = {}) {
+      function isAuthenticated() {
         const t = getTokens();
+        return !!(t && t.authenticated && t.user);
+      }
+      function authHeaders(extra = {}) {
         const headers = Object.assign({}, extra);
-        if (t.access_token) headers["Authorization"] = "Bearer " + t.access_token;
-        if (t.csrf_token) headers["X-CSRF-Token"] = t.csrf_token;
+        const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (metaCsrf && !headers["X-CSRF-Token"]) {
+          headers["X-CSRF-Token"] = metaCsrf;
+        } else if (!metaCsrf && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')) {
+          if (!window.__lifeosWarnedMissingCsrf) {
+            console.warn('[LifeOS] Missing CSRF meta token; write requests may be rejected.');
+            window.__lifeosWarnedMissingCsrf = true;
+          }
+        }
         return headers;
       }
       const lifeosTelemetry = (() => {
@@ -38,7 +53,7 @@
         };
         return { track };
       })();
-      window.lifeosAuth = { getTokens, setTokens, clearTokens, authHeaders };
+      window.lifeosAuth = { getTokens, setTokens, clearTokens, isAuthenticated, authHeaders };
       window.lifeosTelemetry = lifeosTelemetry;
     </script>
   </head>
@@ -115,13 +130,13 @@
 
       const emitAuthChange = () => {
         const tokens = getTokens();
-        const loggedIn = !!(tokens && tokens.user && tokens.access_token);
+        const loggedIn = lifeosAuth.isAuthenticated();
         window.dispatchEvent(new CustomEvent('lifeos:auth-changed', { detail: { loggedIn, user: tokens?.user || null } }));
       };
 
       const updateAuthUI = () => {
         const tokens = getTokens();
-        const loggedIn = tokens && tokens.user && tokens.access_token;
+        const loggedIn = lifeosAuth.isAuthenticated();
         if (loggedIn) {
           loggedInRow?.classList.remove('auth-hidden');
           authLoginLink?.classList.add('auth-hidden');
@@ -135,17 +150,12 @@
       };
 
       const ensureServerSession = async () => {
-        const tokens = getTokens();
-        if (!tokens?.access_token) {
-          updateAuthUI();
-          return;
-        }
         try {
           const res = await fetch('/auth/me', { headers: lifeosAuth.authHeaders() });
           if (!res.ok) throw new Error('unauthorized');
           const body = await res.json().catch(() => ({}));
           if (body?.ok && body.user) {
-            setTokens({ ...tokens, user: body.user });
+            setTokens({ authenticated: true, user: body.user });
             updateAuthUI();
             return;
           }
@@ -160,7 +170,12 @@
       // Note: 403 is NOT handled here as it may indicate permission issues, not invalid auth
       const originalFetch = window.fetch.bind(window);
       window.fetch = async (...args) => {
-        const res = await originalFetch(...args);
+        let input = args[0];
+        let init = args[1] || {};
+        if (!init.credentials) {
+          init = Object.assign({ credentials: 'same-origin' }, init);
+        }
+        const res = await originalFetch(input, init);
         if (res && res.status === 401) {
           // Only clear tokens on 401 (unauthorized) - token is invalid/expired
           clearTokens();
