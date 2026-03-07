@@ -1,0 +1,21 @@
+{
+  "insight": {
+    "type": "finance_calendar_obligation_risk",
+    "message": "Payment-related events are scheduled and recent spend is 750.0.",
+    "severity": "info",
+    "priority": 70,
+    "delivery_policy": "feed",
+    "context": {
+      "obligation_count": 1,
+      "spend_total": 750.0,
+      "window_days": 30,
+      "window_end": "2025-01-10",
+      "feature_snapshot": {
+        "calendar.obligation.count": 1.0,
+        "finance.spend.total": 750.0
+      },
+      "confidence": 0.775,
+      "detail": "You have 1 payment-related calendar items in the next window. Recent spend totals 750.0. This is a neutral heads-up."
+    }
+  }
+}

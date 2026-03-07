@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from math import ceil
 from typing import Iterable, List, Sequence, Tuple
 
-from sqlalchemy import or_
+from sqlalchemy import desc, nullslast, or_
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
@@ -14,6 +14,9 @@ from lifeos.core.insights.routing import enforce_confidence_routing
 from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.core.insights.telemetry import insight_telemetry
 from lifeos.extensions import db
+
+DEFAULT_INSIGHT_PRIORITY = 50
+DEFAULT_DELIVERY_POLICY = "feed"
 
 
 def persist_insights(
@@ -25,6 +28,8 @@ def persist_insights(
     for ins in insights:
         insight_type = ins.get("type") or "generic"
         context = dict(ins.get("context") or {})
+        priority = int(ins.get("priority") or DEFAULT_INSIGHT_PRIORITY)
+        delivery_policy = str(ins.get("delivery_policy") or DEFAULT_DELIVERY_POLICY)
         confidence_band, routing = enforce_confidence_routing(
             insight_type=insight_type,
             event_type=event.event_type,
@@ -43,6 +48,8 @@ def persist_insights(
             severity=ins.get("severity") or "info",
             confidence_band=confidence_band,
             routing=routing,
+            priority=priority,
+            delivery_policy=delivery_policy,
             data=context,
         )
         db.session.add(rec)
@@ -94,7 +101,11 @@ def list_insights_feed(
         end_dt = datetime.combine(filters.end_date, datetime.max.time())
         query = query.filter(InsightRecord.created_at <= end_dt)
 
-    query = query.order_by(InsightRecord.created_at.desc())
+    query = query.order_by(
+        desc(InsightRecord.priority),
+        nullslast(desc(InsightRecord.confidence_band)),
+        desc(InsightRecord.created_at),
+    )
 
     page = filters.page
     per_page = filters.per_page
