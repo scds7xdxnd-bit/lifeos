@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution
-_Last updated: 2025-12-15 (v2.8 — Phase 3b complete; interface contracts frozen)_
+_Last updated: 2026-02-05 (v2.14 — Phase 5b complete; deterministic insights verified)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2025-12-14)
+# 0. Implementation Status (as of 2026-02-05)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -13,7 +13,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Event System**: In-process event bus, event catalog per domain, event_record audit table
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
-- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251223_insight_routing_columns`)
+- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251224_insight_feed_indexes`)
 - **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live. Latest runs: PR workflow reported 24 passed / 10 xfailed / 497 errors (needs investigation on selective job), main workflow reported 515 passed / 6 deselected / 10 xfailed (green).
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
@@ -36,6 +36,11 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 3a Cross-Domain Intelligence Hardening**: Complete; replay determinism, confidence routing, and governance tests enforced. Telemetry checks require admin `AUTH_TOKEN`.
 - **Phase 3a.5 Domain UX & Semantic Surface Alignment**: Complete; DSDs approved, read/write boundaries and interaction patterns normalized, finance surfaces aligned to read-first intent.
 - **Phase 3b Interface & Contract Hardening**: Complete; versioned API contracts, read-only guardrails, DSD alignment tests, and SLO alerts enforced.
+- **Phase 3b.1 Stability Patch & Verification**: Complete; journal write, finance account search, and schedule/forecast regressions fixed and verified; mini soak clean; Phase 3b formally closed.
+- **Phase 3c-1 Read & Throughput Scaling**: Complete; read-through cache, cache observability, read-load verification, and invalidation audit completed; Phase 4 unblocked.
+- **Phase 4 Calendar Time-Canvas UI**: Verification-complete; feature-flagged calendar time-canvas renderer aligned to Apple-style interaction grammar with snapshots and QA sign-off.
+- **Phase 5a Insight Substrate & Proposal Infrastructure**: Complete; timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete.
+- **Phase 5b Deterministic Cross-Domain Insights**: Complete; feature computation, insight registry, rule emission, feed visibility, and feedback capture verified; QA sign-off recorded.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -134,7 +139,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3c track selection (scaling/broker/multi-device) based on trigger signals; Phase 3b is complete.
+- Active: Phase 3c-2 trigger assessment (event transport scaling) remains deferred; Phase 5c readiness can be evaluated now that Phase 5b is complete.
 - Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
@@ -680,6 +685,19 @@ Event: finance.transaction.created {amount: $5000, category: "Groceries", ...}
 - Enabled by default (`WTF_CSRF_ENABLED = true`)
 - Cookies secure: `SESSION_COOKIE_SECURE` = true in prod (HTTPS only)
 - SameSite flags: `SESSION_COOKIE_SAMESITE = Lax` (or Strict)
+- Binding environment policy: see `lifeos/docs/ops/environment_cookie_security_policy.md` (development HTTP with `SESSION_COOKIE_SECURE=false`; production HTTPS with `SESSION_COOKIE_SECURE=true`; `HttpOnly` + `SameSite=Lax` required).
+
+**Auth & CSRF Authority Note (Binding):**
+- **Canonical CSRF source:** the server-issued, session-bound CSRF token (WTF/Flask session). This is the only valid authority.
+- **Forbidden CSRF sources:** localStorage/sessionStorage, client-generated tokens, cached/overridden meta tags, or any token not minted by the current server session.
+- **Invariant:** `X-CSRF-Token` (or equivalent header) **must equal** the session CSRF token for the active session. Mismatch == 403.
+
+**Secret Stability (Binding):**
+- **Must be fixed per environment:** `SECRET_KEY`, `JWT_SECRET_KEY` (and any explicit CSRF secret if configured).
+- **Forbidden:** randomizing these on restart while keeping cookies/sessions alive. Rotation requires coordinated cookie invalidation and re-login.
+
+**Build Identity (Required Observability):**
+- Backend **must expose build identity** (commit SHA) in a stable location (e.g., `/health` response or `X-LifeOS-Build` header) to detect build drift.
 
 **Rate Limiting:**
 - Handled by `Flask-Limiter` using `redis://` backend (or memory:// for dev)
@@ -1093,20 +1111,32 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.8 (Phase 3b complete; interface contracts frozen; session scaffold + admin reset stub): 2025-12-15. Author: LifeOS Architect._
+_Constitution v2.14 (Phase 5b complete; deterministic insights verified; session scaffold + admin reset stub): 2026-02-05. Author: LifeOS Architect._
 
-**Sprint Summary (2025-12-15):**
+**Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
 - ✅ Phase 2.5 task archived; semantic/insight contract registries enforced by tests
 - ✅ Tasks Hub active with archived UX alignment and auth refactor tasks
 - ✅ Session lifecycle scaffold remains interface-only; admin reset minimal path allowed; login issue quarantined to Phase 3c
+- ✅ Phase 3b.1 stabilization gate complete; mini soak clean; Phase 3b formally closed
+- ✅ Phase 3c-1 read scaling complete; cache strategy Option A verified; read-load verification passed
+- ✅ Phase 4 calendar time-canvas UI verification complete; snapshots captured; QA sign-off recorded
+- 🟡 Phase 3c-2 trigger assessment opened; broker scaling pending signal validation
+- ✅ Phase 5a complete: timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete
+- ✅ Phase 5b complete: deterministic cross-domain insight rules, feature computation, feed visibility, and feedback capture verified
 
-**Phase Summary (2025-12-15):**
+**Phase Summary (2025-12-25):**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
 - ✅ Phase 3a.5 complete: DSDs approved across all domains; read-first patterns enforced; finance surfaces stabilized
 - ✅ QA sweep green; telemetry smoke check requires admin `AUTH_TOKEN`
 - ✅ Phase 3b complete: versioned API contracts, read-only guardrails, DSD alignment tests, SLOs and alerts live
 - ✅ Phase 3b ops checks green; /metrics exposes Phase 3b SLO metrics; contract smoke tests green
+- ✅ Phase 3b.1 complete: core write-path regressions fixed; verification mini soak clean; Phase 3b formally closed
+- ✅ Phase 3c-1 complete: read-through cache and observability in place; read-load harness clean; cache invalidation audit complete
+- ✅ Phase 4 verification-complete: calendar time-canvas UI delivered under feature flag; QA snapshots captured; metrics remained green
+- 🟡 Phase 3c-2 assessment opened: collecting outbox and dispatch telemetry before broker selection
+- ✅ Phase 5a complete: proposal substrate shipped; proposals endpoint fixed; QA lifecycle tests green
+- ✅ Phase 5b complete: rule-based insights emitted and verified; Phase 5c entry gate eligible
 
 ---
 

@@ -168,6 +168,9 @@ jobs:
   compose-validate:
     name: Validate Docker Compose
     runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-secret-key-not-for-prod
+      JWT_SECRET_KEY: ci-jwt-secret-key-not-for-prod
     steps:
       - uses: actions/checkout@v4
 

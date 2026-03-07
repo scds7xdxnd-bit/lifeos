@@ -1,0 +1,11 @@
+coverage:
+  status:
+    patch:
+      default:
+        informational: true
+        if_not_found: success
+
+ignore:
+  - "**/*.md"
+  - "docs/**"
+  - "lifeos/docs/**"
