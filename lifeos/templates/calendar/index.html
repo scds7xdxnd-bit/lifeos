@@ -1148,7 +1148,7 @@
   };
 
   pendingLink?.addEventListener('click', (e) => {
-    if (!lifeosAuth.getTokens().access_token) {
+    if (!lifeosAuth.isAuthenticated()) {
       e.preventDefault();
     }
   });
@@ -1193,7 +1193,7 @@
   });
 
   const ensureAuth = () => {
-    const authed = !!lifeosAuth.getTokens().access_token;
+    const authed = lifeosAuth.isAuthenticated();
     [createBtn, reloadBtn, ledgerLoadOlderBtn, ledgerLoadNewerBtn].forEach(el => { if (el) el.disabled = !authed; });
     viewBtns.forEach(btn => { btn.disabled = !authed; });
     if (pendingLink) {

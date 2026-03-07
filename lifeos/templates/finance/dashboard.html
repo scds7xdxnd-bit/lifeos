@@ -116,7 +116,7 @@
     };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
+      const authed = lifeosAuth.isAuthenticated();
       reviewBtn.disabled = !authed;
       reloadBtn.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';

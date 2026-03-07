@@ -9,10 +9,12 @@ from pathlib import Path
 from typing import Optional
 
 from flask import Flask, g, redirect, request, url_for
+from flask_jwt_extended import create_access_token
+from flask_login import current_user
 from sqlalchemy.engine import processors
 
 from lifeos.config import config_by_name
-from lifeos.core.auth.csrf import generate_csrf_token
+from lifeos.core.auth.csrf import generate_csrf_token, get_session_id
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.insights.engine import insights_engine
 from lifeos.extensions import init_extensions, login_manager
@@ -150,6 +152,15 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         """Lightweight endpoint for load-balancer health checks."""
         return {"pong": True}, 200
 
+    @app.get("/api/bootstrap")
+    def bootstrap():
+        """Return canonical session-bound CSRF token and build identity."""
+        return {
+            "ok": True,
+            "csrf_token": generate_csrf_token(),
+            "build_id": app.config.get("BUILD_ID"),
+        }, 200
+
     # Register CLI commands
     from lifeos.scripts.sync_calendars import register_commands
 
@@ -268,6 +279,19 @@ def _register_auth_handlers(app: Flask) -> None:
     """Login manager and template helpers."""
     login_manager.login_view = "auth_api.login"
 
+    def _is_auth_scope(path: str) -> bool:
+        return path == "/auth/me" or path.startswith("/api/")
+
+    def _is_same_origin_request() -> bool:
+        origin = request.headers.get("Origin")
+        if origin:
+            return origin.rstrip("/") == request.host_url.rstrip("/")
+        sec_fetch_site = request.headers.get("Sec-Fetch-Site")
+        if sec_fetch_site:
+            return sec_fetch_site == "same-origin"
+        # No browser-origin hints (e.g., test client): treat as same-origin.
+        return True
+
     @login_manager.user_loader
     def _load_user(user_id: str):
         from lifeos.core.users.models import User
@@ -277,6 +301,48 @@ def _register_auth_handlers(app: Flask) -> None:
     @app.context_processor
     def inject_csrf_token():
         return {"csrf_token": generate_csrf_token}
+
+    @app.before_request
+    def _reject_mixed_auth():
+        if request.method == "OPTIONS":
+            return None
+        if not _is_auth_scope(request.path):
+            return None
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return None
+        session_cookie_name = app.config.get("SESSION_COOKIE_NAME", "session")
+        if session_cookie_name not in request.cookies:
+            return None
+        if not _is_same_origin_request():
+            return None
+        request_id = request.headers.get("X-Request-Id") or request.headers.get("X-Request-ID")
+        app.logger.warning(
+            "mixed_auth_forbidden",
+            extra={
+                "event": "mixed_auth_forbidden",
+                "session_id": get_session_id(),
+                "build_id": app.config.get("BUILD_ID"),
+                "request_id": request_id,
+                "path": request.path,
+                "method": request.method,
+                "origin": request.headers.get("Origin"),
+            },
+        )
+        return {"ok": False, "error": "mixed_auth_forbidden"}, 403
+
+    @app.before_request
+    def _bridge_session_auth_for_scoped_jwt_routes():
+        if not _is_auth_scope(request.path):
+            return None
+        if request.headers.get("Authorization"):
+            return None
+        if not current_user.is_authenticated:
+            return None
+        claims = {"roles": getattr(current_user, "role_codes", [])}
+        access = create_access_token(identity=str(current_user.get_id()), additional_claims=claims)
+        request.environ["HTTP_AUTHORIZATION"] = f"Bearer {access}"
+        return None
 
 
 def _register_observability_handlers(app: Flask) -> None:

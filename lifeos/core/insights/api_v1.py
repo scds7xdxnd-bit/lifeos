@@ -322,13 +322,18 @@ def _feedback_csrf_allowed() -> bool:
     token = request.headers.get("X-CSRF-Token")
     if validate_csrf_token(token or ""):
         return True
+    request_id = request.headers.get("X-Request-Id") or request.headers.get("X-Request-ID")
+    auth_header_present = bool(request.headers.get("Authorization"))
     current_app.logger.warning(
         "csrf_failed",
         extra={
             "event": "csrf_failed",
+            "expected_source": "session",
             "session_id": get_session_id(),
             "expected_csrf": get_session_csrf_token(),
             "received_csrf": token,
+            "auth_header_present": auth_header_present,
+            "request_id": request_id,
             "build_id": current_app.config.get("BUILD_ID"),
             "path": request.path,
             "method": request.method,

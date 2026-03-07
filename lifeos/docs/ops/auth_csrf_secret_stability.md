@@ -32,3 +32,59 @@ Prevent CSRF/session failures caused by secret drift or image drift between depl
 ### Notes
 - CSRF failures without code changes usually indicate **secret drift** or **image drift**.
 - Treat missing/empty secret env vars as a hard failure.
+
+---
+
+## Cookie Security Policy by Environment
+
+### Authority
+- Cookie security mode is selected by `APP_ENV` and mapped to Flask config classes in `lifeos/config.py`.
+- `SESSION_COOKIE_SECURE` is not runtime-toggled by env vars; policy is environment-bound.
+
+### Policy matrix
+- `local-dev` / `development`
+  - `SESSION_COOKIE_SECURE=False`
+  - `JWT_COOKIE_SECURE=False`
+  - HTTP local access allowed.
+- `staging`
+  - `SESSION_COOKIE_SECURE=True`
+  - `JWT_COOKIE_SECURE=True`
+  - HTTPS required for cookie transport.
+- `production`
+  - `SESSION_COOKIE_SECURE=True`
+  - `JWT_COOKIE_SECURE=True`
+  - HTTPS required for cookie transport.
+
+### Environment determination
+- App factory reads `APP_ENV` (`create_app`).
+- Mapping:
+  - `local-dev` -> `DevelopmentConfig`
+  - `development` -> `DevelopmentConfig`
+  - `staging` -> `StagingConfig`
+  - `production` -> `ProductionConfig`
+  - `testing` / `ci` -> `TestingConfig`
+
+### Environment file usage
+- Local dev: `.env` with `APP_ENV=local-dev` (or `development`).
+- Staging: staging deployment env/config with `APP_ENV=staging`.
+- Production: production deployment env/config with `APP_ENV=production`.
+
+---
+
+## CSRF Boot Determinism Rule (Binding)
+
+### Canonical CSRF source (runtime)
+- The **only** valid CSRF authority for API writes is the server-issued, session-bound CSRF token.
+
+### Forbidden CSRF fallbacks
+- localStorage/sessionStorage tokens
+- derived hashes or client-generated tokens
+- JWT claims used as CSRF authority
+- stale/cached meta tags not refreshed from the server session
+
+### Boot contract (required; choose exactly one)
+- **A) Server-rendered pages must include the canonical CSRF meta tag**, or
+- **B) A single bootstrap contract `GET /api/bootstrap` returns `csrf_token` and is required before any write.**
+
+### Invariant
+- The `X-CSRF-Token` header must always equal the current session CSRF token; mismatch is a hard 403.

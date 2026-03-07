@@ -42,7 +42,9 @@ class BaseConfig:
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
+    # Session-cookie primary auth: cookie transport security is environment-scoped
+    # via concrete config classes (dev/testing HTTP vs production HTTPS).
+    SESSION_COOKIE_SECURE = False
     PERMANENT_SESSION_LIFETIME = int(os.environ.get("SESSION_TTL_SECONDS", "86400"))
     WTF_CSRF_ENABLED = True
 
@@ -72,6 +74,7 @@ class BaseConfig:
     READ_CACHE_REDIS_URL = os.environ.get("READ_CACHE_REDIS_URL", os.environ.get("REDIS_URL", ""))
 
     STATIC_CACHE_MAX_AGE = int(os.environ.get("STATIC_CACHE_MAX_AGE", "3600"))
+    SEND_FILE_MAX_AGE_DEFAULT = STATIC_CACHE_MAX_AGE
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
     UPLOAD_ALLOWED_EXTENSIONS = set(
         (os.environ.get("UPLOAD_ALLOWED_EXTENSIONS") or "csv,png,jpg,jpeg,gif,pdf").split(",")
@@ -138,6 +141,9 @@ class BaseConfig:
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     ENV = "development"
+    TEMPLATES_AUTO_RELOAD = True
+    SESSION_COOKIE_SECURE = False
+    JWT_COOKIE_SECURE = False
 
 
 class TestingConfig(BaseConfig):
@@ -150,18 +156,27 @@ class TestingConfig(BaseConfig):
     READ_CACHE_ENABLED = False
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_COOKIE_CSRF_PROTECT = False
+    SESSION_COOKIE_SECURE = False
+    JWT_COOKIE_SECURE = False
 
 
 class ProductionConfig(BaseConfig):
     ENV = "production"
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    JWT_COOKIE_SECURE = True
+
+
+class StagingConfig(ProductionConfig):
+    ENV = "staging"
 
 
 config_by_name: Dict[str, Type[BaseConfig]] = {
     "development": DevelopmentConfig,
+    "local-dev": DevelopmentConfig,
     "testing": TestingConfig,
     "production": ProductionConfig,
+    "staging": StagingConfig,
     # CI pipelines set APP_ENV=ci; map to testing defaults.
     "ci": TestingConfig,
 }

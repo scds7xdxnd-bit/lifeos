@@ -99,7 +99,7 @@
     };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
+      const authed = lifeosAuth.isAuthenticated();
       Array.from(createForm?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
       Array.from(filtersWrap?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
       createToggle.disabled = !authed;

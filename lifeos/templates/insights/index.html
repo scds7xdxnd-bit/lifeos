@@ -61,7 +61,7 @@
       if (csrf) headers['X-CSRF-Token'] = csrf;
       return headers;
     };
-    const isAuthed = () => !!lifeosAuth.getTokens().access_token;
+    const isAuthed = () => lifeosAuth.isAuthenticated();
     const resolveContractError = (body, res) => {
       const error = body?.error;
       if (res?.status === 409 || error === 'read_only_violation') {

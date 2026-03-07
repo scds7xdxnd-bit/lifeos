@@ -9,6 +9,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
 )
+from flask_login import login_user, logout_user
 from pydantic import ValidationError
 
 from lifeos.core.auth.auth_service import (
@@ -94,6 +95,7 @@ def login():
     user = authenticate_user(data.email, data.password)
     if not user:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
+    login_user(user, remember=False)
     tokens = issue_tokens(user)
     return jsonify(
         {
@@ -118,6 +120,8 @@ def refresh():
 @jwt_required(refresh=True)
 @csrf_protected
 def logout():
+    logout_user()
+    session.clear()
     jti = get_jwt().get("jti")
     if jti:
         revoke_refresh_token(jti)

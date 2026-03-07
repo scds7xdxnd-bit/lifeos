@@ -685,6 +685,7 @@ Event: finance.transaction.created {amount: $5000, category: "Groceries", ...}
 - Enabled by default (`WTF_CSRF_ENABLED = true`)
 - Cookies secure: `SESSION_COOKIE_SECURE` = true in prod (HTTPS only)
 - SameSite flags: `SESSION_COOKIE_SAMESITE = Lax` (or Strict)
+- Binding environment policy: see `lifeos/docs/ops/environment_cookie_security_policy.md` (development HTTP with `SESSION_COOKIE_SECURE=false`; production HTTPS with `SESSION_COOKIE_SECURE=true`; `HttpOnly` + `SameSite=Lax` required).
 
 **Auth & CSRF Authority Note (Binding):**
 - **Canonical CSRF source:** the server-issued, session-bound CSRF token (WTF/Flask session). This is the only valid authority.
