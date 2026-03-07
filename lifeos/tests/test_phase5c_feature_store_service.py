@@ -80,6 +80,19 @@ def test_build_feature_write_coerces_types(app):
     )
     assert as_str.value == "100"
 
+    as_json = build_feature_write(
+        user_id=user_id,
+        entity_type="user",
+        entity_id=str(user_id),
+        feature_name="insight.metadata",
+        value={"source": "phase5c", "count": 2},
+        dtype="json",
+        window="1d",
+        as_of_ts=as_of,
+        computed_at=now,
+    )
+    assert as_json.value == {"source": "phase5c", "count": 2}
+
 
 def test_write_read_latest_and_upsert_behavior(app):
     user_id = _default_user_id()
@@ -272,6 +285,25 @@ def test_write_read_latest_and_upsert_behavior(app):
                 lifecycle_state="bad_state",
             ),
             "invalid_lifecycle_state",
+        ),
+        (
+            FeatureWrite(
+                user_id=1,
+                entity_type="user",
+                entity_id="1",
+                feature_name="x",
+                value=1,
+                dtype="not_supported",
+                window="1d",
+                as_of_ts=datetime.utcnow() - timedelta(minutes=2),
+                computed_at=datetime.utcnow(),
+                feature_version="1.0.0",
+                source_event_types=[],
+                provenance_ref={},
+                backfill_policy="allowed",
+                lifecycle_state="shadow",
+            ),
+            "invalid_dtype",
         ),
     ],
 )
