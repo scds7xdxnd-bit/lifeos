@@ -30,12 +30,21 @@ class BaseConfig:
     """Base configuration loaded for all environments."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
+    BUILD_ID = (
+        os.environ.get("LIFEOS_BUILD_ID")
+        or os.environ.get("BUILD_ID")
+        or os.environ.get("GIT_SHA")
+        or os.environ.get("COMMIT_SHA")
+        or "unknown"
+    )
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///instance/lifeos.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
+    # Session-cookie primary auth: cookie transport security is environment-scoped
+    # via concrete config classes (dev/testing HTTP vs production HTTPS).
+    SESSION_COOKIE_SECURE = False
     PERMANENT_SESSION_LIFETIME = int(os.environ.get("SESSION_TTL_SECONDS", "86400"))
     WTF_CSRF_ENABLED = True
 
@@ -91,6 +100,9 @@ class BaseConfig:
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     ENV = "development"
+    TEMPLATES_AUTO_RELOAD = True
+    SESSION_COOKIE_SECURE = False
+    JWT_COOKIE_SECURE = False
 
 
 class TestingConfig(BaseConfig):
@@ -102,18 +114,27 @@ class TestingConfig(BaseConfig):
     RATELIMIT_ENABLED = False
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_COOKIE_CSRF_PROTECT = False
+    SESSION_COOKIE_SECURE = False
+    JWT_COOKIE_SECURE = False
 
 
 class ProductionConfig(BaseConfig):
     ENV = "production"
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    JWT_COOKIE_SECURE = True
+
+
+class StagingConfig(ProductionConfig):
+    ENV = "staging"
 
 
 config_by_name: Dict[str, Type[BaseConfig]] = {
     "development": DevelopmentConfig,
+    "local-dev": DevelopmentConfig,
     "testing": TestingConfig,
     "production": ProductionConfig,
+    "staging": StagingConfig,
     # CI pipelines set APP_ENV=ci; map to testing defaults.
     "ci": TestingConfig,
 }

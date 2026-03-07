@@ -9,6 +9,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
 )
+from flask_login import login_user
 from pydantic import ValidationError
 
 from lifeos.core.auth.auth_service import authenticate_user, issue_tokens
@@ -42,6 +43,7 @@ def login_v1():
     if not user:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
 
+    login_user(user, remember=False)
     tokens = issue_tokens(user)
     return jsonify(
         {
