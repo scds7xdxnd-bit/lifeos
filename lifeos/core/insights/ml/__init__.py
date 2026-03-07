@@ -29,6 +29,18 @@ from lifeos.core.insights.ml.metrics_contracts import (
     get_phase3b_slo_metric,
     list_phase3b_slo_metrics,
 )
+from lifeos.core.insights.ml.phase5a_contracts import (
+    INTERPRETATION_ACTIONS,
+    INTERPRETATION_STATUSES,
+    INTERPRETATION_TYPE_CONTRACTS,
+    TIMELINE_EVENT_CONTRACT,
+    USER_FEEDBACK_EVENT_CONTRACT,
+    FeedbackEventContract,
+    InterpretationTypeContract,
+    TimelineEventContract,
+    get_interpretation_contract,
+    list_interpretation_contracts,
+)
 from lifeos.core.insights.ml.ranking import cosine_similarity, rank_candidates
 from lifeos.core.insights.ml.replay_contracts import (
     GOLD_REPLAY_DATASETS,
@@ -59,6 +71,16 @@ __all__ = [
     "PHASE3B_SLO_METRICS",
     "get_phase3b_slo_metric",
     "list_phase3b_slo_metrics",
+    "TimelineEventContract",
+    "InterpretationTypeContract",
+    "FeedbackEventContract",
+    "TIMELINE_EVENT_CONTRACT",
+    "INTERPRETATION_TYPE_CONTRACTS",
+    "USER_FEEDBACK_EVENT_CONTRACT",
+    "INTERPRETATION_STATUSES",
+    "INTERPRETATION_ACTIONS",
+    "get_interpretation_contract",
+    "list_interpretation_contracts",
     "embed_text",
     "extract_event_features",
     "cosine_similarity",

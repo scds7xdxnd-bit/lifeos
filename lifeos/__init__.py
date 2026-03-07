@@ -131,6 +131,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     calendar_interpreter.register_subscriptions()
     app.extensions["calendar_interpreter"] = calendar_interpreter
 
+    from lifeos.core.insights.timeline_ingestor import timeline_ingestor
+
+    timeline_ingestor.register_subscriptions()
+    app.extensions["timeline_ingestor"] = timeline_ingestor
+
     @app.get("/")
     def index():
         # Send users to the finance dashboard by default.
