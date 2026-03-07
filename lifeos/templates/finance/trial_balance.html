@@ -165,7 +165,7 @@
     };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
+      const authed = lifeosAuth.isAuthenticated();
       [applyBtn, reloadBtn, periodBtn, reviewBtn, filterToggle, periodToggle, monthlyToggle, catToggle].forEach((btn) => { if (btn) btn.disabled = !authed; });
       [asOfInput, startInput, endInput, catFilter].forEach((inp) => { if (inp) inp.disabled = !authed; });
       loginHint.style.display = authed ? 'none' : 'block';

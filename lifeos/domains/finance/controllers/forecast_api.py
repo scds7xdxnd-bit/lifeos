@@ -28,7 +28,7 @@ forecast_api_bp = Blueprint("finance_forecast_api", __name__)
 def get_forecast():
     user_id = int(get_jwt_identity())
     try:
-        params = ForecastParams.model_validate(request.args or {})
+        params = ForecastParams.model_validate(request.args.to_dict(flat=True))
     except Exception:
         return jsonify({"ok": False, "error": "validation_error"}), 400
     return jsonify({"ok": True, "forecast": generate_forecast(user_id, params.days)})

@@ -116,7 +116,7 @@
     };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
+      const authed = lifeosAuth.isAuthenticated();
       reviewBtn.disabled = !authed;
       reloadBtn.disabled = !authed;
       loginHint.style.display = authed ? 'none' : 'block';
@@ -180,6 +180,23 @@
       });
     };
 
+    const fetchJournalFallback = async () => {
+      try {
+        const res = await fetch('/api/finance/journal', { headers: lifeosAuth.authHeaders() });
+        if (!res.ok) return [];
+        const data = await res.json().catch(() => ({}));
+        return (data.entries || []).map((entry) => ({
+          id: entry.id,
+          amount: Number(entry.debit_total || entry.credit_total || 0),
+          description: entry.description || 'Journal entry',
+          occurred_at: entry.posted_at || null,
+          journal_entry_id: entry.id,
+        }));
+      } catch (_) {
+        return [];
+      }
+    };
+
     const renderSchedule = (items = [], accountMap = {}) => {
       schedList.innerHTML = '';
       if (!items.length) {
@@ -188,7 +205,7 @@
       }
       schedEmpty.style.display = 'none';
       items.forEach((row) => {
-        const name = accountMap[row.account_id]?.name || `Account ${row.account_id}`;
+        const name = row.account_name || accountMap[row.account_id]?.name || `Account ${row.account_id}`;
         const div = document.createElement('div');
         div.style.border = '1px solid #e0e5ec';
         div.style.borderRadius = '8px';
@@ -238,7 +255,18 @@
         const accountMap = accounts.reduce((acc, a) => { acc[a.account_id] = a; return acc; }, {});
         renderAccounts(accounts);
         receivablesEl.textContent = fmtMoney(body.receivables_total);
-        renderTransactions(body.recent_transactions || []);
+        const recent = body.recent_transactions || [];
+        let usedFallback = false;
+        if (recent.length) {
+          renderTransactions(recent);
+        } else {
+          const fallback = await fetchJournalFallback();
+          usedFallback = fallback.length > 0;
+          renderTransactions(fallback);
+        }
+        if (usedFallback) {
+          setStatus('Showing latest journal entries while transactions sync.', 'warning');
+        }
         renderSchedule(body.upcoming_schedule || [], accountMap);
         renderForecast(body.forecast || []);
       } else {
@@ -270,6 +298,9 @@
         forecastEnd.textContent = '—';
         forecastChange.textContent = 'Change: —';
       }
+    });
+    window.addEventListener('journal:entry-posted', () => {
+      if (ensureAuth()) hydrate();
     });
 
     const start = () => {
