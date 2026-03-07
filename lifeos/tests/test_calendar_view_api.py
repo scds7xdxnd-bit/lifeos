@@ -12,7 +12,7 @@ from lifeos.domains.calendar.models.calendar_event import CalendarEvent
 from lifeos.extensions import db
 
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 
 def _auth_header(user_id: int) -> dict[str, str]:

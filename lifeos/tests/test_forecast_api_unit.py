@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
+from lifeos.domains.finance.services import forecast_service
 from lifeos.extensions import db
 
 
@@ -38,3 +39,12 @@ def test_forecast_endpoint_accepts_days_query_param(app, client):
     assert body["ok"] is True
     assert isinstance(body["forecast"], list)
     assert body["forecast"][0]["date"] == date.today().isoformat()
+
+
+def test_generate_forecast_returns_cached_payload_when_available(app, monkeypatch):
+    with app.app_context():
+        cached = [{"date": date.today().isoformat(), "projected_balance": 12.5}]
+        monkeypatch.setattr(forecast_service.read_cache, "get", lambda scope, uid, key: cached)
+
+        result = forecast_service.generate_forecast(user_id=1, days=30)
+        assert result == cached

@@ -133,6 +133,7 @@ def cleanup_old_interpretations(days: int = 90) -> int:
 
     Returns count of deleted records.
     """
+    from lifeos.core.read_cache import read_cache
     from lifeos.domains.calendar.models.calendar_event import (
         CalendarEventInterpretation,
     )
@@ -140,12 +141,26 @@ def cleanup_old_interpretations(days: int = 90) -> int:
 
     cutoff = datetime.utcnow() - timedelta(days=days)
 
+    user_rows = (
+        CalendarEventInterpretation.query.with_entities(CalendarEventInterpretation.user_id)
+        .filter(
+            CalendarEventInterpretation.status.in_(["rejected", "ignored"]),
+            CalendarEventInterpretation.updated_at < cutoff,
+        )
+        .distinct()
+        .all()
+    )
+    user_ids = [row[0] for row in user_rows]
+
     deleted = CalendarEventInterpretation.query.filter(
         CalendarEventInterpretation.status.in_(["rejected", "ignored"]),
         CalendarEventInterpretation.updated_at < cutoff,
     ).delete(synchronize_session=False)
 
     db.session.commit()
+    if deleted and user_ids:
+        for user_id in user_ids:
+            read_cache.bump("calendar.views", user_id)
     return deleted
 
 

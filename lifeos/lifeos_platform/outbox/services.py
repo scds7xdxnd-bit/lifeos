@@ -36,13 +36,19 @@ class EventBusAdapter:
         payload.setdefault("external_id", external_id)
         payload.setdefault("event_id", message.id)
 
-        event = EventRecord(
+        event = EventRecord.query.filter(
+            EventRecord.event_type == message.event_type,
+            EventRecord.user_id == message.user_id,
+            EventRecord.created_at == message.created_at,
+        ).first() or EventRecord(
             event_type=message.event_type,
             payload=payload,
             user_id=message.user_id,
+            created_at=message.created_at,
         )
-        event.id = message.id
-        event.created_at = message.created_at
+        if event.id is None:
+            db.session.add(event)
+            db.session.flush()
 
         if event.id in self._delivered:
             return

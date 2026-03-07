@@ -6,7 +6,7 @@ from datetime import datetime
 
 from flask_jwt_extended import create_access_token
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.extensions import db
 from lifeos.core.auth.password import hash_password

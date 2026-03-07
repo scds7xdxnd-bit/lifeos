@@ -5,7 +5,10 @@ from __future__ import annotations
 import datetime as dt
 from typing import List
 
-from lifeos.domains.finance.models.accounting_models import Account, Transaction
+from sqlalchemy.orm import selectinload
+
+from lifeos.core.read_cache import read_cache
+from lifeos.domains.finance.models.accounting_models import Account, JournalEntry
 from lifeos.domains.finance.models.receivable_models import ReceivableTracker
 from lifeos.domains.finance.models.schedule_models import (
     MoneyScheduleDailyBalance,
@@ -16,8 +19,15 @@ from lifeos.domains.finance.services.trial_balance_service import (
     net_balance_for_account,
 )
 
+FINANCE_READ_CACHE_SCOPE = "finance.reads"
+
 
 def get_dashboard(user_id: int) -> dict:
+    today = dt.date.today()
+    cache_key = {"view": "dashboard", "as_of": today.isoformat()}
+    cached = read_cache.get(FINANCE_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     # Balances per account
     accounts: List[Account] = (
         Account.query.filter_by(user_id=user_id).order_by(Account.code.asc().nullsfirst(), Account.name.asc()).all()
@@ -34,30 +44,39 @@ def get_dashboard(user_id: int) -> dict:
     ]
 
     # Recent transactions
-    txns = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.occurred_at.desc()).limit(10).all()
-    recent_transactions = [
-        {
-            "id": t.id,
-            "amount": float(t.amount),
-            "description": t.description,
-            "occurred_at": t.occurred_at.isoformat() if t.occurred_at else None,
-            "journal_entry_id": t.journal_entry_id,
-        }
-        for t in txns
-    ]
+    entries = (
+        JournalEntry.query.filter_by(user_id=user_id)
+        .options(selectinload(JournalEntry.lines))
+        .order_by(JournalEntry.posted_at.desc())
+        .limit(10)
+        .all()
+    )
+    recent_transactions = []
+    for entry in entries:
+        total = float(sum((line.debit or 0) for line in entry.lines))
+        recent_transactions.append(
+            {
+                "id": entry.id,
+                "amount": total,
+                "description": entry.description,
+                "occurred_at": entry.posted_at.isoformat() if entry.posted_at else None,
+                "journal_entry_id": entry.id,
+            }
+        )
 
     # Upcoming schedule rows
-    today = dt.date.today()
     rows = (
         MoneyScheduleRow.query.filter(MoneyScheduleRow.user_id == user_id, MoneyScheduleRow.event_date >= today)
         .order_by(MoneyScheduleRow.event_date.asc())
         .limit(10)
         .all()
     )
+    account_lookup = {acct.id: acct.name for acct in accounts}
     upcoming_schedule = [
         {
             "id": r.id,
             "account_id": r.account_id,
+            "account_name": account_lookup.get(r.account_id),
             "event_date": r.event_date.isoformat(),
             "amount": float(r.amount),
             "memo": r.memo,
@@ -83,10 +102,12 @@ def get_dashboard(user_id: int) -> dict:
         running += balances.get(day, 0.0)
         forecast.append({"date": day.isoformat(), "projected_balance": round(running, 2)})
 
-    return {
+    payload = {
         "accounts": balance_rows,
         "recent_transactions": recent_transactions,
         "upcoming_schedule": upcoming_schedule,
         "receivables_total": receivable_total,
         "forecast": forecast,
     }
+    read_cache.set(FINANCE_READ_CACHE_SCOPE, user_id, cache_key, payload)
+    return payload

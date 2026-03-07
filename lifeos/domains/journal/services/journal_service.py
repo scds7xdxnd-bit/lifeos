@@ -18,7 +18,7 @@ from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 MOOD_MIN = -5
-MOOD_MAX = 5
+MOOD_MAX = 10
 
 
 def create_entry(
@@ -38,13 +38,14 @@ def create_entry(
     body_text = (body or "").strip()
     if not body_text:
         raise ValueError("validation_error")
+    tags_norm = _normalize_tags(tags)
     entry = JournalEntry(
         user_id=user_id,
         title=title_norm,
         body=body_text,
         entry_date=entry_date or date.today(),
         mood=mood_val,
-        tags=tags or [],
+        tags=tags_norm,
         is_private=bool(is_private),
         sentiment_score=sentiment_score,
         emotion_label=(emotion_label or "").strip() or None,
@@ -87,6 +88,8 @@ def update_entry(user_id: int, entry_id: int, **fields) -> Optional[JournalEntry
             val = fields[key]
             if key == "mood":
                 val = _validate_mood(val)
+            if key == "tags":
+                val = _normalize_tags(val)
             if isinstance(val, str):
                 val = val.strip()
             setattr(entry, key if key != "body" else "body", val)
@@ -142,13 +145,35 @@ def list_entries(
     if mood is not None:
         query = query.filter(JournalEntry.mood == _validate_mood(mood))
     if tag:
-        dialect = db.session.bind.dialect.name if db.session.bind else ""
-        if dialect == "postgresql":
-            # Explicit JSONB containment to avoid LIKE fallback.
-            json_literal = json.dumps([tag])
-            query = query.filter(sa.text("journal_entry.tags::jsonb @> :tag_literal")).params(tag_literal=json_literal)
-        else:
-            query = query.filter(JournalEntry.tags.contains([tag]))
+        normalized_tag = _normalize_tag(tag)
+        if normalized_tag:
+            dialect = db.session.bind.dialect.name if db.session.bind else ""
+            tag_variants = [normalized_tag, f"#{normalized_tag}"]
+            if dialect == "postgresql":  # pragma: no cover - exercised in Postgres integration environments
+                # Explicit JSONB containment to avoid LIKE fallback.
+                tag_literal = json.dumps([tag_variants[0]])
+                tag_literal_alt = json.dumps([tag_variants[1]])
+                query = query.filter(
+                    sa.or_(
+                        sa.text("journal_entry.tags::jsonb @> :tag_literal"),
+                        sa.text("journal_entry.tags::jsonb @> :tag_literal_alt"),
+                    )
+                ).params(tag_literal=tag_literal, tag_literal_alt=tag_literal_alt)
+            elif dialect == "sqlite":
+                clauses = []
+                params = {}
+                for idx, variant in enumerate(tag_variants):
+                    key = f"tag_{idx}"
+                    clauses.append(
+                        sa.text(
+                            "EXISTS (SELECT 1 FROM json_each(journal_entry.tags) WHERE value = :{key})".format(key=key)
+                        )
+                    )
+                    params[key] = variant
+                query = query.filter(sa.or_(*clauses)).params(**params)
+            else:  # pragma: no cover - fallback for non-sqlite/non-postgres dialects
+                clauses = [JournalEntry.tags.contains([variant]) for variant in tag_variants if variant]
+                query = query.filter(sa.or_(*clauses))
     if search_text:
         like = f"%{search_text}%"
         query = query.filter(
@@ -177,3 +202,21 @@ def _validate_mood(mood: Optional[int]) -> Optional[int]:
     if mood_int < MOOD_MIN or mood_int > MOOD_MAX:
         raise ValueError("validation_error")
     return mood_int
+
+
+def _normalize_tag(tag: str | None) -> str:
+    if not tag:
+        return ""
+    return str(tag).strip().lstrip("#")
+
+
+def _normalize_tags(tags: Optional[List[str]]) -> List[str]:
+    cleaned: List[str] = []
+    for tag in tags or []:
+        normalized = _normalize_tag(tag)
+        if not normalized:
+            continue
+        if normalized in cleaned:
+            continue
+        cleaned.append(normalized)
+    return cleaned

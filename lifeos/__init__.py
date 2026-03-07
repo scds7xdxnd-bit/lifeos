@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from flask import Flask, redirect, request, url_for
+from flask import Flask, g, redirect, request, url_for
 from flask_jwt_extended import create_access_token
 from flask_login import current_user
 from sqlalchemy.engine import processors
@@ -120,6 +121,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     _register_blueprints(app)
     _register_error_handlers(app)
     _register_auth_handlers(app)
+    _register_observability_handlers(app)
 
     # Attach shared engines
     app.extensions["event_bus"] = event_bus
@@ -158,13 +160,6 @@ def create_app(config_name: Optional[str] = None) -> Flask:
             "csrf_token": generate_csrf_token(),
             "build_id": app.config.get("BUILD_ID"),
         }, 200
-
-    @app.after_request
-    def _attach_build_header(response):
-        build_id = app.config.get("BUILD_ID")
-        if build_id:
-            response.headers["X-LifeOS-Build"] = build_id
-        return response
 
     # Register CLI commands
     from lifeos.scripts.sync_calendars import register_commands
@@ -246,6 +241,8 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(project_pages_bp, url_prefix="/projects")
     app.register_blueprint(insights_api_bp, url_prefix="/api/insights")
     app.register_blueprint(api_v1_insights_bp, url_prefix="/api/v1/insights")
+    if not any(rule.rule == "/api/v1/insights/proposals" for rule in app.url_map.iter_rules()):  # pragma: no cover
+        app.register_blueprint(insights_api_bp, url_prefix="/api/v1/insights")
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
     app.register_blueprint(calendar_view_api_bp, url_prefix="/api/v1/calendar")
@@ -347,6 +344,32 @@ def _register_auth_handlers(app: Flask) -> None:
         access = create_access_token(identity=str(current_user.get_id()), additional_claims=claims)
         request.environ["HTTP_AUTHORIZATION"] = f"Bearer {access}"
         return None
+
+
+def _register_observability_handlers(app: Flask) -> None:
+    """Record HTTP request latency for observability."""
+    from lifeos.core.observability import record_http_request_latency_seconds
+
+    build_id = app.config.get("BUILD_ID")
+
+    @app.before_request
+    def _record_request_start():
+        g._request_start_time = time.perf_counter()
+
+    @app.after_request
+    def _record_request_latency(response):
+        start = getattr(g, "_request_start_time", None)
+        if start is not None:
+            route = request.url_rule.rule if request.url_rule else "unknown"
+            record_http_request_latency_seconds(
+                time.perf_counter() - start,
+                method=request.method,
+                route=route,
+                status_code=str(response.status_code),
+            )
+        if build_id:
+            response.headers["X-LifeOS-Build"] = build_id
+        return response
 
 
 # WSGI entrypoint compatibility

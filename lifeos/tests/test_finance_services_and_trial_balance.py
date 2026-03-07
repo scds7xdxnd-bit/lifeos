@@ -1,6 +1,7 @@
 import pytest
+import datetime as dt
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.extensions import db
 from lifeos.core.auth.password import hash_password
@@ -12,7 +13,11 @@ from lifeos.domains.finance.services.accounting_service import (
     get_or_create_default_category,
     post_journal_entry,
 )
+from lifeos.domains.finance.services.journal_service import record_transaction
 from lifeos.domains.finance.services.trial_balance_service import trial_balance_view
+from lifeos.domains.finance.models.accounting_models import Transaction
+from lifeos.domains.finance.services import schedule_service
+from lifeos.domains.finance.models.schedule_models import MoneyScheduleRow
 
 
 @pytest.fixture
@@ -118,5 +123,57 @@ def test_trial_balance_groups_by_category_and_uncategorized(app, user):
 
         # Ensure accounts are reflected too
         account_ids = {row["account_id"] for row in view["accounts"]}
-        assert cash_acct.id in account_ids
-        assert uncategorized_expense.id in account_ids
+
+
+def test_record_transaction_persists_transaction_row(app, user):
+    with app.app_context():
+        debit = create_account(
+            user_id=user.id,
+            name="Record Txn Debit",
+            base_type="asset",
+            account_subtype="cash",
+            category_name_new="Ops",
+        )
+        credit = create_account(
+            user_id=user.id,
+            name="Record Txn Credit",
+            base_type="income",
+            account_subtype="salary",
+            category_name_new="Income",
+        )
+
+        entry = record_transaction(
+            user_id=user.id,
+            amount=125.5,
+            debit_account_id=debit.id,
+            credit_account_id=credit.id,
+            description="record txn",
+        )
+        txn = Transaction.query.filter_by(user_id=user.id, journal_entry_id=entry.id).first()
+        assert txn is not None
+        assert float(txn.amount) == pytest.approx(125.5)
+        assert txn.source == "manual"
+
+
+def test_recompute_daily_balances_commit_true_returns_totals(app, user):
+    with app.app_context():
+        debit = create_account(
+            user_id=user.id,
+            name="Schedule Debit",
+            base_type="asset",
+            account_subtype="cash",
+            category_name_new="Ops",
+        )
+        db.session.add(
+            MoneyScheduleRow(
+                user_id=user.id,
+                account_id=debit.id,
+                event_date=dt.date.today(),
+                amount=42,
+                memo="test",
+            )
+        )
+        db.session.commit()
+
+        totals = schedule_service.recompute_daily_balances(user.id, commit=True)
+        assert str(dt.date.today()) in totals

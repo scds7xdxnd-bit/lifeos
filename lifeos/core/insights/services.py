@@ -10,11 +10,14 @@ from sqlalchemy import desc, nullslast, or_
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
+from lifeos.core.insights.personalization import rank_insights
 from lifeos.core.insights.routing import enforce_confidence_routing
 from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.core.insights.telemetry import insight_telemetry
+from lifeos.core.read_cache import read_cache
 from lifeos.extensions import db
 
+INSIGHTS_READ_CACHE_SCOPE = "insights.reads"
 DEFAULT_INSIGHT_PRIORITY = 50
 DEFAULT_DELIVERY_POLICY = "feed"
 
@@ -56,6 +59,7 @@ def persist_insights(
         saved.append(rec)
     if saved:
         db.session.commit()
+        read_cache.bump(INSIGHTS_READ_CACHE_SCOPE, event.user_id)
     return saved
 
 
@@ -127,10 +131,12 @@ def list_insights_feed(
         start = (page - 1) * per_page
         end = start + per_page
         items = filtered_items[start:end]
+        items = rank_insights(user_id, items, context={"filters": filters})
         return items, total, page, pages
 
     total = query.count()
     pages = ceil(total / per_page) if total else 0
 
     items = query.offset((page - 1) * per_page).limit(per_page).all()
+    items = rank_insights(user_id, items, context={"filters": filters})
     return items, total, page, pages

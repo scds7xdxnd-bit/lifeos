@@ -14,7 +14,7 @@ from datetime import date, timedelta
 
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.auth_service import issue_tokens
 from lifeos.core.users.schemas import UserCreateRequest
@@ -348,7 +348,7 @@ def test_create_entry_invalid_mood(app, client, user_with_tokens):
     csrf_token = _prime_csrf(client)
     headers = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
 
-    payload = {"body": "Content", "mood": 10}
+    payload = {"body": "Content", "mood": 11}
     resp = client.post("/api/journal", json=payload, headers=headers)
     assert resp.status_code == 400
 
