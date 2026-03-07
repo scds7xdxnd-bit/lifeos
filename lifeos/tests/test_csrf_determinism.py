@@ -7,8 +7,6 @@ from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
 from lifeos.extensions import db
 
-pytestmark = pytest.mark.integration
-
 
 @pytest.fixture(autouse=True)
 def _enable_csrf(app):
