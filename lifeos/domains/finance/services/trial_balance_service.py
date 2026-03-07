@@ -9,6 +9,7 @@ from typing import Dict, List
 import sqlalchemy as sa
 from sqlalchemy import func
 
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.finance.models.accounting_models import (
     Account,
     AccountCategory,
@@ -17,6 +18,8 @@ from lifeos.domains.finance.models.accounting_models import (
 )
 from lifeos.extensions import db
 
+FINANCE_READ_CACHE_SCOPE = "finance.reads"
+
 
 def _end_of_day(d: dt.date) -> dt.datetime:
     return dt.datetime.combine(d, dt.time.max)
@@ -24,6 +27,10 @@ def _end_of_day(d: dt.date) -> dt.datetime:
 
 def calculate_trial_balance(user_id: int, as_of: dt.date | None = None) -> Dict[int, Dict[str, float]]:
     """Return debit/credit totals per account up to as_of (inclusive)."""
+    cache_key = {"view": "trial_balance_totals", "as_of": as_of.isoformat() if as_of else None}
+    cached = read_cache.get(FINANCE_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return {int(k): v for k, v in cached.items()}
     totals: Dict[int, Dict[str, float]] = defaultdict(lambda: {"debit": 0.0, "credit": 0.0})
     query = (
         db.session.query(
@@ -40,11 +47,20 @@ def calculate_trial_balance(user_id: int, as_of: dt.date | None = None) -> Dict[
     for account_id, debit_sum, credit_sum in query.all():
         totals[account_id]["debit"] = float(debit_sum or 0)
         totals[account_id]["credit"] = float(credit_sum or 0)
+    read_cache.set(FINANCE_READ_CACHE_SCOPE, user_id, cache_key, totals)
     return totals
 
 
 def period_balance(user_id: int, start_date: dt.date, end_date: dt.date) -> Dict[int, Dict[str, float]]:
     """Return debit/credit totals per account within date range inclusive."""
+    cache_key = {
+        "view": "period_balance_totals",
+        "start": start_date.isoformat(),
+        "end": end_date.isoformat(),
+    }
+    cached = read_cache.get(FINANCE_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return {int(k): v for k, v in cached.items()}
     totals: Dict[int, Dict[str, float]] = defaultdict(lambda: {"debit": 0.0, "credit": 0.0})
     query = (
         db.session.query(
@@ -61,11 +77,16 @@ def period_balance(user_id: int, start_date: dt.date, end_date: dt.date) -> Dict
     for account_id, debit_sum, credit_sum in query.all():
         totals[account_id]["debit"] = float(debit_sum or 0)
         totals[account_id]["credit"] = float(credit_sum or 0)
+    read_cache.set(FINANCE_READ_CACHE_SCOPE, user_id, cache_key, totals)
     return totals
 
 
 def monthly_rollup(user_id: int) -> Dict[str, Dict[str, float]]:
     """Aggregate debits/credits by YYYY-MM for the user."""
+    cache_key = {"view": "monthly_rollup"}
+    cached = read_cache.get(FINANCE_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     dialect = db.session.bind.dialect.name if db.session.bind else "sqlite"
     if dialect == "sqlite":
         month_expr = func.strftime("%Y-%m", JournalEntry.posted_at)
@@ -85,6 +106,7 @@ def monthly_rollup(user_id: int) -> Dict[str, Dict[str, float]]:
     rollup: Dict[str, Dict[str, float]] = {}
     for ym, debit_sum, credit_sum in query.all():
         rollup[ym] = {"debit": float(debit_sum or 0), "credit": float(credit_sum or 0)}
+    read_cache.set(FINANCE_READ_CACHE_SCOPE, user_id, cache_key, rollup)
     return rollup
 
 
@@ -98,6 +120,10 @@ def net_balance_for_account(account: Account, totals: Dict[int, Dict[str, float]
 
 
 def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
+    cache_key = {"view": "trial_balance_view", "as_of": as_of.isoformat() if as_of else None}
+    cached = read_cache.get(FINANCE_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     totals = calculate_trial_balance(user_id, as_of=as_of)
     accounts: List[Account] = (
         Account.query.join(AccountCategory, isouter=True)
@@ -156,4 +182,6 @@ def trial_balance_view(user_id: int, as_of: dt.date | None = None) -> dict:
             }
         )
 
-    return {"accounts": rows, "categories": category_rows}
+    payload = {"accounts": rows, "categories": category_rows}
+    read_cache.set(FINANCE_READ_CACHE_SCOPE, user_id, cache_key, payload)
+    return payload

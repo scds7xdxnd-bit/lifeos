@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from lifeos.core.auth.csrf import get_session_csrf_token, get_session_id, validate_csrf_token
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
+from lifeos.core.insights.personalization import personalization_enabled
 from lifeos.core.insights.schemas import (
     ALLOWED_INSIGHT_FEEDBACK_ACTIONS,
     ALLOWED_INSIGHT_FEEDBACK_REASONS,
@@ -24,11 +25,13 @@ from lifeos.core.insights.schemas import (
 from lifeos.core.insights.services import list_insights_feed
 from lifeos.core.insights.substrate_models import Interpretation, UserFeedbackEvent
 from lifeos.core.insights.substrate_service import decide_interpretation, list_interpretations
+from lifeos.core.read_cache import read_cache
 from lifeos.core.utils.decorators import csrf_protected, read_only_endpoint
 from lifeos.extensions import db
 from lifeos.readmodels.projections.review_queue import fetch_review_queue_projection
 
 api_v1_insights_bp = Blueprint("insights_api_v1", __name__)
+INSIGHTS_READ_CACHE_SCOPE = "insights.reads"
 PROPOSALS_ROUTE = "/proposals"
 PROPOSAL_DECISION_ROUTE = "/proposals/<int:interpretation_id>"
 
@@ -45,6 +48,21 @@ def insights_feed_v1():
         filters = InsightsFeedQuery.model_validate(payload)
     except ValidationError as exc:
         return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+
+    cache_key = {
+        "view": "feed",
+        "page": filters.page,
+        "per_page": filters.per_page,
+        "domain": sorted(filters.domain or []),
+        "severity": filters.severity,
+        "status": filters.status,
+        "start_date": filters.start_date.isoformat() if filters.start_date else None,
+        "end_date": filters.end_date.isoformat() if filters.end_date else None,
+        "personalization": personalization_enabled(),
+    }
+    cached = read_cache.get(INSIGHTS_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return jsonify(cached)
 
     items, total, page, pages = list_insights_feed(user_id, filters)
     per_page = filters.per_page
@@ -70,6 +88,7 @@ def insights_feed_v1():
         "pages": pages,
         "items": [_serialize(rec) for rec in items],
     }
+    read_cache.set(INSIGHTS_READ_CACHE_SCOPE, user_id, cache_key, payload)
     return jsonify(payload)
 
 
@@ -87,6 +106,10 @@ def insights_review_queue_v1():
 
     limit = max(1, min(limit, 200))
     offset = max(0, offset)
+    cache_key = {"view": "review_queue", "limit": limit, "offset": offset}
+    cached = read_cache.get(INSIGHTS_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return jsonify(cached)
     items = fetch_review_queue_projection(user_id, limit=limit, offset=offset)
     payload = [
         {
@@ -100,7 +123,9 @@ def insights_review_queue_v1():
         }
         for rec in items
     ]
-    return jsonify({"ok": True, "items": payload, "limit": limit, "offset": offset})
+    response = {"ok": True, "items": payload, "limit": limit, "offset": offset}
+    read_cache.set(INSIGHTS_READ_CACHE_SCOPE, user_id, cache_key, response)
+    return jsonify(response)
 
 
 @api_v1_insights_bp.get(PROPOSALS_ROUTE)

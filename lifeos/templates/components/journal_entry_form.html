@@ -94,7 +94,7 @@
 
     const financeAuthState = () => {
       const tokens = lifeosAuth.getTokens();
-      const authed = !!tokens.access_token;
+      const authed = lifeosAuth.isAuthenticated();
       const hasRole = Array.isArray(tokens?.user?.role_codes) && tokens.user.role_codes.includes('finance:write');
       return { allowed: authed && hasRole, authed };
     };

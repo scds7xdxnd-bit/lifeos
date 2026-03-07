@@ -64,7 +64,17 @@ class BaseConfig:
         "yes",
     )
 
+    READ_CACHE_ENABLED = os.environ.get("READ_CACHE_ENABLED", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    READ_CACHE_DEFAULT_TTL_SECONDS = int(os.environ.get("READ_CACHE_DEFAULT_TTL_SECONDS", "30"))
+    READ_CACHE_VERSION_TTL_SECONDS = int(os.environ.get("READ_CACHE_VERSION_TTL_SECONDS", "86400"))
+    READ_CACHE_REDIS_URL = os.environ.get("READ_CACHE_REDIS_URL", os.environ.get("REDIS_URL", ""))
+
     STATIC_CACHE_MAX_AGE = int(os.environ.get("STATIC_CACHE_MAX_AGE", "3600"))
+    SEND_FILE_MAX_AGE_DEFAULT = STATIC_CACHE_MAX_AGE
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
     UPLOAD_ALLOWED_EXTENSIONS = set(
         (os.environ.get("UPLOAD_ALLOWED_EXTENSIONS") or "csv,png,jpg,jpeg,gif,pdf").split(",")
@@ -83,6 +93,7 @@ class BaseConfig:
     )
     ENABLE_ML = os.environ.get("ENABLE_ML", "true").lower() in ("1", "true", "yes")
     MLSUGGESTER_MODEL_DIR = os.environ.get("MLSUGGESTER_MODEL_DIR", "flask_app")
+
     ENABLE_PHASE5B_INSIGHTS = os.environ.get("ENABLE_PHASE5B_INSIGHTS", "true").lower() in (
         "1",
         "true",
@@ -92,6 +103,27 @@ class BaseConfig:
         item.strip() for item in os.environ.get("PHASE5B_INSIGHT_TYPES", "").split(",") if item.strip()
     ]
     PHASE5B_INSIGHT_TYPES = _phase5b_insight_types or None
+
+    ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    PERSONALIZATION_ENABLED = os.environ.get("PERSONALIZATION_ENABLED", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ENABLE_INTERPRETATION_RELATIONSHIP = os.environ.get("ENABLE_INTERPRETATION_RELATIONSHIP", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ENABLE_INTERPRETATION_OBLIGATION = os.environ.get("ENABLE_INTERPRETATION_OBLIGATION", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     # Google Calendar OAuth
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
@@ -121,6 +153,7 @@ class TestingConfig(BaseConfig):
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
+    READ_CACHE_ENABLED = False
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_COOKIE_CSRF_PROTECT = False
     SESSION_COOKIE_SECURE = False

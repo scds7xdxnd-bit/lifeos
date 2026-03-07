@@ -1,8 +1,7 @@
+import pytest
 from datetime import datetime, timedelta
 
-import pytest
-
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.integration, pytest.mark.ml]
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord

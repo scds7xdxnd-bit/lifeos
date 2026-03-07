@@ -164,10 +164,10 @@ def test_create_entry_strips_whitespace(app, test_user):
 
 
 def test_create_entry_mood_valid_range(app, test_user):
-    """Should accept mood within valid range (-5 to 5)."""
+    """Should accept mood within valid range (-5 to 10)."""
     with app.app_context():
         with patch("lifeos.domains.journal.services.journal_service.enqueue_outbox"):
-            for mood in [-5, -3, 0, 3, 5]:
+            for mood in [-5, -3, 0, 3, 5, 10]:
                 entry = journal_service.create_entry(
                     user_id=test_user.id,
                     title=f"Mood {mood}",
@@ -192,7 +192,7 @@ def test_create_entry_mood_invalid_below_min(app, test_user):
 
 
 def test_create_entry_mood_invalid_above_max(app, test_user):
-    """Should reject mood above maximum (5)."""
+    """Should reject mood above maximum (10)."""
     with app.app_context():
         with pytest.raises(ValueError, match="validation_error"):
             journal_service.create_entry(
@@ -200,7 +200,7 @@ def test_create_entry_mood_invalid_above_max(app, test_user):
                 title="Too Good",
                 body="Content",
                 entry_date=date.today(),
-                mood=6,
+                mood=11,
             )
 
 
@@ -507,7 +507,6 @@ def test_list_entries_filter_by_mood(app, test_user):
         assert entries[0].title == "Happy"
 
 
-@pytest.mark.xfail(reason="SQLite JSON contains() filter does not work correctly with array fields")
 def test_list_entries_filter_by_tag(app, test_user):
     """Should filter by tag."""
     with app.app_context():

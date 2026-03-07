@@ -20,7 +20,7 @@ trial_balance_api_bp = Blueprint("trial_balance_api", __name__)
 @jwt_required()
 @read_only_endpoint
 def trial_balance():
-    payload = request.args or {}
+    payload = request.args.to_dict(flat=True)
     try:
         data = TrialBalanceFilter.model_validate(payload)
     except ValidationError:
@@ -40,7 +40,7 @@ def trial_balance():
 @jwt_required()
 @read_only_endpoint
 def period_balance():
-    payload = request.args or {}
+    payload = request.args.to_dict(flat=True)
     try:
         data = PeriodBalanceFilter.model_validate(payload)
     except ValidationError:
