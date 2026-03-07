@@ -8,6 +8,7 @@ from typing import List, Optional, Sequence
 from pydantic import BaseModel, Field, field_validator
 
 ALLOWED_INFERENCE_STATUSES = {"inferred", "confirmed", "rejected", "ambiguous", "ignored"}
+ALLOWED_INTERPRETATION_ACTIONS = {"accepted", "rejected", "corrected"}
 
 
 class InsightsFeedQuery(BaseModel):
@@ -64,4 +65,23 @@ class InsightsFeedQuery(BaseModel):
             return None
         if normalized not in ALLOWED_INFERENCE_STATUSES:
             raise ValueError("invalid_status")
+        return normalized
+
+
+class InterpretationDecisionRequest(BaseModel):
+    """Decision payload for proposal acceptance/rejection/correction."""
+
+    action: str = Field(description="accepted|rejected|corrected")
+    person_id: Optional[int] = None
+    method: Optional[str] = None
+    notes: Optional[str] = None
+
+    @field_validator("action", mode="before")
+    @classmethod
+    def _validate_action(cls, value: Optional[str]):
+        if value is None:
+            raise ValueError("invalid_action")
+        normalized = str(value).strip().lower()
+        if normalized not in ALLOWED_INTERPRETATION_ACTIONS:
+            raise ValueError("invalid_action")
         return normalized
