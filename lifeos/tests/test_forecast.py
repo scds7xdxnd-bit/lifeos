@@ -3,7 +3,7 @@ from datetime import date
 
 from flask_jwt_extended import create_access_token
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.models import Role
 from lifeos.core.users.models import User
@@ -71,9 +71,14 @@ def test_add_and_delete_schedule(app, client):
     assert MoneyScheduleRow.query.get(row_id)
 
     # forecast endpoint
-    resp = client.get("/api/finance/forecast", headers=headers)
+    resp = client.get("/api/finance/forecast?days=30", headers=headers)
     assert resp.status_code == 200
-    assert resp.get_json()["ok"] is True
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body["forecast"]
+    first = body["forecast"][0]
+    assert first["date"] == date.today().isoformat()
+    assert first["projected_balance"] == pytest.approx(10.0)
 
     # delete schedule
     resp = client.delete(
@@ -82,3 +87,42 @@ def test_add_and_delete_schedule(app, client):
     )
     assert resp.status_code == 200
     assert MoneyScheduleRow.query.get(row_id) is None
+    resp = client.get("/api/finance/forecast?days=30", headers=headers)
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    first = body["forecast"][0]
+    assert first["date"] == date.today().isoformat()
+    assert first["projected_balance"] == pytest.approx(0.0)
+
+
+def test_update_schedule_recomputes_forecast(app, client):
+    user, acct = setup_finance_user(app)
+    headers = auth_header(app, user.id, roles=["finance:write"])
+
+    resp = client.post(
+        "/api/finance/schedule",
+        json={
+            "account_id": acct.id,
+            "event_date": date.today().isoformat(),
+            "amount": 15,
+        },
+        headers=headers | {"Content-Type": "application/json", "X-CSRF-Token": "test"},
+    )
+    assert resp.status_code == 200
+    row_id = resp.get_json()["row_id"]
+
+    resp = client.patch(
+        f"/api/finance/schedule/{row_id}",
+        json={"amount": 35},
+        headers=headers | {"Content-Type": "application/json", "X-CSRF-Token": "test"},
+    )
+    assert resp.status_code == 200
+
+    resp = client.get("/api/finance/forecast?days=30", headers=headers)
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    first = body["forecast"][0]
+    assert first["date"] == date.today().isoformat()
+    assert first["projected_balance"] == pytest.approx(35.0)

@@ -66,7 +66,7 @@ def search_accounts_endpoint():
     user_id = int(get_jwt_identity())
 
     try:
-        data = AccountSearchQuery.model_validate(request.args)
+        data = AccountSearchQuery.model_validate(request.args.to_dict(flat=True))
     except Exception:
         # On invalid query, return empty results to keep client logic simple.
         return jsonify({"ok": True, "results": []}), 200

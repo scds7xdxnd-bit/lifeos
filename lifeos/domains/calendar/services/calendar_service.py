@@ -9,6 +9,7 @@ from typing import List, Optional
 from sqlalchemy import and_, func, or_
 
 from lifeos.core.interpreter.inference_emitter import emit_inference_event
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.calendar.events import (
     CALENDAR_EVENT_CREATED,
     CALENDAR_EVENT_DELETED,
@@ -23,6 +24,8 @@ from lifeos.domains.calendar.models.calendar_event import (
 )
 from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
+
+CALENDAR_READ_CACHE_SCOPE = "calendar.views"
 
 
 def create_calendar_event(
@@ -86,6 +89,7 @@ def create_calendar_event(
     )
 
     db.session.commit()
+    read_cache.bump(CALENDAR_READ_CACHE_SCOPE, user_id)
     return event
 
 
@@ -178,6 +182,7 @@ def update_calendar_event(
         )
 
         db.session.commit()
+        read_cache.bump(CALENDAR_READ_CACHE_SCOPE, user_id)
 
     return event
 
@@ -204,6 +209,7 @@ def delete_calendar_event(user_id: int, event_id: int) -> None:
 
     db.session.delete(event)
     db.session.commit()
+    read_cache.bump(CALENDAR_READ_CACHE_SCOPE, user_id)
 
 
 def get_calendar_event(user_id: int, event_id: int) -> CalendarEvent | None:
@@ -353,6 +359,7 @@ def update_interpretation_status(
     )
 
     db.session.commit()
+    read_cache.bump(CALENDAR_READ_CACHE_SCOPE, user_id)
     return interpretation
 
 
@@ -404,34 +411,52 @@ def _window_bounds_for_month(year: int, month: int) -> tuple[datetime, datetime,
 
 
 def get_day_view(user_id: int, target_date: date) -> dict:
+    cache_key = {"view": "day", "date": target_date.isoformat()}
+    cached = read_cache.get(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     window_start, window_end = _window_bounds_for_day(target_date)
     events = _window_overlap_query(user_id, window_start, window_end).all()
-    return {
+    payload = {
         "window_start": window_start.isoformat(),
         "window_end": window_end.isoformat(),
         "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
     }
+    read_cache.set(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key, payload)
+    return payload
 
 
 def get_week_view(user_id: int, start_date: date) -> dict:
+    cache_key = {"view": "week", "start_date": start_date.isoformat()}
+    cached = read_cache.get(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     window_start, window_end = _window_bounds_for_week(start_date)
     events = _window_overlap_query(user_id, window_start, window_end).all()
-    return {
+    payload = {
         "window_start": window_start.isoformat(),
         "window_end": window_end.isoformat(),
         "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
     }
+    read_cache.set(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key, payload)
+    return payload
 
 
 def get_month_view(user_id: int, year: int, month: int) -> dict:
+    cache_key = {"view": "month", "year": year, "month": month}
+    cached = read_cache.get(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     window_start, window_end, spillover_days = _window_bounds_for_month(year, month)
     events = _window_overlap_query(user_id, window_start, window_end).all()
-    return {
+    payload = {
         "window_start": window_start.isoformat(),
         "window_end": window_end.isoformat(),
         "spillover_days": [d.isoformat() for d in spillover_days],
         "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
     }
+    read_cache.set(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key, payload)
+    return payload
 
 
 def get_ledger(
@@ -442,6 +467,16 @@ def get_ledger(
     cursor: Optional[str] = None,
 ) -> dict:
     """Chronological ledger anchored at a date, cursor-based."""
+    cache_key = {
+        "view": "ledger",
+        "anchor": anchor_date.isoformat(),
+        "direction": direction,
+        "limit": limit,
+        "cursor": cursor or "",
+    }
+    cached = read_cache.get(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key)
+    if cached is not None:
+        return cached
     anchor_dt = datetime.combine(anchor_date, time.min)
     pivot_time = anchor_dt
     pivot_id = None
@@ -480,7 +515,7 @@ def get_ledger(
         next_cursor = f"{events[0].start_time.isoformat()}|{events[0].id}" if events else None
         prev_cursor = f"{events[-1].start_time.isoformat()}|{events[-1].id}" if events else None
 
-    return {
+    payload = {
         "anchor": anchor_date.isoformat(),
         "direction": direction,
         "cursor": cursor,
@@ -488,3 +523,5 @@ def get_ledger(
         "prev_cursor": prev_cursor,
         "events": [calendar_event_to_response(e).model_dump(mode="json") for e in events],
     }
+    read_cache.set(CALENDAR_READ_CACHE_SCOPE, user_id, cache_key, payload)
+    return payload
