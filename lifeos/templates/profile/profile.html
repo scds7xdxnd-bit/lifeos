@@ -92,7 +92,7 @@
 
     const fetchProfile = async () => {
       const tokens = lifeosAuth.getTokens();
-      if (!tokens?.access_token) {
+      if (!lifeosAuth.isAuthenticated()) {
         setLoggedOut();
         return;
       }

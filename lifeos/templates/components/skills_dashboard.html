@@ -85,7 +85,7 @@
 
     const ensureAuth = () => {
       const tokens = lifeosAuth.getTokens();
-      const authed = !!tokens.access_token;
+      const authed = lifeosAuth.isAuthenticated();
       [createBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
       Array.from(createForm?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
       createToggle.disabled = !authed;

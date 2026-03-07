@@ -15,7 +15,10 @@
       <h2 style="margin:0;">Record a journal entry</h2>
       <p style="margin:0; color:#5b6470;">Creation is intentional. Review balances before posting.</p>
     </div>
-    <button type="button" class="text-link" id="{{ component_id }}-form-toggle">New entry</button>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <button type="button" class="btn" id="{{ component_id }}-review-btn">Review entries</button>
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-form-toggle">New entry</button>
+    </div>
   </div>
   <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to post journal entries.</div>
   <form id="{{ component_id }}-form" autocomplete="off" style="margin-top:0.75rem; display:none; gap:0.75rem;">
@@ -82,10 +85,11 @@
     const totalCreditEl = el('total-credit');
     const diffEl = el('diff');
     const lines = [];
+    let dropdownListenerBound = false;
 
     const financeAuthState = () => {
       const tokens = lifeosAuth.getTokens();
-      const authed = !!tokens.access_token;
+      const authed = lifeosAuth.isAuthenticated();
       const hasRole = Array.isArray(tokens?.user?.role_codes) && tokens.user.role_codes.includes('finance:write');
       return { allowed: authed && hasRole, authed };
     };
@@ -130,6 +134,14 @@
       form.style.display = isOpen ? 'none' : 'grid';
       toggleBtn.textContent = isOpen ? 'New entry' : 'Hide entry form';
     });
+
+    const closeDropdowns = (target) => {
+      if (!linesTable) return;
+      if (target?.closest?.('.account-search-wrapper')) return;
+      linesTable.querySelectorAll('.account-search-dropdown').forEach((dropdown) => {
+        dropdown.style.display = 'none';
+      });
+    };
 
     const renderTotals = () => {
       let debit = 0;
@@ -208,6 +220,10 @@
         const amountInput = tr.querySelector('input[data-field="amount"]');
         const memoInput = tr.querySelector('input[data-field="memo"]');
         const removeBtn = tr.querySelector('button[data-remove]');
+        const dropdownEl = tr.querySelector(`#${searchId}-dropdown`);
+        const loadingEl = tr.querySelector(`#${searchId}-loading`);
+        const resultsEl = tr.querySelector(`#${searchId}-results`);
+        const emptyEl = tr.querySelector(`#${searchId}-empty`);
 
         dcSelect.addEventListener('change', (e) => {
           lines[idx].dc = e.target.value === 'C' ? 'C' : 'D';
@@ -287,12 +303,12 @@
         searchInput.addEventListener('input', (e) => {
           const query = e.target.value;
           if (query.length === 0) {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+            if (dropdownEl) dropdownEl.style.display = 'none';
           } else {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'block';
-            document.getElementById(`${searchId}-loading`).style.display = 'block';
-            document.getElementById(`${searchId}-results`).style.display = 'block';
-            document.getElementById(`${searchId}-empty`).style.display = 'none';
+            if (dropdownEl) dropdownEl.style.display = 'block';
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (resultsEl) resultsEl.style.display = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
             debouncedSearch(query);
           }
         });
@@ -300,14 +316,7 @@
         // Focus event
         searchInput.addEventListener('focus', () => {
           if (searchInput.value.length > 0) {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'block';
-          }
-        });
-
-        // Click outside to close dropdown
-        document.addEventListener('click', (e) => {
-          if (!tr.contains(e.target)) {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+            if (dropdownEl) dropdownEl.style.display = 'block';
           }
         });
 
@@ -316,6 +325,11 @@
           searchInput.value = line.account_name;
         }
       });
+
+      if (!dropdownListenerBound) {
+        dropdownListenerBound = true;
+        document.addEventListener('click', (e) => closeDropdowns(e.target));
+      }
 
       renderTotals();
     };
@@ -331,14 +345,14 @@
         return;
       }
 
-      loadingMsg.style.display = 'none';
+      if (loadingMsg) loadingMsg.style.display = 'none';
       resultsContainer.innerHTML = '';
 
       if (!results || results.length === 0) {
-        emptyMsg.style.display = 'block';
+        if (emptyMsg) emptyMsg.style.display = 'block';
         resultsContainer.style.display = 'block';
       } else {
-        emptyMsg.style.display = 'none';
+        if (emptyMsg) emptyMsg.style.display = 'none';
         resultsContainer.style.display = 'block';
       }
 
@@ -362,7 +376,8 @@
           lines[lineIdx].account_id = result.id;
           lines[lineIdx].account_name = result.name;
           searchInput.value = result.name;
-          document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+          const dropdownEl = document.getElementById(`${searchId}-dropdown`);
+          if (dropdownEl) dropdownEl.style.display = 'none';
           renderTotals();
         });
 
@@ -482,9 +497,9 @@
               <small style="color: #5b6470; font-size: 0.8rem;">Leave blank to use the default category for the selected type.</small>
             </div>
 
-            <div style="display: flex; gap: 0.75rem;">
-              <button type="button" class="create-account-submit" class="btn" style="flex: 1; padding: 0.75rem; background: #0b4f9c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Account</button>
-              <button type="button" class="create-account-cancel" class="btn btn-secondary" style="flex: 1; padding: 0.75rem; background: #e0e5ec; color: #1f2430; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+          <div style="display: flex; gap: 0.75rem;">
+              <button type="button" class="btn create-account-submit" style="flex: 1; padding: 0.75rem; background: #0b4f9c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Account</button>
+              <button type="button" class="btn btn-secondary create-account-cancel" style="flex: 1; padding: 0.75rem; background: #e0e5ec; color: #1f2430; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
             </div>
             <div id="inline-create-error" style="margin-top: 0.5rem; color: #b3352f; font-size: 0.85rem;"></div>
           `;

@@ -21,6 +21,13 @@
     <button type="button" class="text-link" id="{{ component_id }}-filter-toggle">Refine view</button>
   </div>
 
+  <div id="{{ component_id }}-filters" style="margin-top:0.75rem; display:none; gap:0.5rem; flex-wrap:wrap;">
+    <input id="{{ component_id }}-filter-search" type="text" placeholder="Search text" style="flex:1; min-width:180px;">
+    <input id="{{ component_id }}-filter-tag" type="text" placeholder="Tag filter (comma separated)" style="min-width:180px;">
+    <input id="{{ component_id }}-filter-mood" type="number" min="1" max="10" placeholder="Mood" style="min-width:90px;">
+    <button type="button" class="btn btn-secondary" id="{{ component_id }}-filter-apply">Apply filters</button>
+  </div>
+
   <div id="{{ component_id }}-empty" style="margin-top:0.75rem; color:#5b6470; display:none;">No entries yet.</div>
   <div id="{{ component_id }}-list" style="display:grid; gap:0.5rem; margin-top:0.75rem;"></div>
 
@@ -56,13 +63,6 @@
       <div id="{{ component_id }}-create-status" class="auth-status"></div>
     </div>
   </form>
-
-  <div id="{{ component_id }}-filters" style="margin-top:0.75rem; display:none; gap:0.5rem; flex-wrap:wrap;">
-    <input id="{{ component_id }}-filter-search" type="text" placeholder="Search text" style="flex:1; min-width:180px;">
-    <input id="{{ component_id }}-filter-tag" type="text" placeholder="Tag filter" style="min-width:140px;">
-    <input id="{{ component_id }}-filter-mood" type="number" min="1" max="10" placeholder="Mood" style="min-width:90px;">
-    <button type="button" class="btn btn-secondary" id="{{ component_id }}-filter-apply">Apply filters</button>
-  </div>
 </div>
 
 <script>
@@ -99,7 +99,7 @@
     };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
+      const authed = lifeosAuth.isAuthenticated();
       Array.from(createForm?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
       Array.from(filtersWrap?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
       createToggle.disabled = !authed;
@@ -164,17 +164,54 @@
     const fetchEntries = async () => {
       if (!ensureAuth()) return;
       setStatus(createStatus, '');
-      const params = new URLSearchParams();
-      if (filterSearch.value) params.set('search_text', filterSearch.value);
-      if (filterTag.value) params.set('tag', filterTag.value);
-      if (filterMood.value) params.set('mood', filterMood.value);
-      const res = await fetch(`/api/journal${params.toString() ? '?' + params.toString() : ''}`, { headers: lifeosAuth.authHeaders() });
-      if (!res.ok) {
-        setStatus(createStatus, res.status === 401 ? 'Please log in.' : 'Unable to load entries.', 'error');
+      const parseTags = (raw) => {
+        return (raw || '')
+          .split(',')
+          .map((t) => t.trim().replace(/^#/, ''))
+          .filter(Boolean);
+      };
+      const baseParams = new URLSearchParams();
+      const searchText = filterSearch.value.trim();
+      const tagFilters = parseTags(filterTag.value);
+      const moodVal = filterMood.value;
+      if (searchText) baseParams.set('search_text', searchText);
+      if (moodVal) baseParams.set('mood', moodVal);
+      if (searchText || tagFilters.length || moodVal) baseParams.set('per_page', '100');
+
+      const fetchWithParams = async (params) => {
+        const res = await fetch(`/api/journal${params.toString() ? '?' + params.toString() : ''}`, { headers: lifeosAuth.authHeaders() });
+        if (!res.ok) {
+          setStatus(createStatus, res.status === 401 ? 'Please log in.' : 'Unable to load entries.', 'error');
+          return [];
+        }
+        const body = await res.json().catch(() => ({}));
+        return body.items || [];
+      };
+
+      if (tagFilters.length <= 1) {
+        const params = new URLSearchParams(baseParams);
+        if (tagFilters[0]) params.set('tag', tagFilters[0]);
+        const items = await fetchWithParams(params);
+        renderEntries(items);
         return;
       }
-      const body = await res.json().catch(() => ({}));
-      renderEntries(body.items || []);
+
+      const merged = new Map();
+      const requests = tagFilters.map((tag) => {
+        const params = new URLSearchParams(baseParams);
+        params.set('tag', tag);
+        return fetchWithParams(params);
+      });
+      const results = await Promise.all(requests);
+      results.flat().forEach((entry) => {
+        if (!merged.has(entry.id)) merged.set(entry.id, entry);
+      });
+      const combined = Array.from(merged.values()).sort((a, b) => {
+        const da = new Date(a.entry_date || a.created_at || 0).getTime();
+        const db = new Date(b.entry_date || b.created_at || 0).getTime();
+        return db - da;
+      });
+      renderEntries(combined);
     };
 
     createForm?.addEventListener('submit', async (e) => {
