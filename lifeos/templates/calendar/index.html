@@ -54,34 +54,44 @@
   </div>
 
   <!-- Day View -->
-  <div id="cal-day-view" class="card cal-view-panel" style="display:none;">
+  <div id="cal-day-view" class="card cal-view-panel cal-day-view" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
       <h3 style="margin:0;" id="cal-day-title">Day View</h3>
       <button type="button" class="btn btn-secondary" id="cal-reload-day">Refresh</button>
     </div>
-    <div id="cal-day-grid" style="position:relative; min-height:600px; border:1px solid #e0e5ec; border-radius:8px; overflow:hidden;">
+    <div id="cal-day-allday" class="cal-all-day-track" style="display:none; margin-bottom:0.5rem;">
+      <div class="cal-all-day-label">All day</div>
+      <div id="cal-day-allday-list" class="cal-all-day-list"></div>
+    </div>
+    <div id="cal-day-grid" class="cal-time-grid cal-day-grid">
       <!-- Hours will be rendered here -->
     </div>
   </div>
 
   <!-- Week View -->
-  <div id="cal-week-view" class="card cal-view-panel" style="display:none;">
+  <div id="cal-week-view" class="card cal-view-panel cal-week-view" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
       <h3 style="margin:0;" id="cal-week-title">Week View</h3>
       <button type="button" class="btn btn-secondary" id="cal-reload-week">Refresh</button>
     </div>
-    <div id="cal-week-grid" style="display:grid; grid-template-columns: 50px repeat(7, 1fr); border:1px solid #e0e5ec; border-radius:8px; overflow:hidden;">
+    <div id="cal-week-allday" class="cal-all-day-track" style="display:none; margin-bottom:0.5rem;">
+      <div class="cal-week-allday-grid">
+        <div class="cal-week-allday-label">All day</div>
+        <div id="cal-week-allday-grid" class="cal-week-allday-bars"></div>
+      </div>
+    </div>
+    <div id="cal-week-grid" class="cal-time-grid cal-week-grid">
       <!-- Week grid will be rendered here -->
     </div>
   </div>
 
   <!-- Month View -->
-  <div id="cal-month-view" class="card cal-view-panel" style="display:none;">
+  <div id="cal-month-view" class="card cal-view-panel cal-month-view" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
       <h3 style="margin:0;" id="cal-month-title">Month View</h3>
       <button type="button" class="btn btn-secondary" id="cal-reload-month">Refresh</button>
     </div>
-    <div id="cal-month-grid" style="display:grid; grid-template-columns: repeat(7, 1fr); border:1px solid #e0e5ec; border-radius:8px; overflow:hidden;">
+    <div id="cal-month-grid" class="cal-month-grid">
       <!-- Month grid will be rendered here -->
     </div>
   </div>
@@ -108,15 +118,17 @@
   <form id="cal-event-form" style="display:grid; gap:0.75rem;">
     <input type="hidden" id="cal-event-id" value="">
     <div class="field">
-      <label for="cal-event-title">Title *</label>
+      <label for="cal-event-title">Title</label>
       <input type="text" id="cal-event-title" class="input" placeholder="e.g., Gym workout, Lunch with John" required maxlength="255">
     </div>
     <div class="field">
-      <label for="cal-event-date">When *</label>
+      <label for="cal-event-date">When</label>
       <div id="cal-when-controls" style="display:grid; gap:0.5rem;">
-        <div style="display:grid; gap:0.5rem; grid-template-columns: 1.2fr 1fr;">
+        <div id="cal-start-row" style="display:grid; gap:0.5rem; grid-template-columns: 1.2fr 1fr;">
           <input type="date" id="cal-event-date" class="input" required>
-          <input type="text" id="cal-event-start-time" class="input" placeholder="9:00 AM" list="cal-time-options" required>
+          <div id="cal-start-time-wrap">
+            <input type="text" id="cal-event-start-time" class="input" placeholder="9:00 AM" list="cal-time-options" required>
+          </div>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
           <span style="color:#5b6470; font-size:0.85rem;">Ends</span>
@@ -126,10 +138,12 @@
         <div id="cal-event-end-controls" style="display:none; padding:0.5rem; background:#f7f8fa; border-radius:8px;">
           <div style="display:grid; gap:0.5rem; grid-template-columns: 1.2fr 1fr;">
             <input type="date" id="cal-event-end-date" class="input">
-            <input type="text" id="cal-event-end-time" class="input" placeholder="10:00 AM" list="cal-time-options">
+            <div id="cal-end-time-wrap">
+              <input type="text" id="cal-event-end-time" class="input" placeholder="10:00 AM" list="cal-time-options">
+            </div>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <div id="cal-duration-row" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
           <span style="color:#5b6470; font-size:0.85rem;">Duration</span>
           <div id="cal-event-duration" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
             <button type="button" class="cal-duration-btn" data-duration="15" style="padding:0.25rem 0.6rem; border-radius:999px; border:1px solid #d7dde6; background:#f7f8fa; font-size:0.8rem; color:#4b5563;">15m</button>
@@ -205,6 +219,9 @@
   </div>
 </div>
 
+<div id="cal-quickview" class="cal-quickview" style="display:none;"></div>
+<div id="cal-overflow" class="cal-overflow" style="display:none;"></div>
+
 <script>
 (() => {
   const localDateKey = (d) => {
@@ -215,16 +232,45 @@
     return `${y}-${m}-${day}`;
   };
 
+  const parseLocalDate = (dateStr) => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-').map((part) => parseInt(part, 10));
+    if (parts.length < 3 || parts.some((part) => Number.isNaN(part))) {
+      return null;
+    }
+    const [year, month, day] = parts;
+    return new Date(year, month - 1, day);
+  };
+
   const parseLocalDateTime = (isoStr) => {
     if (!isoStr) return null;
-    // Remove trailing Z/offset so we treat it as provided (naive) local time
-    const cleaned = isoStr.replace(/Z$/, '');
-    return new Date(cleaned);
+    // Remove timezone suffix so we treat provided timestamps as local-naive.
+    const cleaned = isoStr.replace(/([+-]\d{2}:?\d{2}|Z)$/, '');
+    const [datePart, timePartRaw] = cleaned.split('T');
+    const base = parseLocalDate(datePart);
+    if (!base) return null;
+    if (!timePartRaw) return base;
+    const [timePart, fractional] = timePartRaw.split('.');
+    const timeParts = timePart.split(':');
+    const hours = parseInt(timeParts[0] || '0', 10);
+    const minutes = parseInt(timeParts[1] || '0', 10);
+    const seconds = parseInt(timeParts[2] || '0', 10);
+    let ms = 0;
+    if (fractional) {
+      const normalized = fractional.padEnd(3, '0').slice(0, 3);
+      const parsed = parseInt(normalized, 10);
+      ms = Number.isNaN(parsed) ? 0 : parsed;
+    }
+    base.setHours(hours, minutes, seconds, ms);
+    return base;
   };
 
   const pad2 = (num) => String(num).padStart(2, '0');
   const TIME_STEP_MINUTES = 15;
   const DEFAULT_DURATION_MINUTES = 60;
+  const HOUR_HEIGHT_FALLBACK = 48;
+  const MAX_MONTH_BAR_ROWS = 3;
+  const MAX_MONTH_ITEMS = 2;
 
   const roundToNearestMinutes = (date, stepMinutes = TIME_STEP_MINUTES) => {
     const ms = stepMinutes * 60 * 1000;
@@ -279,12 +325,67 @@
     return `${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}`;
   };
 
-  const toLocalDate = (dateStr, timeParts) => new Date(`${dateStr}T${pad2(timeParts.hours)}:${pad2(timeParts.minutes)}:00`);
+  const toLocalDate = (dateStr, timeParts) => {
+    const base = parseLocalDate(dateStr);
+    if (!base || !timeParts) return null;
+    base.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+    return base;
+  };
 
   const formatDateLabel = (dateStr) => {
     if (!dateStr) return '';
-    const dateObj = new Date(`${dateStr}T00:00`);
+    const dateObj = parseLocalDate(dateStr);
+    if (!dateObj) return '';
     return dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+  const addDays = (dateObj, days) => {
+    const d = new Date(dateObj.getTime());
+    d.setDate(d.getDate() + days);
+    return d;
+  };
+  const toStartOfDay = (dateObj) => {
+    const d = new Date(dateObj.getTime());
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  const getHourHeight = (el) => {
+    if (!el) return HOUR_HEIGHT_FALLBACK;
+    const value = parseFloat(getComputedStyle(el).getPropertyValue('--cal-hour-height'));
+    return Number.isFinite(value) && value > 0 ? value : HOUR_HEIGHT_FALLBACK;
+  };
+  const getEventEndDay = (range) => {
+    const endDay = toStartOfDay(range.end);
+    if (
+      range.end.getHours() === 0 &&
+      range.end.getMinutes() === 0 &&
+      range.end.getSeconds() === 0 &&
+      range.end.getMilliseconds() === 0
+    ) {
+      endDay.setDate(endDay.getDate() - 1);
+    }
+    return endDay;
+  };
+  const dayDiff = (start, end) => Math.floor((toStartOfDay(end) - toStartOfDay(start)) / (24 * 60 * 60 * 1000));
+  const clampDayIndex = (index) => Math.min(6, Math.max(0, index));
+  const isMultiDayEvent = (event, range) => {
+    if (event.all_day) return true;
+    const startDay = toStartOfDay(range.start);
+    const endDay = getEventEndDay(range);
+    return endDay > startDay;
+  };
+  const getEventRange = (event) => {
+    const start = parseLocalDateTime(event.start_time);
+    if (!start) return null;
+    let end = event.end_time ? parseLocalDateTime(event.end_time) : null;
+    if (event.all_day) {
+      if (!end) {
+        end = addDays(start, 1);
+      }
+    } else if (!end && event.duration_minutes) {
+      end = new Date(start.getTime() + Number(event.duration_minutes) * 60000);
+    }
+    if (!end) end = new Date(start.getTime());
+    return { start, end };
   };
 
   // Get auth headers with CSRF token from meta tag (session-bound)
@@ -318,6 +419,8 @@
   let dayWindow = null;
   let weekWindow = null;
   let monthWindow = null;
+  let monthOverflowMap = {};
+  let monthEventMap = new Map();
 
   // DOM elements - View panels
   const viewBtns = document.querySelectorAll('.cal-view-btn');
@@ -335,6 +438,12 @@
   const dayGrid = document.getElementById('cal-day-grid');
   const weekGrid = document.getElementById('cal-week-grid');
   const monthGrid = document.getElementById('cal-month-grid');
+  const dayAllDay = document.getElementById('cal-day-allday');
+  const dayAllDayList = document.getElementById('cal-day-allday-list');
+  const weekAllDay = document.getElementById('cal-week-allday');
+  const weekAllDayGrid = document.getElementById('cal-week-allday-grid');
+  const quickView = document.getElementById('cal-quickview');
+  const overflowPopover = document.getElementById('cal-overflow');
 
   // DOM elements
   const loginHint = document.getElementById('cal-login-hint');
@@ -362,6 +471,10 @@
   const eventStartTimeInput = document.getElementById('cal-event-start-time');
   const eventEndDateInput = document.getElementById('cal-event-end-date');
   const eventEndTimeInput = document.getElementById('cal-event-end-time');
+  const startRow = document.getElementById('cal-start-row');
+  const startTimeWrap = document.getElementById('cal-start-time-wrap');
+  const endTimeWrap = document.getElementById('cal-end-time-wrap');
+  const durationRow = document.getElementById('cal-duration-row');
   const eventEndPreview = document.getElementById('cal-event-end-preview');
   const eventEndToggle = document.getElementById('cal-event-end-toggle');
   const eventEndControls = document.getElementById('cal-event-end-controls');
@@ -416,7 +529,8 @@
 
   const getWeekStart = (d) => {
     const weekStart = new Date(d);
-    weekStart.setDate(d.getDate() - d.getDay());
+    const dayOffset = (d.getDay() + 6) % 7;
+    weekStart.setDate(d.getDate() - dayOffset);
     return weekStart;
   };
 
@@ -483,107 +597,211 @@
     const dayTitle = document.getElementById('cal-day-title');
     dayTitle.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-    // Build hourly grid
-    let html = '<div style="display:grid; grid-template-columns: 50px 1fr;">';
-    for (let h = 0; h < 24; h++) {
-      const hour = h.toString().padStart(2, '0') + ':00';
+    const hourHeight = getHourHeight(dayGrid);
+    const hourLabels = Array.from({ length: 24 }, (_, h) => {
       const hourLabel = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
-      html += `
-        <div style="padding:0.25rem 0.5rem; font-size:0.75rem; color:#5b6470; text-align:right; border-bottom:1px solid #f0f0f0;">${hourLabel}</div>
-        <div style="min-height:40px; border-bottom:1px solid #f0f0f0; border-left:1px solid #e0e5ec; position:relative;" data-hour="${h}" data-date="${dateStr}"></div>
-      `;
-    }
-    html += '</div>';
-    dayGrid.innerHTML = html;
+      return `<div class="cal-hour-label">${hourLabel}</div>`;
+    }).join('');
+    const slots = Array.from({ length: 24 }, (_, h) => `<div class="cal-hour-slot" data-hour="${h}"></div>`).join('');
 
-    // Place events
-    const dayItems = dayEvents.filter(e => {
-      const start = parseLocalDateTime(e.start_time);
-      const end = parseLocalDateTime(e.end_time || e.start_time);
-      return start < windowEnd && end > windowStart;
+    dayGrid.innerHTML = `
+      <div class="cal-day-axis">${hourLabels}</div>
+      <div class="cal-day-column" data-date="${dateStr}">
+        <div class="cal-time-slots">${slots}</div>
+        <div class="cal-time-events" data-date="${dateStr}"></div>
+      </div>
+    `;
+
+    const dayStart = toStartOfDay(windowStart);
+    const dayEnd = addDays(dayStart, 1);
+
+    const allDayItems = dayEvents.filter(e => {
+      if (!e.all_day) return false;
+      const range = getEventRange(e);
+      if (!range) return false;
+      return range.start < dayEnd && range.end > dayStart;
     });
 
-    dayItems.forEach(event => {
-      const startTime = parseLocalDateTime(event.start_time);
-      const hour = startTime.getHours();
-      const minutes = startTime.getMinutes();
-      const slot = dayGrid.querySelector(`[data-hour="${hour}"][data-date="${dateStr}"]`);
-      if (slot) {
-        const eventEl = document.createElement('div');
-        eventEl.style.cssText = `position:absolute; left:4px; right:4px; top:${(minutes / 60) * 40}px; background:${event.color || '#0b4f9c'}; color:white; padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem; cursor:pointer; z-index:1;`;
-        eventEl.textContent = event.title;
-        eventEl.onclick = () => showEventDetail(event.id);
-        slot.appendChild(eventEl);
+    if (dayAllDay && dayAllDayList) {
+      dayAllDayList.innerHTML = '';
+      if (allDayItems.length) {
+        dayAllDay.style.display = 'block';
+        allDayItems.forEach((event) => {
+          const chip = document.createElement('div');
+          chip.className = 'cal-all-day-chip';
+          chip.style.setProperty('--event-accent', event.color || '#2c5aa0');
+          chip.textContent = event.title || 'Untitled';
+          chip.addEventListener('mouseenter', () => showQuickView(event, chip));
+          chip.addEventListener('mouseleave', hideQuickView);
+          chip.addEventListener('click', () => showEventDetail(event.id));
+          dayAllDayList.appendChild(chip);
+        });
+      } else {
+        dayAllDay.style.display = 'none';
       }
+    }
+
+    // Place timed events
+    const timedEvents = dayEvents.filter(e => !e.all_day);
+    const layout = layoutTimedEvents(timedEvents, dayStart, dayEnd);
+    const eventsLayer = dayGrid.querySelector('.cal-time-events');
+    const gap = 6;
+    layout.forEach((item) => {
+      const { event, startMin, endMin } = item;
+      const top = (startMin / 60) * hourHeight;
+      const height = Math.max(14, ((endMin - startMin) / 60) * hourHeight);
+      const totalGap = gap * (item.colCount - 1);
+      const width = `calc((100% - ${totalGap}px) / ${item.colCount})`;
+      const left = `calc(${item.col} * (100% - ${totalGap}px) / ${item.colCount} + ${item.col * gap}px)`;
+      const eventEl = document.createElement('div');
+      eventEl.className = 'cal-event-card cal-event-card--timed';
+      if (height < 34) eventEl.classList.add('is-compact');
+      eventEl.style.top = `${top}px`;
+      eventEl.style.height = `${height}px`;
+      eventEl.style.left = left;
+      eventEl.style.width = width;
+      eventEl.style.setProperty('--event-accent', event.color || '#2c5aa0');
+      eventEl.innerHTML = `
+        <div class="cal-event-title">${event.title || 'Untitled'}</div>
+        <div class="cal-event-time">${formatTimeRange(item.start, item.end)}</div>
+      `;
+      eventEl.addEventListener('mouseenter', () => showQuickView(event, eventEl));
+      eventEl.addEventListener('mouseleave', hideQuickView);
+      eventEl.addEventListener('click', () => showEventDetail(event.id));
+      eventsLayer.appendChild(eventEl);
     });
   };
 
   // ==================== Week View Rendering ====================
   const renderWeekView = () => {
-    const weekStart = new Date(currentDate);
-    weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+    const weekStart = getWeekStart(currentDate);
+    weekStart.setHours(0, 0, 0, 0);
 
     const weekTitle = document.getElementById('cal-week-title');
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    const weekEnd = addDays(weekStart, 6);
     weekTitle.textContent = `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 
-    // Header row
-    let html = '<div style="background:#f7f8fa; padding:0.5rem; font-size:0.7rem; color:#5b6470;"></div>';
+    const hourLabels = Array.from({ length: 24 }, (_, h) => {
+      const hourLabel = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+      return `<div class="cal-hour-label">${hourLabel}</div>`;
+    }).join('');
+    const slots = Array.from({ length: 24 }, (_, h) => `<div class="cal-hour-slot" data-hour="${h}"></div>`).join('');
+    const todayStr = localDateKey(new Date());
+
+    let html = '<div class="cal-week-header-spacer"></div>';
     for (let d = 0; d < 7; d++) {
-      const day = new Date(weekStart);
-      day.setDate(weekStart.getDate() + d);
-      const isToday = day.toDateString() === new Date().toDateString();
-      html += `<div style="background:#f7f8fa; padding:0.5rem; text-align:center; font-weight:600; font-size:0.85rem; ${isToday ? 'color:#0b4f9c;' : ''}">
-        ${day.toLocaleDateString('en-US', { weekday: 'short' })}<br>
-        <span style="font-size:1.1rem;">${day.getDate()}</span>
-      </div>`;
+      const day = addDays(weekStart, d);
+      const dateStr = localDateKey(day);
+      const isToday = dateStr === todayStr;
+      html += `
+        <div class="cal-week-day-head ${isToday ? 'is-today' : ''} ${d === 0 ? 'is-first' : ''}" data-date="${dateStr}">
+          <span>${day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+          <strong>${day.getDate()}</strong>
+        </div>
+      `;
     }
 
-    // Hour rows
-    for (let h = 0; h < 24; h++) {
-      const hourLabel = h === 12 ? '12 PM' : h < 12 ? `${h} AM` : `${h - 12} PM`;
-      const displayLabel = h === 0 ? '12 AM' : hourLabel;
-      html += `<div style="padding:0.25rem; font-size:0.7rem; color:#5b6470; text-align:right; border-top:1px solid #f0f0f0;">${displayLabel}</div>`;
-      for (let d = 0; d < 7; d++) {
-        const day = new Date(weekStart);
-        day.setDate(weekStart.getDate() + d);
-        const dateStr = localDateKey(day);
-        html += `<div style="min-height:30px; border-top:1px solid #f0f0f0; border-left:1px solid #e0e5ec; position:relative;" data-hour="${h}" data-date="${dateStr}"></div>`;
-      }
+    html += `<div class="cal-week-axis" style="grid-column:1; grid-row:2 / span 24;">${hourLabels}</div>`;
+    for (let d = 0; d < 7; d++) {
+      const day = addDays(weekStart, d);
+      const dateStr = localDateKey(day);
+      html += `
+        <div class="cal-week-day-column ${d === 0 ? 'is-first' : ''}" data-date="${dateStr}" style="grid-column:${d + 2}; grid-row:2 / span 24;">
+          <div class="cal-time-slots">${slots}</div>
+          <div class="cal-time-events" data-date="${dateStr}"></div>
+        </div>
+      `;
     }
     weekGrid.innerHTML = html;
 
-    // Place events
-    const windowStart = weekWindow?.start ? parseLocalDateTime(weekWindow.start) : (() => {
-      const w = getWeekStart(currentDate);
-      w.setHours(0,0,0,0);
-      return w;
-    })();
-    const windowEnd = weekWindow?.end ? parseLocalDateTime(weekWindow.end) : (() => {
-      const w = new Date(windowStart);
-      w.setDate(w.getDate() + 7);
-      return w;
-    })();
-
-    weekEvents.forEach(event => {
-      const startTime = parseLocalDateTime(event.start_time);
-      const endTime = parseLocalDateTime(event.end_time || event.start_time);
-      if (!(startTime < windowEnd && endTime > windowStart)) return;
-      const hour = startTime.getHours();
-      const dateKey = localDateKey(startTime);
-      if (hour >= 0 && hour < 24) {
-        const slot = weekGrid.querySelector(`[data-hour="${hour}"][data-date="${dateKey}"]`);
-        if (slot) {
-          const eventEl = document.createElement('div');
-          eventEl.style.cssText = `background:${event.color || '#0b4f9c'}; color:white; padding:0.15rem 0.25rem; border-radius:3px; font-size:0.7rem; cursor:pointer; margin:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;`;
-          eventEl.textContent = event.title;
-          eventEl.title = event.title;
-          eventEl.onclick = () => showEventDetail(event.id);
-          slot.appendChild(eventEl);
-        }
+    // All-day row
+    if (weekAllDay && weekAllDayGrid) {
+      weekAllDayGrid.innerHTML = '';
+      const weekAllDayEvents = weekEvents.filter(e => e.all_day);
+      if (weekAllDayEvents.length) {
+        weekAllDay.style.display = 'block';
+        const sorted = weekAllDayEvents.slice().sort((a, b) => {
+          const ra = getEventRange(a);
+          const rb = getEventRange(b);
+          return (ra?.start || 0) - (rb?.start || 0);
+        });
+        const rows = [];
+        const reserveRow = (startIdx, endIdx) => {
+          for (let r = 0; r < rows.length; r++) {
+            const row = rows[r];
+            let free = true;
+            for (let i = startIdx; i <= endIdx; i++) {
+              if (row[i]) { free = false; break; }
+            }
+            if (free) {
+              for (let i = startIdx; i <= endIdx; i++) row[i] = true;
+              return r;
+            }
+          }
+          const newRow = Array(7).fill(false);
+          for (let i = startIdx; i <= endIdx; i++) newRow[i] = true;
+          rows.push(newRow);
+          return rows.length - 1;
+        };
+        sorted.forEach((event) => {
+          const range = getEventRange(event);
+          if (!range) return;
+          const startIdx = clampDayIndex(dayDiff(weekStart, range.start));
+          const endIdx = clampDayIndex(dayDiff(weekStart, getEventEndDay(range)));
+          if (endIdx < 0 || startIdx > 6) return;
+          const row = reserveRow(startIdx, endIdx);
+          const bar = document.createElement('div');
+          bar.className = 'cal-week-all-day-bar';
+          bar.style.gridColumn = `${startIdx + 1} / ${endIdx + 2}`;
+          bar.style.gridRow = `${row + 1}`;
+          bar.style.setProperty('--event-accent', event.color || '#2c5aa0');
+          bar.textContent = event.title || 'Untitled';
+          bar.addEventListener('mouseenter', () => showQuickView(event, bar));
+          bar.addEventListener('mouseleave', hideQuickView);
+          bar.addEventListener('click', () => showEventDetail(event.id));
+          weekAllDayGrid.appendChild(bar);
+        });
+      } else {
+        weekAllDay.style.display = 'none';
       }
-    });
+    }
+
+    // Place timed events
+    const timedEvents = weekEvents.filter(e => !e.all_day);
+    const hourHeight = getHourHeight(weekGrid);
+    const gap = 6;
+    for (let d = 0; d < 7; d++) {
+      const day = addDays(weekStart, d);
+      const dayStart = toStartOfDay(day);
+      const dayEnd = addDays(dayStart, 1);
+      const dateKey = localDateKey(day);
+      const layout = layoutTimedEvents(timedEvents, dayStart, dayEnd);
+      const eventsLayer = weekGrid.querySelector(`.cal-time-events[data-date="${dateKey}"]`);
+      layout.forEach((item) => {
+        const { event, startMin, endMin } = item;
+        const top = (startMin / 60) * hourHeight;
+        const height = Math.max(12, ((endMin - startMin) / 60) * hourHeight);
+        const totalGap = gap * (item.colCount - 1);
+        const width = `calc((100% - ${totalGap}px) / ${item.colCount})`;
+        const left = `calc(${item.col} * (100% - ${totalGap}px) / ${item.colCount} + ${item.col * gap}px)`;
+        const eventEl = document.createElement('div');
+        eventEl.className = 'cal-event-card cal-event-card--timed';
+        if (height < 32) eventEl.classList.add('is-compact');
+        eventEl.style.top = `${top}px`;
+        eventEl.style.height = `${height}px`;
+        eventEl.style.left = left;
+        eventEl.style.width = width;
+        eventEl.style.setProperty('--event-accent', event.color || '#2c5aa0');
+        eventEl.innerHTML = `
+          <div class="cal-event-title">${event.title || 'Untitled'}</div>
+          <div class="cal-event-time">${formatTimeRange(item.start, item.end)}</div>
+        `;
+        eventEl.addEventListener('mouseenter', () => showQuickView(event, eventEl));
+        eventEl.addEventListener('mouseleave', hideQuickView);
+        eventEl.addEventListener('click', () => showEventDetail(event.id));
+        eventsLayer.appendChild(eventEl);
+      });
+    }
   };
 
   // ==================== Month View Rendering ====================
@@ -592,53 +810,173 @@
     const month = currentDate.getMonth();
     const monthTitle = document.getElementById('cal-month-title');
     monthTitle.textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDay = firstDay.getDay();
-
-    // Header row
-    let html = '';
-    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
-      html += `<div style="background:#f7f8fa; padding:0.5rem; text-align:center; font-weight:600; font-size:0.8rem; color:#5b6470;">${d}</div>`;
-    });
-
-    // Empty cells before first day
-    for (let i = 0; i < startDay; i++) {
-      html += `<div style="min-height:80px; background:#fafafa; border:1px solid #f0f0f0;"></div>`;
+    const viewStartRaw = monthWindow?.start ? parseLocalDateTime(monthWindow.start) : new Date(year, month, 1);
+    const viewEndRaw = monthWindow?.end ? parseLocalDateTime(monthWindow.end) : new Date(year, month + 1, 1);
+    let viewStart = toStartOfDay(viewStartRaw);
+    let viewEnd = toStartOfDay(viewEndRaw);
+    if (viewEndRaw && (viewEndRaw.getHours() || viewEndRaw.getMinutes() || viewEndRaw.getSeconds() || viewEndRaw.getMilliseconds())) {
+      viewEnd = addDays(viewEnd, 1);
+    }
+    const startOffset = (viewStart.getDay() + 6) % 7;
+    if (startOffset) {
+      viewStart = addDays(viewStart, -startOffset);
+    }
+    const totalDays = dayDiff(viewStart, viewEnd);
+    const remainder = totalDays % 7;
+    if (remainder !== 0) {
+      viewEnd = addDays(viewEnd, 7 - remainder);
+    }
+    const days = [];
+    for (let d = new Date(viewStart); d < viewEnd; d.setDate(d.getDate() + 1)) {
+      days.push(new Date(d));
+    }
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) {
+      weeks.push(days.slice(i, i + 7));
     }
 
-    // Days of month
+    const spilloverSet = new Set(monthWindow?.spillover || []);
     const todayStr = localDateKey(new Date());
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      const dateObj = new Date(year, month, day);
-      const dateStr = localDateKey(dateObj);
-      const isToday = dateStr === todayStr;
-      const dayEvents = monthEvents.filter(e => {
-        const start = parseLocalDateTime(e.start_time);
-        const end = parseLocalDateTime(e.end_time || e.start_time);
-        const dayStart = new Date(dateObj);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(dayStart);
-        dayEnd.setDate(dayStart.getDate() + 1);
-        return start < dayEnd && end > dayStart;
+    const eventMeta = new Map();
+    monthEvents.forEach((event) => {
+      const range = getEventRange(event);
+      if (!range) return;
+      eventMeta.set(event.id, {
+        range,
+        endDay: getEventEndDay(range),
+        isMulti: isMultiDayEvent(event, range),
+      });
+    });
+    monthEventMap = new Map(monthEvents.map((event) => [String(event.id), event]));
+
+    const viewEndDay = addDays(viewEnd, -1);
+    const eventsByDay = {};
+    days.forEach((day) => {
+      eventsByDay[localDateKey(day)] = [];
+    });
+    monthEvents.forEach((event) => {
+      const meta = eventMeta.get(event.id);
+      if (!meta) return;
+      const startDay = toStartOfDay(meta.range.start);
+      const endDay = meta.endDay;
+      if (endDay < viewStart || startDay > viewEndDay) return;
+      const start = startDay < viewStart ? new Date(viewStart) : startDay;
+      const end = endDay > viewEndDay ? new Date(viewEndDay) : endDay;
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const key = localDateKey(d);
+        if (!eventsByDay[key]) eventsByDay[key] = [];
+        eventsByDay[key].push(event);
+      }
+    });
+    Object.keys(eventsByDay).forEach((key) => {
+      eventsByDay[key].sort((a, b) => {
+        const ra = eventMeta.get(a.id)?.range?.start || 0;
+        const rb = eventMeta.get(b.id)?.range?.start || 0;
+        return ra - rb;
+      });
+    });
+    monthOverflowMap = eventsByDay;
+
+    let html = '<div class="cal-month-header">';
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach((d) => {
+      html += `<div class="cal-month-header-cell">${d}</div>`;
+    });
+    html += '</div>';
+
+    weeks.forEach((week) => {
+      const weekStartDay = toStartOfDay(week[0]);
+      const weekEndDay = toStartOfDay(week[6]);
+      const weekMulti = monthEvents.filter((event) => {
+        const meta = eventMeta.get(event.id);
+        if (!meta || !meta.isMulti) return false;
+        return meta.range.start < addDays(weekEndDay, 1) && meta.endDay >= weekStartDay;
+      }).sort((a, b) => {
+        const ra = eventMeta.get(a.id)?.range?.start || 0;
+        const rb = eventMeta.get(b.id)?.range?.start || 0;
+        return ra - rb;
       });
 
-      html += `<div style="min-height:80px; border:1px solid #e0e5ec; padding:0.25rem; ${isToday ? 'background:#e6f0ff;' : ''}" data-date="${dateStr}">
-        <div style="font-weight:600; font-size:0.85rem; ${isToday ? 'color:#0b4f9c;' : ''}">${day}</div>
-        <div style="display:grid; gap:2px; margin-top:0.25rem;">
-          ${dayEvents.slice(0, 3).map(e => `
-            <div style="background:${e.color || '#0b4f9c'}; color:white; padding:0.1rem 0.25rem; border-radius:2px; font-size:0.65rem; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" onclick="window.calShowEvent && window.calShowEvent(${e.id})" title="${e.title}">${e.title}</div>
-          `).join('')}
-          ${dayEvents.length > 3 ? `<div style="font-size:0.65rem; color:#5b6470;">+${dayEvents.length - 3} more</div>` : ''}
-        </div>
-      </div>`;
-    }
+      const rows = Array.from({ length: MAX_MONTH_BAR_ROWS }, () => Array(7).fill(false));
+      const overflowByDay = Array(7).fill(0);
+      const bars = [];
+      const reserveRow = (startIdx, endIdx) => {
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows[r];
+          let free = true;
+          for (let i = startIdx; i <= endIdx; i++) {
+            if (row[i]) { free = false; break; }
+          }
+          if (free) {
+            for (let i = startIdx; i <= endIdx; i++) row[i] = true;
+            return r;
+          }
+        }
+        return -1;
+      };
+
+      weekMulti.forEach((event) => {
+        const meta = eventMeta.get(event.id);
+        if (!meta) return;
+        const startIdx = clampDayIndex(dayDiff(weekStartDay, meta.range.start));
+        const endIdx = clampDayIndex(dayDiff(weekStartDay, meta.endDay));
+        if (endIdx < 0 || startIdx > 6) return;
+        const row = reserveRow(startIdx, endIdx);
+        if (row === -1) {
+          for (let i = startIdx; i <= endIdx; i++) overflowByDay[i] += 1;
+          return;
+        }
+        bars.push(`
+          <button type="button" class="cal-month-bar" data-id="${event.id}"
+            style="grid-column:${startIdx + 1} / ${endIdx + 2}; grid-row:${row + 1}; --event-accent:${event.color || '#2c5aa0'};">
+            ${event.title || 'Untitled'}
+          </button>
+        `);
+      });
+
+      html += `<div class="cal-month-week" style="--cal-month-bar-rows:${MAX_MONTH_BAR_ROWS};">`;
+      html += `<div class="cal-month-bars">${bars.join('')}</div>`;
+      week.forEach((day, idx) => {
+        const dateStr = localDateKey(day);
+        const isToday = dateStr === todayStr;
+        const isSpillover = spilloverSet.has(dateStr) || day.getMonth() !== month;
+        const dayEvents = (eventsByDay[dateStr] || []).slice();
+        const singleDayEvents = dayEvents.filter((event) => {
+          const meta = eventMeta.get(event.id);
+          return !(meta && meta.isMulti);
+        }).sort((a, b) => {
+          const ra = eventMeta.get(a.id)?.range?.start || 0;
+          const rb = eventMeta.get(b.id)?.range?.start || 0;
+          return ra - rb;
+        });
+
+        const visible = singleDayEvents.slice(0, MAX_MONTH_ITEMS);
+        const extraCount = Math.max(0, singleDayEvents.length - MAX_MONTH_ITEMS) + overflowByDay[idx];
+        const itemsHtml = visible.map((event) => `
+          <button type="button" class="cal-month-item" data-id="${event.id}" title="${event.title || 'Untitled'}">
+            <span class="cal-month-dot" style="background:${event.color || '#2c5aa0'};"></span>
+            <span>${event.title || 'Untitled'}</span>
+          </button>
+        `).join('');
+
+        html += `
+          <div class="cal-month-cell ${isToday ? 'is-today' : ''} ${isSpillover ? 'is-spillover' : ''}" data-date="${dateStr}">
+            <div class="cal-month-day">${day.getDate()}</div>
+            <div class="cal-month-items">
+              ${itemsHtml}
+              ${extraCount > 0 ? `<button type="button" class="cal-more-btn" data-date="${dateStr}">+${extraCount} more</button>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+    });
 
     monthGrid.innerHTML = html;
   };
 
   const renderCurrentView = () => {
+    hideQuickView();
+    hideOverflow();
     if (currentView === 'day') renderDayView();
     else if (currentView === 'week') renderWeekView();
     else if (currentView === 'month') renderMonthView();
@@ -719,8 +1057,22 @@
   };
 
   const updateEndPreview = () => {
-    const endParts = getEndParts();
     const startDate = eventDateInput?.value || '';
+    if (allDayToggle?.checked) {
+      if (!eventEndPreview) return;
+      const endDate = eventEndDateInput?.value || startDate;
+      if (!startDate) {
+        eventEndPreview.textContent = 'All day';
+        return;
+      }
+      if (endDate && endDate !== startDate) {
+        eventEndPreview.textContent = `${formatDateLabel(startDate)} → ${formatDateLabel(endDate)}`;
+      } else {
+        eventEndPreview.textContent = `${formatDateLabel(startDate)} · All day`;
+      }
+      return;
+    }
+    const endParts = getEndParts();
     if (!endParts || !eventEndPreview) {
       if (eventEndPreview) eventEndPreview.textContent = '—';
       return;
@@ -731,6 +1083,16 @@
   };
 
   const setEndFromStart = () => {
+    if (allDayToggle?.checked) {
+      if (eventEndDateInput && eventDateInput?.value) {
+        if (!eventEndDateInput.value) eventEndDateInput.value = eventDateInput.value;
+        if (eventEndDateInput.value < eventDateInput.value) {
+          eventEndDateInput.value = eventDateInput.value;
+        }
+      }
+      updateEndPreview();
+      return;
+    }
     const startParts = getStartParts();
     if (!startParts || !eventEndDateInput || !eventEndTimeInput) return;
     const startDateTime = toLocalDate(startParts.dateStr, startParts.timeParts);
@@ -744,6 +1106,10 @@
   };
 
   const updateDurationFromEnd = () => {
+    if (allDayToggle?.checked) {
+      updateEndPreview();
+      return;
+    }
     const startParts = getStartParts();
     const endParts = getEndParts();
     if (!startParts || !endParts) return;
@@ -761,31 +1127,73 @@
   const syncAllDayVisibility = () => {
     if (!whenControls || !allDayToggle) return;
     const isAllDay = allDayToggle.checked;
-    whenControls.style.display = isAllDay ? 'none' : 'grid';
-    if (eventEndToggle && eventEndControls) {
+    if (startTimeWrap) startTimeWrap.style.display = isAllDay ? 'none' : 'block';
+    if (startRow) startRow.style.gridTemplateColumns = isAllDay ? '1fr' : '1.2fr 1fr';
+    if (durationRow) durationRow.style.display = isAllDay ? 'none' : 'flex';
+    if (endTimeWrap) endTimeWrap.style.display = isAllDay ? 'none' : 'block';
+    if (eventEndControls) {
+      eventEndControls.style.display = isAllDay ? 'block' : (eventEndControls.style.display || 'none');
+    }
+    if (eventEndToggle) {
+      eventEndToggle.style.display = isAllDay ? 'none' : 'inline-flex';
       eventEndToggle.disabled = isAllDay;
-      if (isAllDay) {
-        eventEndControls.style.display = 'none';
-        eventEndToggle.textContent = 'Adjust end';
+      if (!isAllDay) eventEndToggle.textContent = eventEndControls?.style.display !== 'none' ? 'Hide end' : 'Adjust end';
+    }
+    if (isAllDay) {
+      if (eventEndDateInput && eventDateInput?.value && !eventEndDateInput.value) {
+        eventEndDateInput.value = eventDateInput.value;
       }
     }
-    if (eventEndPreview) {
-      if (isAllDay) {
-        eventEndPreview.textContent = 'All day';
-      } else {
-        updateEndPreview();
-      }
-    }
+    updateEndPreview();
   };
 
   pendingLink?.addEventListener('click', (e) => {
-    if (!lifeosAuth.getTokens().access_token) {
+    if (!lifeosAuth.isAuthenticated()) {
       e.preventDefault();
     }
   });
 
+  monthGrid?.addEventListener('click', (e) => {
+    const moreBtn = e.target.closest('.cal-more-btn');
+    if (moreBtn) {
+      const date = moreBtn.dataset.date;
+      const events = monthOverflowMap[date] || [];
+      showOverflow(date, events, moreBtn);
+      return;
+    }
+    const bar = e.target.closest('.cal-month-bar');
+    if (bar?.dataset?.id) {
+      showEventDetail(bar.dataset.id);
+      return;
+    }
+    const item = e.target.closest('.cal-month-item');
+    if (item?.dataset?.id) {
+      showEventDetail(item.dataset.id);
+    }
+  });
+
+  monthGrid?.addEventListener('mouseover', (e) => {
+    const bar = e.target.closest('.cal-month-bar');
+    if (bar?.dataset?.id) {
+      const event = monthEventMap.get(bar.dataset.id);
+      if (event) showQuickView(event, bar);
+      return;
+    }
+    const item = e.target.closest('.cal-month-item');
+    if (item?.dataset?.id) {
+      const event = monthEventMap.get(item.dataset.id);
+      if (event) showQuickView(event, item);
+    }
+  });
+
+  monthGrid?.addEventListener('mouseout', (e) => {
+    if (!e.relatedTarget || !monthGrid.contains(e.relatedTarget)) {
+      hideQuickView();
+    }
+  });
+
   const ensureAuth = () => {
-    const authed = !!lifeosAuth.getTokens().access_token;
+    const authed = lifeosAuth.isAuthenticated();
     [createBtn, reloadBtn, ledgerLoadOlderBtn, ledgerLoadNewerBtn].forEach(el => { if (el) el.disabled = !authed; });
     viewBtns.forEach(btn => { btn.disabled = !authed; });
     if (pendingLink) {
@@ -823,11 +1231,154 @@
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
+  const formatTimeRange = (start, end) => {
+    if (!start || !end) return '';
+    const startLabel = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const endLabel = end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return `${startLabel}–${endLabel}`;
+  };
+
+  const formatEventTimeRange = (event) => {
+    if (event.all_day) return 'All day';
+    const range = getEventRange(event);
+    if (!range) return '';
+    const start = range.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const end = range.end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return `${start}–${end}`;
+  };
+
+  const hideQuickView = () => {
+    if (quickView) quickView.style.display = 'none';
+  };
+
+  const showQuickView = (event, anchorEl) => {
+    if (!quickView || !anchorEl) return;
+    const range = formatEventTimeRange(event);
+    const location = event.location ? `<div class="cal-quickview-meta">📍 ${event.location}</div>` : '';
+    const tags = (event.tags || []).length ? `<div class="cal-quickview-tags">${(event.tags || []).map(t => `<span>${t}</span>`).join('')}</div>` : '';
+    quickView.innerHTML = `
+      <div class="cal-quickview-title">${event.title || 'Untitled'}</div>
+      <div class="cal-quickview-meta">${range}</div>
+      ${location}
+      ${tags}
+    `;
+    const rect = anchorEl.getBoundingClientRect();
+    quickView.style.top = `${rect.bottom + window.scrollY + 8}px`;
+    quickView.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 260)}px`;
+    quickView.style.display = 'block';
+  };
+
+  const hideOverflow = () => {
+    if (overflowPopover) overflowPopover.style.display = 'none';
+  };
+
+  const showOverflow = (dateStr, events, anchorEl) => {
+    if (!overflowPopover || !anchorEl) return;
+    const title = formatDateLabel(dateStr);
+    overflowPopover.innerHTML = `
+      <div class="cal-overflow-title">${title}</div>
+      <div class="cal-overflow-list">
+        ${(events || []).map((event) => `
+          <button type="button" class="cal-overflow-item" data-id="${event.id}">
+            <span class="cal-overflow-dot" style="background:${event.color || '#0b4f9c'}"></span>
+            <span>${event.title || 'Untitled'}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    const rect = anchorEl.getBoundingClientRect();
+    overflowPopover.style.top = `${rect.bottom + window.scrollY + 6}px`;
+    overflowPopover.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 260)}px`;
+    overflowPopover.style.display = 'block';
+  };
+
+  overflowPopover?.addEventListener('click', (e) => {
+    const item = e.target.closest('.cal-overflow-item');
+    if (!item) return;
+    showEventDetail(item.dataset.id);
+    hideOverflow();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (overflowPopover && !overflowPopover.contains(e.target) && !e.target.closest('.cal-more-btn')) {
+      hideOverflow();
+    }
+    if (
+      quickView &&
+      !quickView.contains(e.target) &&
+      !e.target.closest('.cal-event-card') &&
+      !e.target.closest('.cal-all-day-chip') &&
+      !e.target.closest('.cal-week-all-day-bar') &&
+      !e.target.closest('.cal-month-bar') &&
+      !e.target.closest('.cal-month-item')
+    ) {
+      hideQuickView();
+    }
+  });
+
+  window.addEventListener('scroll', () => {
+    hideQuickView();
+    hideOverflow();
+  }, true);
+
+  const layoutTimedEvents = (events, dayStart, dayEnd) => {
+    const items = events.map((event) => {
+      const range = getEventRange(event);
+      if (!range) return null;
+      const start = range.start < dayStart ? dayStart : range.start;
+      const end = range.end > dayEnd ? dayEnd : range.end;
+      if (end <= start) return null;
+      return {
+        event,
+        start,
+        end,
+        startMin: start.getHours() * 60 + start.getMinutes(),
+        endMin: end.getHours() * 60 + end.getMinutes(),
+        col: 0,
+        colCount: 1,
+      };
+    }).filter(Boolean);
+
+    items.sort((a, b) => a.startMin - b.startMin);
+    let active = [];
+    let cluster = [];
+    let clusterMax = 1;
+
+    const finalizeCluster = () => {
+      cluster.forEach((item) => {
+        item.colCount = clusterMax;
+      });
+      cluster = [];
+      clusterMax = 1;
+    };
+
+    items.forEach((item) => {
+      active = active.filter((a) => a.endMin > item.startMin);
+      if (!active.length && cluster.length) {
+        finalizeCluster();
+      }
+      const used = new Set(active.map((a) => a.col));
+      let col = 0;
+      while (used.has(col)) col += 1;
+      item.col = col;
+      active.push(item);
+      cluster.push(item);
+      clusterMax = Math.max(clusterMax, active.length);
+    });
+    if (cluster.length) finalizeCluster();
+
+    return items;
+  };
+
   const mergeLedgerEvents = (newEvents = []) => {
     const byId = new Map();
     ledgerEvents.forEach((e) => byId.set(e.id, e));
     newEvents.forEach((e) => byId.set(e.id, e));
-    ledgerEvents = Array.from(byId.values()).sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    ledgerEvents = Array.from(byId.values()).sort((a, b) => {
+      const aTime = parseLocalDateTime(a.start_time);
+      const bTime = parseLocalDateTime(b.start_time);
+      return (aTime?.getTime() || 0) - (bTime?.getTime() || 0);
+    });
   };
 
   const renderLedger = () => {
@@ -1096,8 +1647,14 @@
       const diffMinutes = Math.round((endDateTime - startDateTime) / 60000);
       durationMinutes = diffMinutes > 0 ? diffMinutes : DEFAULT_DURATION_MINUTES;
       endDateLocked = localDateKey(endDateTime) === localDateKey(startDateTime);
-      eventEndDateInput.value = localDateKey(endDateTime);
-      eventEndTimeInput.value = formatTime12h(endDateTime);
+      if (eventData.all_day) {
+        const endDate = addDays(endDateTime, -1);
+        eventEndDateInput.value = localDateKey(endDate);
+        eventEndTimeInput.value = '12:00 AM';
+      } else {
+        eventEndDateInput.value = localDateKey(endDateTime);
+        eventEndTimeInput.value = formatTime12h(endDateTime);
+      }
     } else {
       const endDateTime = new Date(startDateTime.getTime() + DEFAULT_DURATION_MINUTES * 60000);
       eventEndDateInput.value = localDateKey(endDateTime);
@@ -1239,20 +1796,38 @@
 
     const allDay = allDayToggle.checked;
     const startDate = eventDateInput.value;
-    const startParts = parseTimeInput(eventStartTimeInput.value);
-    if (!startDate || !startParts) {
-      setStatus(modalStatus, 'Enter a valid start time (e.g., 9:30 AM or 09:30)', 'error');
-      eventStartTimeInput.focus();
+    if (!startDate) {
+      setStatus(modalStatus, 'Select a start date.', 'error');
+      eventDateInput.focus();
       return;
     }
-    eventStartTimeInput.value = formatTimeFromParts(startParts.hours, startParts.minutes);
+    let startParts = null;
+    if (!allDay) {
+      startParts = parseTimeInput(eventStartTimeInput.value);
+      if (!startParts) {
+        setStatus(modalStatus, 'Enter a valid start time (e.g., 9:30 AM or 09:30)', 'error');
+        eventStartTimeInput.focus();
+        return;
+      }
+      eventStartTimeInput.value = formatTimeFromParts(startParts.hours, startParts.minutes);
+    }
 
     const startTimeString = allDay
       ? `${startDate}T00:00`
       : buildDateTimeString(startDate, startParts);
 
     let endTimeString = null;
-    if (!allDay) {
+    if (allDay) {
+      const endDateRaw = eventEndDateInput.value || startDate;
+      if (endDateRaw < startDate) {
+        setStatus(modalStatus, 'End date must be on or after start date.', 'error');
+        eventEndDateInput.focus();
+        return;
+      }
+      const endDateObj = parseLocalDate(endDateRaw);
+      endDateObj.setDate(endDateObj.getDate() + 1);
+      endTimeString = `${localDateKey(endDateObj)}T00:00`;
+    } else {
       const endDate = eventEndDateInput.value || startDate;
       const endParts = parseTimeInput(eventEndTimeInput.value);
       if (!endDate || !endParts) {
@@ -1282,7 +1857,7 @@
       is_private: document.getElementById('cal-event-private').checked,
     };
     if (allDay) {
-      payload.end_time = null;
+      payload.end_time = endTimeString;
     } else {
       payload.end_time = endTimeString;
     }
