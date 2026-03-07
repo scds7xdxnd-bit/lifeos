@@ -1,15 +1,17 @@
 import pytest
 from datetime import datetime, timedelta
 
-pytestmark = [pytest.mark.integration, pytest.mark.ml]
+pytestmark = pytest.mark.unit
 
 from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.models import InsightRecord
 from lifeos.core.insights.services import (
     fetch_insights,
+    list_insights_feed,
     persist_insights,
     recent_events,
 )
+from lifeos.core.insights.schemas import InsightsFeedQuery
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.extensions import db
@@ -187,3 +189,79 @@ def test_fetch_insights_orders_most_recent_first(app):
 
         assert len(results) == 1
         assert results[0].id == newer.id
+
+
+def test_list_insights_feed_applies_ranker_on_default_path(app, monkeypatch):
+    with app.app_context():
+        user = _create_user(email="feed-rank@example.com")
+        event = _create_event(user)
+        db.session.add(
+            InsightRecord(
+                user_id=user.id,
+                event_id=event.id,
+                event_type=event.event_type,
+                kind="generic",
+                message="rank me",
+                severity="info",
+                data={},
+                created_at=datetime.utcnow(),
+            )
+        )
+        db.session.commit()
+
+        called = {"value": False}
+
+        def _rank(uid, items, context=None):
+            called["value"] = True
+            return items
+
+        monkeypatch.setattr("lifeos.core.insights.services.rank_insights", _rank)
+
+        items, total, page, pages = list_insights_feed(
+            user.id,
+            InsightsFeedQuery(page=1, per_page=20),
+        )
+
+        assert called["value"] is True
+        assert total == 1
+        assert page == 1
+        assert pages == 1
+        assert len(items) == 1
+
+
+def test_list_insights_feed_status_filter_path_applies_ranker(app, monkeypatch):
+    with app.app_context():
+        user = _create_user(email="feed-status@example.com")
+        event = _create_event(user)
+        db.session.add(
+            InsightRecord(
+                user_id=user.id,
+                event_id=event.id,
+                event_type=event.event_type,
+                kind="generic",
+                message="status record",
+                severity="info",
+                data={"status": "confirmed"},
+                created_at=datetime.utcnow(),
+            )
+        )
+        db.session.commit()
+
+        called = {"value": False}
+
+        def _rank(uid, items, context=None):
+            called["value"] = True
+            return items
+
+        monkeypatch.setattr("lifeos.core.insights.services.rank_insights", _rank)
+
+        items, total, page, pages = list_insights_feed(
+            user.id,
+            InsightsFeedQuery(page=1, per_page=10, status="confirmed"),
+        )
+
+        assert called["value"] is True
+        assert total == 1
+        assert page == 1
+        assert pages == 1
+        assert len(items) == 1

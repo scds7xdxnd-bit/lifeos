@@ -3,7 +3,7 @@ from datetime import date
 
 from flask_jwt_extended import create_access_token
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.models import Role
 from lifeos.core.users.models import User

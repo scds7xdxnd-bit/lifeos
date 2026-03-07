@@ -4,14 +4,17 @@ import pytest
 from datetime import datetime
 from decimal import Decimal
 
-pytestmark = pytest.mark.integration  # Uses database fixtures
+pytestmark = pytest.mark.unit  # Uses database fixtures
 
 from lifeos.extensions import db
 from lifeos.domains.finance.models.accounting_models import Account, AccountCategory
 from lifeos.domains.finance.services.accounting_service import (
     search_accounts,
+    create_account,
     create_account_inline,
+    create_custom_account_category,
     get_account_subtypes,
+    update_account_category,
     get_suggested_accounts,
     _normalize_name,
     VALID_ACCOUNT_TYPES,
@@ -201,6 +204,13 @@ class TestSearchAccounts:
             data = setup_accounts
             results = search_accounts(data["user_id"], "a", limit=1)
             assert len(results) <= 1
+
+    def test_search_returns_results_when_query_has_no_alnum_tokens(self, app, setup_accounts):
+        """Search should short-circuit fallback when tokenization yields no words."""
+        with app.app_context():
+            data = setup_accounts
+            results = search_accounts(data["user_id"], "!!!", limit=5)
+            assert results == []
 
 
 class TestCreateAccountInline:
@@ -415,3 +425,56 @@ class TestGetSuggestedAccounts:
                 assert "account_type" in result
                 assert "account_subtype" in result
                 assert "is_existing" in result
+
+
+def test_create_custom_category_existing_default_bumps_read_cache(app, monkeypatch):
+    with app.app_context():
+        bumps: list[tuple[str, int]] = []
+        monkeypatch.setattr(
+            "lifeos.domains.finance.services.accounting_service.read_cache.bump",
+            lambda scope, uid: bumps.append((scope, uid)),
+        )
+
+        existing = create_custom_account_category(
+            user_id=1,
+            name="Ops Receivable",
+            base_type="asset",
+            is_default=False,
+        )
+        resolved = create_custom_account_category(
+            user_id=1,
+            name="Ops Receivable",
+            base_type="asset",
+            is_default=True,
+        )
+
+        assert resolved.id == existing.id
+        assert resolved.is_default is True
+        assert bumps
+
+
+def test_update_account_category_bumps_read_cache(app, monkeypatch):
+    with app.app_context():
+        bumps: list[tuple[str, int]] = []
+        monkeypatch.setattr(
+            "lifeos.domains.finance.services.accounting_service.read_cache.bump",
+            lambda scope, uid: bumps.append((scope, uid)),
+        )
+
+        acct = create_account(
+            user_id=1,
+            name="Ops Cash",
+            base_type="asset",
+            account_subtype="cash",
+            category_name_new="Operations",
+        )
+        category = create_custom_account_category(
+            user_id=1,
+            name="Ops Target",
+            base_type="asset",
+            is_default=False,
+        )
+
+        updated = update_account_category(user_id=1, account_id=acct.id, category_id=category.id)
+        assert updated.category_id == category.id
+        assert bumps

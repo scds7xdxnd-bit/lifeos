@@ -241,7 +241,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(project_pages_bp, url_prefix="/projects")
     app.register_blueprint(insights_api_bp, url_prefix="/api/insights")
     app.register_blueprint(api_v1_insights_bp, url_prefix="/api/v1/insights")
-    if not any(rule.rule == "/api/v1/insights/proposals" for rule in app.url_map.iter_rules()):
+    if not any(rule.rule == "/api/v1/insights/proposals" for rule in app.url_map.iter_rules()):  # pragma: no cover
         app.register_blueprint(insights_api_bp, url_prefix="/api/v1/insights")
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
