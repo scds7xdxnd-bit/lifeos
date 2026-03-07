@@ -16,7 +16,6 @@ def test_personalization_enabled_from_env(monkeypatch):
     assert personalization_enabled(config=None) is False
 
 
-@pytest.mark.integration
 def test_personalization_enabled_from_app_config(app):
     app.config["PERSONALIZATION_ENABLED"] = True
     assert personalization_enabled(app.config) is True
@@ -25,7 +24,6 @@ def test_personalization_enabled_from_app_config(app):
     assert personalization_enabled(app.config) is False
 
 
-@pytest.mark.integration
 def test_rank_insights_noop_order_preserved(app):
     candidates = [{"id": 1}, {"id": 2}, {"id": 3}]
 

@@ -14,9 +14,6 @@ from scripts.ops import phase5c_feature_runner as feature_runner
 from scripts.ops import phase5c_personalization_noop_check as noop_check
 
 
-pytestmark = pytest.mark.integration
-
-
 def _default_user() -> User:
     user = User.query.filter_by(email="test@example.com").first()
     assert user is not None

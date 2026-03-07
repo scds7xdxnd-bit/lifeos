@@ -17,9 +17,6 @@ from lifeos.core.feature_store.service import (
 from lifeos.core.users.models import User
 
 
-pytestmark = pytest.mark.integration
-
-
 def _default_user_id() -> int:
     user = User.query.filter_by(email="test@example.com").first()
     assert user is not None
