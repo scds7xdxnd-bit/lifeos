@@ -41,6 +41,23 @@ from lifeos.core.insights.ml.phase5a_contracts import (
     get_interpretation_contract,
     list_interpretation_contracts,
 )
+from lifeos.core.insights.ml.phase5b_contracts import (
+    ALLOWED_DELIVERY_POLICIES,
+    ALLOWED_SEVERITIES,
+    ALLOWED_WINDOW_DAYS,
+    FEATURE_VERSION,
+    PHASE5B_FEATURE_CONTRACTS,
+    PHASE5B_FORBIDDEN_CAPABILITIES,
+    PHASE5B_INSIGHT_TYPE_CONTRACTS,
+    PHASE5B_REQUIRED_INVARIANTS,
+    FeatureContract,
+    InsightTypeContract,
+    alignment_report,
+    get_feature_contract,
+    get_insight_type_contract,
+    list_feature_contracts,
+    list_insight_type_contracts,
+)
 from lifeos.core.insights.ml.ranking import cosine_similarity, rank_candidates
 from lifeos.core.insights.ml.replay_contracts import (
     GOLD_REPLAY_DATASETS,
@@ -51,6 +68,12 @@ from lifeos.core.insights.ml.replay_contracts import (
     get_replay_determinism_contract,
     list_gold_replay_datasets,
     list_replay_determinism_contracts,
+)
+from lifeos.core.insights.ml.stability_contracts import (
+    PHASE3B1_STABILITY_CONTRACT,
+    StabilityPatchContract,
+    get_phase3b1_stability_contract,
+    list_stability_contracts,
 )
 
 __all__ = [
@@ -71,6 +94,21 @@ __all__ = [
     "PHASE3B_SLO_METRICS",
     "get_phase3b_slo_metric",
     "list_phase3b_slo_metrics",
+    "FeatureContract",
+    "InsightTypeContract",
+    "FEATURE_VERSION",
+    "ALLOWED_WINDOW_DAYS",
+    "ALLOWED_DELIVERY_POLICIES",
+    "ALLOWED_SEVERITIES",
+    "PHASE5B_FEATURE_CONTRACTS",
+    "PHASE5B_INSIGHT_TYPE_CONTRACTS",
+    "PHASE5B_FORBIDDEN_CAPABILITIES",
+    "PHASE5B_REQUIRED_INVARIANTS",
+    "alignment_report",
+    "get_feature_contract",
+    "list_feature_contracts",
+    "get_insight_type_contract",
+    "list_insight_type_contracts",
     "TimelineEventContract",
     "InterpretationTypeContract",
     "FeedbackEventContract",
@@ -81,6 +119,10 @@ __all__ = [
     "INTERPRETATION_ACTIONS",
     "get_interpretation_contract",
     "list_interpretation_contracts",
+    "StabilityPatchContract",
+    "PHASE3B1_STABILITY_CONTRACT",
+    "get_phase3b1_stability_contract",
+    "list_stability_contracts",
     "embed_text",
     "extract_event_features",
     "cosine_similarity",
