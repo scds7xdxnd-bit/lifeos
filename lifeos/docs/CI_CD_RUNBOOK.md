@@ -1,7 +1,7 @@
 # LifeOS CI/CD Runbook
 
-**Owner:** DevOps Team  
-**Last Updated:** 2025-12-07  
+**Owner:** DevOps Team
+**Last Updated:** 2025-12-07
 **Status:** Production Ready
 
 ---
@@ -252,7 +252,7 @@ make build-image
 ### Golden Rules
 
 1. **DevOps runs migrations, DB team creates them**
-2. **Never create migrations in CI** — Only `flask db upgrade`
+2. **Never create migrations in CI** — Only `python -m flask --app lifeos.wsgi:app db upgrade head`
 3. **Dangerous patterns require review** — `drop_table`, `drop_column`, `execute(`
 
 ### CI Migration Workflow
@@ -279,7 +279,7 @@ PR Submitted
 ┌─────────────────────────────────┐
 │ Staging Deploy                  │
 │ • run_migrations.sh             │
-│ • flask db upgrade head         │
+│ • python -m flask --app lifeos.wsgi:app db upgrade head         │
 └─────────────────────────────────┘
     │
     ▼ (after testing)
@@ -295,16 +295,16 @@ PR Submitted
 
 ```bash
 # Check current state
-cd lifeos && flask db current
+python -m flask --app lifeos.wsgi:app db current
 
 # Apply pending migrations
-cd lifeos && flask db upgrade head
+python -m flask --app lifeos.wsgi:app db upgrade head
 
 # Rollback one migration
-cd lifeos && flask db downgrade -1
+python -m flask --app lifeos.wsgi:app db downgrade -1
 
 # Show migration history
-cd lifeos && flask db history
+python -m flask --app lifeos.wsgi:app db history
 ```
 
 ---

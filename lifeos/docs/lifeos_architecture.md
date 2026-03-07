@@ -1,11 +1,11 @@
-# LifeOS Architecture Constitution  
-_Last updated: 2025-12-10 (v2.1 — CI/CD operational, Calendar-First complete)_
+# LifeOS Architecture Constitution
+_Last updated: 2026-02-05 (v2.14 — Phase 5b complete; deterministic insights verified)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2025-12-10)
+# 0. Implementation Status (as of 2026-02-05)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -13,8 +13,8 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Event System**: In-process event bus, event catalog per domain, event_record audit table
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
-- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with 23 additive migrations (head: `20251219_calendar_oauth_tokens`)
-- **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live
+- **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251224_insight_feed_indexes`)
+- **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live. Latest runs: PR workflow reported 24 passed / 10 xfailed / 497 errors (needs investigation on selective job), main workflow reported 515 passed / 6 deselected / 10 xfailed (green).
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
 - **Habits Domain**: Habits, logs, streaks, metrics (complete lifecycle)
@@ -27,8 +27,20 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Calendar Interpreter**: Rule-based classification engine (`lifeos/core/interpreter/`), domain adapters, confidence scoring, constants
 - **Inferred Records**: All existing domains extended with `source`, `calendar_event_id`, `confidence_score`, `inferred_status` columns (migration applied)
 - **Insights Engine**: Rule-based pipeline (ingest→enrich→rules→persist→deliver); per-domain handlers; feature flags
+- **Inference Telemetry**: In-memory telemetry for insight/inference events (counts, latency, FP/FN flags per domain/model_version); admin-only debug endpoint in non-prod (`GET /admin/debug/insight-telemetry`) exposes bounded snapshots
+- **Event Catalog Completeness**: All domains updated to include inference events with payload_version/model_version and optional `is_false_positive`/`is_false_negative`; guardrail tests enforce catalog coverage
 - **Health Endpoints**: `/health` and `/api/v1/ping` for CI/CD smoketests
-- **Testing**: 521 tests passing, 85% coverage, all tests with proper markers (33 integration, 1 unit, 24 ml)
+- **Testing**: 539 tests passing, 10 xfailed, 38 warnings, 85% coverage; all tests carry markers (integration/unit/ml).
+- **Documentation Governance**: UI/UX Constitution is binding (`lifeos/docs/ui_ux_constitution.md`); Tasks Hub at `lifeos/docs/tasks/` with `archive/` for completed cross-team handoffs; semantics canon published under `lifeos/docs/semantics/`.
+- **Phase 2.5 Semantic Contract Freeze**: Complete; canonical references in `lifeos/docs/semantics/` are binding for Phase 3a and beyond.
+- **Phase 3a Cross-Domain Intelligence Hardening**: Complete; replay determinism, confidence routing, and governance tests enforced. Telemetry checks require admin `AUTH_TOKEN`.
+- **Phase 3a.5 Domain UX & Semantic Surface Alignment**: Complete; DSDs approved, read/write boundaries and interaction patterns normalized, finance surfaces aligned to read-first intent.
+- **Phase 3b Interface & Contract Hardening**: Complete; versioned API contracts, read-only guardrails, DSD alignment tests, and SLO alerts enforced.
+- **Phase 3b.1 Stability Patch & Verification**: Complete; journal write, finance account search, and schedule/forecast regressions fixed and verified; mini soak clean; Phase 3b formally closed.
+- **Phase 3c-1 Read & Throughput Scaling**: Complete; read-through cache, cache observability, read-load verification, and invalidation audit completed; Phase 4 unblocked.
+- **Phase 4 Calendar Time-Canvas UI**: Verification-complete; feature-flagged calendar time-canvas renderer aligned to Apple-style interaction grammar with snapshots and QA sign-off.
+- **Phase 5a Insight Substrate & Proposal Infrastructure**: Complete; timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete.
+- **Phase 5b Deterministic Cross-Domain Insights**: Complete; feature computation, insight registry, rule emission, feed visibility, and feedback capture verified; QA sign-off recorded.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -111,17 +123,36 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Pending (User Actions Required)**:
   - Configure staging/production secrets in GitHub (requires admin access)
   - Set up GitHub environment protection rules (requires admin access)
-  - Add `CODECOV_TOKEN` secret to GitHub
+- Add `CODECOV_TOKEN` secret to GitHub
   - Test pipelines end-to-end (push PR to trigger)
+
+## 🆕 Session Lifecycle Scaffold (Phase 3b½ — structure-only; login issue quarantined)
+- **Scope**: Add interface-only session lifecycle skeleton (session vs user vs future device identity), admin reset contract, and event shapes without changing current auth behavior.
+- **Allowed Implementation Now**: Minimal `admin_reset` path plus optional DB-level session reset script for ops; all other files remain interfaces/stubs until Phase 3c.
+- **Events (contracts only)**: `auth.session.created`, `auth.session.invalidated`, `auth.session.admin_reset` with payloads `{session_id, user_id, device_id? (stub), reason?}`; no emitters wired yet.
+- **Deferral Statement**: “This login issue is quarantined by design. A minimal reset exists; full resolution belongs to Phase 3c.” Use this to justify deferring behavioral fixes.
+- **Explicit Non-Goals (Phase 3c)**: No device fingerprinting, no token/cookie changes, no multi-device sync/offline behavior, no client/browser heuristics.
 
 ## 🔜 Immediate Next Steps (post-Phase 2)
 - DevOps: monitor first `lifeos-main.yml` run; configure GitHub Secrets (`CODECOV_TOKEN`, registry creds), and enforce branch protections/approvals on main/staging/prod; archive `docs/DEVOPS_HANDOFF_CI_FIX.md` after confirming green.
 - QA: verify coverage uploads (Codecov) and CI environment parity; maintain nightly monitoring (`lifeos-nightly.yml`); add remaining inferred-record integration tests.
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
+## 🎯 Current Phase Focus
+- Active: Phase 3c-2 trigger assessment (event transport scaling) remains deferred; Phase 5c readiness can be evaluated now that Phase 5b is complete.
+- Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
+
+## ✅ Phase 3b API Hardening (Complete — prior milestone)
+- `/api/v1` namespace added without breaking legacy routes.
+- Auth endpoints: `/api/v1/auth/login`, `/api/v1/auth/refresh` return access/refresh tokens, CSRF token, and user payload; Bearer + CSRF supported.
+- Insights feed: `/api/v1/insights/feed` with validated filters (domain, severity, date range, status) and consistent pagination metadata; user-scoped and includes source event metadata.
+- Client-friendly responses: finance account search, trial balance, and journal list return HTTP 200 with empty payloads/metadata on invalid/empty queries rather than 400; pagination metadata always present.
+- Tests: suite green (539 passed, 10 xfailed, 38 warnings); xfails track known gaps outside these changes.
+
 ## ⚠️ Partially Implemented / Planned
-- **Broker Integration**: Stub in `lifeos/platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
-- **Read Model Projections**: Not yet implemented; events flow to outbox but no materialized read-side views
+- **Session Lifecycle Scaffold**: Interface-only `core/auth/session_*`, `device.py`, `constants.py`, `admin_controllers.py`, and session event contracts. Only minimal `admin_reset` path + optional DB reset script may be implemented now; broader behavior deferred to Phase 3c.
+- **Broker Integration**: Stub in `lifeos/lifeos_platform/broker/`; real broker (RabbitMQ/Kafka) deferred post-v1
+- **Read Model Projections**: Partial; read-only projections exist for insights/review, broader domain projections remain pending
 - **Autonomous Assistant**: Framework ready; rules/NLU inference deferred
 - **RL-based Personalization**: Blocked on read models; placeholder for future
 - **Admin Dashboard**: Stub; full audit/insights UI planned for Q1 2026
@@ -129,7 +160,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 
 ---
 
-# 1. Purpose & Scope  
+# 1. Purpose & Scope
 LifeOS is a multi-domain, event-aware system for a single tenant (the user). Controllers are thin; services own business rules; domains integrate via events/read models; insights consume events and persist derived signals.
 
 ---
@@ -137,7 +168,7 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 # 2. Domain Boundaries (authoritative)
 **8 fully-defined domains, each with controllers, services, models, events, and tasks:**
 
-- **Core**: auth (register, login, password-reset, username-reminder), users/prefs, roles/permissions, events, insights, **interpreter** (calendar classification), utils, app factory, extensions, worker runtime, outbox platform.  
+- **Core**: auth (register, login, password-reset, username-reminder, session lifecycle scaffold + admin reset contract), users/prefs, roles/permissions, events, insights, **interpreter** (calendar classification), utils, app factory, extensions, worker runtime, outbox platform.
 - **Calendar** _(NEW)_: calendar events (title, description, start/end time, location, recurrence), external sync (Google/Apple), event interpretations, tagging, UI views. Primary input surface for life activity capture.
 - **Finance**: ledger (accounts + categories, journal entries/lines), transactions, schedules/forecasts, receivables/loans, trial balance, imports, ML account suggester. _Extended with inferred transaction support._
 - **Habits**: habit definitions, logs, streaks/metrics, habit-driven tasks (recurring schedules via money_schedule integration). _Extended with inferred habit log support._
@@ -145,7 +176,7 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 - **Skills**: skill definitions, practice sessions, metrics (hours logged, streak, proficiency), competency tracking. _Extended with inferred practice session support._
 - **Projects**: project lifecycle (created→updated→archived→completed), tasks (created→updated→completed→logged), task logs, status/priority tracking. _Extended with inferred work session support._
 - **Relationships**: people (contact directory with reconnect cues), interactions (call, message, meeting logged), reunion planning, relationship signals. _Extended with inferred interaction support._
-- **Journal**: personal entries (markdown/text, mood, tags, privacy), signals for insights, search/tagging.  
+- **Journal**: personal entries (markdown/text, mood, tags, privacy), signals for insights, search/tagging.
 
 **Integration Points:**
 - **Calendar → Interpreter → Domains**: Calendar events flow through interpreter for classification; inferred records created in target domains with `source='calendar'`, `calendar_event_id`, `confidence_score`.
@@ -158,250 +189,105 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 ---
 
 # 3. Layering & Folder Map (current)
-**Backend Stack:** Flask + SQLAlchemy + Alembic + Pytest  
-**Frontend:** Jinja2 templates (server-rendered) with htmx/Alpine.js for interactivity  
-**Broker:** Stub (RabbitMQ/Kafka post-v1)  
+**Backend Stack:** Flask + SQLAlchemy + Alembic + Pytest
+**Frontend:** Jinja2 templates (server-rendered) with htmx/Alpine.js for interactivity
+**Broker:** Stub (RabbitMQ/Kafka post-v1)
 
 **Folder Structure:**
 ```
 lifeos/
 ├── core/                           # Shared services, auth, events, interpreter
-│   ├── auth/                       # Login, register, JWT/session, roles/perms
-│   │   ├── controllers.py
-│   │   ├── models.py              # Role, Permission, RolePermission, UserRole, SessionToken, JWTBlocklist, PasswordResetToken
-│   │   ├── services.py
-│   │   ├── schemas.py
-│   │   ├── events.py              # auth.user.* events
-│   │   └── tasks.py               # background email tasks
-│   ├── users/                      # User model, preferences
-│   │   ├── models.py              # User, UserPreference
-│   │   ├── services.py
-│   │   └── events.py              # user.* events (future)
-│   ├── events/                     # Event bus & catalog
-│   │   ├── event_bus.py           # In-process bus (planned outbox+broker)
-│   │   ├── event_models.py        # EventRecord model (audit log)
-│   │   └── event_catalog.md       # Mirrored from domain events.py
-│   ├── interpreter/                # Calendar Interpreter (NEW)
-│   │   ├── __init__.py
-│   │   ├── calendar_interpreter.py # Main interpreter class; subscribes to calendar events
-│   │   ├── classification_rules.py # Rule definitions (keywords, patterns, time hints)
-│   │   ├── domain_adapters.py     # Service interface adapters for each domain
-│   │   └── constants.py           # Keywords, patterns, thresholds, confidence levels
-│   ├── insights/                   # Signal derivation engine
-│   │   ├── engine.py              # Rule evaluation pipeline
-│   │   ├── models.py              # InsightRecord (persistence)
-│   │   ├── rules/                 # Per-domain insight rules
-│   │   │   ├── finance_rules.py
-│   │   │   ├── health_rules.py
-│   │   │   ├── habits_rules.py
-│   │   │   ├── skills_rules.py
-│   │   │   ├── projects_rules.py
-│   │   │   ├── relationships_rules.py
-│   │   │   └── journal_rules.py
-│   │   ├── services.py            # Dispatch, derive, persist
-│   │   └── schemas.py
-│   └── utils/                      # Shared helpers
-│       ├── decorators.py          # @auth, @rate_limit, @feature_flag
-│       ├── validators.py
-│       ├── encoders.py            # JSON encoders
-│       └── exceptions.py           # LifeOSError base class
-├── domains/
-│   ├── finance/                    # Full ledger, transactions, forecasts
-│   │   ├── controllers/            # Flask routes for UI
-│   │   │   ├── accounts.py
-│   │   │   ├── journal.py
-│   │   │   ├── transactions.py
-│   │   │   └── ...
-│   │   ├── models/                 # SQLAlchemy + domain logic
-│   │   │   ├── account.py
-│   │   │   ├── journal_entry.py
-│   │   │   ├── journal_line.py
-│   │   │   ├── transaction.py
-│   │   │   ├── trial_balance.py
-│   │   │   ├── money_schedule.py
-│   │   │   ├── receivable.py
-│   │   │   ├── loan.py
-│   │   │   └── category.py
-│   │   ├── services/               # Business logic, event emission
-│   │   │   ├── ledger_service.py
-│   │   │   ├── transaction_service.py
-│   │   │   ├── forecast_service.py
-│   │   │   ├── trial_balance_service.py
-│   │   │   ├── import_service.py
-│   │   │   └── ml_ranker.py        # Account suggester integration
-│   │   ├── schemas/                # Pydantic DTOs
-│   │   │   ├── account.py
-│   │   │   ├── transaction.py
-│   │   │   └── ...
-│   │   ├── mappers.py              # DTO↔model converters
-│   │   ├── events.py               # finance.account.*, finance.transaction.*, finance.ml.* events
-│   │   ├── tasks.py                # @periodic_task for schedule recompute, receivables, etc.
-│   │   └── ml/                     # ML integration adapters
-│   │       ├── account_suggester.py # Uses joblib model; wraps ml_ranker
-│   │       └── version_registry.py
-│   ├── habits/                     # Habit tracking, streaks
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # habits.habit.*, habits.habit.logged
-│   │   ├── tasks.py                # Streak computation, rollup
-│   │   └── ml/ (stub)
-│   ├── health/                     # Biometrics, workouts, nutrition
-│   │   ├── controllers/
-│   │   ├── models/                 # health_biometric, health_workout, health_nutrition_log
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # health.biometric.*, health.workout.*, health.nutrition.*
-│   │   ├── tasks.py                # Daily summaries, energy/stress derivation
-│   │   └── ml/ (stub)
-│   ├── skills/                     # Practice, competency
-│   │   ├── controllers/
-│   │   ├── models/                 # skill, skill_practice_session, skill_metric
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # skills.practice.logged
-│   │   └── tasks.py                # Metric rollup
-│   ├── projects/                   # Project/task lifecycle
-│   │   ├── controllers/
-│   │   ├── models/                 # project, project_task, project_task_log
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # projects.project.*, projects.task.*
-│   │   └── tasks.py
-│   ├── relationships/              # People, interactions, reconnect
-│   │   ├── controllers/
-│   │   ├── models/                 # relationships_person, relationships_interaction
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # relationships.person.*, relationships.interaction.*
-│   │   └── tasks.py
-│   ├── journal/                    # Personal entries, mood, tags
-│   │   ├── controllers/
-│   │   ├── models/                 # journal_entry
-│   │   ├── services/
-│   │   ├── schemas/
-│   │   ├── mappers.py
-│   │   ├── events.py               # journal.entry.*
-│   │   └── tasks.py
-│   └── calendar/                   # Calendar events (NEW - 8th domain)
-│       ├── __init__.py
-│       ├── controllers/
-│       │   ├── calendar_api.py    # JSON API endpoints
-│       │   └── calendar_pages.py  # HTML UI routes
-│       ├── models/
-│       │   └── calendar_event.py  # CalendarEvent, CalendarEventInterpretation
-│       ├── services/
-│       │   ├── calendar_service.py # CRUD, query, hooks to interpreter
-│       │   └── sync_service.py    # Google/Apple Calendar sync (future)
-│       ├── schemas/
-│       │   └── calendar_schemas.py # Pydantic DTOs
-│       ├── events.py               # calendar.event.* events
-│       ├── mappers.py
-│       └── tasks.py                # Periodic sync tasks (future)
-├── platform/                       # Async runtime, outbox, broker stubs
-│   ├── outbox/
-│   │   ├── models.py              # OutboxMessage (durable envelope)
-│   │   ├── services.py            # enqueue, dequeue_batch, mark_sent, dispatch_ready
-│   │   └── schemas.py
-│   ├── worker/                     # Dispatcher runtime
-│   │   ├── config.py              # DispatchConfig (env-driven)
-│   │   ├── dispatcher.py          # Main loop: claim→publish→mark_sent/failed
-│   │   ├── run.py                 # CLI entrypoint
-│   │   └── __init__.py            # Helper exports
-│   ├── broker/                     # Stub (post-v1: RabbitMQ/Kafka)
-│   │   ├── client.py              # Interface for publish/subscribe
-│   │   └── adapters/
-│   └── clients/                    # External service adapters
-│       ├── email.py               # SMTP, SendGrid, etc.
-│       └── sms.py                 # Twilio, etc.
-├── migrations/                     # Single Alembic home
-│   ├── alembic.ini
-│   ├── env.py
-│   └── versions/
-│       ├── 20240522_core_initial.py
-│       ├── 20251204_core_add_insight_record.py
-│       ├── 20251204_core_user_query_indexes.py
-│       ├── 20251205_platform_outbox.py
-│       ├── 20251205_skills_initial_schema.py
-│       ├── 20251206_core_password_reset_token.py
-│       ├── 20251206_finance_account_type_classification.py
-│       ├── 20251207_finance_journal_entry_index.py
-│       ├── 20251208_skills_enhancements.py
-│       ├── 20251209_habits_initial.py
-│       ├── 20251210_relationships_initial.py
-│       ├── 20251211_journal_enhancements.py
-│       ├── 20251212_health_rework.py
-│       ├── 20251213_health_relax_legacy_columns.py
-│       ├── 20251214_health_null_legacy_values.py
-│       ├── 20251215_projects_init.py
-│       ├── 20251216_drop_legacy_habits_relationships.py
-│       ├── 20251218_backend_updates_validation.py
-│       ├── 20251206_calendar_initial.py ← **Calendar domain tables**
-│       ├── 20251207_domains_inferred_columns.py ← **Inferred record columns on all domains**
-│       ├── 20251207_standardize_user_roles.py ← **RBAC standardization**
-│       ├── 20251206_finance_account_categories_update.py
-│       └── ... (22 total, additive only)
-├── templates/                      # Jinja2 templates (server-rendered)
-│   ├── layouts/
-│   │   ├── base.html              # Master template
-│   │   └── dashboard.html
-│   ├── components/
-│   │   ├── sidebar.html
-│   │   ├── forms.html
-│   │   └── alerts.html
+│   ├── admin/                      # Admin controllers
+│   ├── auth/                       # Auth (api_v1, auth_service, controllers, csrf, password, models, schemas, events)
+│   ├── events/                     # Event bus + event models/services
+│   ├── insights/                   # Engine, rules, telemetry, ML helpers, API controllers
+│   ├── interpreter/                # Calendar interpreter + inference emitter
+│   ├── users/                      # User models/preferences/services
+│   └── utils/                      # Decorators, pagination, strings, time, validation
+├── domains/                        # Domain modules
+│   ├── calendar/                   # Controllers, models, services, schemas, events, tasks, ml
 │   ├── finance/
-│   │   ├── accounts.html
-│   │   ├── journal.html
-│   │   ├── transactions.html
-│   │   └── forecast.html
-│   ├── habits/, health/, skills/, projects/, relationships/, journal/ (per-domain)
-│   └── insights/
-│       ├── signals.html            # Derived insights display
-│       └── assistant.html
-├── static/                         # CSS, JS (Alpine.js, htmx)
+│   ├── habits/
+│   ├── health/
+│   ├── journal/
+│   ├── projects/
+│   ├── relationships/
+│   └── skills/
+├── lifeos_platform/                # Async runtime, outbox, broker stubs, clients
+├── readmodels/                     # Read model scaffolding (contracts, registry, runners, projections)
+├── migrations/                     # Alembic home (env.py, script.py.mako, versions/, README.md)
+├── docs/                           # Architecture, runbooks, UI/UX constitution, semantics, tasks hub
+│   ├── lifeos_architecture.md
+│   ├── AUTH_COPY_LAYOUT_RULES.md
+│   ├── ui_ux_constitution.md
+│   ├── semantics/
+│   │   ├── DOMAIN_SEMANTIC_CONTRACTS.md
+│   │   ├── EVENT_SEMANTICS_FREEZE.md
+│   │   ├── INSIGHT_CONTRACTS.md
+│   │   └── CONFIDENCE_VOCABULARY.md
+│   ├── tasks/
+│   │   ├── README.md
+│   │   ├── calendar_event_creation_ux_ops.md
+│   │   ├── calendar_subsystem_refactor_ops.md
+│   │   ├── phase_3a_cross_domain_intelligence_hardening_ops.md
+│   │   ├── phase_3b_interface_contract_hardening_ops.md
+│   │   └── archive/
+│   │       ├── calendar_subsystem_refactor.md
+│   │       ├── calendar_subsystem_refactor_ops.md
+│   │       ├── calendar_event_creation_ux_handoff.md
+│   │       ├── auth_experience_refactor.md
+│   │       ├── ux_alignment_sprint_phase1.md
+│   │       ├── phase_2_5_semantic_insight_contract_freeze.md
+│   │       ├── phase_3a_cross_domain_intelligence_hardening.md
+│   │       ├── phase_3a_5_domain_ux_semantic_surface_alignment.md
+│   │       ├── phase_3a_5_dsd_checklist.md
+│   │       ├── phase_3a_5_dsds.md
+│   │       └── phase_3b_interface_contract_hardening.md
+│   ├── prompts/
+│   └── archive/
+├── templates/                      # Jinja2 templates
+│   ├── calendar/
+│   ├── components/
+│   ├── finance/
+│   ├── habits/
+│   ├── health/
+│   ├── insights/
+│   ├── journal/
+│   ├── layouts/
+│   ├── profile/
+│   ├── projects/
+│   ├── relationships/
+│   └── skills/
+├── static/                         # CSS/JS assets
 │   ├── css/
-│   │   └── tailwind.css           # Or Bootstrap
-│   ├── js/
-│   │   ├── app.js
-│   │   └── components/            # Alpine.js components
-│   └── assets/
+│   ├── images/
+│   └── js/
 ├── tests/                          # Pytest suite
-│   ├── conftest.py
-│   ├── test_architecture_constraints.py
-│   ├── test_auth_*.py
-│   ├── test_finance_*.py
-│   ├── test_habits_*.py
-│   ├── test_outbox_dispatcher.py
-│   ├── test_insight_services.py
-│   └── ... (one test file per feature/integration)
 ├── __init__.py                     # create_app factory
-├── extensions.py                   # Flask extensions (db, jwt, migrate, limiter, cache)
+├── cleaner.py
 ├── config.py                       # BaseConfig, DevelopmentConfig, ProductionConfig
-├── wsgi.py                         # Gunicorn entrypoint
-├── gunicorn.conf.py                # Gunicorn settings
-├── requirements.txt                # Python deps
-└── alembic.ini                     # Alembic config (points to migrations/)
+├── extensions.py                   # Flask extensions (db, jwt, migrate, limiter, cache)
+├── gunicorn.conf.py
+├── requirements.txt
+├── wsgi.py
+└── alembic.ini
 
 deploy/
-├── Dockerfile                      # Multi-stage: builder → prod image
-├── gunicorn.conf.py                # Prod server config
-├── entrypoint.sh                   # Startup with migrations
+├── Dockerfile
+├── gunicorn.conf.py
+├── entrypoint.sh
 ├── scripts/
-│   ├── deploy.sh                   # CI/CD integration
-│   └── ...
+│   └── deploy.sh
 ├── monitoring/
-│   └── prometheus.yml              # Metrics scrape config
+│   └── prometheus.yml
 └── README.md
 
 .env.example                        # All knobs documented
 docker-compose.yml                  # services: web, db (postgres), redis, worker, broker (stub), monitoring
 ```
+
+Planned (not yet in repo; Phase 3c or approved interim hygiene):
+- `lifeos/core/auth/admin_controllers.py`, `session_services.py`, `session_repository.py`, `session_read_models.py`, `session_models.py`, `device.py`, `session_events.py`, `constants.py`, `tasks.py`
 
 **Layering Rules:**
 - Controllers: HTTP validation, authz only; delegate to services
@@ -415,66 +301,149 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 ---
 
 # 4. Event System & Catalog (implemented)
-- Bus: `lifeos/core/events/event_bus.py` (in-memory today; planned to move to outbox+broker under `lifeos/platform`).  
-- Persistence: `event_record` remains an audit log.  
-- Catalog (per-domain `events.py`, mirrored here):  
-  - `auth.user.registered` → {user_id, email, full_name?, timezone?}  
-  - `auth.user.username_reminder_requested` → {user_id?, email}  
-  - `auth.user.password_reset_requested` → {user_id?, email, expires_at}  
-  - `auth.user.password_reset_completed` → {user_id, reset_id}  
-  - `finance.transaction.created` → {transaction_id, user_id, amount, description?, category?, counterparty?, occurred_at}  
-  - `finance.journal.posted` → {entry_id, user_id, debit_total, credit_total, line_count}  
-  - `finance.schedule.created` → {row_id, user_id, amount, account_id, event_date}  
-  - `finance.schedule.updated` → {row_id, user_id, amount?, account_id?, event_date?, memo?}  
-  - `finance.schedule.deleted` → {row_id, user_id}  
-  - `finance.schedule.recomputed` → {user_id, days}  
-  - `finance.receivable.created` → {tracker_id, user_id, principal, counterparty, start_date, due_date?}  
-  - `finance.receivable.entry_recorded` → {tracker_id, amount, entry_date}  
-  - `finance.ml.suggest_accounts` → {user_id, description, suggestions:[account_id], model, model_version?, payload_version?, context?}  
-  - `habits.habit.created` / `habits.habit.updated` / `habits.habit.deactivated` / `habits.habit.deleted`  
-    - created payload: {habit_id, user_id, name, schedule_type, target_count?, domain_link?, is_active, created_at}  
-    - updated payload: {habit_id, user_id, fields, updated_at}  
-    - deactivated payload: {habit_id, user_id, deactivated_at}  
-    - deleted payload: {habit_id, user_id, deleted_at}  
-  - `habits.habit.logged` → {log_id, habit_id, user_id, logged_date, value?, note?}  
-  - `health.biometric.logged` → {biometric_id, user_id, date, weight?, body_fat_pct?, resting_hr?, energy_level?, stress_level?}  
-  - `health.workout.logged` → {workout_id, user_id, date, workout_type, duration_minutes, intensity, calories_est?}  
-  - `health.nutrition.logged` → {nutrition_id, user_id, date, meal_type, calories_est?, quality_score?}  
-  - `skills.practice.logged` → {skill_id, user_id, duration_minutes, practiced_at}  
-  - `projects.project.created/updated/archived/completed` (see projects/events.py payloads)  
-  - `projects.task.created/updated/completed/logged` (see projects/events.py payloads)  
-  - `relationships.person.created/updated/deleted` (see relationships/events.py payloads)  
-  - `relationships.interaction.logged/updated` (see relationships/events.py payloads)  
-  - `journal.entry.created` → {entry_id, user_id, entry_date, mood?, tags?, is_private, created_at}  
-  - `journal.entry.updated` → {entry_id, user_id, fields, updated_at}  
-  - `journal.entry.deleted` → {entry_id, user_id}  
+- Bus: `lifeos/core/events/event_bus.py` (in-memory today; planned to move to outbox+broker under `lifeos/platform`).
+- Persistence: `event_record` remains an audit log.
+- Catalog (per-domain `events.py`, mirrored here):
+  - `auth.user.registered` → {user_id, email, full_name?, timezone?}
+  - `auth.user.username_reminder_requested` → {user_id?, email}
+  - `auth.user.password_reset_requested` → {user_id?, email, expires_at}
+  - `auth.user.password_reset_completed` → {user_id, reset_id}
+  - `auth.session.created` (contract only) → {session_id, user_id, device_id? (stub), created_at}
+  - `auth.session.invalidated` (contract only) → {session_id, user_id, device_id? (stub), invalidated_at, reason?}
+  - `auth.session.admin_reset` (contract only) → {user_id, session_scope ('single'|'all'), session_id?, device_id? (stub), reason, initiated_by_admin_id?, reset_at}; payload frozen for audit/replay; no device fingerprinting implied; admin action carries no confidence score (explicit intent, not inference)
+  - `finance.transaction.created` → {transaction_id, user_id, amount, description?, category?, counterparty?, occurred_at}
+  - `finance.journal.posted` → {entry_id, user_id, debit_total, credit_total, line_count}
+  - `finance.schedule.created` → {row_id, user_id, amount, account_id, event_date}
+  - `finance.schedule.updated` → {row_id, user_id, amount?, account_id?, event_date?, memo?}
+  - `finance.schedule.deleted` → {row_id, user_id}
+  - `finance.schedule.recomputed` → {user_id, days}
+  - `finance.receivable.created` → {tracker_id, user_id, principal, counterparty, start_date, due_date?}
+  - `finance.receivable.entry_recorded` → {tracker_id, amount, entry_date}
+  - `finance.ml.suggest_accounts` → {user_id, description, suggestions:[account_id], model, model_version?, payload_version?, context?}
+  - `habits.habit.created` / `habits.habit.updated` / `habits.habit.deactivated` / `habits.habit.deleted`
+    - created payload: {habit_id, user_id, name, schedule_type, target_count?, domain_link?, is_active, created_at}
+    - updated payload: {habit_id, user_id, fields, updated_at}
+    - deactivated payload: {habit_id, user_id, deactivated_at}
+    - deleted payload: {habit_id, user_id, deleted_at}
+  - `habits.habit.logged` → {log_id, habit_id, user_id, logged_date, value?, note?}
+  - `health.biometric.logged` → {biometric_id, user_id, date, weight?, body_fat_pct?, resting_hr?, energy_level?, stress_level?}
+  - `health.workout.logged` → {workout_id, user_id, date, workout_type, duration_minutes, intensity, calories_est?}
+  - `health.nutrition.logged` → {nutrition_id, user_id, date, meal_type, calories_est?, quality_score?}
+  - `skills.practice.logged` → {skill_id, user_id, duration_minutes, practiced_at}
+  - `projects.project.created/updated/archived/completed` (see projects/events.py payloads)
+  - `projects.task.created/updated/completed/logged` (see projects/events.py payloads)
+  - `relationships.person.created/updated/deleted` (see relationships/events.py payloads)
+  - `relationships.interaction.logged/updated` (see relationships/events.py payloads)
+  - `journal.entry.created` → {entry_id, user_id, entry_date, mood?, tags?, is_private, created_at}
+  - `journal.entry.updated` → {entry_id, user_id, fields, updated_at}
+  - `journal.entry.deleted` → {entry_id, user_id}
   - **Calendar Events (NEW):**
   - `calendar.event.created` → {event_id, user_id, title, start_time, end_time?, source, created_at}
   - `calendar.event.updated` → {event_id, user_id, fields, updated_at}
   - `calendar.event.deleted` → {event_id, user_id}
   - `calendar.event.synced` → {event_id, user_id, source, external_id} (for external calendar sync)
   - **Interpreter/Inferred Events (NEW):**
-  - `calendar.interpretation.created` → {interpretation_id, calendar_event_id, user_id, domain, record_type, confidence_score, status}
-  - `calendar.interpretation.confirmed` → {interpretation_id, user_id, record_id}
-  - `calendar.interpretation.rejected` → {interpretation_id, user_id, reason?}
-  - `finance.transaction.inferred` → {transaction_id, calendar_event_id, user_id, confidence_score, amount?, description}
-  - `health.meal.inferred` → {nutrition_id, calendar_event_id, user_id, confidence_score, meal_type}
-  - `health.workout.inferred` → {workout_id, calendar_event_id, user_id, confidence_score, workout_type, duration_minutes?}
-  - `habits.habit.inferred` → {log_id, habit_id, calendar_event_id, user_id, confidence_score}
-  - `skills.practice.inferred` → {session_id, skill_id, calendar_event_id, user_id, confidence_score, duration_minutes?}
-  - `projects.work_session.inferred` → {log_id, project_id?, task_id?, calendar_event_id, user_id, confidence_score}
-  - `relationships.interaction.inferred` → {interaction_id, person_id?, calendar_event_id, user_id, confidence_score, interaction_type}
+  - `calendar.interpretation.created` → {interpretation_id, calendar_event_id, user_id, domain, record_type, confidence_score, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `calendar.interpretation.confirmed` → {interpretation_id, user_id, record_id, payload_version, model_version}
+  - `calendar.interpretation.rejected` → {interpretation_id, user_id, reason?, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `finance.transaction.inferred` → {transaction_id, calendar_event_id, user_id, confidence_score, amount?, description, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `health.meal.inferred` → {nutrition_id, calendar_event_id, user_id, confidence_score, meal_type, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `health.workout.inferred` → {workout_id, calendar_event_id, user_id, confidence_score, workout_type, duration_minutes?, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `habits.habit.inferred` → {log_id, habit_id, calendar_event_id, user_id, confidence_score, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `skills.practice.inferred` → {session_id, skill_id, calendar_event_id, user_id, confidence_score, duration_minutes?, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `projects.work_session.inferred` → {log_id, project_id?, task_id?, calendar_event_id, user_id, confidence_score, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - `relationships.interaction.inferred` → {interaction_id, person_id?, calendar_event_id, user_id, confidence_score, interaction_type, status, payload_version, model_version, is_false_positive?, is_false_negative?}
+  - All inference events carry `inferred_structure` metadata where available and are versioned; guardrails enforce presence.
 - Rule: any new event must be added to the emitting domain's `events.py` with payload versioning when changed.
+
+# 4.1 Auth & Session Structural Scaffold (Phase 3b½ — structure-only)
+**Purpose:** Separate user identity, session lifecycle, and future device identity so admins/devs can reset sessions without altering auth semantics; quarantine the login issue until Phase 3c while preserving replay/audit guarantees.
+
+**Scope (structure, no behavior change):**
+- Components: `session_models.py` (identity + lifecycle states), `session_services.py` (interfaces: create/invalidate/invalidate_all_for_user/admin_reset), `session_events.py` (contracts), `session_repository.py` (persistence contract), `session_read_models.py` (projection-only, replayable, never for authz), `device.py` (stub identity placeholder), `constants.py` (states: active, invalidated, expired, admin_reset), `admin_controllers.py` (admin-only endpoint contract), `tasks.queue_session_admin_reset` (interface hook only), `schemas.py` (session payload DTOs aligned with events; no device fingerprinting).
+- Documentation: event catalog remains in this document (Section 4); a standalone `lifeos/core/events/event_catalog.md` is planned but not yet in repo.
+- Component responsibilities: `session_models.py` defines session identity boundaries and lifecycle envelope; `session_services.py` owns lifecycle contracts compatible with replay; `session_events.py` fixes event shapes for auditability; `session_repository.py` remains pure data access; `session_read_models.py` are projection-only surfaces; `device.py` anchors deferred device identity without implying fingerprinting or sync.
+- Events: contract-only `auth.session.created`, `auth.session.invalidated`, `auth.session.admin_reset`; payloads include `{session_id, user_id, device_id? (stub), reason?}` with frozen audit semantics; admin_reset carries no confidence field (explicit human intent).
+- Read-model rule: session read models are replay-safe projections only; never used for authorization decisions.
+
+**What is allowed now (minimal):**
+- Implement the smallest viable `admin_reset` path plus an optional DB-level session reset script for ops. No other code paths change; emitters may remain unwired.
+- No token/cookie changes, no device fingerprinting, no browser heuristics, no UI work.
+- Deferral statement for contributors: “This login issue is quarantined by design. A minimal reset exists; full resolution belongs to Phase 3c.”
+- Note: session_* files listed above are planned structure-only and are not yet present in the repo; add them when Phase 3c (or approved interim hygiene work) begins.
+
+**Explicit non-goals until Phase 3c:**
+- No multi-device sync or coherence, no offline writes, no CRDT/conflict handling.
+- No device identity policy (user-declared vs cryptographic vs platform-provided) and no fingerprinting commitment.
+- No auth token format/cookie changes; no client/browser heuristics; no UI surfaces.
+- State space fixed to {active, invalidated, expired, admin_reset}; do not add enums until Phase 3c.
+
+**Extension points reserved for Phase 3c:**
+- Optional `device_id` FK on session records.
+- Projection hydrators for device-aware session dashboards.
+- Background cleanup/TTL task implementations.
+
+**Cross-team handoff (structure first):**
+- DB: `auth_session` table exists (migration `20251221_auth_session_table.py`) with `session_id`, `user_id`, `lifecycle_state`, `created_at`, `invalidated_at`, optional `device_id` nullable stub. Do not alter existing auth tables or token semantics; keep device_id nullable.
+- Backend: land interface files and admin_reset contract only; avoid wiring emitters or token changes. Treat repository/read-model layers as contracts, not implementations.
+- QA: design contract-level tests for session lifecycle events and admin reset flows (replay and projection determinism). Do not simulate multi-device/offline or modify auth tokens.
+- Frontend: no UI work now; align on future admin-only endpoint contract when backend enables it.
+- ML: no action; note future device context may feed risk models; do not ship fingerprinting or behavioral models.
+- DevOps/Platform: plan observability hooks for new session events and ensure worker/outbox pipelines can handle them when wired; define admin-only access control for reset endpoints; keep migrations additive-only.
+- Cultural guardrail: prioritize structure-first; resist “just fix the login bug”; use the deferral statement until Phase 3c implementation.
+
+**Problem vs non-problem clarity:**
+- Solved now: clear separation of identities and lifecycle contracts enabling admin/dev-driven resets without new semantics.
+- Not solved now: device coherence, offline, sync/merge logic, or any change to current login/session behavior.
+
+**Admin Reset Design (structure-only, hygiene):**
+- Problem: stale or incompatible server-side session/auth state across browsers; known issue quarantined until Phase 3c.
+- Intent: provide a minimal, explicit admin/dev-only reset to recover state without altering auth semantics, device policy, or tokens; maintain replay/auditability.
+- Solution (structure):
+  - Boundary: `core/auth` owns the contract; exposed via `admin_controllers.py` (admin-only) invoking `SessionLifecycleService.admin_reset(user_id, scope, reason, initiated_by_admin_id?)`.
+  - Services: `SessionLifecycleService` defines `admin_reset` (idempotent; invalidates all sessions for user or targeted session_id); `SessionQueryService` may surface current session state for admin review (read-only).
+  - Repository: `session_repository.py` contract to mark sessions `admin_reset`/`invalidated`; pure data access; no heuristics.
+  - Events: `auth.session.admin_reset` contract (see catalog) emitted upon completion; no confidence field; explicit human action.
+  - Authorization: limited to admin/dev roles (conceptual); no end-user surface; enforced at controller layer with existing authz primitives.
+  - Read models: optional projection surfaces may reflect session states; never used for authz; replay-safe.
+
+**DB-level reset strategy (conceptual, additive-friendly):**
+- Scope: one user per invocation; no truncation; no cascading deletes.
+- Tables affected (conceptual): existing `session_token` rows (and `auth_session` where present) marked `invalidated_at=now`, `lifecycle_state='admin_reset'`; `jwt_blocklist` may be appended with relevant tokens if present; user row untouched.
+- Operations: idempotent by filtering on `user_id` and states ≠ already `admin_reset`/`invalidated`; repeated runs yield no further effect.
+- Audit/replay: emit `auth.session.admin_reset` after DB mutation; ensure outbox entry is durably written. Read models, if present, replay this event to converge.
+- Reversible in intent: does not delete user; only invalidates session state. Recovery is via normal login afterward.
+- Safety: additive-only migrations; no schema change required now. `auth_session` follows the same invalidation semantics.
+
+**Invariants after admin_reset:**
+- User identity remains intact; no deletion or mutation of `user`.
+- No silent data loss: sessions are marked/reset, not dropped; history/audit preserved.
+- Auth guarantees are not weakened: tokens are not broadened; reset removes access rather than loosening checks.
+- Replay deterministic: event + DB mutation order is consistent; read models converge by replaying `auth.session.admin_reset`.
+- Read models are advisory only and never used for authz; session checks remain server-side on canonical state.
+
+**Non-goals (intentional deferral to Phase 3c):**
+- No device identity or browser heuristics; `device_id` remains nullable stub.
+- No token/cookie format changes.
+- No multi-device coherence or offline semantics.
+- No user-facing UX changes; no automatic triggers; no broad session TTL redesign.
+
+**Backend handoff (do now vs defer):**
+- Implement now: `SessionLifecycleService.admin_reset` contract, admin-only controller entrypoint (stub), repository method to mark sessions invalidated/admin_reset, outbox emission of `auth.session.admin_reset`, and a minimal DB-level reset script/CLI for single-user scope. Ensure idempotency and audit logging.
+- Keep interface-only: session read models, device identity types, hydrators, background cleanup/TTL tasks.
+- Defer: any token/cookie changes, device_id enforcement, UI surfaces, multi-device/offline logic, browser detection.
+- Do not “improve” by adding heuristics, auto-triggers, or client changes; this is hygiene only.
 
 ---
 
-# 5. Data Model Inventory (22 migrations, all additive)
-**Core (11 tables):**
+# 5. Data Model Inventory (additive migrations)
+**Core (12 tables, additive):**
 - `user`, `user_preference` (user identity & settings)
 - `role`, `permission`, `role_permission`, `user_role` (RBAC)
 - `session_token`, `jwt_blocklist`, `password_reset_token` (auth state)
 - `event_record` (audit log for all domain events)
 - `insight_record` (derived signals for UI)
+- `auth_session` (immutable `session_id`, `user_id`, `lifecycle_state` in {active, invalidated, expired, admin_reset}, `created_at`, `invalidated_at`, optional `device_id` nullable stub; migration `20251221_auth_session_table.py`).
 
 **Finance (14 tables):**
 - `finance_account_category`, `finance_account` (chart of accounts)
@@ -540,7 +509,9 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 **Auth Flows (special case):**
 - Register: Controller → service `create_user` → commit user row + `password_reset_token` → emit `auth.user.registered` to outbox
-- Login: Controller validates credentials → emit session token (no outbox event)
+- Login: Controller validates credentials → emit session token (no outbox event). Session events are contracts only until Phase 3c; current behavior unchanged.
+- Session lifecycle contract (structure-only): `SessionLifecycleService` (create, invalidate, invalidate_all_for_user, admin_reset) + `SessionQueryService`; `session_read_models` are replay-only and never used for authz; optional `device_id` is a stub (no fingerprinting).
+- Admin reset guardrails: Only minimal `admin_reset` path + optional DB-level session reset script may be implemented now to quarantine login issues. No token/cookie changes, no browser heuristics, no new device identity policy until Phase 3c.
 - Password Reset Request: Controller → service → commit `password_reset_token` row → emit `auth.user.password_reset_requested` to outbox
 - Password Reset Completion: Controller validates token → service → update user password → commit → emit `auth.user.password_reset_completed`
 - All auth flows rate-limited; non-enumerating responses (never reveal if email exists)
@@ -565,32 +536,34 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 ---
 
 # 7. Naming Conventions
-- Events: `domain.resource.action[.variant]` (lowercase, dot-separated).  
-- Migrations: `<timestamp>_<domain>_<short_action>.py` (e.g., `20251205_platform_outbox.py`).  
-- Tasks: `domains.<domain>.tasks.<action>.run`.  
+- Events: `domain.resource.action[.variant]` (lowercase, dot-separated).
+- Migrations: `<timestamp>_<domain>_<short_action>.py` (e.g., `20251205_platform_outbox.py`).
+- Tasks: `domains.<domain>.tasks.<action>.run`.
 - Tables: prefix with domain for non-core (`finance_*`, `health_*`, etc.); core tables unprefixed.
 
 ---
 
 # 8. Schema Evolution & Migrations
-- Single Alembic home: `lifeos/migrations`. Root `alembic.ini` targets it; `migrate.init_app` uses the absolute path.  
-- Additive-first: new columns nullable/defaulted; new tables allowed. Destructive changes require two-phase (shadow + backfill + swap).  
-- Migration ownership: domain team for domain tables; core team for shared tables.  
-- Backfills live in scripts/management commands, not long Alembic steps.  
-- Index rule: always index `user_id` plus primary query dimension (e.g., date/event_type). Enforced via models and migration `20251204_core_user_query_indexes.py`.  
+- Single Alembic home: `lifeos/migrations`. Root `alembic.ini` targets it; `migrate.init_app` uses the absolute path.
+- Additive-first: new columns nullable/defaulted; new tables allowed. Destructive changes require two-phase (shadow + backfill + swap).
+- `auth_session` migration is additive and present (`20251221_auth_session_table.py`); `device_id` remains nullable stub.
+- Migration ownership: domain team for domain tables; core team for shared tables.
+- Backfills live in scripts/management commands, not long Alembic steps.
+- Index rule: always index `user_id` plus primary query dimension (e.g., date/event_type). Enforced via models and migration `20251204_core_user_query_indexes.py`.
 - If DB is stamped with legacy IDs, stamp to `20251204_core_add_insight_record` (or `_core_initial` if empty) then upgrade to newest.
+- Dialect-aware patterns: use `to_char`/`strftime` for date grouping; avoid SQLite-only `connect_args` on Postgres/MySQL; JSON containment on Postgres (`::jsonb @>`) with `.contains` fallback elsewhere; type casts (e.g., journal.mood integer) must include `postgresql_using` for Postgres safety.
 
 ---
 
 # 9. Platform & Outbox (fully implemented)
 **Outbox Model:**
-- `lifeos/platform/outbox/models.py`: `OutboxMessage` (SQLAlchemy table `platform_outbox`)
+- `lifeos/lifeos_platform/outbox/models.py`: `OutboxMessage` (SQLAlchemy table `platform_outbox`)
 - Columns: `id` (PK), `user_id` (FK + index), `event_type`, `payload` (JSON), `status` (enum), `attempts`, `available_at`, `last_error`, `created_at`
 - Composite indexes: `(user_id, available_at)` for ready-queue polling, `(user_id, status, available_at)` for status queries
 - Migration: `20251205_platform_outbox.py` (idempotent; creates table + indexes)
 
 **Outbox Services:**
-- `lifeos/platform/outbox/services.py` exports:
+- `lifeos/lifeos_platform/outbox/services.py` exports:
   - `enqueue(user_id, event_type, payload)` → creates row with status `pending`, available_at = now
   - `dequeue_batch(batch_size, backoff_factor)` → SELECT ... FOR UPDATE SKIP LOCKED; orders by available_at; returns ready rows
   - `mark_sent(message_id)` → updates status → `sent`
@@ -598,15 +571,15 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
   - `dispatch_ready(user_id?, batch_size)` → convenience; returns [messages] ready to send
 
 **Worker Dispatcher:**
-- `lifeos/platform/worker/config.py`: `DispatchConfig(batch_size, poll_interval_seconds, max_attempts, backoff_base, backoff_max_seconds)`
+- `lifeos/lifeos_platform/worker/config.py`: `DispatchConfig(batch_size, poll_interval_seconds, max_attempts, backoff_base, backoff_max_seconds)`
   - Loaded from env: `WORKER_BATCH_SIZE`, `WORKER_POLL_INTERVAL`, `WORKER_MAX_ATTEMPTS`, `WORKER_BACKOFF_BASE`
-- `lifeos/platform/worker/dispatcher.py`: Main event loop
+- `lifeos/lifeos_platform/worker/dispatcher.py`: Main event loop
   - Claims batch from outbox with skip-locked
   - For each message: publishes to `EventBusAdapter` (wraps in-process bus + assigns external_id)
   - On success: calls `mark_sent()`
   - On failure: calls `mark_failed()` (retries with backoff) → after max_attempts, status = `dead`
   - Logs all transitions; tracks telemetry (latency, failure reasons)
-- `lifeos/platform/worker/run.py`: CLI entrypoint `python -m lifeos.platform.worker.run`
+- `lifeos/lifeos_platform/worker/run.py`: CLI entrypoint `python -m lifeos.lifeos_platform.worker.run`
   - Creates Flask app, acquires app context, runs `run_dispatcher(config)` in infinite loop
 - Docker Compose service: `worker` (separate container, shares DB + cache)
 - Logging: `WORKER_LOGLEVEL` env controls level (default: INFO)
@@ -634,6 +607,7 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 **Components:**
 - `engine.py`: `InsightEngine` class; registers subscribers on bus; fires rules on event
+- `telemetry.py`: in-memory telemetry (counts, latencies, coverage, FP/FN by domain/model_version); bounded retention; ops/debug only
 - `rules/`: One file per domain
   - `finance_rules.py`: High-spend alerts, budget overruns, forecast variance, receivable due-dates, anomalies
   - `health_rules.py`: Weight trends, sleep quality derivation, fitness progression, stress/energy patterns
@@ -661,11 +635,30 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 - On event: dispatcher calls `InsightService.derive(event)` synchronously (blocking)
 - If rule fires → `InsightRecord` persisted + added to queue for delivery
 - Delivery: async (post-v1); currently logs + renders in UI
+- API v1 feed: `/api/v1/insights/feed` returns paginated, user-scoped insights with filters (domain, severity, status, date range) using `InsightsFeedQuery`; status filtering is applied from insight data (`status`/`inference_status`) in-memory for DB portability.
 
 **Performance Tuning:**
 - Batch-friendly: rules query recent events (e.g., last 7 days) not full history
 - Caching: user prefs cached in Redis (with TTL); aggregate rollups computed nightly (scheduled tasks)
 - Early exit: rule checks feature flag first; expensive computations gated behind config
+- Telemetry: counts/latency/FP-FN exposed via admin-only debug endpoint (non-prod): `GET /admin/debug/insight-telemetry`; read-only, requires admin JWT; in-memory only
+
+# 10.1 Read Model Constitution (binding)
+- Purpose: answer queries the transactional model is not optimized for; never enforce business rules or accept user writes.
+- Source of truth: derived exclusively from events; controllers/services never write them; backfills via event replay only.
+- Taxonomy: Snapshots (current best-known state, idempotent, 1 row/user/key), Timeline (append-only, time-indexed, immutable), Aggregates (windowed, re-computable, explicit bounds).
+- Placement: future `lifeos/readmodels/<domain>/`; not inside domains; prevents leakage and clarifies ownership.
+- Contracts: each read model declares consumed events, replay start version, idempotency key, and rebuild strategy; if not rebuildable deterministically, it is invalid.
+- Storage: SQL/views/Redis/etc. allowed; schema contract must be documented independent of storage.
+- Forbidden: joining transactional tables in builders; controllers writing read models; read models emitting domain events; mutating confidence/inference status; permission logic in read models.
+
+# 10.2 Confidence Semantics (binding)
+- Confidence is historical, immutable: answers “how certain was the system at inference time?”
+- Layers: Interpreter confidence (`confidence_score`, set once); Inference status (`inferred|confirmed|rejected|ignored`, user actions only, does not change score); Insight confidence (derived reliability over time, contextual).
+- Immutability: `confidence_score`, `classification_data`, calendar_event links, FP/FN flags never mutate; `inferred_status` changes only via user actions/events.
+- FP/FN: FP = inferred then user rejected; FN = system missed, user created manually; flags are append-only and include `model_version` and `payload_version`.
+- Auto-confirm (future): explicit thresholds, domain-specific allowed, audit trail required; user override always wins; auto-confirm is routing only, not truth rewriting.
+- No confidence decay/post-hoc smoothing; temporal relevance handled by insights, not by mutating confidence.
 
 **Example Rule Flow:**
 ```
@@ -686,11 +679,25 @@ Event: finance.transaction.created {amount: $5000, category: "Groceries", ...}
 - Sessions: HTTP-only, SameSite=Lax (or Strict in prod)
 - RBAC: Role → Permissions via `role_permission` join; check at controller via `@require_permission("perm_name")`
 - Password storage: Bcrypt hashing via `Flask-Bcrypt`; salted, no plaintext in logs
+- API v1 auth: `/api/v1/auth/login` and `/api/v1/auth/refresh` return access/refresh + CSRF token + user; Bearer + CSRF headers supported; JWT_TOKEN_LOCATION includes headers/cookies
 
 **CSRF Protection:**
 - Enabled by default (`WTF_CSRF_ENABLED = true`)
 - Cookies secure: `SESSION_COOKIE_SECURE` = true in prod (HTTPS only)
 - SameSite flags: `SESSION_COOKIE_SAMESITE = Lax` (or Strict)
+- Binding environment policy: see `lifeos/docs/ops/environment_cookie_security_policy.md` (development HTTP with `SESSION_COOKIE_SECURE=false`; production HTTPS with `SESSION_COOKIE_SECURE=true`; `HttpOnly` + `SameSite=Lax` required).
+
+**Auth & CSRF Authority Note (Binding):**
+- **Canonical CSRF source:** the server-issued, session-bound CSRF token (WTF/Flask session). This is the only valid authority.
+- **Forbidden CSRF sources:** localStorage/sessionStorage, client-generated tokens, cached/overridden meta tags, or any token not minted by the current server session.
+- **Invariant:** `X-CSRF-Token` (or equivalent header) **must equal** the session CSRF token for the active session. Mismatch == 403.
+
+**Secret Stability (Binding):**
+- **Must be fixed per environment:** `SECRET_KEY`, `JWT_SECRET_KEY` (and any explicit CSRF secret if configured).
+- **Forbidden:** randomizing these on restart while keeping cookies/sessions alive. Rotation requires coordinated cookie invalidation and re-login.
+
+**Build Identity (Required Observability):**
+- Backend **must expose build identity** (commit SHA) in a stable location (e.g., `/health` response or `X-LifeOS-Build` header) to detect build drift.
 
 **Rate Limiting:**
 - Handled by `Flask-Limiter` using `redis://` backend (or memory:// for dev)
@@ -755,7 +762,7 @@ ENABLE_ASSISTANT=false
 - Enables asynchronous event delivery without blocking HTTP requests
 
 **Entry Points:**
-- CLI: `python -m lifeos.platform.worker.run` (from command line, for local testing)
+- CLI: `python -m lifeos.lifeos_platform.worker.run` (from command line, for local testing)
 - Docker: `docker-compose up worker` (from compose; service defined in docker-compose.yml)
 - Kubernetes: `kubectl apply -f lifeos-worker-deployment.yaml` (post-v1)
 
@@ -898,12 +905,12 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 ---
 
 # 15. Future Roadmap (directional, post-v1)
-**Phase 1 (Complete — v1.0):**
-- ✅ Multi-domain event architecture (7 domains operational)
-- ✅ Outbox pattern with worker dispatcher
-- ✅ Basic insights engine
-- ✅ Flask + Jinja2 frontend
-- ⚠️ ML account suggester (integrated but rules engine pending)
+- **Phase 1 (Complete — v1.0):**
+  - ✅ Multi-domain event architecture (7 domains operational)
+  - ✅ Outbox pattern with worker dispatcher
+  - ✅ Basic insights engine
+  - ✅ Flask + Jinja2 frontend
+  - ⚠️ ML account suggester (integrated but rules engine pending)
 
 **Phase 1.5 (Complete — Calendar-First):**
 - ✅ Calendar domain implementation (`lifeos/domains/calendar/`) — models, services, controllers, events
@@ -913,21 +920,30 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - ✅ Acceptance criteria recorded in this doc (Section 0)
 - **Specification**: `lifeos/docs/CALENDAR_FIRST_ARCHITECTURE.md`
 
-**Phase 3a (Next) — Cross-Domain Intelligence (2026 Q1 kickoff):**
-- [ ] Correlate calendar + journal + domain events to surface insights (energy vs habits, finance stress vs health, etc.)
-- [ ] Define/read projections for high-value queries (read models for insights, dashboards)
-- [ ] Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence auto-routed with audit trail
-- [ ] Telemetry: insight generation metrics, coverage, false-positive/negative tracking
-- [ ] ML enablement: keep model hooks behind services; log `model_version`/`payload_version`
+**Phase 3a (Complete) — Cross-Domain Intelligence (formalization/hardening):**
+- ✅ Correlate calendar + journal + domain events to surface insights using existing interpreter/events/rules.
+- ✅ Define/read projections for high-value queries as read-only, conservative surfaces; no full CQRS infra.
+- ✅ Confidence-aware pipelines: low-confidence interpretations flagged; high-confidence routed with audit trail; no autonomous action without explicit user confirmation.
+- ✅ Telemetry: insight generation metrics, coverage, false-positive/negative tracking.
+- ✅ ML enablement: keep model hooks behind services; log `model_version`/`payload_version`.
+- ✅ Backend tasks: harden event catalog completeness; extend insights rules to consume calendar/journal cross-signals; replay-safe projections only.
 
-**Phase 3b (Option) — Mobile/API Hardening:**
-- [ ] API versioning strategy (`/api/v1`, `/api/v2`)
-- [ ] Auth/session hardening for mobile clients; offline/sync design
+**Phase 3b (Complete) — Interface & Contract Hardening:**
+- ✅ Versioned response schemas for read surfaces (insights, review queue, calendar views/ledger, finance read APIs)
+- ✅ Read-only guardrails enforced with contract tests
+- ✅ DSD alignment enforced in CI
+- ✅ SLOs defined with alerts; metrics exposed via `/metrics`
 
-**Phase 3c (Option) — Data Sync & Broker:**
-- [ ] Broker integration (RabbitMQ/Kafka replacing in-process bus)
-- [ ] Read-model projections (materialized views) for heavy queries
-- [ ] Multi-device sync/offline support
+**Phase 3c (Option) — Scaling Track (split by trigger):**
+- **Phase 3c-1 — Read & Throughput Scaling (trigger: slow dashboards/insight cost growth/background load):**
+  - [ ] Materialized views or cached projections for heavy queries
+  - [ ] Redis-backed query results where justified
+- **Phase 3c-2 — Event Transport Scaling (trigger: multiple workers/fan-out cost/retry-DLQ pressure):**
+  - [ ] Broker integration (RabbitMQ/Kafka) and outbox→broker bridge
+  - [ ] DLQ/throughput tuning
+- **Phase 3c-3 — Multi-Device & Session Realization (trigger: active multi-device use/offline conflicts/mobile clients):**
+  - [ ] Implement session lifecycle stack: wire events/repository/read models, optional `device_id` FK, TTL/cleanup tasks, admin reset flows
+  - [ ] Token/cookie redesign only with legal/security sign-off
 
 **Phase 4 (Later):**
 - [ ] Autonomous assistant; RL-based personalization
@@ -974,7 +990,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - Tagging: `lifeos:<sha>`, `lifeos:<semver>`, `lifeos:latest`
 
 **Deployment Flow:**
-1. Pre-deploy: Run migrations (`flask db upgrade head`) in separate job
+1. Pre-deploy: Run migrations (`python -m flask --app lifeos.wsgi:app db upgrade head`) in separate job
 2. Deploy: Rolling update via Kubernetes/Docker Compose
 3. Post-deploy: Smoke test; rollback if fails
 
@@ -1025,7 +1041,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 2. `pip install -r lifeos/requirements.txt`
 3. `export DATABASE_URL=sqlite:///instance/lifeos.db && python -m flask --app lifeos db upgrade`
 4. `python -m flask --app lifeos run` (web at :5000)
-5. In another terminal: `python -m lifeos.platform.worker.run` (worker)
+5. In another terminal: `python -m lifeos.lifeos_platform.worker.run` (worker)
 6. Read domain `services.py` + `events.py` to understand the pattern
 7. Add your feature: Controller → Service → Model → Event → Test
 
@@ -1069,6 +1085,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - ❌ No WebSocket/SSE (polling-based UI updates)
 - ❌ No mobile app (web-only)
 - ❌ No third-party integrations (Stripe, Plaid, etc.)
+- ⚠️ Session lifecycle scaffold only: admin_reset path minimal; no device identity policy, no session read models used for authz, no multi-device/offline coherence. Login issue quarantined until Phase 3c.
 - ⚠️ ML account suggester: basic TF-IDF ranker (not neural)
 - ⚠️ Insights: rule-based only (no ML anomaly detection)
 
@@ -1094,14 +1111,32 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.1 (Calendar-First Phase 2 Complete; CI/CD operational): 2025-12-10. Author: LifeOS Architect._
+_Constitution v2.14 (Phase 5b complete; deterministic insights verified; session scaffold + admin reset stub): 2026-02-05. Author: LifeOS Architect._
 
-**Sprint Summary (2025-12-10):**
-- ✅ Calendar-First Phase 2: All acceptance criteria verified by QA
-- ✅ CI/CD Infrastructure: Pipelines operational (PR/main/release/nightly), Codecov wired
-- ✅ Test Coverage: 521 tests passing, 85% coverage, 10 xfailed (documented bugs)
-- ✅ Database: Single head at `20251219_calendar_oauth_tokens`
-- ⏳ User Actions Required: GitHub secrets (`CODECOV_TOKEN`, staging/prod), environment protection rules, registry credentials
+**Sprint Summary (2025-12-25):**
+- ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
+- ✅ Phase 2.5 task archived; semantic/insight contract registries enforced by tests
+- ✅ Tasks Hub active with archived UX alignment and auth refactor tasks
+- ✅ Session lifecycle scaffold remains interface-only; admin reset minimal path allowed; login issue quarantined to Phase 3c
+- ✅ Phase 3b.1 stabilization gate complete; mini soak clean; Phase 3b formally closed
+- ✅ Phase 3c-1 read scaling complete; cache strategy Option A verified; read-load verification passed
+- ✅ Phase 4 calendar time-canvas UI verification complete; snapshots captured; QA sign-off recorded
+- 🟡 Phase 3c-2 trigger assessment opened; broker scaling pending signal validation
+- ✅ Phase 5a complete: timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete
+- ✅ Phase 5b complete: deterministic cross-domain insight rules, feature computation, feed visibility, and feedback capture verified
+
+**Phase Summary (2025-12-25):**
+- ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
+- ✅ Phase 3a.5 complete: DSDs approved across all domains; read-first patterns enforced; finance surfaces stabilized
+- ✅ QA sweep green; telemetry smoke check requires admin `AUTH_TOKEN`
+- ✅ Phase 3b complete: versioned API contracts, read-only guardrails, DSD alignment tests, SLOs and alerts live
+- ✅ Phase 3b ops checks green; /metrics exposes Phase 3b SLO metrics; contract smoke tests green
+- ✅ Phase 3b.1 complete: core write-path regressions fixed; verification mini soak clean; Phase 3b formally closed
+- ✅ Phase 3c-1 complete: read-through cache and observability in place; read-load harness clean; cache invalidation audit complete
+- ✅ Phase 4 verification-complete: calendar time-canvas UI delivered under feature flag; QA snapshots captured; metrics remained green
+- 🟡 Phase 3c-2 assessment opened: collecting outbox and dispatch telemetry before broker selection
+- ✅ Phase 5a complete: proposal substrate shipped; proposals endpoint fixed; QA lifecycle tests green
+- ✅ Phase 5b complete: rule-based insights emitted and verified; Phase 5c entry gate eligible
 
 ---
 
