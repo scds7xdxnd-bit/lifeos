@@ -46,6 +46,18 @@ REQUIRED_METRICS = [
     "lifeos_inquiry_blocked_claims_by_domain_total",
     "lifeos_inquiry_replay_mismatch_total",
     "lifeos_inquiry_replay_mismatch_by_domain_total",
+    "lifeos_inquiry_productization_total",
+    "lifeos_inquiry_productization_by_domain_total",
+    "lifeos_inquiry_productization_latency_seconds_bucket",
+    "lifeos_inquiry_productization_latency_seconds_by_domain_bucket",
+    "lifeos_inquiry_productization_errors_total",
+    "lifeos_inquiry_productization_errors_by_domain_total",
+    "lifeos_inquiry_direct_answer_present_total",
+    "lifeos_inquiry_direct_answer_present_by_domain_total",
+    "lifeos_inquiry_answerability_total",
+    "lifeos_inquiry_answerability_by_domain_total",
+    "lifeos_inquiry_limitation_redundancy_removed_total",
+    "lifeos_inquiry_limitation_redundancy_removed_by_domain_total",
     "lifeos_phase6_inquiry_migration_mismatch",
 ]
 
@@ -148,6 +160,31 @@ def test_phase6_metrics_increment_on_inquiry_flow(app, client):
     assert (
         _metric_value_for_label(payload, "lifeos_inquiry_refined_by_domain_total", "domain", "finance") or 0.0
     ) >= 1.0
+    assert (_metric_value(payload, "lifeos_inquiry_productization_total") or 0.0) >= 2.0
+    assert (
+        _metric_value_for_label(payload, "lifeos_inquiry_productization_by_domain_total", "domain", "finance") or 0.0
+    ) >= 1.0
+    productization_hist_count = _metric_value(payload, "lifeos_inquiry_productization_latency_seconds_count")
+    assert productization_hist_count is not None
+    assert productization_hist_count >= 2.0
+    productization_hist_count_by_domain = _metric_value_for_label(
+        payload,
+        "lifeos_inquiry_productization_latency_seconds_by_domain_count",
+        "domain",
+        "finance",
+    )
+    assert productization_hist_count_by_domain is not None
+    assert productization_hist_count_by_domain >= 2.0
+    assert (_metric_value(payload, "lifeos_inquiry_direct_answer_present_total") or 0.0) >= 2.0
+    assert (
+        _metric_value_for_label(payload, "lifeos_inquiry_direct_answer_present_by_domain_total", "domain", "finance")
+        or 0.0
+    ) >= 1.0
+    assert (_metric_sum(payload, "lifeos_inquiry_answerability_total") or 0.0) >= 2.0
+    assert (
+        _metric_value_for_label(payload, "lifeos_inquiry_answerability_by_domain_total", "domain", "finance") or 0.0
+    ) >= 1.0
+    assert (_metric_value(payload, "lifeos_inquiry_limitation_redundancy_removed_total") or 0.0) >= 0.0
 
     generation_hist_count = _metric_value(payload, "lifeos_inquiry_generation_latency_seconds_count")
     assert generation_hist_count is not None
@@ -287,6 +324,22 @@ def test_phase7_alert_rule_coverage_exists():
         "lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio",
         "lifeos:inquiry_refine_after_low_coverage_rate_by_domain_profile:ratio",
         "lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds",
+        "lifeos:inquiry_direct_answer_presence_rate:ratio",
+        "lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_answerability_distribution:ratio",
+        "lifeos:inquiry_answerability_distribution_by_domain_profile:ratio",
+        "lifeos:inquiry_weak_answer_rate:ratio",
+        "lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_limitation_redundancy_rate:ratio",
+        "lifeos:inquiry_limitation_redundancy_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_refine_after_weak_answer_lift:ratio",
+        "lifeos:inquiry_refine_after_weak_answer_lift_by_domain_profile:ratio",
+        "lifeos:inquiry_productization_latency_p95:seconds",
+        "lifeos:inquiry_productization_latency_p95_by_domain_profile:seconds",
+        "lifeos:inquiry_productization_error_rate:ratio",
+        "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_productization_replay_mismatch_count",
+        "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile",
         "Phase7DomainInquiryErrorRateHigh",
         "Phase7DomainInquiryLatencyHigh",
         "Phase7DomainInquiryEmptyBriefHigh",
@@ -307,8 +360,14 @@ def test_phase7_alert_rule_coverage_exists():
         "Phase8CrossDomainPairBlockedClaimsSpike",
         "Phase8CrossDomainPairReplayMismatchDetected",
         "Phase8CrossDomainPairProfileVersionUnexpected",
+        "Phase81ProductizationErrorRateHigh",
+        "Phase81ProductizationLatencyHigh",
+        "Phase81WeakAnswerRateHigh",
+        "Phase81DirectAnswerPresenceLow",
+        "Phase81ProductizationReplayMismatchDetected",
         'domain=~"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships"',
         'domain=~"journal|relationships|health"',
+        'phase: "8.1"',
     )
     for token in required_tokens:
         assert token in payload
@@ -361,9 +420,22 @@ def test_phase8_rollout_scripts_include_pair_controls():
         "PHASE8_PAIR_PROFILES",
         "PHASE8_EXPECT_PROFILE_VERSION",
         "PHASE8_EXPECT_STRATEGY_VERSION",
+        "PHASE8_1_PRODUCTIZATION_ENABLED",
+        "PHASE8_1_EXPECT_PRODUCTIZATION_VERSION",
+        "PHASE8_1_CANARY_PROFILE",
+        "PHASE8_1_CANARY_MIN_DIRECT_ANSWER_RATE",
+        "PHASE8_1_CANARY_MAX_WEAK_RATE",
         "lifeos_inquiry_blocked_claims_total",
         "lifeos_inquiry_replay_mismatch_total",
+        "lifeos_inquiry_productization_total",
+        "lifeos_inquiry_direct_answer_present_total",
+        "lifeos_inquiry_answerability_total",
+        "lifeos_inquiry_limitation_redundancy_removed_total",
         "lifeos:inquiry_replay_mismatch_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile",
     )
     for token in required_tokens:
         assert token in payload
@@ -373,3 +445,46 @@ def test_phase8_rollout_scripts_include_pair_controls():
     ).resolve()
     phase8_payload = phase8_script.read_text(encoding="utf-8")
     assert "phase6_inquiry_rollout_check.sh" in phase8_payload
+
+    phase81_script = (
+        Path(__file__).resolve().parents[1]
+        / ".."
+        / "scripts"
+        / "ops"
+        / "phase8_1_inquiry_productization_rollout_check.sh"
+    ).resolve()
+    phase81_payload = phase81_script.read_text(encoding="utf-8")
+    assert "PHASE8_1_PRODUCTIZATION_ENABLED" in phase81_payload
+    assert "PHASE8_1_EXPECT_PRODUCTIZATION_VERSION" in phase81_payload
+    assert "phase6_inquiry_rollout_check.sh" in phase81_payload
+
+    snapshot_script = (
+        Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "phase8_1_inquiry_productization_snapshot.sh"
+    ).resolve()
+    snapshot_payload = snapshot_script.read_text(encoding="utf-8")
+    assert "lifeos:inquiry_direct_answer_presence_rate:ratio" in snapshot_payload
+    assert "lifeos:inquiry_weak_answer_rate:ratio" in snapshot_payload
+    assert "lifeos:inquiry_productization_error_rate:ratio" in snapshot_payload
+
+
+def test_phase81_ops_runbook_exists_with_rollout_controls():
+    runbook_path = Path(__file__).resolve().parents[1] / "docs" / "ops" / "phase_8_1_inquiry_productization_ops.md"
+    payload = runbook_path.read_text(encoding="utf-8")
+    required_tokens = (
+        "PHASE8_1_PRODUCTIZATION_ENABLED",
+        "PHASE8_1_EXPECT_PRODUCTIZATION_VERSION",
+        "PHASE8_1_CANARY_PROFILE",
+        "PHASE8_1_CANARY_MIN_DIRECT_ANSWER_RATE",
+        "PHASE8_1_CANARY_MAX_WEAK_RATE",
+        "lifeos:inquiry_direct_answer_presence_rate:ratio",
+        "lifeos:inquiry_weak_answer_rate:ratio",
+        "lifeos:inquiry_productization_error_rate:ratio",
+        "lifeos:inquiry_productization_replay_mismatch_count",
+        "Phase81ProductizationErrorRateHigh",
+        "Phase81ProductizationLatencyHigh",
+        "Phase81WeakAnswerRateHigh",
+        "Phase81DirectAnswerPresenceLow",
+        "Phase81ProductizationReplayMismatchDetected",
+    )
+    for token in required_tokens:
+        assert token in payload

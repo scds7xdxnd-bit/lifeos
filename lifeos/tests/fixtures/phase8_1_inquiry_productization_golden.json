@@ -1,0 +1,132 @@
+{
+  "single_domain_finance": {
+    "input": {
+      "question": "What does finance show this week?",
+      "domains": [
+        "finance"
+      ],
+      "findings": [
+        {
+          "claim": "Finance evidence includes canonical spend records.",
+          "finding_category": "coverage",
+          "confidence_label": "informational",
+          "domain": "finance",
+          "source_kind": "event_record",
+          "source_id": 1
+        },
+        {
+          "claim": "Finance derived signals are present in scope.",
+          "finding_category": "signal",
+          "confidence_label": "informational",
+          "domain": "finance",
+          "source_kind": "event_record",
+          "source_id": 2
+        }
+      ],
+      "limits": [
+        "finance: Bounded to selected scope.",
+        "finance: bounded to selected scope.",
+        "Bounded to selected scope."
+      ],
+      "incoming_refine_guidance": [
+        "Narrow timeframe."
+      ]
+    },
+    "expected": {
+      "answerability": {
+        "classification": "strong_answerable"
+      },
+      "direct_answer": {
+        "text": "Finance derived signals are present in scope. Finance evidence includes canonical spend records.",
+        "supporting_claims": [
+          "Finance derived signals are present in scope.",
+          "Finance evidence includes canonical spend records."
+        ]
+      },
+      "limits": [
+        "finance: Bounded to selected scope."
+      ],
+      "metadata": {
+        "version": "phase8_1_productization_v1",
+        "limitation_count_before": 3,
+        "limitation_count_after": 1,
+        "limitation_redundancy_removed": 2
+      },
+      "top_finding": {
+        "claim": "Finance derived signals are present in scope.",
+        "relevance_rank": 1,
+        "relevance_reason_contains": "High relevance"
+      },
+      "required_refine_guidance": [
+        "Narrow timeframe. Likely gain: improve evidence relevance or answerability clarity."
+      ]
+    }
+  },
+  "cross_domain_finance_habits": {
+    "input": {
+      "question": "How do finance and habits align?",
+      "domains": [
+        "finance",
+        "habits"
+      ],
+      "findings": [
+        {
+          "claim": "Coverage gap detected for habits in this window.",
+          "finding_category": "coverage_gap",
+          "confidence_label": "needs_review",
+          "domain": "habits",
+          "source_kind": "event_record",
+          "source_id": 3
+        },
+        {
+          "claim": "Finance and Habits both have canonical records in scope.",
+          "finding_category": "co_occurrence_observation",
+          "confidence_label": "informational",
+          "domain": "finance",
+          "source_kind": "event_record",
+          "source_id": 1
+        }
+      ],
+      "limits": [
+        "finance: Evidence is bounded to selected scope.",
+        "habits: Evidence is bounded to selected scope.",
+        "Evidence is bounded to selected scope.",
+        "Cross-domain coverage is incomplete."
+      ],
+      "incoming_refine_guidance": [
+        "Adjust scope."
+      ]
+    },
+    "expected": {
+      "answerability": {
+        "classification": "strong_answerable"
+      },
+      "direct_answer": {
+        "text": "Finance and Habits both have canonical records in scope. Coverage gap detected for habits in this window.",
+        "supporting_claims": [
+          "Finance and Habits both have canonical records in scope.",
+          "Coverage gap detected for habits in this window."
+        ]
+      },
+      "limits": [
+        "finance: Evidence is bounded to selected scope.",
+        "Cross-domain coverage is incomplete."
+      ],
+      "metadata": {
+        "version": "phase8_1_productization_v1",
+        "limitation_count_before": 4,
+        "limitation_count_after": 2,
+        "limitation_redundancy_removed": 2
+      },
+      "top_finding": {
+        "claim": "Finance and Habits both have canonical records in scope.",
+        "relevance_rank": 1,
+        "relevance_reason_contains": "High relevance"
+      },
+      "required_refine_guidance": [
+        "Adjust scope. Likely gain: improve evidence relevance or answerability clarity.",
+        "Refine by removing missing-coverage domains or extending the window. Likely gain: reduce coverage gaps and increase answerability."
+      ]
+    }
+  }
+}

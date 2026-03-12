@@ -71,9 +71,15 @@ def test_inquiry_contracts_include_canonical_brief_fields():
         "claim",
         "finding_category",
         "evidence_refs",
+        "relevance_rank",
+        "relevance_reason",
         "confidence_label",
         "uncertainty_note",
         "context_non_evidence",
+        "direct_answer",
+        "answerability",
+        "bounded_patterns",
+        "productization_metadata",
         "brief_profile",
         "quality_metadata",
         "profile",
@@ -88,6 +94,9 @@ def test_inquiry_contracts_include_canonical_brief_fields():
         "structure_gaps",
         "sparse_domains",
         "refine_guidance",
+        "classification",
+        "supporting_claims",
+        "limitation_redundancy_removed",
     }
     assert required.issubset(fields)
 
@@ -98,9 +107,15 @@ def test_inquiry_dsd_mappings_exist():
     required = {
         "InquiryFindingItem.claim",
         "InquiryFindingItem.evidence_refs",
+        "InquiryFindingItem.relevance_rank",
+        "InquiryFindingItem.relevance_reason",
         "InquiryFindingItem.confidence_label",
         "InquiryFindingItem.uncertainty_note",
         "InquiryBriefItem.context_non_evidence",
+        "InquiryBriefItem.direct_answer",
+        "InquiryBriefItem.answerability",
+        "InquiryBriefItem.bounded_patterns",
+        "InquiryBriefItem.productization_metadata",
         "InquiryBriefItem.brief_profile",
         "InquiryBriefItem.quality_metadata",
         "InquiryFindingItem.finding_category",
@@ -117,5 +132,8 @@ def test_inquiry_dsd_mappings_exist():
         "InquiryQualityMetadata.structure_gaps",
         "InquiryQualityMetadata.sparse_domains",
         "InquiryQualityMetadata.refine_guidance",
+        "InquiryDirectAnswer.text",
+        "InquiryAnswerability.classification",
+        "InquiryProductizationMetadata.limitation_redundancy_removed",
     }
     assert required.issubset(mapping.keys())

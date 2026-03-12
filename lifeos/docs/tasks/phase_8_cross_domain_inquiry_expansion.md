@@ -3,7 +3,7 @@
 **Audience:** Architecture, Backend, Frontend, DB, QA, DevOps, ML (contracts-only)
 **Owner:** LifeOS Architecture
 **Preconditions:** Phase 7 and Phase 7.1 complete and QA-approved
-**Status:** Approved to Open
+**Status:** Complete (implemented and governance-approved)
 **Nature:** Deterministic cross-domain synthesis (bounded, non-assistant)
 
 ---
@@ -122,3 +122,15 @@ Phase 8 closes only when:
 - No recommendation engines.
 - No broad causal modeling.
 - No assistant-first architecture.
+
+---
+
+## 10) Completion record
+
+Phase 8 closure is recorded with:
+- Deterministic cross-domain synthesis shipped for approved domain pairs.
+- Cross-domain claim taxonomy and forbidden-claim guardrails verified by QA.
+- Cross-domain replay determinism verified by profile/version.
+- Per-pair observability and staged rollout controls validated by DevOps.
+
+Next phase: `phase_8_1_inquiry_productization.md`

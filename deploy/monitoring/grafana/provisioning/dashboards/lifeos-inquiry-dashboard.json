@@ -1,7 +1,7 @@
 {
-  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8)",
-  "description": "Operational dashboard for focused inquiry rollout and domain/cross-domain expert quality signals",
-  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "inquiry"],
+  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8/8.1)",
+  "description": "Operational dashboard for focused inquiry rollout, domain/cross-domain expert quality signals, and productization usefulness",
+  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "phase81", "inquiry"],
   "timezone": "utc",
   "panels": [
     {
@@ -447,6 +447,158 @@
           "legendFormat": "{{ domain }} strategy={{ strategy_version }}"
         }
       ]
+    },
+    {
+      "id": 35,
+      "title": "Phase 8.1 Productization Runs / Errors (5m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "increase(lifeos_inquiry_productization_total[5m])",
+          "legendFormat": "productization_runs"
+        },
+        {
+          "expr": "increase(lifeos_inquiry_productization_errors_total[5m])",
+          "legendFormat": "productization_errors"
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "title": "Phase 8.1 Productization Latency p95 (seconds)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_productization_latency_p95:seconds",
+          "legendFormat": "global_p95"
+        },
+        {
+          "expr": "lifeos:inquiry_productization_latency_p95_by_domain_profile:seconds",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Duration", "format": "s"}]
+    },
+    {
+      "id": 37,
+      "title": "Phase 8.1 Productization Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_productization_error_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 38,
+      "title": "Phase 8.1 Direct Answer Presence Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_direct_answer_presence_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 39,
+      "title": "Phase 8.1 Answerability Distribution (global)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_answerability_distribution:ratio",
+          "legendFormat": "{{ classification }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 40,
+      "title": "Phase 8.1 Weak Answer Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_weak_answer_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 41,
+      "title": "Phase 8.1 Limitation Redundancy Removed / Brief",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_limitation_redundancy_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_limitation_redundancy_rate_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "title": "Phase 8.1 Refine-After-Weak-Answer Lift",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_refine_after_weak_answer_lift:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_refine_after_weak_answer_lift_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "title": "Phase 8.1 Replay Mismatch Count (15m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_productization_replay_mismatch_count",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "title": "Phase 8.1 Canary Comparison (Pair Profiles)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "direct {{ domain }} p{{ profile_version }}"
+        },
+        {
+          "expr": "lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "weak {{ domain }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
     }
   ],
   "refresh": "30s",

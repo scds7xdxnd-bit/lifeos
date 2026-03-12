@@ -1611,6 +1611,53 @@ select:focus {
   color: var(--text-strong);
 }
 
+.inquiry-direct-answer {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.inquiry-direct-answer-note {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.inquiry-direct-answer-support {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  color: var(--text-strong);
+  font-size: 0.86rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.inquiry-answerability-row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.inquiry-answerability-coverage {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.inquiry-answerability-reason {
+  margin-top: 0.25rem;
+  color: var(--text-strong);
+  font-size: 0.88rem;
+}
+
+.inquiry-bounded-patterns,
+.inquiry-refine-guidance {
+  margin: 0.2rem 0 0;
+  padding-left: 1rem;
+  color: var(--text-strong);
+  display: grid;
+  gap: 0.2rem;
+}
+
 .inquiry-domain-profile-summary {
   color: var(--text-strong);
   font-size: 0.9rem;
@@ -1747,6 +1794,17 @@ select:focus {
   font-size: 0.88rem;
 }
 
+.inquiry-finding-relevance {
+  color: var(--text-strong);
+  font-size: 0.86rem;
+}
+
+.inquiry-finding-relevance-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
 .inquiry-finding-evidence {
   display: grid;
   gap: 0.45rem;
@@ -1812,6 +1870,12 @@ select:focus {
   color: var(--text-strong);
   display: grid;
   gap: 0.2rem;
+}
+
+.inquiry-limits-meta {
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.83rem;
 }
 
 .inquiry-quality-summary {

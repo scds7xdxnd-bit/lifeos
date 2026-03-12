@@ -15,6 +15,11 @@ PHASE8_CROSS_DOMAIN_NON_RUNTIME_DECLARATION = (
     "Phase 8 cross-domain inquiry profiles are deterministic, rules-only, non-runtime scaffolding. "
     "Cross-domain profile metadata is structured contract output, not model inference."
 )
+PHASE8_1_PRODUCTIZATION_NON_RUNTIME_DECLARATION = (
+    "Phase 8.1 inquiry productization is deterministic and non-runtime for ML decisioning. "
+    "Answerability and usefulness metadata are bounded contract descriptors, not probabilistic truth scores."
+)
+PHASE8_1_PRODUCTIZATION_VERSION = "phase8_1_productization_v1"
 PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED = False
 PHASE6_INQUIRY_FORBIDDEN_RUNTIME_CAPABILITIES = (
     "runtime_model_scoring",
@@ -24,6 +29,12 @@ PHASE6_INQUIRY_FORBIDDEN_RUNTIME_CAPABILITIES = (
     "confidence_relabeling",
     "evidence_override",
     "free_form_answer_generation",
+)
+PHASE8_1_FORBIDDEN_RUNTIME_CAPABILITIES = (
+    "runtime_answerability_scoring",
+    "runtime_helpfulness_probability",
+    "personalized_finding_ranking",
+    "free_form_productized_generation",
 )
 
 INQUIRY_LENS_TYPES = ("domain", "cross_domain")
@@ -71,9 +82,14 @@ REQUIRED_INQUIRY_QUALITY_FIELDS = (
 REQUIRED_INQUIRY_BRIEF_FIELDS = (
     "summary",
     "findings",
+    "direct_answer",
+    "answerability",
     "context_non_evidence",
     "uncertainty_note",
     "limits",
+    "refine_guidance",
+    "bounded_patterns",
+    "productization_metadata",
     "question",
     "lens",
     "domains",
@@ -87,6 +103,8 @@ REQUIRED_INQUIRY_FINDING_FIELDS = (
     "claim",
     "finding_category",
     "evidence_refs",
+    "relevance_rank",
+    "relevance_reason",
     "confidence_label",
     "uncertainty_note",
     "source_domains",
@@ -106,6 +124,38 @@ DISALLOWED_QUALITY_METADATA_FIELDS = (
     "probability",
     "model_score",
     "truth_score",
+)
+REQUIRED_DIRECT_ANSWER_FIELDS = ("text", "supporting_claims", "note")
+REQUIRED_ANSWERABILITY_FIELDS = ("classification", "reason", "evidence_coverage_ratio", "supporting_finding_count")
+REQUIRED_BOUNDED_PATTERN_FIELDS = ("pattern_category", "finding_count", "note")
+REQUIRED_PRODUCTIZATION_METADATA_FIELDS = (
+    "version",
+    "limitation_count_before",
+    "limitation_count_after",
+    "limitation_redundancy_removed",
+    "direct_answer_present",
+)
+PHASE8_1_ALLOWED_ANSWERABILITY_CLASSES = (
+    "strong_answerable",
+    "partial_answerable",
+    "weak_answerable",
+)
+DISALLOWED_ANSWERABILITY_FIELDS = (
+    "confidence",
+    "confidence_score",
+    "probability",
+    "model_score",
+    "truth_score",
+    "helpfulness_score",
+)
+DISALLOWED_PRODUCTIZATION_METADATA_FIELDS = (
+    "confidence",
+    "confidence_score",
+    "probability",
+    "model_score",
+    "truth_score",
+    "helpfulness_score",
+    "answerability_score",
 )
 REQUIRED_BRIEF_PROFILE_FIELDS = (
     "profile",
@@ -357,6 +407,16 @@ INQUIRY_FUTURE_DATA_REQUIREMENTS: dict[str, InquiryDataRequirement] = {
             "brief_profile.expert_mode",
             "brief_profile.finding_categories",
             "finding_category",
+            "relevance_rank",
+            "relevance_reason",
+            "direct_answer.text",
+            "direct_answer.supporting_claims",
+            "answerability.classification",
+            "answerability.evidence_coverage_ratio",
+            "bounded_patterns.pattern_category",
+            "bounded_patterns.finding_count",
+            "productization_metadata.version",
+            "productization_metadata.limitation_redundancy_removed",
         ),
         purpose="Keep epistemic boundaries and evidence coverage measurable in future phases.",
     ),
@@ -385,6 +445,7 @@ def alignment_report() -> dict[str, object]:
     from lifeos.core.contracts.api_dsd_mappings import DSD_FIELD_MAPPINGS
     from lifeos.core.insights.inquiry_cross_domain.pairs import PAIR_PROFILES
     from lifeos.core.insights.inquiry_cross_domain.pairs.base import ALLOWED_CROSS_DOMAIN_CLAIM_CATEGORIES
+    from lifeos.core.insights.inquiry_productization import ANSWERABILITY_CLASSES, productize_inquiry_brief
     from lifeos.core.insights.inquiry_strategies import (
         DOMAIN_STRATEGIES,
         FIRST_WAVE_DOMAIN_STRATEGIES,
@@ -402,10 +463,16 @@ def alignment_report() -> dict[str, object]:
     finding_fields = {field.name for field in api_contracts.INQUIRY_FINDING_ITEM.fields}
     brief_profile_fields = {field.name for field in api_contracts.INQUIRY_BRIEF_PROFILE.fields}
     quality_fields = {field.name for field in api_contracts.INQUIRY_QUALITY_METADATA.fields}
+    direct_answer_fields = {field.name for field in api_contracts.INQUIRY_DIRECT_ANSWER.fields}
+    answerability_fields = {field.name for field in api_contracts.INQUIRY_ANSWERABILITY.fields}
+    bounded_pattern_fields = {field.name for field in api_contracts.INQUIRY_BOUNDED_PATTERN.fields}
+    productization_fields = {field.name for field in api_contracts.INQUIRY_PRODUCTIZATION_METADATA.fields}
     context_fields = {field.name for field in api_contracts.INQUIRY_CONTEXT_BLOCK.fields}
     disallowed_present = sorted((brief_fields | finding_fields) & set(DISALLOWED_INQUIRY_OUTPUT_FIELDS))
     disallowed_profile_present = sorted(brief_profile_fields & set(DISALLOWED_BRIEF_PROFILE_FIELDS))
     disallowed_quality_present = sorted(quality_fields & set(DISALLOWED_QUALITY_METADATA_FIELDS))
+    disallowed_answerability_present = sorted(answerability_fields & set(DISALLOWED_ANSWERABILITY_FIELDS))
+    disallowed_productization_present = sorted(productization_fields & set(DISALLOWED_PRODUCTIZATION_METADATA_FIELDS))
 
     dsd_mapping = DSD_FIELD_MAPPINGS.get("insights:inquiry", {})
     required_quality_dsd_keys = {"InquiryBriefItem.quality_metadata"} | {
@@ -414,12 +481,43 @@ def alignment_report() -> dict[str, object]:
     required_profile_dsd_keys = {"InquiryBriefItem.brief_profile", "InquiryFindingItem.finding_category"} | {
         f"InquiryBriefProfile.{field_name}" for field_name in REQUIRED_BRIEF_PROFILE_FIELDS
     }
+    required_productization_dsd_keys = {
+        "InquiryBriefItem.direct_answer",
+        "InquiryBriefItem.answerability",
+        "InquiryBriefItem.refine_guidance",
+        "InquiryBriefItem.bounded_patterns",
+        "InquiryBriefItem.productization_metadata",
+        "InquiryFindingItem.relevance_rank",
+        "InquiryFindingItem.relevance_reason",
+    }
+    required_productization_dsd_keys |= {
+        f"InquiryDirectAnswer.{field_name}" for field_name in REQUIRED_DIRECT_ANSWER_FIELDS
+    }
+    required_productization_dsd_keys |= {
+        f"InquiryAnswerability.{field_name}" for field_name in REQUIRED_ANSWERABILITY_FIELDS
+    }
+    required_productization_dsd_keys |= {
+        f"InquiryBoundedPattern.{field_name}" for field_name in REQUIRED_BOUNDED_PATTERN_FIELDS
+    }
+    required_productization_dsd_keys |= {
+        f"InquiryProductizationMetadata.{field_name}" for field_name in REQUIRED_PRODUCTIZATION_METADATA_FIELDS
+    }
     required_phase8_dsd_keys = set(PHASE8_REQUIRED_CROSS_DOMAIN_PROFILE_DSD_KEYS) | set(
         PHASE8_REQUIRED_SELECTED_DOMAIN_CONTRACT_KEYS
     )
     missing_quality_dsd_mappings = sorted(required_quality_dsd_keys - set(dsd_mapping.keys()))
     missing_profile_dsd_mappings = sorted(required_profile_dsd_keys - set(dsd_mapping.keys()))
+    missing_productization_dsd_mappings = sorted(required_productization_dsd_keys - set(dsd_mapping.keys()))
     missing_phase8_dsd_mappings = sorted(required_phase8_dsd_keys - set(dsd_mapping.keys()))
+
+    productization_probe = productize_inquiry_brief(
+        question="",
+        domains=[],
+        findings=[],
+        limits=[],
+        incoming_refine_guidance=[],
+    )
+    productization_runtime_version = str(productization_probe.metadata.get("version") or "")
 
     missing_selected_domains_contract_fields: list[str] = []
     if "domains" not in inquiry_fields:
@@ -545,12 +643,34 @@ def alignment_report() -> dict[str, object]:
         "missing_required_finding_fields": sorted(set(REQUIRED_INQUIRY_FINDING_FIELDS) - finding_fields),
         "missing_required_brief_profile_fields": sorted(set(REQUIRED_BRIEF_PROFILE_FIELDS) - brief_profile_fields),
         "missing_required_quality_fields": sorted(set(REQUIRED_INQUIRY_QUALITY_FIELDS) - quality_fields),
+        "missing_required_direct_answer_fields": sorted(set(REQUIRED_DIRECT_ANSWER_FIELDS) - direct_answer_fields),
+        "missing_required_answerability_fields": sorted(set(REQUIRED_ANSWERABILITY_FIELDS) - answerability_fields),
+        "missing_required_bounded_pattern_fields": sorted(
+            set(REQUIRED_BOUNDED_PATTERN_FIELDS) - bounded_pattern_fields
+        ),
+        "missing_required_productization_metadata_fields": sorted(
+            set(REQUIRED_PRODUCTIZATION_METADATA_FIELDS) - productization_fields
+        ),
         "disallowed_output_fields_present": disallowed_present,
         "disallowed_brief_profile_fields_present": disallowed_profile_present,
         "disallowed_quality_fields_present": disallowed_quality_present,
+        "disallowed_answerability_fields_present": disallowed_answerability_present,
+        "disallowed_productization_fields_present": disallowed_productization_present,
         "missing_context_non_evidence_fields": sorted({"label", "text"} - context_fields),
         "missing_quality_dsd_mappings": missing_quality_dsd_mappings,
         "missing_profile_dsd_mappings": missing_profile_dsd_mappings,
+        "missing_productization_dsd_mappings": missing_productization_dsd_mappings,
+        "non_contract_answerability_classes": sorted(
+            set(PHASE8_1_ALLOWED_ANSWERABILITY_CLASSES) - set(ANSWERABILITY_CLASSES)
+        ),
+        "extra_runtime_answerability_classes": sorted(
+            set(ANSWERABILITY_CLASSES) - set(PHASE8_1_ALLOWED_ANSWERABILITY_CLASSES)
+        ),
+        "productization_version_mismatch": (
+            productization_runtime_version
+            if productization_runtime_version != PHASE8_1_PRODUCTIZATION_VERSION
+            else None
+        ),
         "missing_selected_domains_contract_fields": missing_selected_domains_contract_fields,
         "missing_phase8_dsd_mappings": missing_phase8_dsd_mappings,
         "missing_cross_domain_storage_fields": missing_cross_domain_storage_fields,
@@ -607,6 +727,12 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
                 errors.append(f"invalid_finding_category:{idx}")
             else:
                 findings_categories.append(category.strip())
+            relevance_rank = finding.get("relevance_rank")
+            if not isinstance(relevance_rank, int) or relevance_rank < 1:
+                errors.append(f"invalid_relevance_rank:{idx}")
+            relevance_reason = finding.get("relevance_reason")
+            if not isinstance(relevance_reason, str) or not relevance_reason.strip():
+                errors.append(f"invalid_relevance_reason:{idx}")
             confidence = str(finding.get("confidence_label") or "")
             if confidence and confidence not in CONFIDENCE_VOCABULARY:
                 errors.append(f"invalid_confidence_label:{idx}:{confidence}")
@@ -647,6 +773,127 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
             value = quality_metadata.get(key)
             if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
                 errors.append(f"invalid_quality_{key}")
+
+    direct_answer = payload.get("direct_answer")
+    if not isinstance(direct_answer, Mapping):
+        errors.append("invalid_direct_answer")
+    else:
+        direct_keys = set(direct_answer.keys())
+        missing_direct = sorted(set(REQUIRED_DIRECT_ANSWER_FIELDS) - direct_keys)
+        if missing_direct:
+            errors.append(f"missing_direct_answer_fields:{','.join(missing_direct)}")
+        disallowed_direct = sorted(direct_keys & set(DISALLOWED_ANSWERABILITY_FIELDS))
+        if disallowed_direct:
+            errors.append(f"disallowed_direct_answer_fields:{','.join(disallowed_direct)}")
+        text = direct_answer.get("text")
+        note = direct_answer.get("note")
+        supporting_claims = direct_answer.get("supporting_claims")
+        if not isinstance(text, str) or not text.strip():
+            errors.append("invalid_direct_answer_text")
+        if not isinstance(note, str) or not note.strip():
+            errors.append("invalid_direct_answer_note")
+        if not isinstance(supporting_claims, list) or any(
+            not isinstance(item, str) or not item.strip() for item in supporting_claims
+        ):
+            errors.append("invalid_direct_answer_supporting_claims")
+
+    answerability = payload.get("answerability")
+    if not isinstance(answerability, Mapping):
+        errors.append("invalid_answerability")
+    else:
+        answerability_keys = set(answerability.keys())
+        missing_answerability = sorted(set(REQUIRED_ANSWERABILITY_FIELDS) - answerability_keys)
+        if missing_answerability:
+            errors.append(f"missing_answerability_fields:{','.join(missing_answerability)}")
+        disallowed_answerability = sorted(answerability_keys & set(DISALLOWED_ANSWERABILITY_FIELDS))
+        if disallowed_answerability:
+            errors.append(f"disallowed_answerability_fields:{','.join(disallowed_answerability)}")
+        classification = str(answerability.get("classification") or "")
+        if classification not in PHASE8_1_ALLOWED_ANSWERABILITY_CLASSES:
+            errors.append("invalid_answerability_classification")
+        reason = answerability.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            errors.append("invalid_answerability_reason")
+        supporting_count = answerability.get("supporting_finding_count")
+        if not isinstance(supporting_count, int) or supporting_count < 0:
+            errors.append("invalid_answerability_supporting_finding_count")
+        try:
+            answerability_ratio = float(answerability.get("evidence_coverage_ratio"))
+        except (TypeError, ValueError):
+            answerability_ratio = None
+        if answerability_ratio is None or answerability_ratio < 0.0 or answerability_ratio > 1.0:
+            errors.append("invalid_answerability_evidence_coverage_ratio")
+
+    refine_guidance = payload.get("refine_guidance")
+    if not isinstance(refine_guidance, list) or any(
+        not isinstance(item, str) or not item.strip() for item in refine_guidance
+    ):
+        errors.append("invalid_refine_guidance")
+
+    bounded_patterns = payload.get("bounded_patterns")
+    if not isinstance(bounded_patterns, list):
+        errors.append("invalid_bounded_patterns")
+    else:
+        for idx, item in enumerate(bounded_patterns):
+            if not isinstance(item, Mapping):
+                errors.append(f"invalid_bounded_pattern_mapping:{idx}")
+                continue
+            pattern_keys = set(item.keys())
+            missing_pattern_fields = sorted(set(REQUIRED_BOUNDED_PATTERN_FIELDS) - pattern_keys)
+            if missing_pattern_fields:
+                errors.append(f"missing_bounded_pattern_fields:{idx}:{','.join(missing_pattern_fields)}")
+            disallowed_pattern_fields = sorted(pattern_keys & set(DISALLOWED_ANSWERABILITY_FIELDS))
+            if disallowed_pattern_fields:
+                errors.append(f"disallowed_bounded_pattern_fields:{idx}:{','.join(disallowed_pattern_fields)}")
+            category = item.get("pattern_category")
+            note = item.get("note")
+            count = item.get("finding_count")
+            if not isinstance(category, str) or not category.strip():
+                errors.append(f"invalid_bounded_pattern_category:{idx}")
+            if category in FORBIDDEN_CROSS_DOMAIN_CLAIM_CATEGORIES:
+                errors.append(f"forbidden_bounded_pattern_category:{idx}")
+            if not isinstance(note, str) or not note.strip():
+                errors.append(f"invalid_bounded_pattern_note:{idx}")
+            if not isinstance(count, int) or count < 0:
+                errors.append(f"invalid_bounded_pattern_count:{idx}")
+
+    productization_metadata = payload.get("productization_metadata")
+    if not isinstance(productization_metadata, Mapping):
+        errors.append("invalid_productization_metadata")
+    else:
+        productization_keys = set(productization_metadata.keys())
+        missing_productization_fields = sorted(set(REQUIRED_PRODUCTIZATION_METADATA_FIELDS) - productization_keys)
+        if missing_productization_fields:
+            errors.append(f"missing_productization_metadata_fields:{','.join(missing_productization_fields)}")
+        disallowed_productization_fields = sorted(productization_keys & set(DISALLOWED_PRODUCTIZATION_METADATA_FIELDS))
+        if disallowed_productization_fields:
+            errors.append(f"disallowed_productization_metadata_fields:{','.join(disallowed_productization_fields)}")
+        version = str(productization_metadata.get("version") or "")
+        if version != PHASE8_1_PRODUCTIZATION_VERSION:
+            errors.append("invalid_productization_version")
+        before = productization_metadata.get("limitation_count_before")
+        after = productization_metadata.get("limitation_count_after")
+        removed = productization_metadata.get("limitation_redundancy_removed")
+        present = productization_metadata.get("direct_answer_present")
+        if not isinstance(before, int) or before < 0:
+            errors.append("invalid_productization_limitation_count_before")
+        if not isinstance(after, int) or after < 0:
+            errors.append("invalid_productization_limitation_count_after")
+        if not isinstance(removed, int) or removed < 0:
+            errors.append("invalid_productization_limitation_redundancy_removed")
+        if (
+            isinstance(before, int)
+            and isinstance(after, int)
+            and isinstance(removed, int)
+            and before - after != removed
+        ):
+            errors.append("invalid_productization_limitation_consistency")
+        if not isinstance(present, bool):
+            errors.append("invalid_productization_direct_answer_present")
+        elif isinstance(direct_answer, Mapping):
+            expected_present = bool(str(direct_answer.get("text") or "").strip())
+            if present != expected_present:
+                errors.append("invalid_productization_direct_answer_consistency")
 
     brief_profile = payload.get("brief_profile")
     if not isinstance(brief_profile, Mapping):
@@ -753,8 +1000,11 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
 __all__ = [
     "PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION",
     "PHASE8_CROSS_DOMAIN_NON_RUNTIME_DECLARATION",
+    "PHASE8_1_PRODUCTIZATION_NON_RUNTIME_DECLARATION",
+    "PHASE8_1_PRODUCTIZATION_VERSION",
     "PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED",
     "PHASE6_INQUIRY_FORBIDDEN_RUNTIME_CAPABILITIES",
+    "PHASE8_1_FORBIDDEN_RUNTIME_CAPABILITIES",
     "INQUIRY_LENS_TYPES",
     "ALLOWED_INQUIRY_ACTIONS",
     "FIRST_WAVE_EXPERT_DOMAINS",
@@ -764,11 +1014,18 @@ __all__ = [
     "LATER_WAVE_FORBIDDEN_TOKEN_REQUIREMENTS",
     "REQUIRED_BRIEF_PROFILE_FIELDS",
     "REQUIRED_INQUIRY_QUALITY_FIELDS",
+    "REQUIRED_DIRECT_ANSWER_FIELDS",
+    "REQUIRED_ANSWERABILITY_FIELDS",
+    "REQUIRED_BOUNDED_PATTERN_FIELDS",
+    "REQUIRED_PRODUCTIZATION_METADATA_FIELDS",
+    "PHASE8_1_ALLOWED_ANSWERABILITY_CLASSES",
     "REQUIRED_INQUIRY_BRIEF_FIELDS",
     "REQUIRED_INQUIRY_FINDING_FIELDS",
     "DISALLOWED_INQUIRY_OUTPUT_FIELDS",
     "DISALLOWED_BRIEF_PROFILE_FIELDS",
     "DISALLOWED_QUALITY_METADATA_FIELDS",
+    "DISALLOWED_ANSWERABILITY_FIELDS",
+    "DISALLOWED_PRODUCTIZATION_METADATA_FIELDS",
     "FORBIDDEN_CROSS_DOMAIN_CLAIM_CATEGORIES",
     "PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS",
     "PHASE8_APPROVED_PAIR_PROFILE_NAMES",

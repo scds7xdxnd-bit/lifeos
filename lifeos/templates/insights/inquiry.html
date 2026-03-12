@@ -131,6 +131,27 @@
         <div id="inquiry-summary" class="inquiry-summary"></div>
       </div>
 
+      <div class="inquiry-block" id="inquiry-direct-answer-block">
+        <div class="inquiry-block-label">Direct Answer</div>
+        <div id="inquiry-direct-answer" class="inquiry-direct-answer"></div>
+        <div id="inquiry-direct-answer-note" class="inquiry-direct-answer-note"></div>
+        <ul id="inquiry-direct-answer-support" class="inquiry-direct-answer-support"></ul>
+      </div>
+
+      <div class="inquiry-block" id="inquiry-answerability-block">
+        <div class="inquiry-block-label">Answerability Status</div>
+        <div class="inquiry-answerability-row">
+          <span id="inquiry-answerability-pill" class="inquiry-label inquiry-label--neutral">Unspecified</span>
+          <span id="inquiry-answerability-coverage" class="inquiry-answerability-coverage"></span>
+        </div>
+        <div id="inquiry-answerability-reason" class="inquiry-answerability-reason"></div>
+      </div>
+
+      <div class="inquiry-block" id="inquiry-bounded-patterns-block">
+        <div class="inquiry-block-label">What This Means</div>
+        <ul id="inquiry-bounded-patterns" class="inquiry-bounded-patterns"></ul>
+      </div>
+
       <div class="inquiry-block" id="inquiry-domain-profile-block">
         <div class="inquiry-block-label">Domain Profile</div>
         <div id="inquiry-domain-profile-summary" class="inquiry-domain-profile-summary"></div>
@@ -157,8 +178,9 @@
       </div>
 
       <div class="inquiry-block">
-        <div class="inquiry-block-label">Uncertainty / Limits</div>
+        <div class="inquiry-block-label">Deduplicated Limitations</div>
         <div id="inquiry-uncertainty" class="inquiry-uncertainty"></div>
+        <div id="inquiry-limits-meta" class="inquiry-limits-meta"></div>
         <ul id="inquiry-limits" class="inquiry-limits"></ul>
       </div>
 
@@ -181,6 +203,11 @@
         <div class="inquiry-quality-actions">
           <button type="button" class="btn btn-secondary" id="inquiry-quality-refine-btn" style="display:none;">Refine Inquiry</button>
         </div>
+      </div>
+
+      <div class="inquiry-block" id="inquiry-refine-guidance-block">
+        <div class="inquiry-block-label">Refine Guidance</div>
+        <ul id="inquiry-refine-guidance" class="inquiry-refine-guidance"></ul>
       </div>
 
       <div class="inquiry-block">
@@ -263,6 +290,13 @@
     const briefStatus = document.getElementById('inquiry-brief-status');
     const versionList = document.getElementById('inquiry-version-list');
     const briefSummary = document.getElementById('inquiry-summary');
+    const directAnswerEl = document.getElementById('inquiry-direct-answer');
+    const directAnswerNoteEl = document.getElementById('inquiry-direct-answer-note');
+    const directAnswerSupportEl = document.getElementById('inquiry-direct-answer-support');
+    const answerabilityPillEl = document.getElementById('inquiry-answerability-pill');
+    const answerabilityCoverageEl = document.getElementById('inquiry-answerability-coverage');
+    const answerabilityReasonEl = document.getElementById('inquiry-answerability-reason');
+    const boundedPatternsEl = document.getElementById('inquiry-bounded-patterns');
     const domainProfileSummaryEl = document.getElementById('inquiry-domain-profile-summary');
     const domainProfileMetaEl = document.getElementById('inquiry-domain-profile-meta');
     const domainSafetyWrap = document.getElementById('inquiry-domain-safety-wrap');
@@ -275,6 +309,7 @@
     const domainRefineHintsEl = document.getElementById('inquiry-domain-refine-hints');
     const findingsEl = document.getElementById('inquiry-findings');
     const uncertaintyEl = document.getElementById('inquiry-uncertainty');
+    const limitsMetaEl = document.getElementById('inquiry-limits-meta');
     const limitsEl = document.getElementById('inquiry-limits');
     const qualityBlock = document.getElementById('inquiry-quality-block');
     const qualitySummaryEl = document.getElementById('inquiry-quality-summary');
@@ -287,6 +322,7 @@
     const qualityGuidanceEl = document.getElementById('inquiry-quality-guidance');
     const qualityRefineBtn = document.getElementById('inquiry-quality-refine-btn');
     const contextRender = document.getElementById('inquiry-context-render');
+    const refineGuidanceEl = document.getElementById('inquiry-refine-guidance');
     const nextQuestionsEl = document.getElementById('inquiry-next-questions');
     const briefAlert = document.getElementById('inquiry-brief-alert');
 
@@ -466,6 +502,22 @@
       if (normalized === 'needs_review') return 'Needs review';
       if (normalized === 'informational') return 'Informational';
       if (normalized === 'confirmed') return 'Confirmed';
+      return 'Unspecified';
+    };
+
+    const answerabilityClass = (classification) => {
+      const normalized = String(classification || '').toLowerCase();
+      if (normalized === 'strong_answerable') return 'inquiry-label inquiry-label--confirmed';
+      if (normalized === 'partial_answerable') return 'inquiry-label inquiry-label--informational';
+      if (normalized === 'weak_answerable') return 'inquiry-label inquiry-label--needs-review';
+      return 'inquiry-label inquiry-label--neutral';
+    };
+
+    const answerabilityText = (classification) => {
+      const normalized = String(classification || '').toLowerCase();
+      if (normalized === 'strong_answerable') return 'Strongly answerable';
+      if (normalized === 'partial_answerable') return 'Partially answerable';
+      if (normalized === 'weak_answerable') return 'Weakly answerable';
       return 'Unspecified';
     };
 
@@ -881,8 +933,13 @@
       card.className = 'inquiry-finding';
       const groupedEvidence = groupEvidenceByDomain(finding.evidence_refs || []);
       const category = String(finding.finding_category || '').trim();
+      const relevanceRank = Number(finding.relevance_rank || 0);
+      const relevanceReason = String(finding.relevance_reason || '').trim();
       const categoryHtml = category
         ? `<span class="inquiry-finding-category">${categoryLabel(category, domain)}</span>`
+        : '';
+      const relevanceHtml = relevanceReason
+        ? `<div class="inquiry-finding-relevance"><span class="inquiry-finding-relevance-label">Why this evidence matters${relevanceRank > 0 ? ` (rank ${relevanceRank})` : ''}:</span> ${relevanceReason}</div>`
         : '';
 
       const evidenceHtml = groupedEvidence.map(([evidenceDomain, refs]) => {
@@ -905,6 +962,7 @@
           </div>
           <span class="${confidenceClass(finding.confidence_label)}">${confidenceText(finding.confidence_label)}</span>
         </div>
+        ${relevanceHtml}
         <div class="inquiry-finding-uncertainty">${finding.uncertainty_note || 'No uncertainty note provided.'}</div>
         <div class="inquiry-finding-evidence">${evidenceHtml || '<div class="inquiry-empty-inline">No evidence refs.</div>'}</div>
       `;
@@ -963,6 +1021,78 @@
       });
     };
 
+    const renderDirectAnswer = (brief) => {
+      const directAnswer = brief?.direct_answer || {};
+      const answerText = String(directAnswer.text || '').trim();
+      const noteText = String(directAnswer.note || '').trim();
+      const supportingClaims = Array.isArray(directAnswer.supporting_claims)
+        ? directAnswer.supporting_claims.map((item) => String(item || '').trim()).filter(Boolean)
+        : [];
+
+      directAnswerEl.textContent = answerText || 'No direct answer was generated for this scope.';
+      directAnswerNoteEl.textContent = noteText || 'Derived from evidence-bounded findings only.';
+      directAnswerSupportEl.innerHTML = '';
+      if (!supportingClaims.length) {
+        directAnswerSupportEl.innerHTML = '<li>No supporting claims listed.</li>';
+        return;
+      }
+      supportingClaims.forEach((claim) => {
+        const li = document.createElement('li');
+        li.textContent = claim;
+        directAnswerSupportEl.appendChild(li);
+      });
+    };
+
+    const renderAnswerability = (brief) => {
+      const answerability = brief?.answerability || {};
+      const classification = String(answerability.classification || '').toLowerCase();
+      const reason = String(answerability.reason || '').trim();
+      const coverageRatio = Number(answerability.evidence_coverage_ratio);
+      const supportingCount = Number(answerability.supporting_finding_count || 0);
+
+      answerabilityPillEl.className = answerabilityClass(classification);
+      answerabilityPillEl.textContent = answerabilityText(classification);
+      if (Number.isFinite(coverageRatio)) {
+        answerabilityCoverageEl.textContent = `${coveragePercentText(coverageRatio)} evidence coverage · ${supportingCount} supporting findings`;
+      } else {
+        answerabilityCoverageEl.textContent = `${supportingCount} supporting findings`;
+      }
+      answerabilityReasonEl.textContent = reason || 'Answerability details are unavailable for this brief version.';
+    };
+
+    const renderBoundedPatterns = (brief) => {
+      const patterns = Array.isArray(brief?.bounded_patterns) ? brief.bounded_patterns : [];
+      boundedPatternsEl.innerHTML = '';
+      if (!patterns.length) {
+        boundedPatternsEl.innerHTML = '<li>No bounded patterns were identified in this scope.</li>';
+        return;
+      }
+      patterns.forEach((pattern) => {
+        const category = categoryLabel(pattern.pattern_category, brief?.lens === 'cross_domain' ? 'cross_domain' : brief?.brief_profile?.domain);
+        const count = Number(pattern.finding_count || 0);
+        const note = String(pattern.note || '').trim();
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${category}</strong> (${count})${note ? ` — ${note}` : ''}
+        `;
+        boundedPatternsEl.appendChild(li);
+      });
+    };
+
+    const renderProductizedRefineGuidance = (brief) => {
+      const guidance = Array.isArray(brief?.refine_guidance) ? brief.refine_guidance : [];
+      refineGuidanceEl.innerHTML = '';
+      if (!guidance.length) {
+        refineGuidanceEl.innerHTML = '<li>No refine guidance was generated for this scope.</li>';
+        return;
+      }
+      guidance.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = String(item || '');
+        refineGuidanceEl.appendChild(li);
+      });
+    };
+
     const renderBrief = (brief, meta = {}) => {
       state.brief = brief;
       briefEmpty.style.display = 'none';
@@ -970,13 +1100,27 @@
 
       const findings = Array.isArray(brief?.findings) ? brief.findings : [];
       renderBriefStatus(findings);
+      renderDirectAnswer(brief);
+      renderAnswerability(brief);
+      renderBoundedPatterns(brief);
       renderDomainProfile(brief);
       renderFindings(findings, brief);
       renderDomainSafety(brief, findings);
       renderQualityMetadata(brief?.quality_metadata, brief?.brief_profile || null);
+      renderProductizedRefineGuidance(brief);
 
       briefSummary.textContent = brief?.summary || 'No summary generated.';
       uncertaintyEl.textContent = brief?.uncertainty_note || 'No uncertainty note provided.';
+      const productizationMeta = brief?.productization_metadata || {};
+      const limitationsBefore = Number(productizationMeta.limitation_count_before);
+      const limitationsAfter = Number(productizationMeta.limitation_count_after);
+      const removed = Number(productizationMeta.limitation_redundancy_removed);
+      if (Number.isFinite(limitationsBefore) && Number.isFinite(limitationsAfter) && limitationsBefore >= limitationsAfter) {
+        const removedCopy = removed > 0 ? ` · ${removed} repeated limit${removed === 1 ? '' : 's'} consolidated` : '';
+        limitsMetaEl.textContent = `${limitationsAfter} active limitation${limitationsAfter === 1 ? '' : 's'} retained from ${limitationsBefore}.${removedCopy}`;
+      } else {
+        limitsMetaEl.textContent = '';
+      }
 
       limitsEl.innerHTML = '';
       const limits = Array.isArray(brief?.limits) ? brief.limits : [];

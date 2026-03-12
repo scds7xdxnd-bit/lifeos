@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-12 (v2.17 — Phase 7.1 complete; Phase 8 approved)_
+_Last updated: 2026-03-13 (v2.19 — Phase 8.1 complete; Phase 9 approved)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2026-03-12)
+# 0. Implementation Status (as of 2026-03-13)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -45,6 +45,8 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 6.1 Focused Inquiry Quality Hardening**: Complete; inquiry quality transparency, deterministic refine guidance, and quality observability gates verified.
 - **Phase 7 Domain Expert Briefs (First-wave)**: Complete; deterministic domain expert strategies shipped for finance/habits/projects/skills with profile/version metadata and QA governance sign-off.
 - **Phase 7.1 Later-Wave Domain Expert Briefs**: Complete; deterministic domain expert strategies shipped for journal/relationships/health with semantic guardrails and QA sign-off.
+- **Phase 8 Cross-Domain Inquiry Expansion**: Complete; deterministic pair-profile synthesis shipped with safety taxonomy, replay determinism, and per-pair observability gates.
+- **Phase 8.1 Inquiry Productization and Decision-Useful Briefs**: Complete; direct-answer shaping, deterministic evidence relevance ordering, answerability metadata, and concise limitation/refine guidance verified without expanding inference breadth.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -143,9 +145,9 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 8 Cross-Domain Inquiry Expansion is approved to open.
-- Deferred: Phase 3c-2 transport scaling (trigger-based) and timeline intelligence foundations.
-- Forbidden in current window: omniscient assistant behavior, runtime ML decisioning, autonomous action, and unbounded causal modeling.
+- Active: Phase 9 Timeline Intelligence Foundations is approved to open.
+- Deferred: Phase 3c-2 transport scaling (trigger-based), recommendation layer, causal explanation layer, and predictive modeling foundations.
+- Forbidden in current window: omniscient assistant behavior, runtime ML decisioning, autonomous action, hidden personalization, causal overreach, and predictive modeling.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
@@ -236,6 +238,13 @@ lifeos/
 │   │   ├── calendar_subsystem_refactor_ops.md
 │   │   ├── phase_3a_cross_domain_intelligence_hardening_ops.md
 │   │   ├── phase_3b_interface_contract_hardening_ops.md
+│   │   ├── phase_6_focused_inquiry_v1.md
+│   │   ├── phase_6_1_focused_inquiry_quality_hardening.md
+│   │   ├── phase_7_domain_expert_briefs.md
+│   │   ├── phase_7_1_later_wave_domain_expert_briefs.md
+│   │   ├── phase_8_cross_domain_inquiry_expansion.md
+│   │   ├── phase_8_1_inquiry_productization.md
+│   │   ├── phase_9_timeline_intelligence_foundations.md
 │   │   └── archive/
 │   │       ├── calendar_subsystem_refactor.md
 │   │       ├── calendar_subsystem_refactor_ops.md
@@ -293,6 +302,9 @@ docker-compose.yml                  # services: web, db (postgres), redis, worke
 
 Planned (not yet in repo; Phase 3c or approved interim hygiene):
 - `lifeos/core/auth/admin_controllers.py`, `session_services.py`, `session_repository.py`, `session_read_models.py`, `session_models.py`, `device.py`, `session_events.py`, `constants.py`, `tasks.py`
+
+Planned (approved, not yet in repo; Phase 9 timeline intelligence):
+- `lifeos/core/timeline/` with `semantics.py`, `contracts.py`, `registry.py`, `feature_builder.py`, `window_comparator.py`, `baseline_estimator.py`, `recurrence_engine.py`, `drift_detector.py`, `summary_assembler.py`, and `adapters/`
 
 **Layering Rules:**
 - Controllers: HTTP validation, authz only; delegate to services
@@ -1008,7 +1020,6 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 ---
 
 # 17. RACI (ownership & accountability)
-# 17. RACI (ownership & accountability)
 
 | Area | Responsible | Accountable | Consulted | Informed |
 |------|-------------|-------------|-----------|----------|
@@ -1116,9 +1127,9 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.17 (Phase 7.1 complete; Phase 8 cross-domain inquiry approved): 2026-03-12. Author: LifeOS Architect._
+_Constitution v2.19 (Phase 8.1 complete; Phase 9 timeline intelligence foundations approved): 2026-03-13. Author: LifeOS Architect._
 
-**Sprint Summary (2025-12-25):**
+**Sprint Summary:**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
 - ✅ Phase 2.5 task archived; semantic/insight contract registries enforced by tests
 - ✅ Tasks Hub active with archived UX alignment and auth refactor tasks
@@ -1130,7 +1141,7 @@ _Constitution v2.17 (Phase 7.1 complete; Phase 8 cross-domain inquiry approved):
 - ✅ Phase 5a complete: timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete
 - ✅ Phase 5b complete: deterministic cross-domain insight rules, feature computation, feed visibility, and feedback capture verified
 
-**Phase Summary (2025-12-25):**
+**Phase Summary:**
 - ✅ Phase 3a complete: deterministic replay harness + gold dataset, confidence routing enforcement, read-only projections, governance tests
 - ✅ Phase 3a.5 complete: DSDs approved across all domains; read-first patterns enforced; finance surfaces stabilized
 - ✅ QA sweep green; telemetry smoke check requires admin `AUTH_TOKEN`
@@ -1146,6 +1157,8 @@ _Constitution v2.17 (Phase 7.1 complete; Phase 8 cross-domain inquiry approved):
 - ✅ Phase 6.1 complete: inquiry quality hardening delivered and QA-approved
 - ✅ Phase 7 complete (first-wave): deterministic domain expert briefs for finance/habits/projects/skills
 - ✅ Phase 7.1 complete (later-wave): deterministic domain expert briefs for journal/relationships/health with safety guardrails
+- ✅ Phase 8 complete: deterministic cross-domain inquiry synthesis for approved domain pairs
+- ✅ Phase 8.1 complete: inquiry productization delivered with decision-useful direct answers and answerability metadata
 
 ---
 
@@ -1214,7 +1227,7 @@ Phase 7.1 extends deterministic domain expert brief coverage to higher-semantic-
 
 ## 22.4 Execution reference
 - `lifeos/docs/tasks/phase_7_domain_expert_briefs.md` (first-wave closure)
-- `lifeos/docs/tasks/phase_7_1_later_wave_domain_expert_briefs.md` (active phase brief)
+- `lifeos/docs/tasks/phase_7_1_later_wave_domain_expert_briefs.md` (later-wave closure)
 
 ---
 
@@ -1245,7 +1258,113 @@ Phase 8 introduces deterministic cross-domain inquiry synthesis for approved dom
 - Forbidden: omniscient assistant architecture, hidden personalization/ranking, runtime ML decisioning.
 
 ## 23.5 Execution reference
-- `lifeos/docs/tasks/phase_8_cross_domain_inquiry_expansion.md`
+- `lifeos/docs/tasks/phase_8_cross_domain_inquiry_expansion.md` (phase closure brief)
+
+---
+
+# 24. Phase 8.1 Inquiry Productization (Constitutional Decision, Binding)
+
+Phase 8.1 improves inquiry usefulness quality without expanding inference breadth.
+
+## 24.1 Phase objective
+- Increase direct-answer quality and decision usefulness in inquiry briefs.
+- Preserve deterministic, evidence-bounded, non-assistant behavior.
+
+## 24.2 Productization boundaries
+- In scope: deterministic question-to-brief matching, relevance shaping, limitation deduplication, answerability classification, and refine-guidance improvement.
+- Out of scope: timeline intelligence, recommendation layer, causal explanation layer, and runtime ML reasoning.
+
+## 24.3 Safety guardrails
+- Productized wording must not overstate truth boundaries.
+- Answer quality must not be treated as certainty.
+- Correlation must not be presented as causation.
+- Context remains non-evidence unless independently supported by canonical records.
+
+## 24.4 Execution reference
+- `lifeos/docs/tasks/phase_8_1_inquiry_productization.md`
+
+---
+
+# 25. Phase 9 Timeline Intelligence Foundations (Constitutional Decision, Binding)
+
+Phase 9 introduces deterministic temporal pattern interpretation for inquiry without changing LifeOS into a recommendation, causal, or predictive system.
+
+## 25.1 Phase objective
+- Add replay-stable temporal reasoning for recurrence, continuity/breaks, drift, baseline comparison, stability, and change across fixed historical windows.
+- Improve inquiry usefulness for "what is changing over time?" questions while preserving evidence-bounded, non-chat, non-causal behavior.
+
+## 25.2 Product position
+- Bounded-window reasoning answers what appears inside one selected interval.
+- Timeline intelligence answers how comparable intervals relate to each other across history.
+- Temporal findings remain observational summaries over canonical evidence, not diagnoses, recommendations, forecasts, or causal stories.
+
+## 25.3 Architectural placement
+- Phase 9 adds a shared timeline layer under `lifeos/core/timeline/`; it is distinct from Phase 5 timeline ingestion in `lifeos/core/insights/timeline_ingestor.py`.
+- Inquiry generation must route all temporal claims through this shared layer before domain or cross-domain brief assembly. Domain strategies and cross-domain pair profiles must not implement ad-hoc temporal math outside the shared timeline layer.
+- Core shared components:
+  - `semantics.py`: canonical windowing, ordering, timezone, and `as_of_ts` rules
+  - `contracts.py`: versioned timeline request/summary/profile contracts
+  - `registry.py`: allowlisted domain and approved-pair timeline profiles
+  - `feature_builder.py`: deterministic bucket construction from canonical evidence
+  - `window_comparator.py`: current vs prior comparable window comparison
+  - `baseline_estimator.py`: fixed baseline construction from prior comparable windows
+  - `recurrence_engine.py`: recurrence, continuity, and break detection
+  - `drift_detector.py`: baseline-relative change classification
+  - `summary_assembler.py`: bounded temporal findings with provenance, limits, and metadata
+  - `adapters/`: domain-specific temporal adapters that normalize safe domain evidence into timeline features without altering domain semantics
+
+## 25.4 Determinism and replay law
+- Timeline computation identity is fixed by normalized inquiry input, selected domains, captured timezone, fixed window specification, `as_of_ts`, timeline profile/version, and deterministic evidence manifest hash.
+- Comparison windows must be equal-duration, non-overlapping, and fully determined from the active window plus profile policy; no sampling, heuristic backfilling, or moving baselines are allowed.
+- No evidence with timestamps after `as_of_ts` may affect any temporal feature, baseline, comparison, or rendered claim.
+- Missing or sparse history must degrade to explicit insufficiency language, not silent interpolation or inferred continuity.
+
+## 25.5 Allowed temporal capability scope
+- In scope:
+  - recurrence detection
+  - streak continuity and break detection
+  - recent-window vs prior-window comparison
+  - fixed-baseline comparison
+  - trend direction over comparable windows
+  - volatility / instability description
+  - episodic vs sustained distinction
+  - drift from established baseline
+  - approved-pair temporal alignment persistence across windows
+- Internal-only support features may include density/clustering metrics, but these are not standalone user claims in Phase 9.
+
+## 25.6 Semantic guardrails
+- Allowed temporal claims are observational only: "recurred", "increased relative to the prior comparable window", "more variable than the recent baseline", "appears recent rather than sustained", "alignment persisted across multiple windows".
+- Forbidden claims include:
+  - causality ("because", "caused by", "driven by")
+  - inevitability ("will happen again", "always", "destined")
+  - pathology or diagnosis from volatility/drift
+  - recommendations or prescribed interventions
+  - prediction, forecasting, or counterfactual reasoning
+- Confidence vocabulary remains unchanged and canonical. Temporal directness may improve, but certainty may not be upgraded without stronger evidence.
+
+## 25.7 UX scope
+- Phase 9 changes the inquiry surface only. No dedicated timeline dashboard/view is introduced in this phase.
+- Inquiry output may add bounded read-first sections such as:
+  - "Change over time"
+  - "Compared with prior window"
+  - "Recurring pattern"
+  - "Stability / instability"
+- Every temporal finding must expose window labels, evidence references, and an explicit note when history is sparse or partial.
+- Forbidden UI patterns in Phase 9: dense KPI dashboards, predictive arrows, causal storytelling, opaque scores, and hidden evidence behind charts.
+
+## 25.8 Domain rollout and cross-domain scope
+- First-wave timeline support: finance, habits, projects, skills, calendar.
+- Later-wave timeline support: health, journal, relationships.
+- Cross-domain timeline scope is limited to approved Phase 8 domain pairs and only for persistence/alignment across fixed windows. No 3+ domain temporal synthesis is allowed.
+
+## 25.9 Docs and execution references
+- Required updates:
+  - `lifeos/docs/ui_ux_constitution.md`
+  - `lifeos/docs/semantics/INSIGHT_CONTRACTS.md`
+  - `lifeos/docs/semantics/DOMAIN_SEMANTIC_CONTRACTS.md`
+  - `lifeos/docs/semantics/EVENT_SEMANTICS_FREEZE.md`
+- `lifeos/docs/semantics/CONFIDENCE_VOCABULARY.md` remains unchanged.
+- Execution reference: `lifeos/docs/tasks/phase_9_timeline_intelligence_foundations.md`
 
 ---
 

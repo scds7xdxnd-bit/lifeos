@@ -147,3 +147,52 @@ Include: “Aligned with UI/UX Constitution §X” and cite the domain contract 
 - No speculative causal storytelling between domains.
 - No clinical or psychological framing in cross-domain summaries.
 - No inferred intent/emotion framing for other people.
+
+## 14. Inquiry Productization (Phase 8.1, Binding)
+- Inquiry remains read-first and structured; no assistant shell or chat transcript is introduced.
+- Productization improves usefulness quality, not inference breadth.
+
+### 14.1 Required brief improvements
+- A stronger direct-answer block must appear first.
+- Pattern-level takeaways should replace count-heavy summaries when evidence supports it.
+- Limitation language should be deduplicated and concise.
+- Evidence relevance must be explained in human-readable form ("why this matters"), not only referenced.
+- Refine guidance must be specific to expected quality gain.
+- Briefs must expose answerability/sufficiency status clearly.
+
+### 14.2 UI constraints that do not change
+- Evidence references remain visible and traceable.
+- Confidence labels remain canonical and secondary to evidence.
+- Context remains explicitly labeled as non-evidence.
+- No speculative or assistant-style prose may replace structured findings.
+
+## 15. Timeline Intelligence Foundations (Phase 9, Binding)
+- Phase 9 extends the existing inquiry surface only. No dedicated timeline dashboard, analytics lab, or assistant shell is introduced.
+- Primary temporal question: "What is changing over time here?"
+- Read-first order remains: direct answer, temporal findings, evidence/comparison labels, limits, then refine actions.
+
+### 15.1 What temporal UI may show
+- Bounded sections such as:
+  - "Change over time"
+  - "Compared with prior window"
+  - "Recurring pattern"
+  - "Stability / instability"
+  - "Recent or sustained"
+- Each temporal finding must show:
+  - the active window label,
+  - the comparison reference ("prior comparable window" or "baseline of prior windows"),
+  - evidence references,
+  - explicit insufficiency language when history is sparse.
+- Temporal findings should render as concise brief blocks, not charts-first dashboards.
+
+### 15.2 What temporal UI must not show
+- No predictive arrows, forecasts, or "what happens next" widgets.
+- No causal arrows or "why this happened" storytelling.
+- No global timeline score, health score, life score, or hidden ranking.
+- No dense chart walls by default; any future charts remain subordinate to textual findings and evidence.
+- No "normal/abnormal" framing that implies diagnosis or judgment; use neutral baseline-relative phrasing instead.
+
+### 15.3 Overload control
+- Inquiry should surface only a small set of temporal findings per brief; do not turn the surface into a monitoring cockpit.
+- Comparison metadata must stay legible but visually secondary to the answer itself.
+- If coverage is too thin for a safe temporal interpretation, show the insufficiency note instead of a weak pseudo-pattern.

@@ -254,6 +254,75 @@ INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL = Counter(
     _INQUIRY_DOMAIN_LABELS,
 )
 
+INQUIRY_PRODUCTIZATION_TOTAL = Counter(
+    "lifeos_inquiry_productization_total",
+    "Total focused inquiry productization runs",
+)
+
+INQUIRY_PRODUCTIZATION_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_productization_by_domain_total",
+    "Total focused inquiry productization runs by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_PRODUCTIZATION_LATENCY_SECONDS = Histogram(
+    "lifeos_inquiry_productization_latency_seconds",
+    "Focused inquiry productization latency in seconds",
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0),
+)
+
+INQUIRY_PRODUCTIZATION_LATENCY_SECONDS_BY_DOMAIN = Histogram(
+    "lifeos_inquiry_productization_latency_seconds_by_domain",
+    "Focused inquiry productization latency in seconds by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0),
+)
+
+INQUIRY_PRODUCTIZATION_ERRORS_TOTAL = Counter(
+    "lifeos_inquiry_productization_errors_total",
+    "Total focused inquiry productization errors",
+)
+
+INQUIRY_PRODUCTIZATION_ERRORS_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_productization_errors_by_domain_total",
+    "Total focused inquiry productization errors by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_DIRECT_ANSWER_PRESENT_TOTAL = Counter(
+    "lifeos_inquiry_direct_answer_present_total",
+    "Total focused inquiry briefs with non-empty direct answers",
+)
+
+INQUIRY_DIRECT_ANSWER_PRESENT_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_direct_answer_present_by_domain_total",
+    "Total focused inquiry briefs with non-empty direct answers by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_ANSWERABILITY_TOTAL = Counter(
+    "lifeos_inquiry_answerability_total",
+    "Focused inquiry answerability classification distribution",
+    ["classification"],
+)
+
+INQUIRY_ANSWERABILITY_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_answerability_by_domain_total",
+    "Focused inquiry answerability classification distribution by domain strategy profile",
+    (*_INQUIRY_DOMAIN_LABELS, "classification"),
+)
+
+INQUIRY_LIMITATION_REDUNDANCY_REMOVED_TOTAL = Counter(
+    "lifeos_inquiry_limitation_redundancy_removed_total",
+    "Total removed duplicate limitation lines from inquiry productization",
+)
+
+INQUIRY_LIMITATION_REDUNDANCY_REMOVED_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_limitation_redundancy_removed_by_domain_total",
+    "Total removed duplicate limitation lines by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
 PHASE6_INQUIRY_MIGRATION_MISMATCH = Gauge(
     "lifeos_phase6_inquiry_migration_mismatch",
     "Focused Inquiry migration mismatch state (1=mismatch, 0=applied)",
@@ -262,6 +331,7 @@ PHASE6_INQUIRY_MIGRATION_MISMATCH = Gauge(
 
 _LOW_COVERAGE_THRESHOLD = 0.8
 _QUALITY_STATES = ("sufficient", "low_coverage", "empty", "needs_refine", "unknown")
+_ANSWERABILITY_CLASSES = ("strong_answerable", "partial_answerable", "weak_answerable", "unknown")
 
 
 def _domain_metric_labels(
@@ -320,9 +390,20 @@ INQUIRY_REFINE_AFTER_LOW_QUALITY_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS
 INQUIRY_REFINE_AFTER_LOW_COVERAGE_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 INQUIRY_BLOCKED_CLAIMS_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_PRODUCTIZATION_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_PRODUCTIZATION_LATENCY_SECONDS_BY_DOMAIN.labels(**_UNKNOWN_DOMAIN_LABELS)
+INQUIRY_PRODUCTIZATION_ERRORS_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_DIRECT_ANSWER_PRESENT_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_LIMITATION_REDUNDANCY_REMOVED_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 for _state in _QUALITY_STATES:
     INQUIRY_QUALITY_STATE_TOTAL.labels(state=_state).inc(0)
     INQUIRY_QUALITY_STATE_BY_DOMAIN_TOTAL.labels(state=_state, **_UNKNOWN_DOMAIN_LABELS).inc(0)
+for _classification in _ANSWERABILITY_CLASSES:
+    INQUIRY_ANSWERABILITY_TOTAL.labels(classification=_classification).inc(0)
+    INQUIRY_ANSWERABILITY_BY_DOMAIN_TOTAL.labels(
+        classification=_classification,
+        **_UNKNOWN_DOMAIN_LABELS,
+    ).inc(0)
 INQUIRY_ERROR_RATE.set(0.0)
 INQUIRY_EMPTY_BRIEF_RATE.set(0.0)
 INQUIRY_EVIDENCE_COVERAGE_RATIO.set(1.0)
@@ -675,6 +756,72 @@ def record_inquiry_replay_mismatch(
     )
     INQUIRY_REPLAY_MISMATCH_TOTAL.inc()
     INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+
+def record_inquiry_productization(
+    *,
+    latency_seconds: float | None,
+    direct_answer_present: bool,
+    answerability_classification: str,
+    limitation_redundancy_removed: int,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record inquiry productization metrics."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_PRODUCTIZATION_TOTAL.inc()
+    INQUIRY_PRODUCTIZATION_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+    if latency_seconds is not None:
+        INQUIRY_PRODUCTIZATION_LATENCY_SECONDS.observe(max(0.0, latency_seconds))
+        INQUIRY_PRODUCTIZATION_LATENCY_SECONDS_BY_DOMAIN.labels(**domain_labels).observe(max(0.0, latency_seconds))
+
+    classification = str(answerability_classification or "").strip() or "unknown"
+    if classification not in _ANSWERABILITY_CLASSES:
+        classification = "unknown"
+    INQUIRY_ANSWERABILITY_TOTAL.labels(classification=classification).inc()
+    INQUIRY_ANSWERABILITY_BY_DOMAIN_TOTAL.labels(classification=classification, **domain_labels).inc()
+
+    if direct_answer_present:
+        INQUIRY_DIRECT_ANSWER_PRESENT_TOTAL.inc()
+        INQUIRY_DIRECT_ANSWER_PRESENT_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+    removed = max(0, int(limitation_redundancy_removed or 0))
+    if removed > 0:
+        INQUIRY_LIMITATION_REDUNDANCY_REMOVED_TOTAL.inc(removed)
+        INQUIRY_LIMITATION_REDUNDANCY_REMOVED_BY_DOMAIN_TOTAL.labels(**domain_labels).inc(removed)
+
+
+def record_inquiry_productization_error(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record inquiry productization errors."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_PRODUCTIZATION_ERRORS_TOTAL.inc()
+    INQUIRY_PRODUCTIZATION_ERRORS_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
 
 
 def record_inquiry_error(

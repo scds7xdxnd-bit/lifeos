@@ -247,6 +247,8 @@ INQUIRY_FINDING_ITEM = ApiObject(
         ApiField("claim", "string", "Finding claim text", "system", "stable"),
         ApiField("finding_category", "string", "Domain finding category", "system", "stable"),
         ApiField("evidence_refs", "list[InquiryEvidenceRef]", "Evidence references", "system", "stable"),
+        ApiField("relevance_rank", "integer", "Deterministic relevance rank", "system", "stable"),
+        ApiField("relevance_reason", "string", "Deterministic relevance explanation", "system", "stable"),
         ApiField("confidence_label", "string", "Canonical confidence label", "system", "stable"),
         ApiField("uncertainty_note", "string", "Finding uncertainty note", "system", "stable"),
         ApiField("source_domains", "list[string]", "Source domains for finding", "system", "stable"),
@@ -299,11 +301,58 @@ INQUIRY_BRIEF_PROFILE = ApiObject(
     ],
 )
 
+INQUIRY_DIRECT_ANSWER = ApiObject(
+    name="InquiryDirectAnswer",
+    fields=[
+        ApiField("text", "string", "Direct bounded answer text", "system", "stable"),
+        ApiField("supporting_claims", "list[string]", "Top supporting finding claims", "system", "stable"),
+        ApiField("note", "string", "Direct answer scope note", "system", "stable"),
+    ],
+)
+
+INQUIRY_ANSWERABILITY = ApiObject(
+    name="InquiryAnswerability",
+    fields=[
+        ApiField("classification", "string", "Answerability class", "system", "stable"),
+        ApiField("reason", "string", "Answerability reason", "system", "stable"),
+        ApiField("evidence_coverage_ratio", "number", "Coverage ratio used for answerability", "system", "stable"),
+        ApiField("supporting_finding_count", "integer", "Evidence-backed findings count", "system", "stable"),
+    ],
+)
+
+INQUIRY_BOUNDED_PATTERN = ApiObject(
+    name="InquiryBoundedPattern",
+    fields=[
+        ApiField("pattern_category", "string", "Bounded pattern category", "system", "stable"),
+        ApiField("finding_count", "integer", "Pattern finding count", "system", "stable"),
+        ApiField("note", "string", "Pattern boundedness note", "system", "stable"),
+    ],
+)
+
+INQUIRY_PRODUCTIZATION_METADATA = ApiObject(
+    name="InquiryProductizationMetadata",
+    fields=[
+        ApiField("version", "string", "Productization layer version", "system", "stable"),
+        ApiField("limitation_count_before", "integer", "Limitations before deduplication", "system", "stable"),
+        ApiField("limitation_count_after", "integer", "Limitations after deduplication", "system", "stable"),
+        ApiField(
+            "limitation_redundancy_removed",
+            "integer",
+            "Removed duplicate limitation count",
+            "system",
+            "stable",
+        ),
+        ApiField("direct_answer_present", "boolean", "Direct answer presence flag", "system", "stable"),
+    ],
+)
+
 INQUIRY_BRIEF_ITEM = ApiObject(
     name="InquiryBriefItem",
     fields=[
         ApiField("summary", "string", "Brief summary", "system", "stable"),
         ApiField("findings", "list[InquiryFindingItem]", "Brief findings", "system", "stable"),
+        ApiField("direct_answer", "InquiryDirectAnswer", "Productized direct answer", "system", "stable"),
+        ApiField("answerability", "InquiryAnswerability", "Productized answerability block", "system", "stable"),
         ApiField(
             "context_non_evidence",
             "InquiryContextBlock",
@@ -313,6 +362,15 @@ INQUIRY_BRIEF_ITEM = ApiObject(
         ),
         ApiField("uncertainty_note", "string", "Brief uncertainty note", "system", "stable"),
         ApiField("limits", "list[string]", "Brief limits list", "system", "stable"),
+        ApiField("refine_guidance", "list[string]", "Productized refine guidance", "system", "stable"),
+        ApiField("bounded_patterns", "list[InquiryBoundedPattern]", "Bounded pattern synthesis", "system", "stable"),
+        ApiField(
+            "productization_metadata",
+            "InquiryProductizationMetadata",
+            "Productization stage metadata",
+            "system",
+            "stable",
+        ),
         ApiField("question", "string", "Inquiry question", "user", "stable"),
         ApiField("lens", "string", "Inquiry lens", "user", "stable"),
         ApiField("domains", "list[string]", "Selected domains", "user", "stable"),
@@ -676,9 +734,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
                 INQUIRY_QUALITY_METADATA,
+                INQUIRY_DIRECT_ANSWER,
+                INQUIRY_ANSWERABILITY,
+                INQUIRY_BOUNDED_PATTERN,
+                INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="08bed1d7ef3625288a939e26481aed7f28330a3450a5b1cef2378a2c546f5172",
+        schema_hash="f23b84af03f87910e9a9f9c27c9cd5ea640d6713d9845338956671fd16fd75a6",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -704,9 +766,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
                 INQUIRY_QUALITY_METADATA,
+                INQUIRY_DIRECT_ANSWER,
+                INQUIRY_ANSWERABILITY,
+                INQUIRY_BOUNDED_PATTERN,
+                INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="2ac8d0fbdabf1eb64e9494e4b66e937d7822b99feb61a4c6a5d776b8c5a27e64",
+        schema_hash="04104df593af8913c3adf040e642008cd16360b89a0997a73fb1286c5e8ef220",
         read_only=True,
         surface_key="insights:inquiry",
     ),
@@ -729,9 +795,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
                 INQUIRY_QUALITY_METADATA,
+                INQUIRY_DIRECT_ANSWER,
+                INQUIRY_ANSWERABILITY,
+                INQUIRY_BOUNDED_PATTERN,
+                INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="2c760d3a46f73a7f607b8d8ac5ac0b0908940b9568427a84dc15894e4fb5f656",
+        schema_hash="7221d716935211f7162a5161dfc72f9c2b45241e1bd53ab5bc65372ebcab306f",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -755,9 +825,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
                 INQUIRY_QUALITY_METADATA,
+                INQUIRY_DIRECT_ANSWER,
+                INQUIRY_ANSWERABILITY,
+                INQUIRY_BOUNDED_PATTERN,
+                INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="9189cd7f28d79b3af134cd50e994fe86f1d7650cf9245f9ca3bdaefd668863d5",
+        schema_hash="98649dca5e7b3b0325c8b0984a40ece78bcce1ca8ef9f22d11bf88d8cca2f49b",
         read_only=False,
         surface_key="insights:inquiry",
     ),

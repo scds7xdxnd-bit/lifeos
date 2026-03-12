@@ -16,6 +16,7 @@ from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.inquiry_cross_domain.engine import synthesize_cross_domain_brief
 from lifeos.core.insights.inquiry_cross_domain.pairs.base import CrossDomainPairProfile
 from lifeos.core.insights.inquiry_cross_domain.registry import get_cross_domain_strategy
+from lifeos.core.insights.inquiry_productization import productize_inquiry_brief
 from lifeos.core.insights.inquiry_quality import evaluate_inquiry_brief_quality
 from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryRefineRequest
 from lifeos.core.insights.inquiry_strategies import (
@@ -30,6 +31,8 @@ from lifeos.core.observability import (
     record_inquiry_blocked_claims,
     record_inquiry_created,
     record_inquiry_generated,
+    record_inquiry_productization,
+    record_inquiry_productization_error,
     record_inquiry_refine_after_low_coverage,
     record_inquiry_refine_after_low_quality,
     record_inquiry_refined,
@@ -447,7 +450,7 @@ def _assemble_domain_expert_brief(
     return findings, limits, evidence_refs, refine_guidance
 
 
-def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]]:
+def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict], dict[str, object]]:
     prefix_filters = _domain_prefix_filters(scope.domains)
 
     events = (
@@ -646,20 +649,35 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
         if total_events + total_insights == 0:
             summary = f"Scoped inquiry for {scope.primary_domain} found no canonical records in the selected timeframe."
 
-    global_uncertainty = (
-        "Evidence is bounded to the selected timeframe and explicit scope." if not limits else " ; ".join(limits)
-    )
+    productization_started = perf_counter()
+    try:
+        productized = productize_inquiry_brief(
+            question=scope.question,
+            domains=scope.domains,
+            findings=findings,
+            limits=limits,
+            incoming_refine_guidance=domain_refine_guidance,
+        )
+    except Exception:
+        record_inquiry_productization_error()
+        raise
+    productization_latency_seconds = perf_counter() - productization_started
 
     payload = {
         "summary": summary,
-        "findings": findings,
+        "findings": productized.findings,
+        "direct_answer": productized.direct_answer,
+        "answerability": productized.answerability,
         "context_non_evidence": {
             "label": "Context (not evidence)",
             "text": scope.context_text or "",
             "note": "User-provided context is framing input and not treated as factual evidence.",
         },
-        "uncertainty_note": global_uncertainty,
-        "limits": limits,
+        "uncertainty_note": productized.uncertainty_note,
+        "limits": productized.limits,
+        "refine_guidance": productized.refine_guidance,
+        "bounded_patterns": productized.bounded_patterns,
+        "productization_metadata": productized.metadata,
         "question": scope.question,
         "lens": scope.lens,
         "domains": scope.domains,
@@ -674,17 +692,23 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
         scope=scope,
         strategy=applied_strategy,
         cross_domain_profile=active_cross_domain_profile,
-        finding_categories=[str(item.get("finding_category") or "") for item in findings],
+        finding_categories=[str(item.get("finding_category") or "") for item in productized.findings],
     )
     payload["quality_metadata"] = evaluate_inquiry_brief_quality(
         payload,
-        preferred_refine_guidance=domain_refine_guidance,
+        preferred_refine_guidance=productized.refine_guidance,
     )
     if scope.lens == "cross_domain":
         payload["blocked_claim_count"] = int(blocked_claim_count)
+    productization_stats = {
+        "latency_seconds": productization_latency_seconds,
+        "direct_answer_present": bool(str(productized.direct_answer.get("text") or "").strip()),
+        "answerability_classification": str(productized.answerability.get("classification") or "weak_answerable"),
+        "limitation_redundancy_removed": int(productized.metadata.get("limitation_redundancy_removed") or 0),
+    }
     if active_cross_domain_profile is not None:
-        return payload, _sorted_cross_domain_evidence_refs(provenance_refs)
-    return payload, _sorted_evidence_refs(provenance_refs)
+        return payload, _sorted_cross_domain_evidence_refs(provenance_refs), productization_stats
+    return payload, _sorted_evidence_refs(provenance_refs), productization_stats
 
 
 def _new_event(*, user_id: int, event_type: str, payload: dict) -> None:
@@ -940,7 +964,7 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         )
 
     generation_started = perf_counter()
-    brief_payload, provenance_refs = _assemble_brief(scope, user_id)
+    brief_payload, provenance_refs, productization_stats = _assemble_brief(scope, user_id)
     generation_latency_seconds = perf_counter() - generation_started
     brief_hash = _payload_hash(brief_payload)
     quality_storage_fields = _quality_storage_fields(brief_payload)
@@ -987,6 +1011,13 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         findings_total=findings_total,
         findings_with_evidence=findings_with_evidence,
         quality_metadata=brief_payload.get("quality_metadata") if isinstance(brief_payload, dict) else None,
+        **profile_labels,
+    )
+    record_inquiry_productization(
+        latency_seconds=float(productization_stats.get("latency_seconds") or 0.0),
+        direct_answer_present=bool(productization_stats.get("direct_answer_present")),
+        answerability_classification=str(productization_stats.get("answerability_classification") or "weak_answerable"),
+        limitation_redundancy_removed=int(productization_stats.get("limitation_redundancy_removed") or 0),
         **profile_labels,
     )
     if scope.lens == "cross_domain":
@@ -1101,7 +1132,7 @@ def refine_inquiry(
         )
 
     generation_started = perf_counter()
-    brief_payload, provenance_refs = _assemble_brief(scope, user_id)
+    brief_payload, provenance_refs, productization_stats = _assemble_brief(scope, user_id)
     generation_latency_seconds = perf_counter() - generation_started
     brief_hash = _payload_hash(brief_payload)
     quality_storage_fields = _quality_storage_fields(brief_payload)
@@ -1148,6 +1179,13 @@ def refine_inquiry(
         findings_total=findings_total,
         findings_with_evidence=findings_with_evidence,
         quality_metadata=brief_payload.get("quality_metadata") if isinstance(brief_payload, dict) else None,
+        **profile_labels,
+    )
+    record_inquiry_productization(
+        latency_seconds=float(productization_stats.get("latency_seconds") or 0.0),
+        direct_answer_present=bool(productization_stats.get("direct_answer_present")),
+        answerability_classification=str(productization_stats.get("answerability_classification") or "weak_answerable"),
+        limitation_redundancy_removed=int(productization_stats.get("limitation_redundancy_removed") or 0),
         **profile_labels,
     )
     if scope.lens == "cross_domain":

@@ -19,6 +19,11 @@ PHASE8_CROSS_DOMAIN_ENABLED="${PHASE8_CROSS_DOMAIN_ENABLED:-false}"
 PHASE8_EXPECT_PROFILE_VERSION="${PHASE8_EXPECT_PROFILE_VERSION:-1.0.0}"
 PHASE8_EXPECT_STRATEGY_VERSION="${PHASE8_EXPECT_STRATEGY_VERSION:-1.0.0}"
 PHASE8_PAIR_PROFILES="${PHASE8_PAIR_PROFILES:-finance_habits_v1,projects_skills_v1,journal_habits_v1,health_habits_v1,projects_calendar_v1,relationships_journal_v1}"
+PHASE8_1_PRODUCTIZATION_ENABLED="${PHASE8_1_PRODUCTIZATION_ENABLED:-false}"
+PHASE8_1_EXPECT_PRODUCTIZATION_VERSION="${PHASE8_1_EXPECT_PRODUCTIZATION_VERSION:-phase8_1_productization_v1}"
+PHASE8_1_CANARY_PROFILE="${PHASE8_1_CANARY_PROFILE:-}"
+PHASE8_1_CANARY_MIN_DIRECT_ANSWER_RATE="${PHASE8_1_CANARY_MIN_DIRECT_ANSWER_RATE:-0.55}"
+PHASE8_1_CANARY_MAX_WEAK_RATE="${PHASE8_1_CANARY_MAX_WEAK_RATE:-0.70}"
 
 required_metrics=(
   "lifeos_inquiry_created_total"
@@ -48,6 +53,18 @@ required_metrics=(
   "lifeos_inquiry_blocked_claims_by_domain_total"
   "lifeos_inquiry_replay_mismatch_total"
   "lifeos_inquiry_replay_mismatch_by_domain_total"
+  "lifeos_inquiry_productization_total"
+  "lifeos_inquiry_productization_by_domain_total"
+  "lifeos_inquiry_productization_latency_seconds_bucket"
+  "lifeos_inquiry_productization_latency_seconds_by_domain_bucket"
+  "lifeos_inquiry_productization_errors_total"
+  "lifeos_inquiry_productization_errors_by_domain_total"
+  "lifeos_inquiry_direct_answer_present_total"
+  "lifeos_inquiry_direct_answer_present_by_domain_total"
+  "lifeos_inquiry_answerability_total"
+  "lifeos_inquiry_answerability_by_domain_total"
+  "lifeos_inquiry_limitation_redundancy_removed_total"
+  "lifeos_inquiry_limitation_redundancy_removed_by_domain_total"
   "lifeos_phase6_inquiry_migration_mismatch"
 )
 
@@ -90,7 +107,7 @@ for metric in "${required_metrics[@]}"; do
     exit 1
   fi
 done
-echo "OK: required Phase 6/6.1/7/7.1/8 inquiry metrics are exposed"
+echo "OK: required Phase 6/6.1/7/7.1/8/8.1 inquiry metrics are exposed"
 
 inquiry_status="$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/v1/inquiries")"
 if [[ "${INQUIRY_FEATURE_ENABLED}" == "true" ]]; then
@@ -148,6 +165,22 @@ if curl -fsS "${PROM_URL}/api/v1/alerts" >/dev/null 2>&1; then
     "lifeos:inquiry_quality_state_distribution_by_domain_profile:ratio"
     "lifeos:inquiry_blocked_claims_rate_by_domain_profile:ratio"
     "lifeos:inquiry_replay_mismatch_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_direct_answer_presence_rate:ratio"
+    "lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_answerability_distribution:ratio"
+    "lifeos:inquiry_answerability_distribution_by_domain_profile:ratio"
+    "lifeos:inquiry_weak_answer_rate:ratio"
+    "lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_limitation_redundancy_rate:ratio"
+    "lifeos:inquiry_limitation_redundancy_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_refine_after_weak_answer_lift:ratio"
+    "lifeos:inquiry_refine_after_weak_answer_lift_by_domain_profile:ratio"
+    "lifeos:inquiry_productization_latency_p95:seconds"
+    "lifeos:inquiry_productization_latency_p95_by_domain_profile:seconds"
+    "lifeos:inquiry_productization_error_rate:ratio"
+    "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_productization_replay_mismatch_count"
+    "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile"
   )
   for recording in "${required_recordings[@]}"; do
     query_json="$(curl -fsS --get --data-urlencode "query=${recording}" "${PROM_URL}/api/v1/query")"
@@ -163,7 +196,7 @@ if not isinstance(result, list):
     sys.exit(1)
 PY
   done
-  echo "OK: required Phase 6/6.1 recording rules are queryable"
+  echo "OK: required Phase 6/6.1/7/7.1/8/8.1 recording rules are queryable"
 
   alerts_json="$(curl -fsS "${PROM_URL}/api/v1/alerts")"
   ALERTS_JSON="${alerts_json}" "${PYTHON_BIN}" - <<'PY'
@@ -177,14 +210,14 @@ firing = []
 for alert in alerts:
     labels = alert.get("labels", {})
     phase = str(labels.get("phase") or "")
-    if phase in {"6", "6.1", "7", "7.1", "8"} and alert.get("state") == "firing":
+    if phase in {"6", "6.1", "7", "7.1", "8", "8.1"} and alert.get("state") == "firing":
         firing.append(labels.get("alertname") or "unknown")
 
 if firing:
-    print("ERROR: Phase 6/6.1/7/7.1 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
+    print("ERROR: Phase 6/6.1/7/7.1/8/8.1 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
     sys.exit(1)
 
-print("OK: no Phase 6/6.1/7/7.1/8 inquiry alerts firing")
+print("OK: no Phase 6/6.1/7/7.1/8/8.1 inquiry alerts firing")
 PY
 
   check_rollout_versions() {
@@ -305,8 +338,129 @@ if missing:
 print("OK: Phase 8 pair-profile versions are within expected rollout values")
 PY
   fi
+
+  if [[ "${PHASE8_1_PRODUCTIZATION_ENABLED}" == "true" ]]; then
+    phase81_query="sum(rate(lifeos_inquiry_productization_by_domain_total[30m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)"
+    phase81_json="$(curl -fsS --get --data-urlencode "query=${phase81_query}" "${PROM_URL}/api/v1/query")"
+    PHASE81_JSON="${phase81_json}" "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["PHASE81_JSON"])
+result = payload.get("data", {}).get("result", [])
+if not result:
+    print("WARN: no Phase 8.1 productization traffic observed yet; profile-level checks skipped", file=sys.stderr)
+    sys.exit(0)
+print("OK: Phase 8.1 productization traffic is observable")
+PY
+
+    if [[ -n "${PHASE8_1_CANARY_PROFILE}" ]]; then
+      canary_direct_query="lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio{profile=\"${PHASE8_1_CANARY_PROFILE}\"}"
+      canary_weak_query="lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio{profile=\"${PHASE8_1_CANARY_PROFILE}\"}"
+      canary_direct_json="$(curl -fsS --get --data-urlencode "query=${canary_direct_query}" "${PROM_URL}/api/v1/query")"
+      canary_weak_json="$(curl -fsS --get --data-urlencode "query=${canary_weak_query}" "${PROM_URL}/api/v1/query")"
+      CANARY_DIRECT_JSON="${canary_direct_json}" \
+      CANARY_WEAK_JSON="${canary_weak_json}" \
+      CANARY_PROFILE="${PHASE8_1_CANARY_PROFILE}" \
+      MIN_DIRECT="${PHASE8_1_CANARY_MIN_DIRECT_ANSWER_RATE}" \
+      MAX_WEAK="${PHASE8_1_CANARY_MAX_WEAK_RATE}" \
+      "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+def _values(raw: str) -> list[float]:
+    payload = json.loads(raw)
+    result = payload.get("data", {}).get("result", [])
+    values: list[float] = []
+    for row in result:
+        metric = row.get("metric", {})
+        value = row.get("value", [None, None])[1]
+        if value is None:
+            continue
+        try:
+            values.append(float(value))
+        except Exception:
+            continue
+    return values
+
+canary = os.environ["CANARY_PROFILE"]
+min_direct = float(os.environ["MIN_DIRECT"])
+max_weak = float(os.environ["MAX_WEAK"])
+direct_values = _values(os.environ["CANARY_DIRECT_JSON"])
+weak_values = _values(os.environ["CANARY_WEAK_JSON"])
+
+if not direct_values:
+    print(f"WARN: no direct-answer rate series for canary profile={canary}; threshold check skipped", file=sys.stderr)
+    sys.exit(0)
+
+direct_min_observed = min(direct_values)
+if direct_min_observed < min_direct:
+    print(
+        f"ERROR: canary profile={canary} direct-answer presence {direct_min_observed:.3f} below threshold {min_direct:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+if weak_values:
+    weak_max_observed = max(weak_values)
+    if weak_max_observed > max_weak:
+        print(
+            f"ERROR: canary profile={canary} weak-answer rate {weak_max_observed:.3f} above threshold {max_weak:.3f}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+print(f"OK: Phase 8.1 canary thresholds satisfied for profile={canary}")
+PY
+    fi
+
+    if [[ -n "${INQUIRY_JWT}" ]]; then
+      productization_version_json="$(curl -fsS -H "Authorization: Bearer ${INQUIRY_JWT}" "${BASE_URL}/api/v1/inquiries?limit=20&offset=0")"
+      PRODUCTIZATION_VERSION_JSON="${productization_version_json}" \
+      EXPECTED_PRODUCTIZATION_VERSION="${PHASE8_1_EXPECT_PRODUCTIZATION_VERSION}" \
+      "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["PRODUCTIZATION_VERSION_JSON"])
+items = payload.get("items", [])
+expected = os.environ["EXPECTED_PRODUCTIZATION_VERSION"]
+observed = []
+for item in items:
+    latest = item.get("latest_brief") or {}
+    brief = latest.get("brief") if isinstance(latest, dict) else None
+    if not isinstance(brief, dict):
+        continue
+    metadata = brief.get("productization_metadata")
+    if not isinstance(metadata, dict):
+        continue
+    version = str(metadata.get("version") or "").strip()
+    if version:
+        observed.append(version)
+
+if not observed:
+    print("WARN: no productization metadata version observed from inquiry list; version check skipped", file=sys.stderr)
+    sys.exit(0)
+
+unexpected = sorted({value for value in observed if value != expected})
+if unexpected:
+    print(
+        "ERROR: observed unexpected productization metadata version(s): "
+        + ", ".join(unexpected)
+        + f"; expected={expected}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+print(f"OK: observed productization metadata version matches expected ({expected})")
+PY
+    fi
+  fi
 else
   echo "WARN: Prometheus is unreachable at ${PROM_URL}; alert-state check skipped" >&2
 fi
 
-echo "Phase 6/6.1/7/7.1/8 focused inquiry rollout checks passed"
+echo "Phase 6/6.1/7/7.1/8/8.1 focused inquiry rollout checks passed"

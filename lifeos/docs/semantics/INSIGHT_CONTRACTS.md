@@ -187,6 +187,54 @@ Format:
   - Confidence bands: informational, needs_review
   - Allowed actions: display, refine_only
 
+## Inquiry Productization Rules (Phase 8.1)
+- Productized inquiry briefs must improve decision usefulness while preserving existing evidence and confidence contracts.
+- Allowed output shaping:
+  - deterministic direct-answer compression,
+  - deterministic evidence relevance ordering,
+  - limitation deduplication,
+  - answerability classification (`strong` / `partial` / `weak`) as quality metadata.
+- Disallowed output shaping:
+  - replacing evidence with fluent unsupported narrative,
+  - presenting correlation as causation,
+  - introducing recommendation-engine or assistant behavior.
+- Allowed actions remain unchanged for inquiry brief contracts:
+  - `display`
+  - `refine_only`
+
+## Timeline Intelligence Contracts (Phase 9)
+- focused_inquiry_timeline_domain_brief
+  - Description: Deterministic single-domain inquiry brief with temporal pattern interpretation over fixed historical windows.
+  - Required evidence: Contract-safe domain records/events/read models within the selected timeframe plus deterministically chosen prior comparable windows that end at or before `as_of_ts`.
+  - Disallowed evidence: user-provided context as sole proof; records beyond `as_of_ts`; moving or heuristically sampled baselines; causal/predictive claims.
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_timeline_cross_domain_brief
+  - Description: Deterministic approved-pair inquiry brief describing temporal persistence/alignment across fixed windows.
+  - Required evidence: Contract-safe records/events/read models from each explicitly selected approved domain pair, using the same deterministic window specification.
+  - Disallowed evidence: unapproved domain pairs; 3+ domain synthesis; unsupported causality; recommendations; user context as factual proof.
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+## Timeline Intelligence Rules (Phase 9, Binding)
+- Allowed temporal claim classes:
+  - recurrence_observation
+  - continuity_or_break
+  - prior_window_comparison
+  - baseline_relative_change
+  - trend_direction
+  - volatility_description
+  - episodic_vs_sustained
+  - approved_pair_alignment_persistence
+- Forbidden temporal claim classes:
+  - causal explanation
+  - prediction / forecasting
+  - diagnosis / pathology framing
+  - inevitability claims
+  - recommendations or intervention directives
+- Temporal findings remain observational. Confidence describes evidence support, not the probability that a pattern will continue.
+
 ## ML Scope
 - Insight contracts are binding for ML evaluation: evidence used for training/eval must be a subset of Required evidence and must exclude Disallowed evidence.
 - Confidence bands define allowable system behaviors; ML outputs must never exceed the contract (e.g., review_only remains review_only).

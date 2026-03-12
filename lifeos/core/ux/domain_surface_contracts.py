@@ -288,6 +288,18 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
                 label="Brief findings", meaning="Inquiry brief findings", source="system_derived", stability="stable"
             ),
             SurfaceField(
+                label="Brief direct answer",
+                meaning="Deterministic direct answer block",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief answerability block",
+                meaning="Deterministic answerability classification block",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
                 label="Brief context non evidence",
                 meaning="Context section marked non-evidence",
                 source="user_entered",
@@ -301,6 +313,24 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
             ),
             SurfaceField(
                 label="Brief limits", meaning="Inquiry limits list", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Brief refine guidance",
+                meaning="Productized refine guidance list",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief bounded patterns",
+                meaning="Bounded pattern synthesis list",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief productization metadata",
+                meaning="Productization stage metadata block",
+                source="system_derived",
+                stability="stable",
             ),
             SurfaceField(
                 label="Brief generated timestamp",
@@ -414,6 +444,18 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
                 stability="stable",
             ),
             SurfaceField(
+                label="Finding relevance rank",
+                meaning="Deterministic relevance rank",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Finding relevance reason",
+                meaning="Deterministic relevance explanation",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
                 label="Finding confidence label",
                 meaning="Finding confidence label",
                 source="system_derived",
@@ -473,6 +515,96 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
             SurfaceField(
                 label="Evidence insight count",
                 meaning="Read-model insight count evidence",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Direct answer text",
+                meaning="Direct answer text",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Direct answer supporting claims",
+                meaning="Direct answer supporting claims",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Direct answer note",
+                meaning="Direct answer scope note",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Answerability classification",
+                meaning="Answerability classification",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Answerability reason",
+                meaning="Answerability reasoning note",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Answerability evidence coverage ratio",
+                meaning="Answerability evidence coverage ratio",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Answerability supporting finding count",
+                meaning="Answerability supporting finding count",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Bounded pattern category",
+                meaning="Bounded pattern category",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Bounded pattern finding count",
+                meaning="Bounded pattern finding count",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Bounded pattern note",
+                meaning="Bounded pattern note",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Productization version",
+                meaning="Productization layer version",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Limitations before dedupe",
+                meaning="Limitation count before deduplication",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Limitations after dedupe",
+                meaning="Limitation count after deduplication",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Removed duplicate limitations",
+                meaning="Removed duplicate limitation count",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Direct answer presence",
+                meaning="Direct answer presence flag",
                 source="system_derived",
                 stability="stable",
             ),

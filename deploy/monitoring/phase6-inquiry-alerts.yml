@@ -30,6 +30,18 @@ groups:
           or absent(lifeos_inquiry_blocked_claims_by_domain_total)
           or absent(lifeos_inquiry_replay_mismatch_total)
           or absent(lifeos_inquiry_replay_mismatch_by_domain_total)
+          or absent(lifeos_inquiry_productization_total)
+          or absent(lifeos_inquiry_productization_by_domain_total)
+          or absent(lifeos_inquiry_productization_latency_seconds_bucket)
+          or absent(lifeos_inquiry_productization_latency_seconds_by_domain_bucket)
+          or absent(lifeos_inquiry_productization_errors_total)
+          or absent(lifeos_inquiry_productization_errors_by_domain_total)
+          or absent(lifeos_inquiry_direct_answer_present_total)
+          or absent(lifeos_inquiry_direct_answer_present_by_domain_total)
+          or absent(lifeos_inquiry_answerability_total)
+          or absent(lifeos_inquiry_answerability_by_domain_total)
+          or absent(lifeos_inquiry_limitation_redundancy_removed_total)
+          or absent(lifeos_inquiry_limitation_redundancy_removed_by_domain_total)
         for: 3m
         labels:
           severity: critical
@@ -173,6 +185,123 @@ groups:
             sum(rate(lifeos_inquiry_generated_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
             0.001
           )
+
+      - record: lifeos:inquiry_direct_answer_presence_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_direct_answer_present_total[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_productization_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_direct_answer_present_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_productization_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_answerability_distribution:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_answerability_total[15m])) by (classification)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_answerability_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_answerability_distribution_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_answerability_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode, classification)
+          /
+          ignoring(classification) group_left
+          clamp_min(
+            sum(rate(lifeos_inquiry_answerability_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_weak_answer_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_answerability_total{classification="weak_answerable"}[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_answerability_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_answerability_by_domain_total{classification="weak_answerable"}[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_answerability_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_limitation_redundancy_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_limitation_redundancy_removed_total[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_productization_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_limitation_redundancy_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_limitation_redundancy_removed_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_productization_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_refine_after_weak_answer_lift:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_refine_after_low_quality_total[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_answerability_total{classification="weak_answerable"}[15m])), 0.001)
+
+      - record: lifeos:inquiry_refine_after_weak_answer_lift_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_refine_after_low_quality_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_answerability_by_domain_total{classification="weak_answerable"}[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_productization_latency_p95:seconds
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(lifeos_inquiry_productization_latency_seconds_bucket[5m])) by (le)
+          )
+
+      - record: lifeos:inquiry_productization_latency_p95_by_domain_profile:seconds
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(lifeos_inquiry_productization_latency_seconds_by_domain_bucket[5m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode, le)
+          )
+
+      - record: lifeos:inquiry_productization_error_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_productization_errors_total[10m])), 0)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_productization_total[10m])) + sum(rate(lifeos_inquiry_productization_errors_total[10m])),
+            0.001
+          )
+
+      - record: lifeos:inquiry_productization_error_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_productization_errors_by_domain_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_productization_by_domain_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+            + sum(rate(lifeos_inquiry_productization_errors_by_domain_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_productization_replay_mismatch_count
+        expr: |
+          clamp_min(sum(increase(lifeos_inquiry_replay_mismatch_total[15m])), 0)
+
+      - record: lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile
+        expr: |
+          sum(increase(lifeos_inquiry_replay_mismatch_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
 
       - alert: Phase6InquiryGenerationFailures
         expr: |
@@ -583,3 +712,86 @@ groups:
         annotations:
           summary: "Phase 8 pair-profile version drift detected"
           description: "Phase 8 pair-profile traffic includes unexpected profile_version or strategy_version labels."
+
+      - alert: Phase81ProductizationErrorRateHigh
+        expr: |
+          max by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            lifeos:inquiry_productization_error_rate_by_domain_profile:ratio
+          ) > 0.12
+          and
+          sum by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            rate(lifeos_inquiry_productization_by_domain_total[15m])
+          ) > 0.005
+        for: 10m
+        labels:
+          severity: warning
+          phase: "8.1"
+        annotations:
+          summary: "Phase 8.1 productization error rate high"
+          description: "One or more inquiry profiles exceeded a 12% productization-stage error rate."
+
+      - alert: Phase81ProductizationLatencyHigh
+        expr: |
+          max by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            lifeos:inquiry_productization_latency_p95_by_domain_profile:seconds
+          ) > 0.75
+          and
+          sum by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            rate(lifeos_inquiry_productization_by_domain_total[15m])
+          ) > 0.005
+        for: 10m
+        labels:
+          severity: warning
+          phase: "8.1"
+        annotations:
+          summary: "Phase 8.1 productization latency high"
+          description: "One or more inquiry profiles exceeded 750ms productization p95 latency."
+
+      - alert: Phase81WeakAnswerRateHigh
+        expr: |
+          max by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio
+          ) > 0.7
+          and
+          sum by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            rate(lifeos_inquiry_answerability_by_domain_total[15m])
+          ) > 0.005
+        for: 15m
+        labels:
+          severity: warning
+          phase: "8.1"
+        annotations:
+          summary: "Phase 8.1 weak-answer rate high"
+          description: "Weak answerability exceeded 70% for one or more inquiry profiles."
+
+      - alert: Phase81DirectAnswerPresenceLow
+        expr: |
+          min by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            lifeos:inquiry_direct_answer_presence_rate_by_domain_profile:ratio
+          ) < 0.55
+          and
+          sum by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            rate(lifeos_inquiry_productization_by_domain_total[15m])
+          ) > 0.005
+        for: 20m
+        labels:
+          severity: warning
+          phase: "8.1"
+        annotations:
+          summary: "Phase 8.1 direct-answer presence low"
+          description: "Direct-answer presence dropped below 55% for a sustained period under active productization traffic."
+
+      - alert: Phase81ProductizationReplayMismatchDetected
+        expr: |
+          sum(increase(lifeos_inquiry_replay_mismatch_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode) > 0
+          and
+          sum by (domain, profile, profile_version, strategy, strategy_version, expert_mode) (
+            rate(lifeos_inquiry_productization_by_domain_total[15m])
+          ) > 0.001
+        for: 5m
+        labels:
+          severity: critical
+          phase: "8.1"
+        annotations:
+          summary: "Phase 8.1 productization replay mismatch detected"
+          description: "Replay mismatch detected while inquiry productization is active for at least one profile."

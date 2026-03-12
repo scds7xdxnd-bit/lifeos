@@ -81,6 +81,29 @@ Canonical source for domain purpose and semantic boundaries.
 - Cross-domain outputs must not include psychological interpretation, moral judgment, medical inference, or inferred intent of other people.
 - User context remains non-evidence in cross-domain synthesis unless independently supported by canonical records.
 
+## Inquiry Productization Epistemic Rule (Phase 8.1, Binding)
+- Product usefulness and epistemic certainty are distinct.
+- Productized inquiry outputs may improve directness/relevance wording but must not upgrade certainty without evidence.
+- Answerability labels describe query support quality, not truth guarantees.
+- Productized summaries must remain faithful to canonical evidence and domain boundaries.
+
+## Timeline Intelligence Observational Rule (Phase 9, Binding)
+- Timeline intelligence is deterministic temporal interpretation over domain facts that already satisfy the domain "Asserts."
+- Allowed temporal reasoning:
+  - recurrence,
+  - continuity/breaks,
+  - change relative to prior comparable windows,
+  - baseline-relative variation,
+  - stability/instability,
+  - episodic vs sustained presence.
+- Timeline intelligence must not change what a domain asserts. It only compares when and how often asserted facts appear across fixed windows.
+- Forbidden:
+  - converting temporal patterns into causality,
+  - turning baseline deviation into diagnosis or judgment,
+  - treating recurrence as inevitability,
+  - treating change as a recommendation.
+- User context remains non-evidence in temporal interpretation unless independently supported by canonical domain records/events.
+
 ## ML Scope
 - ML consumes domain semantics to decide what can be treated as evidence; do not train on claims outside a domain's "Asserts".
 - No UI-filtered subsets are valid for training/eval; only canonical event streams and deterministic windows are allowed inputs.

@@ -47,11 +47,18 @@ def test_inquiry_brief_surface_renders_summary_evidence_uncertainty_next_questio
     html = TEMPLATE_PATH.read_text(encoding="utf-8")
 
     assert 'id="inquiry-summary"' in html
+    assert 'id="inquiry-direct-answer"' in html
+    assert 'id="inquiry-direct-answer-support"' in html
+    assert 'id="inquiry-answerability-pill"' in html
+    assert 'id="inquiry-answerability-reason"' in html
+    assert 'id="inquiry-bounded-patterns"' in html
     assert 'id="inquiry-domain-profile-summary"' in html
     assert 'id="inquiry-domain-categories"' in html
     assert 'id="inquiry-domain-safety-caution"' in html
     assert 'id="inquiry-findings"' in html
     assert 'id="inquiry-uncertainty"' in html
+    assert 'id="inquiry-limits-meta"' in html
+    assert 'id="inquiry-refine-guidance"' in html
     assert 'id="inquiry-next-questions"' in html
     assert 'id="inquiry-context-render"' in html
 
@@ -89,6 +96,8 @@ def test_inquiry_domain_expert_rendering_patterns_are_present_for_first_wave_dom
     assert "isExpertDomainProfile" in html
     assert "APPROVED_CROSS_DOMAIN_PAIRS" in html
     assert "finding_category" in html
+    assert "relevance_reason" in html
+    assert "Why this evidence matters" in html
     assert "renderDomainProfile(brief)" in html
     assert "renderFindings(findings, brief)" in html
 
@@ -162,6 +171,24 @@ def test_inquiry_template_avoids_chatbot_patterns_and_keeps_primary_action_clear
 
     assert "generate brief" in html
     assert "context (not evidence)" in html
+    assert "direct answer" in html
+    assert "answerability status" in html
+    assert "what this means" in html
+
+
+@pytest.mark.unit
+def test_inquiry_template_wires_productization_sections_without_confidence_drift():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert "renderDirectAnswer(brief)" in html
+    assert "renderAnswerability(brief)" in html
+    assert "renderBoundedPatterns(brief)" in html
+    assert "renderProductizedRefineGuidance(brief)" in html
+    assert "Strongly answerable" in html
+    assert "Partially answerable" in html
+    assert "Weakly answerable" in html
+    assert "No refine guidance was generated for this scope." in html
+    assert "Derived from evidence-bounded findings only." in html
 
 
 @pytest.mark.integration
