@@ -88,6 +88,18 @@ Format:
 - journal.entry.updated: A journal entry was updated. asserted_by=user, certainty=confirmed
 - journal.entry.deleted: A journal entry was deleted. asserted_by=user, certainty=confirmed
 
+## Inquiry (Focused Inquiry v1)
+- inquiry.requested: A user requested a scoped inquiry brief. asserted_by=user, certainty=confirmed
+- inquiry.context.submitted: User-provided context text was submitted for an inquiry. asserted_by=user, certainty=confirmed
+- inquiry.brief.generated: The system generated an inquiry brief from bounded evidence. asserted_by=system, certainty=informational
+- inquiry.brief.viewed: A user opened an inquiry brief. asserted_by=user, certainty=confirmed
+- inquiry.refined: A user refined inquiry scope/timeframe/context and requested regeneration. asserted_by=user, certainty=confirmed
+
+## Inquiry Event Rules (Binding)
+- `inquiry.context.submitted` is context metadata only and is never evidence by itself.
+- `inquiry.brief.generated` certifies generation completion, not truth of all findings.
+- Inquiry events must preserve deterministic replay for identical request inputs and evidence windows.
+
 ## ML Scope
 - ML may only attach to inference events and ML feedback events defined in the semantic registry; no new event types are allowed without a contract update.
 - Inference events must carry `model_version` and `payload_version` fields; these must be preserved through storage, replay, and projection.

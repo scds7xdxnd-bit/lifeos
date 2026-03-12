@@ -54,6 +54,18 @@ Canonical source for domain purpose and semantic boundaries.
 - Asserts: Operational and workflow state changes.
 - Must not infer: No user intent beyond explicit system actions.
 
+### Inquiry (Focused Inquiry v1)
+- Purpose: Orchestrate user-initiated investigative questions into bounded, evidence-based briefs.
+- Asserts: Inquiry request scope (lens + timeframe + optional context) and generated brief artifacts.
+- Must not infer: No conversion of user-provided context into factual evidence without independent support from canonical domain records/events.
+
+## Focused Inquiry Semantic Law (Binding)
+- Evidence: canonical domain records/events/read-model outputs that already satisfy domain "Asserts."
+- User context: user-supplied narrative/hypothesis; contextual input only.
+- Interpretation: deterministic synthesis over evidence and context, explicitly labeled.
+- Recommendation: optional follow-up prompt/question, never an autonomous action.
+- Forbidden: speculative mental/medical/financial conclusions beyond recorded evidence boundaries.
+
 ## ML Scope
 - ML consumes domain semantics to decide what can be treated as evidence; do not train on claims outside a domain's "Asserts".
 - No UI-filtered subsets are valid for training/eval; only canonical event streams and deterministic windows are allowed inputs.

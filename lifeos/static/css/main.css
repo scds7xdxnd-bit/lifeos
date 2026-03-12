@@ -1429,3 +1429,345 @@ select:focus {
 .proposal-card.is-correcting .proposal-correction {
   display: grid;
 }
+
+/* Focused inquiry v1 */
+.inquiry-container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1rem 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.inquiry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.inquiry-title {
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.inquiry-lede {
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+}
+
+.inquiry-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.inquiry-section-heading h3 {
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.inquiry-section-heading p {
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.inquiry-form {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.inquiry-form-grid {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.inquiry-cross-domain {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.inquiry-checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-strong);
+}
+
+.inquiry-subtle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.inquiry-domain-multi {
+  border: 1px dashed var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.inquiry-domain-multi-title {
+  font-size: 0.88rem;
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.inquiry-domain-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.8rem;
+}
+
+.inquiry-context-controls {
+  margin-top: 0.1rem;
+}
+
+.inquiry-context-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  background: #f9fafc;
+}
+
+.inquiry-setup-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.inquiry-refine-mode {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.inquiry-empty-state {
+  margin-top: 0.6rem;
+  color: var(--text-muted);
+}
+
+.inquiry-brief-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.inquiry-brief-meta {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.inquiry-version-list {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.inquiry-version-chip {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-strong);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.inquiry-version-chip.is-active {
+  background: #ffffff;
+  border-color: #9fb4d4;
+}
+
+.inquiry-block {
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.8rem;
+}
+
+.inquiry-block-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.inquiry-summary,
+.inquiry-uncertainty,
+.inquiry-context-text {
+  color: var(--text-strong);
+}
+
+.inquiry-findings {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.inquiry-finding {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.inquiry-finding-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.inquiry-finding-claim {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.inquiry-finding-uncertainty {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.inquiry-finding-evidence {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.inquiry-evidence-domain {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+}
+
+.inquiry-evidence-domain-name {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+
+.inquiry-evidence-list {
+  margin: 0;
+  padding-left: 1rem;
+  color: var(--text-strong);
+  font-size: 0.86rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.inquiry-label {
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid transparent;
+}
+
+.inquiry-label--informational {
+  background: #edf3ff;
+  color: #264a8a;
+  border-color: #cddbf7;
+}
+
+.inquiry-label--confirmed {
+  background: #e8f7ee;
+  color: #1f6b43;
+  border-color: #bfdfcb;
+}
+
+.inquiry-label--needs-review {
+  background: #fff5e8;
+  color: #8d5b1d;
+  border-color: #f2d9b2;
+}
+
+.inquiry-label--neutral {
+  background: var(--bg-secondary);
+  color: var(--text-strong);
+  border-color: var(--border-subtle);
+}
+
+.inquiry-limits,
+.inquiry-next-questions {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  color: var(--text-strong);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.inquiry-context-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.inquiry-context-note {
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.inquiry-empty-inline {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.inquiry-history-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.inquiry-history-list {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.inquiry-history-item {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.inquiry-history-main {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.inquiry-history-question {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.inquiry-history-meta {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.inquiry-history-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}

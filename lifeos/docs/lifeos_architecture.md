@@ -1,11 +1,11 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-02-05 (v2.14 — Phase 5b complete; deterministic insights verified)_
+_Last updated: 2026-03-12 (v2.15 — Focused Inquiry v1 constitutional decision ratified)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
 ---
 
-# 0. Implementation Status (as of 2026-02-05)
+# 0. Implementation Status (as of 2026-03-12)
 
 ## ✅ Fully Implemented & Tested
 - **Core Authentication**: JWT + Session hybrid, roles/permissions, password reset tokens, rate limiting
@@ -139,8 +139,9 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 3c-2 trigger assessment (event transport scaling) remains deferred; Phase 5c readiness can be evaluated now that Phase 5b is complete.
-- Deferred: Phase 4 later roadmap items; no new meaning or UX work without explicit approval.
+- Active: Phase 5c readiness execution remains additive/no-op only; Phase 3c-2 (event transport scaling) remains deferred by trigger policy.
+- Approved next product feature: Phase 6 Focused Inquiry v1 (spec complete, implementation pending).
+- Deferred: transport scaling (3c-2), advanced personalization, and any autonomous intelligence behavior.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
@@ -1111,7 +1112,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.14 (Phase 5b complete; deterministic insights verified; session scaffold + admin reset stub): 2026-02-05. Author: LifeOS Architect._
+_Constitution v2.15 (Focused Inquiry v1 constitutional decision ratified; Phase 5c readiness active): 2026-03-12. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1137,6 +1138,47 @@ _Constitution v2.14 (Phase 5b complete; deterministic insights verified; session
 - 🟡 Phase 3c-2 assessment opened: collecting outbox and dispatch telemetry before broker selection
 - ✅ Phase 5a complete: proposal substrate shipped; proposals endpoint fixed; QA lifecycle tests green
 - ✅ Phase 5b complete: rule-based insights emitted and verified; Phase 5c entry gate eligible
+
+---
+
+# 21. Focused Inquiry v1 (Constitutional Decision, Binding)
+
+Focused Inquiry v1 is the next product feature after Phase 5c readiness. It is defined as a user-initiated, scoped, evidence-based brief generator and must preserve existing semantic law.
+
+## 21.1 Product Position
+- LifeOS is a personal evidence-based inquiry system, not a generic chatbot, not a dashboard-first tracker, and not an omniscient assistant.
+- Focused Inquiry v1 is the first intentional surface for "ask one question, get one bounded brief."
+- Domain expertise remains bounded. Cross-domain synthesis is allowed only when contract-safe evidence exists.
+
+## 21.2 Hard Guardrails
+- No autonomous actions, no hidden ranking changes, no speculative psychology.
+- No user-provided context may be promoted into system evidence without independent support from canonical records.
+- No schema or contract reinterpretation outside semantically frozen vocabularies.
+- UI interaction remains calm-first and read-first; this feature must not collapse into chat loops or dashboard density.
+
+## 21.3 Canonical Output Form
+- Output is a brief, not a conversation transcript.
+- Every finding must show: claim, evidence references, confidence label, and uncertainty note (if applicable).
+- Evidence references must resolve to canonical domain events, records, read models, or existing insight artifacts.
+
+## 21.4 Routing Model
+- Inquiry requests route to a bounded domain lens (finance, health, habits, skills, projects, relationships, journal, calendar) or an explicitly cross-domain lens.
+- Cross-domain lenses must explicitly list participating domains and evidence links used in synthesis.
+
+## 21.5 System Behavior Requirements
+- Deterministic generation for the same inputs (scope, timeframe, evidence state, context text).
+- Replay-safe derivation; no hidden mutable state in brief assembly.
+- Read-through caching allowed for inquiry reads only, with explicit invalidation on source-change events.
+- Observability must include inquiry requested/generated/viewed/refined counters and latency histograms.
+
+## 21.6 Constitutional References
+- UI behavior is governed by `lifeos/docs/ui_ux_constitution.md`.
+- Semantic and evidence boundaries are governed by:
+  - `lifeos/docs/semantics/DOMAIN_SEMANTIC_CONTRACTS.md`
+  - `lifeos/docs/semantics/EVENT_SEMANTICS_FREEZE.md`
+  - `lifeos/docs/semantics/INSIGHT_CONTRACTS.md`
+  - `lifeos/docs/semantics/CONFIDENCE_VOCABULARY.md`
+- Execution brief: `lifeos/docs/tasks/phase_6_focused_inquiry_v1.md`.
 
 ---
 

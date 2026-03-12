@@ -1,0 +1,895 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container inquiry-container">
+  <div class="card inquiry-header-card">
+    <div class="inquiry-header">
+      <div>
+        <h2 class="inquiry-title">Focused Inquiry</h2>
+        <p class="inquiry-lede">Ask one scoped question and generate one bounded evidence-based brief.</p>
+      </div>
+      <div class="inquiry-header-actions">
+        <a class="btn btn-secondary" href="/insights">Back to Insight Feed</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card inquiry-setup-card">
+    <div class="inquiry-section-heading">
+      <h3>Inquiry Setup</h3>
+      <p>Define scope first. Generate only when the question and domain lens are explicit.</p>
+    </div>
+
+    <div id="inquiry-login-hint" class="auth-status" data-tone="error" style="display:none;">
+      Please sign in to generate inquiry briefs.
+    </div>
+    <div id="inquiry-setup-status" class="auth-status" aria-live="polite"></div>
+
+    <form id="inquiry-form" class="inquiry-form" autocomplete="off">
+      <div class="field">
+        <label for="inquiry-question">Question</label>
+        <textarea id="inquiry-question" rows="3" maxlength="500" placeholder="What exactly am I trying to understand right now?" required></textarea>
+      </div>
+
+      <div class="inquiry-form-grid">
+        <div class="field">
+          <label for="inquiry-primary-domain">Primary domain</label>
+          <select id="inquiry-primary-domain" required>
+            <option value="">Select domain...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="inquiry-timeframe-preset">Timeframe</label>
+          <select id="inquiry-timeframe-preset">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="custom">Custom range</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="inquiry-form-grid">
+        <div class="field">
+          <label for="inquiry-timeframe-start">Start date</label>
+          <input id="inquiry-timeframe-start" type="date" required>
+        </div>
+        <div class="field">
+          <label for="inquiry-timeframe-end">End date</label>
+          <input id="inquiry-timeframe-end" type="date" required>
+        </div>
+      </div>
+
+      <div class="inquiry-form-grid">
+        <div class="field">
+          <label for="inquiry-as-of">As of (optional)</label>
+          <input id="inquiry-as-of" type="datetime-local">
+          <small>Locks replay to a deterministic cutoff time.</small>
+        </div>
+      </div>
+
+      <div class="inquiry-cross-domain">
+        <label class="inquiry-checkbox-row" for="inquiry-cross-domain">
+          <input id="inquiry-cross-domain" type="checkbox">
+          <span>Enable explicit cross-domain mode</span>
+        </label>
+        <p class="inquiry-subtle">Cross-domain claims are generated only when selected domains are explicit and evidence-backed.</p>
+      </div>
+
+      <div id="inquiry-domain-multi" class="inquiry-domain-multi" style="display:none;">
+        <div class="inquiry-domain-multi-title">Additional domains (select one or more)</div>
+        <div id="inquiry-domain-options" class="inquiry-domain-options"></div>
+      </div>
+
+      <div class="inquiry-context-controls">
+        <button type="button" class="text-link" id="inquiry-context-toggle">Add optional context</button>
+      </div>
+
+      <div id="inquiry-context-panel" class="inquiry-context-panel" style="display:none;">
+        <div class="field">
+          <label for="inquiry-context-text">Context (not evidence)</label>
+          <textarea id="inquiry-context-text" rows="3" maxlength="1000" placeholder="Optional framing context. This is not treated as factual evidence."></textarea>
+          <small>User context is displayed separately and not promoted to system evidence.</small>
+        </div>
+      </div>
+
+      <div class="inquiry-setup-actions">
+        <button type="submit" id="inquiry-generate-btn" class="btn">Generate Brief</button>
+        <button type="button" id="inquiry-reset-btn" class="text-link">Reset setup</button>
+        <span id="inquiry-refine-mode" class="inquiry-refine-mode" style="display:none;">Refining selected inquiry</span>
+      </div>
+    </form>
+  </div>
+
+  <div class="card inquiry-brief-card">
+    <div class="inquiry-section-heading">
+      <h3>Generated Brief</h3>
+      <p>Summary first, then evidence, then limits. Context remains non-evidence.</p>
+    </div>
+
+    <div id="inquiry-brief-empty" class="inquiry-empty-state">No brief generated yet.</div>
+
+    <div id="inquiry-brief-content" style="display:none;">
+      <div class="inquiry-brief-toolbar">
+        <div id="inquiry-brief-meta" class="inquiry-brief-meta"></div>
+        <div id="inquiry-brief-status" class="inquiry-brief-status"></div>
+      </div>
+      <div id="inquiry-version-list" class="inquiry-version-list"></div>
+
+      <div class="inquiry-block">
+        <div class="inquiry-block-label">Summary</div>
+        <div id="inquiry-summary" class="inquiry-summary"></div>
+      </div>
+
+      <div class="inquiry-block">
+        <div class="inquiry-block-label">Evidence</div>
+        <div id="inquiry-findings" class="inquiry-findings"></div>
+      </div>
+
+      <div class="inquiry-block">
+        <div class="inquiry-block-label">Uncertainty / Limits</div>
+        <div id="inquiry-uncertainty" class="inquiry-uncertainty"></div>
+        <ul id="inquiry-limits" class="inquiry-limits"></ul>
+      </div>
+
+      <div class="inquiry-block">
+        <div class="inquiry-block-label">Context (not evidence)</div>
+        <div id="inquiry-context-render" class="inquiry-context-render"></div>
+      </div>
+
+      <div class="inquiry-block">
+        <div class="inquiry-block-label">Next Questions</div>
+        <ul id="inquiry-next-questions" class="inquiry-next-questions"></ul>
+      </div>
+
+      <div id="inquiry-brief-alert" class="auth-status" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="card inquiry-history-card">
+    <div class="inquiry-history-header">
+      <div class="inquiry-section-heading" style="margin:0;">
+        <h3>Inquiry History</h3>
+        <p>Revisit previous inquiries and brief versions.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="inquiry-history-refresh">Refresh history</button>
+    </div>
+
+    <div id="inquiry-history-status" class="auth-status"></div>
+    <div id="inquiry-history-empty" class="inquiry-empty-state" style="display:none;">No inquiries yet.</div>
+    <div id="inquiry-history-list" class="inquiry-history-list"></div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const DOMAINS = [
+      { key: 'calendar', label: 'Calendar' },
+      { key: 'finance', label: 'Finance' },
+      { key: 'habits', label: 'Habits' },
+      { key: 'skills', label: 'Skills' },
+      { key: 'health', label: 'Health' },
+      { key: 'projects', label: 'Projects' },
+      { key: 'relationships', label: 'Relationships' },
+      { key: 'journal', label: 'Journal' },
+    ];
+
+    const state = {
+      inquiries: [],
+      selectedInquiry: null,
+      selectedVersionId: null,
+      brief: null,
+      refineInquiryId: null,
+      inquiryCache: new Map(),
+    };
+
+    const loginHint = document.getElementById('inquiry-login-hint');
+    const setupStatus = document.getElementById('inquiry-setup-status');
+    const historyStatus = document.getElementById('inquiry-history-status');
+
+    const form = document.getElementById('inquiry-form');
+    const questionInput = document.getElementById('inquiry-question');
+    const primaryDomainSelect = document.getElementById('inquiry-primary-domain');
+    const crossDomainInput = document.getElementById('inquiry-cross-domain');
+    const domainMulti = document.getElementById('inquiry-domain-multi');
+    const domainOptions = document.getElementById('inquiry-domain-options');
+    const timeframePreset = document.getElementById('inquiry-timeframe-preset');
+    const timeframeStart = document.getElementById('inquiry-timeframe-start');
+    const timeframeEnd = document.getElementById('inquiry-timeframe-end');
+    const asOfInput = document.getElementById('inquiry-as-of');
+    const contextToggle = document.getElementById('inquiry-context-toggle');
+    const contextPanel = document.getElementById('inquiry-context-panel');
+    const contextText = document.getElementById('inquiry-context-text');
+    const generateBtn = document.getElementById('inquiry-generate-btn');
+    const resetBtn = document.getElementById('inquiry-reset-btn');
+    const refineModeLabel = document.getElementById('inquiry-refine-mode');
+
+    const briefEmpty = document.getElementById('inquiry-brief-empty');
+    const briefContent = document.getElementById('inquiry-brief-content');
+    const briefMeta = document.getElementById('inquiry-brief-meta');
+    const briefStatus = document.getElementById('inquiry-brief-status');
+    const versionList = document.getElementById('inquiry-version-list');
+    const briefSummary = document.getElementById('inquiry-summary');
+    const findingsEl = document.getElementById('inquiry-findings');
+    const uncertaintyEl = document.getElementById('inquiry-uncertainty');
+    const limitsEl = document.getElementById('inquiry-limits');
+    const contextRender = document.getElementById('inquiry-context-render');
+    const nextQuestionsEl = document.getElementById('inquiry-next-questions');
+    const briefAlert = document.getElementById('inquiry-brief-alert');
+
+    const historyRefresh = document.getElementById('inquiry-history-refresh');
+    const historyEmpty = document.getElementById('inquiry-history-empty');
+    const historyList = document.getElementById('inquiry-history-list');
+
+    const setStatus = (node, msg, tone = '') => {
+      if (!node) return;
+      node.textContent = msg || '';
+      if (tone) node.dataset.tone = tone;
+      else node.removeAttribute('data-tone');
+    };
+
+    const resolveContractError = (body, res) => {
+      const error = body?.error;
+      if (res?.status === 409 || error === 'read_only_violation') {
+        return 'Read-only contract violation detected. Please refresh and report this issue.';
+      }
+      if (['contract_mismatch', 'contract_violation', 'schema_mismatch'].includes(error)) {
+        return 'Contract mismatch detected. Please refresh and try again.';
+      }
+      return '';
+    };
+
+    const getAuthHeaders = (extra = {}) => {
+      const headers = lifeosAuth.authHeaders(extra);
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+      if (csrf) headers['X-CSRF-Token'] = csrf;
+      return headers;
+    };
+
+    const fmtDate = (value) => {
+      if (!value) return '—';
+      const dt = new Date(value);
+      if (Number.isNaN(dt.getTime())) return value;
+      return dt.toLocaleString();
+    };
+
+    const todayIso = () => {
+      const d = new Date();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${month}-${day}`;
+    };
+
+    const datetimeLocalNow = () => {
+      const d = new Date();
+      d.setSeconds(0, 0);
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${d.getFullYear()}-${month}-${day}T${hours}:${mins}`;
+    };
+
+    const shiftDateIso = (daysBack) => {
+      const d = new Date();
+      d.setDate(d.getDate() - daysBack);
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${month}-${day}`;
+    };
+
+    const labelForDomain = (domain) => {
+      const found = DOMAINS.find((item) => item.key === domain);
+      return found?.label || String(domain || 'Unknown');
+    };
+
+    const confidenceClass = (label) => {
+      const normalized = String(label || '').toLowerCase();
+      if (normalized === 'confirmed') return 'inquiry-label inquiry-label--confirmed';
+      if (normalized === 'informational') return 'inquiry-label inquiry-label--informational';
+      if (normalized === 'needs_review') return 'inquiry-label inquiry-label--needs-review';
+      return 'inquiry-label inquiry-label--neutral';
+    };
+
+    const confidenceText = (label) => {
+      const normalized = String(label || '').toLowerCase();
+      if (normalized === 'needs_review') return 'Needs review';
+      if (normalized === 'informational') return 'Informational';
+      if (normalized === 'confirmed') return 'Confirmed';
+      return 'Unspecified';
+    };
+
+    const ensureAuth = () => {
+      const authed = lifeosAuth.isAuthenticated();
+      loginHint.style.display = authed ? 'none' : 'block';
+      Array.from(form.querySelectorAll('input, select, textarea, button')).forEach((node) => {
+        node.disabled = !authed;
+      });
+      historyRefresh.disabled = !authed;
+      if (!authed) {
+        setStatus(setupStatus, 'Please sign in to generate a brief.', 'error');
+        setStatus(historyStatus, 'Please sign in to view inquiry history.', 'error');
+      }
+      return authed;
+    };
+
+    const populateDomains = () => {
+      primaryDomainSelect.innerHTML = '<option value="">Select domain...</option>';
+      domainOptions.innerHTML = '';
+      DOMAINS.forEach((domain) => {
+        const option = document.createElement('option');
+        option.value = domain.key;
+        option.textContent = domain.label;
+        primaryDomainSelect.appendChild(option);
+
+        const label = document.createElement('label');
+        label.className = 'inquiry-checkbox-row';
+        label.innerHTML = `
+          <input type="checkbox" value="${domain.key}" data-domain-option>
+          <span>${domain.label}</span>
+        `;
+        domainOptions.appendChild(label);
+      });
+    };
+
+    const applyPreset = (preset) => {
+      if (preset === 'custom') return;
+      const days = Number(preset);
+      if (!days || Number.isNaN(days)) return;
+      timeframeEnd.value = todayIso();
+      timeframeStart.value = shiftDateIso(days - 1);
+    };
+
+    const selectedAdditionalDomains = () => {
+      return Array.from(domainOptions.querySelectorAll('input[data-domain-option]:checked')).map((node) => node.value);
+    };
+
+    const currentScopePayload = () => {
+      const question = questionInput.value.trim();
+      const primaryDomain = primaryDomainSelect.value;
+      const crossDomain = crossDomainInput.checked;
+      const additional = selectedAdditionalDomains();
+      const domains = Array.from(new Set([primaryDomain, ...additional].filter(Boolean))).sort();
+      const start = timeframeStart.value;
+      const end = timeframeEnd.value;
+      const asOfRaw = asOfInput.value;
+      const payload = {
+        question,
+        domain: primaryDomain,
+        domains,
+        cross_domain: crossDomain,
+        timeframe_start: start,
+        timeframe_end: end,
+      };
+      const context = contextText.value.trim();
+      if (context) payload.context_text = context;
+      if (asOfRaw) {
+        const dt = new Date(asOfRaw);
+        payload.as_of_ts = Number.isNaN(dt.getTime()) ? asOfRaw : dt.toISOString();
+      }
+      return payload;
+    };
+
+    const validateScope = (payload) => {
+      if (!payload.question || payload.question.length < 3) return 'Enter a clear question (minimum 3 characters).';
+      if (!payload.domain) return 'Select a primary domain.';
+      if (!payload.timeframe_start || !payload.timeframe_end) return 'Select a valid timeframe.';
+      if (payload.timeframe_start > payload.timeframe_end) return 'Timeframe start must be before end.';
+      if (payload.cross_domain && (!Array.isArray(payload.domains) || payload.domains.length < 2)) {
+        return 'Cross-domain mode requires at least two selected domains.';
+      }
+      if (!payload.cross_domain && (!Array.isArray(payload.domains) || payload.domains.length !== 1)) {
+        return 'Single-domain mode requires exactly one selected domain.';
+      }
+      return '';
+    };
+
+    const parseError = (body, res) => {
+      const contractError = resolveContractError(body, res);
+      if (contractError) return contractError;
+      if (body?.error === 'validation_error') {
+        const details = Array.isArray(body.details) ? body.details.map((item) => item.msg || item.type).filter(Boolean) : [];
+        return details.length ? `Invalid inquiry: ${details.join('; ')}` : 'Invalid inquiry. Please review scope and timeframe.';
+      }
+      if (body?.error) return String(body.error).replace(/_/g, ' ');
+      if (res?.status === 401) return 'Please sign in.';
+      return 'Generation failed. Please try again.';
+    };
+
+    const groupEvidenceByDomain = (refs = []) => {
+      const grouped = new Map();
+      refs.forEach((ref) => {
+        const domain = ref.domain || 'unknown';
+        if (!grouped.has(domain)) grouped.set(domain, []);
+        grouped.get(domain).push(ref);
+      });
+      return Array.from(grouped.entries()).sort(([a], [b]) => String(a).localeCompare(String(b)));
+    };
+
+    const evidenceText = (ref) => {
+      if (!ref) return 'Unknown evidence source';
+      if (ref.source_kind === 'read_model') {
+        return `Projection count: events ${ref.event_count ?? 0}, insights ${ref.insight_count ?? 0}`;
+      }
+      const typeText = ref.event_type || ref.insight_type || ref.source_kind || 'record';
+      const idText = ref.source_id ? `#${ref.source_id}` : (ref.source_ref || '');
+      const created = ref.created_at ? ` · ${fmtDate(ref.created_at)}` : '';
+      return `${typeText}${idText ? ` ${idText}` : ''}${created}`;
+    };
+
+    const buildNextQuestions = (brief) => {
+      const findings = Array.isArray(brief?.findings) ? brief.findings : [];
+      const questions = [];
+      if (!findings.length) {
+        questions.push('Would a narrower timeframe help reveal usable evidence?');
+      }
+      const needsReviewDomains = new Set();
+      findings.forEach((finding) => {
+        if (String(finding.confidence_label || '').toLowerCase() === 'needs_review') {
+          (finding.source_domains || []).forEach((domain) => needsReviewDomains.add(domain));
+        }
+      });
+      Array.from(needsReviewDomains).slice(0, 3).forEach((domain) => {
+        questions.push(`What additional ${labelForDomain(domain)} records would reduce uncertainty?`);
+      });
+      if (brief?.lens === 'cross_domain') {
+        questions.push('Which selected domain should be prioritized for a follow-up scoped inquiry?');
+      }
+      if (!questions.length) {
+        questions.push('Would comparing this scope to a prior timeframe add useful context?');
+      }
+      return questions.slice(0, 4);
+    };
+
+    const renderBriefStatus = (findings = []) => {
+      const labels = new Set(findings.map((finding) => String(finding.confidence_label || '').toLowerCase()).filter(Boolean));
+      if (!labels.size) {
+        briefStatus.innerHTML = '<span class="inquiry-label inquiry-label--neutral">No confidence labels</span>';
+        return;
+      }
+      if (labels.size > 1) {
+        briefStatus.innerHTML = '<span class="inquiry-label inquiry-label--neutral">Mixed confidence</span>';
+        return;
+      }
+      const [label] = Array.from(labels);
+      briefStatus.innerHTML = `<span class="${confidenceClass(label)}">${confidenceText(label)}</span>`;
+    };
+
+    const renderFindings = (findings = []) => {
+      findingsEl.innerHTML = '';
+      if (!findings.length) {
+        findingsEl.innerHTML = '<div class="inquiry-empty-inline">No findings were generated for this scope.</div>';
+        return;
+      }
+
+      findings.forEach((finding) => {
+        const card = document.createElement('div');
+        card.className = 'inquiry-finding';
+        const groupedEvidence = groupEvidenceByDomain(finding.evidence_refs || []);
+
+        const evidenceHtml = groupedEvidence.map(([domain, refs]) => {
+          const refsList = refs
+            .map((ref) => `<li>${evidenceText(ref)}</li>`)
+            .join('');
+          return `
+            <div class="inquiry-evidence-domain">
+              <div class="inquiry-evidence-domain-name">${labelForDomain(domain)}</div>
+              <ul class="inquiry-evidence-list">${refsList || '<li>No evidence refs.</li>'}</ul>
+            </div>
+          `;
+        }).join('');
+
+        card.innerHTML = `
+          <div class="inquiry-finding-head">
+            <div class="inquiry-finding-claim">${finding.claim || 'No claim provided.'}</div>
+            <span class="${confidenceClass(finding.confidence_label)}">${confidenceText(finding.confidence_label)}</span>
+          </div>
+          <div class="inquiry-finding-uncertainty">${finding.uncertainty_note || 'No uncertainty note provided.'}</div>
+          <div class="inquiry-finding-evidence">${evidenceHtml || '<div class="inquiry-empty-inline">No evidence refs.</div>'}</div>
+        `;
+        findingsEl.appendChild(card);
+      });
+    };
+
+    const renderBrief = (brief, meta = {}) => {
+      state.brief = brief;
+      briefEmpty.style.display = 'none';
+      briefContent.style.display = 'block';
+
+      const findings = Array.isArray(brief?.findings) ? brief.findings : [];
+      renderBriefStatus(findings);
+      renderFindings(findings);
+
+      briefSummary.textContent = brief?.summary || 'No summary generated.';
+      uncertaintyEl.textContent = brief?.uncertainty_note || 'No uncertainty note provided.';
+
+      limitsEl.innerHTML = '';
+      const limits = Array.isArray(brief?.limits) ? brief.limits : [];
+      if (!limits.length) {
+        limitsEl.innerHTML = '<li>No explicit limits reported.</li>';
+      } else {
+        limits.forEach((limit) => {
+          const li = document.createElement('li');
+          li.textContent = limit;
+          limitsEl.appendChild(li);
+        });
+      }
+
+      const contextBlock = brief?.context_non_evidence || {};
+      const contextLabel = contextBlock.label || 'Context (not evidence)';
+      const contextNote = contextBlock.note || 'User context is framing only and not treated as factual evidence.';
+      const contextValue = contextBlock.text || 'No user context provided.';
+      contextRender.innerHTML = `
+        <div class="inquiry-context-label">${contextLabel}</div>
+        <div class="inquiry-context-text">${contextValue}</div>
+        <div class="inquiry-context-note">${contextNote}</div>
+      `;
+
+      const nextQuestions = buildNextQuestions(brief);
+      nextQuestionsEl.innerHTML = '';
+      nextQuestions.forEach((question) => {
+        const li = document.createElement('li');
+        li.textContent = question;
+        nextQuestionsEl.appendChild(li);
+      });
+
+      const metaParts = [];
+      if (meta.versionNumber) metaParts.push(`Version ${meta.versionNumber}`);
+      if (brief?.lens) metaParts.push(`Lens: ${brief.lens}`);
+      if (Array.isArray(brief?.domains) && brief.domains.length) {
+        metaParts.push(`Domains: ${brief.domains.map(labelForDomain).join(', ')}`);
+      }
+      if (brief?.timeframe?.start && brief?.timeframe?.end) {
+        metaParts.push(`Window: ${brief.timeframe.start} to ${brief.timeframe.end}`);
+      }
+      if (brief?.as_of_ts) metaParts.push(`As of ${fmtDate(brief.as_of_ts)}`);
+      briefMeta.textContent = metaParts.join(' · ');
+
+      const noEvidence = !findings.length || findings.every((finding) => !Array.isArray(finding.evidence_refs) || !finding.evidence_refs.length);
+      const partialEvidence = findings.some((finding) => {
+        const label = String(finding.confidence_label || '').toLowerCase();
+        const note = String(finding.uncertainty_note || '').toLowerCase();
+        return label === 'needs_review' || note.includes('partial') || note.includes('sparse');
+      });
+
+      if (noEvidence) {
+        briefAlert.style.display = 'block';
+        setStatus(briefAlert, 'No evidence found for this inquiry scope. Try a broader timeframe or different domain lens.', 'warning');
+      } else if (partialEvidence) {
+        briefAlert.style.display = 'block';
+        setStatus(briefAlert, 'Partial evidence detected. Use findings as directional, not definitive.', 'warning');
+      } else {
+        briefAlert.style.display = 'none';
+        setStatus(briefAlert, '');
+      }
+    };
+
+    const renderVersions = (versions = [], activeVersionId = null) => {
+      versionList.innerHTML = '';
+      if (!versions.length) return;
+      versions.forEach((version) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `inquiry-version-chip ${activeVersionId === version.id ? 'is-active' : ''}`;
+        btn.textContent = `v${version.version_number}`;
+        btn.addEventListener('click', () => {
+          state.selectedVersionId = version.id;
+          renderVersions(versions, version.id);
+          renderBrief(version.brief, { versionNumber: version.version_number });
+        });
+        versionList.appendChild(btn);
+      });
+    };
+
+    const renderHistory = (items = []) => {
+      historyList.innerHTML = '';
+      if (!items.length) {
+        historyEmpty.style.display = 'block';
+        return;
+      }
+      historyEmpty.style.display = 'none';
+
+      items.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'inquiry-history-item';
+        const domains = Array.isArray(item.domains) ? item.domains.map(labelForDomain).join(', ') : labelForDomain(item.domain);
+        const timeframeStart = item.timeframe?.start || '—';
+        const timeframeEnd = item.timeframe?.end || '—';
+        row.innerHTML = `
+          <div class="inquiry-history-main">
+            <div class="inquiry-history-question">${item.question || 'Untitled inquiry'}</div>
+            <div class="inquiry-history-meta">
+              ${domains} · ${timeframeStart} to ${timeframeEnd} · Updated ${fmtDate(item.updated_at || item.created_at)} · v${item.last_version_number || 1}
+            </div>
+          </div>
+          <div class="inquiry-history-actions">
+            <button type="button" class="btn btn-secondary" data-action="view" data-id="${item.id}">View</button>
+            <button type="button" class="text-link" data-action="refine" data-id="${item.id}">Refine</button>
+          </div>
+        `;
+        historyList.appendChild(row);
+      });
+    };
+
+    const hydrateFormFromInquiry = (inquiry) => {
+      if (!inquiry) return;
+      questionInput.value = inquiry.question || '';
+      primaryDomainSelect.value = inquiry.domain || (Array.isArray(inquiry.domains) ? inquiry.domains[0] : '') || '';
+      primaryDomainSelect.dispatchEvent(new Event('change'));
+
+      const domains = Array.isArray(inquiry.domains) ? inquiry.domains : [];
+      const isCross = (inquiry.lens === 'cross_domain') || domains.length > 1;
+      crossDomainInput.checked = isCross;
+      domainMulti.style.display = isCross ? 'block' : 'none';
+      Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
+        node.checked = isCross && domains.includes(node.value) && node.value !== primaryDomainSelect.value;
+      });
+
+      timeframeStart.value = inquiry.timeframe?.start || '';
+      timeframeEnd.value = inquiry.timeframe?.end || '';
+      timeframePreset.value = 'custom';
+
+      if (inquiry.as_of_ts) {
+        const dt = new Date(inquiry.as_of_ts);
+        if (!Number.isNaN(dt.getTime())) {
+          const month = String(dt.getMonth() + 1).padStart(2, '0');
+          const day = String(dt.getDate()).padStart(2, '0');
+          const hours = String(dt.getHours()).padStart(2, '0');
+          const mins = String(dt.getMinutes()).padStart(2, '0');
+          asOfInput.value = `${dt.getFullYear()}-${month}-${day}T${hours}:${mins}`;
+        }
+      }
+
+      const contextValue = inquiry.context_non_evidence?.text || '';
+      contextText.value = contextValue;
+      contextPanel.style.display = contextValue ? 'block' : 'none';
+      contextToggle.textContent = contextValue ? 'Hide optional context' : 'Add optional context';
+
+      state.refineInquiryId = inquiry.id;
+      refineModeLabel.style.display = 'inline';
+      setStatus(setupStatus, 'Refine mode enabled. Generate Brief will create a new version.', '');
+      questionInput.focus();
+    };
+
+    const resetFormState = () => {
+      form.reset();
+      primaryDomainSelect.dispatchEvent(new Event('change'));
+      state.refineInquiryId = null;
+      refineModeLabel.style.display = 'none';
+      contextPanel.style.display = 'none';
+      contextToggle.textContent = 'Add optional context';
+      crossDomainInput.checked = false;
+      domainMulti.style.display = 'none';
+      Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
+        node.checked = false;
+      });
+      timeframePreset.value = '30';
+      applyPreset('30');
+      asOfInput.value = datetimeLocalNow();
+      setStatus(setupStatus, '');
+    };
+
+    const loadHistory = async () => {
+      if (!ensureAuth()) return;
+      setStatus(historyStatus, 'Loading history...');
+      try {
+        const res = await fetch('/api/v1/inquiries?limit=20&offset=0', { headers: getAuthHeaders() });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus(historyStatus, parseError(body, res), 'error');
+          renderHistory([]);
+          return;
+        }
+        state.inquiries = body.items || [];
+        renderHistory(state.inquiries);
+        setStatus(historyStatus, '');
+      } catch (_) {
+        setStatus(historyStatus, 'Unable to load inquiry history.', 'error');
+        renderHistory([]);
+      }
+    };
+
+    const loadInquiryDetail = async (inquiryId, options = {}) => {
+      if (!inquiryId) return;
+      if (!ensureAuth()) return;
+      const useCache = options.useCache !== false;
+      if (useCache && state.inquiryCache.has(inquiryId)) {
+        const cached = state.inquiryCache.get(inquiryId);
+        state.selectedInquiry = cached;
+        const versions = Array.isArray(cached.versions) ? cached.versions : [];
+        const selectedVersion = versions.length ? versions[versions.length - 1] : cached.latest_brief;
+        state.selectedVersionId = selectedVersion?.id || null;
+        renderVersions(versions, state.selectedVersionId);
+        if (selectedVersion?.brief) {
+          renderBrief(selectedVersion.brief, { versionNumber: selectedVersion.version_number });
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/v1/inquiries/${inquiryId}`, { headers: getAuthHeaders() });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus(historyStatus, parseError(body, res), 'error');
+          return;
+        }
+        const inquiry = body.inquiry;
+        state.inquiryCache.set(inquiryId, inquiry);
+        state.selectedInquiry = inquiry;
+        const versions = Array.isArray(inquiry.versions) ? inquiry.versions : [];
+        const selectedVersion = versions.length ? versions[versions.length - 1] : inquiry.latest_brief;
+        state.selectedVersionId = selectedVersion?.id || null;
+        renderVersions(versions, state.selectedVersionId);
+        if (selectedVersion?.brief) {
+          renderBrief(selectedVersion.brief, { versionNumber: selectedVersion.version_number });
+        }
+      } catch (_) {
+        setStatus(historyStatus, 'Unable to load inquiry detail.', 'error');
+      }
+    };
+
+    const submitInquiry = async (event) => {
+      event.preventDefault();
+      if (!ensureAuth()) return;
+
+      const payload = currentScopePayload();
+      const validationError = validateScope(payload);
+      if (validationError) {
+        setStatus(setupStatus, validationError, 'error');
+        return;
+      }
+
+      generateBtn.disabled = true;
+      setStatus(setupStatus, state.refineInquiryId ? 'Refining inquiry...' : 'Generating brief...');
+
+      const url = state.refineInquiryId
+        ? `/api/v1/inquiries/${state.refineInquiryId}/refine`
+        : '/api/v1/inquiries';
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus(setupStatus, parseError(body, res), 'error');
+          briefAlert.style.display = 'block';
+          setStatus(briefAlert, 'Generation failure. Review scope and try again.', 'error');
+          return;
+        }
+
+        const inquiryId = body.inquiry_id || body.inquiry?.id;
+        const versionNumber = body.version_number || body.inquiry?.last_version_number || 1;
+        const brief = body.brief || body.latest_brief;
+        if (brief) renderBrief(brief, { versionNumber });
+        if (inquiryId) {
+          state.inquiryCache.delete(inquiryId);
+          await loadInquiryDetail(inquiryId, { useCache: false });
+        }
+        await loadHistory();
+
+        if (state.refineInquiryId) {
+          setStatus(setupStatus, `Brief refined. Version ${versionNumber} generated.`, 'success');
+        } else {
+          const dedupeCopy = body.deduped ? 'Existing brief returned from matching scope.' : 'Brief generated.';
+          setStatus(setupStatus, dedupeCopy, 'success');
+        }
+      } catch (_) {
+        setStatus(setupStatus, 'Generation failed due to a network error.', 'error');
+        briefAlert.style.display = 'block';
+        setStatus(briefAlert, 'Generation failure. Check connectivity and retry.', 'error');
+      } finally {
+        generateBtn.disabled = false;
+      }
+    };
+
+    const bindEvents = () => {
+      form.addEventListener('submit', submitInquiry);
+
+      timeframePreset.addEventListener('change', () => {
+        applyPreset(timeframePreset.value);
+      });
+
+      [timeframeStart, timeframeEnd].forEach((input) => {
+        input.addEventListener('change', () => {
+          if (timeframePreset.value !== 'custom') {
+            timeframePreset.value = 'custom';
+          }
+        });
+      });
+
+      crossDomainInput.addEventListener('change', () => {
+        const enabled = crossDomainInput.checked;
+        domainMulti.style.display = enabled ? 'block' : 'none';
+        if (!enabled) {
+          Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
+            node.checked = false;
+          });
+        }
+      });
+
+      primaryDomainSelect.addEventListener('change', () => {
+        const primary = primaryDomainSelect.value;
+        Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
+          if (node.value === primary) {
+            node.checked = false;
+            node.disabled = true;
+          } else {
+            node.disabled = false;
+          }
+        });
+      });
+
+      contextToggle.addEventListener('click', () => {
+        const willShow = contextPanel.style.display === 'none';
+        contextPanel.style.display = willShow ? 'block' : 'none';
+        contextToggle.textContent = willShow ? 'Hide optional context' : 'Add optional context';
+      });
+
+      resetBtn.addEventListener('click', () => {
+        resetFormState();
+      });
+
+      historyRefresh.addEventListener('click', () => {
+        loadHistory();
+      });
+
+      historyList.addEventListener('click', async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const action = target.dataset.action;
+        const inquiryId = Number(target.dataset.id || 0);
+        if (!action || !inquiryId) return;
+
+        if (action === 'view') {
+          state.refineInquiryId = null;
+          refineModeLabel.style.display = 'none';
+          await loadInquiryDetail(inquiryId, { useCache: false });
+          return;
+        }
+
+        if (action === 'refine') {
+          await loadInquiryDetail(inquiryId, { useCache: false });
+          hydrateFormFromInquiry(state.selectedInquiry);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+
+      window.addEventListener('lifeos:auth-changed', (e) => {
+        if (e.detail?.loggedIn) {
+          ensureAuth();
+          loadHistory();
+        } else {
+          ensureAuth();
+          historyList.innerHTML = '';
+          historyEmpty.style.display = 'block';
+          briefEmpty.style.display = 'block';
+          briefContent.style.display = 'none';
+        }
+      });
+    };
+
+    const start = async () => {
+      populateDomains();
+      bindEvents();
+      resetFormState();
+      ensureAuth();
+      if (!lifeosAuth.isAuthenticated()) {
+        historyEmpty.style.display = 'block';
+        return;
+      }
+      await loadHistory();
+      if (state.inquiries.length) {
+        await loadInquiryDetail(state.inquiries[0].id);
+      }
+    };
+
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(start);
+    } else {
+      start();
+    }
+  })();
+</script>
+{% endblock %}

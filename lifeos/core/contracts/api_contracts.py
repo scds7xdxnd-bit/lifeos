@@ -227,6 +227,101 @@ FORECAST_ITEM = ApiObject(
     ],
 )
 
+INQUIRY_EVIDENCE_REF = ApiObject(
+    name="InquiryEvidenceRef",
+    fields=[
+        ApiField("source_kind", "string", "Evidence source type", "system", "stable"),
+        ApiField("source_id", "integer|null", "Evidence source id", "system", "stable"),
+        ApiField("source_ref", "string|null", "Evidence source reference key", "system", "stable"),
+        ApiField("event_type", "string|null", "Source event type", "system", "stable"),
+        ApiField("domain", "string", "Evidence source domain", "system", "stable"),
+        ApiField("created_at", "string|null", "Evidence source timestamp", "system", "stable"),
+        ApiField("event_count", "integer|null", "Read-model event count evidence", "system", "stable"),
+        ApiField("insight_count", "integer|null", "Read-model insight count evidence", "system", "stable"),
+    ],
+)
+
+INQUIRY_FINDING_ITEM = ApiObject(
+    name="InquiryFindingItem",
+    fields=[
+        ApiField("claim", "string", "Finding claim text", "system", "stable"),
+        ApiField("evidence_refs", "list[InquiryEvidenceRef]", "Evidence references", "system", "stable"),
+        ApiField("confidence_label", "string", "Canonical confidence label", "system", "stable"),
+        ApiField("uncertainty_note", "string", "Finding uncertainty note", "system", "stable"),
+        ApiField("source_domains", "list[string]", "Source domains for finding", "system", "stable"),
+    ],
+)
+
+INQUIRY_CONTEXT_BLOCK = ApiObject(
+    name="InquiryContextBlock",
+    fields=[
+        ApiField("label", "string", "Context block label", "system", "stable"),
+        ApiField("text", "string", "User-provided context text", "user", "stable"),
+        ApiField("note", "string|null", "Context handling note", "system", "stable"),
+    ],
+)
+
+INQUIRY_BRIEF_ITEM = ApiObject(
+    name="InquiryBriefItem",
+    fields=[
+        ApiField("summary", "string", "Brief summary", "system", "stable"),
+        ApiField("findings", "list[InquiryFindingItem]", "Brief findings", "system", "stable"),
+        ApiField(
+            "context_non_evidence",
+            "InquiryContextBlock",
+            "User context block marked non-evidence",
+            "user",
+            "stable",
+        ),
+        ApiField("uncertainty_note", "string", "Brief uncertainty note", "system", "stable"),
+        ApiField("limits", "list[string]", "Brief limits list", "system", "stable"),
+        ApiField("question", "string", "Inquiry question", "user", "stable"),
+        ApiField("lens", "string", "Inquiry lens", "user", "stable"),
+        ApiField("domains", "list[string]", "Selected domains", "user", "stable"),
+        ApiField("timeframe", "object", "Timeframe object", "user", "stable"),
+        ApiField("as_of_ts", "string", "Deterministic as_of timestamp", "user", "stable"),
+        ApiField("generated_at", "string", "Generated timestamp", "system", "stable"),
+    ],
+)
+
+INQUIRY_VERSION_ITEM = ApiObject(
+    name="InquiryVersionItem",
+    fields=[
+        ApiField("id", "integer", "Brief version id", "system", "stable"),
+        ApiField("version_number", "integer", "Brief version number", "system", "stable"),
+        ApiField("parent_version_id", "integer|null", "Parent brief version id", "system", "stable"),
+        ApiField("created_at", "string|null", "Brief created timestamp", "system", "stable"),
+        ApiField("brief_hash", "string", "Brief hash", "system", "stable"),
+        ApiField("as_of_ts", "string|null", "Brief as_of timestamp", "system", "stable"),
+        ApiField("brief", "InquiryBriefItem", "Brief payload", "system", "stable"),
+    ],
+)
+
+INQUIRY_ITEM = ApiObject(
+    name="InquiryItem",
+    fields=[
+        ApiField("id", "integer", "Inquiry id", "system", "stable"),
+        ApiField("question", "string", "Inquiry question", "user", "stable"),
+        ApiField("lens", "string", "Inquiry lens", "user", "stable"),
+        ApiField("domain", "string", "Primary domain", "user", "stable"),
+        ApiField("domains", "list[string]", "Selected domains", "user", "stable"),
+        ApiField("timeframe", "object", "Timeframe object", "user", "stable"),
+        ApiField("as_of_ts", "string", "As-of timestamp", "user", "stable"),
+        ApiField(
+            "context_non_evidence",
+            "InquiryContextBlock",
+            "Context block marked non-evidence",
+            "user",
+            "stable",
+        ),
+        ApiField("created_at", "string|null", "Inquiry created timestamp", "system", "stable"),
+        ApiField("updated_at", "string|null", "Inquiry updated timestamp", "system", "stable"),
+        ApiField("last_version_number", "integer", "Latest version number", "system", "stable"),
+        ApiField("latest_brief", "InquiryVersionItem|null", "Latest brief version", "system", "stable"),
+        ApiField("versions", "list[InquiryVersionItem]|null", "Version history", "system", "stable"),
+    ],
+)
+
 
 API_CONTRACTS: dict[str, ApiContract] = {
     "insights.feed.v1": ApiContract(
@@ -511,6 +606,106 @@ API_CONTRACTS: dict[str, ApiContract] = {
         schema_hash="0e9bfbcd1b432504d93cb14fee7af8daa223b0077dd886e91232974c86cdaff3",
         read_only=True,
         surface_key="finance:forecast",
+    ),
+    "inquiries.create.v1": ApiContract(
+        name="inquiries.create.v1",
+        method="POST",
+        path="/api/v1/inquiries",
+        version="1.0.0",
+        schema=ApiSchema(
+            fields=[
+                ApiField("ok", "boolean", "Success flag", "system", "stable"),
+                ApiField("deduped", "boolean", "Create dedupe indicator", "system", "stable"),
+                ApiField("inquiry_id", "integer", "Inquiry id", "system", "stable"),
+                ApiField("version_id", "integer", "Brief version id", "system", "stable"),
+                ApiField("inquiry", "InquiryItem", "Inquiry payload", "system", "stable"),
+                ApiField("latest_brief", "InquiryBriefItem", "Latest brief payload", "system", "stable"),
+            ],
+            objects=[
+                INQUIRY_ITEM,
+                INQUIRY_VERSION_ITEM,
+                INQUIRY_BRIEF_ITEM,
+                INQUIRY_FINDING_ITEM,
+                INQUIRY_EVIDENCE_REF,
+                INQUIRY_CONTEXT_BLOCK,
+            ],
+        ),
+        schema_hash="e59ab0dea2b7e3c0bae41f20fb96b9c3215684c744d131a1c04bc39de44a4fcb",
+        read_only=False,
+        surface_key="insights:inquiry",
+    ),
+    "inquiries.list.v1": ApiContract(
+        name="inquiries.list.v1",
+        method="GET",
+        path="/api/v1/inquiries",
+        version="1.0.0",
+        schema=ApiSchema(
+            fields=[
+                ApiField("ok", "boolean", "Success flag", "system", "stable"),
+                ApiField("items", "list[InquiryItem]", "Inquiry list payload", "system", "stable"),
+                ApiField("total", "integer", "Inquiry list total count", "system", "stable"),
+                ApiField("limit", "integer", "Inquiry list limit", "system", "stable"),
+                ApiField("offset", "integer", "Inquiry list offset", "system", "stable"),
+            ],
+            objects=[
+                INQUIRY_ITEM,
+                INQUIRY_VERSION_ITEM,
+                INQUIRY_BRIEF_ITEM,
+                INQUIRY_FINDING_ITEM,
+                INQUIRY_EVIDENCE_REF,
+                INQUIRY_CONTEXT_BLOCK,
+            ],
+        ),
+        schema_hash="a0768b4a0003eabb355f199e625872495934e985ecdb893d9ae01847eef7c0bb",
+        read_only=True,
+        surface_key="insights:inquiry",
+    ),
+    "inquiries.detail.v1": ApiContract(
+        name="inquiries.detail.v1",
+        method="GET",
+        path="/api/v1/inquiries/<id>",
+        version="1.0.0",
+        schema=ApiSchema(
+            fields=[
+                ApiField("ok", "boolean", "Success flag", "system", "stable"),
+                ApiField("inquiry", "InquiryItem", "Inquiry payload", "system", "stable"),
+            ],
+            objects=[
+                INQUIRY_ITEM,
+                INQUIRY_VERSION_ITEM,
+                INQUIRY_BRIEF_ITEM,
+                INQUIRY_FINDING_ITEM,
+                INQUIRY_EVIDENCE_REF,
+                INQUIRY_CONTEXT_BLOCK,
+            ],
+        ),
+        schema_hash="db224ddd7e3b5efe5ce299a8f02318a5b27085194877e2955ae8bc7bb3e9bb63",
+        read_only=False,
+        surface_key="insights:inquiry",
+    ),
+    "inquiries.refine.v1": ApiContract(
+        name="inquiries.refine.v1",
+        method="POST",
+        path="/api/v1/inquiries/<id>/refine",
+        version="1.0.0",
+        schema=ApiSchema(
+            fields=[
+                ApiField("ok", "boolean", "Success flag", "system", "stable"),
+                ApiField("inquiry_id", "integer", "Inquiry id", "system", "stable"),
+                ApiField("version_id", "integer", "Brief version id", "system", "stable"),
+                ApiField("version_number", "integer", "Brief version number", "system", "stable"),
+                ApiField("brief", "InquiryBriefItem", "Refined brief payload", "system", "stable"),
+            ],
+            objects=[
+                INQUIRY_BRIEF_ITEM,
+                INQUIRY_FINDING_ITEM,
+                INQUIRY_EVIDENCE_REF,
+                INQUIRY_CONTEXT_BLOCK,
+            ],
+        ),
+        schema_hash="c1d42e763f078319485902a574d0300ee1fbb1b863728915e87dd8d3434cba89",
+        read_only=False,
+        surface_key="insights:inquiry",
     ),
 }
 

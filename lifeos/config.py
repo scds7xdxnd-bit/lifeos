@@ -103,6 +103,15 @@ class BaseConfig:
         item.strip() for item in os.environ.get("PHASE5B_INSIGHT_TYPES", "").split(",") if item.strip()
     ]
     PHASE5B_INSIGHT_TYPES = _phase5b_insight_types or None
+    ENABLE_PHASE6_FOCUSED_INQUIRY = os.environ.get("ENABLE_PHASE6_FOCUSED_INQUIRY", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
+        "PHASE6_INQUIRY_MIGRATION_HEAD",
+        "20260312_phase6_inquiry_query_indexes",
+    )
 
     ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
         "1",
@@ -144,6 +153,7 @@ class DevelopmentConfig(BaseConfig):
     TEMPLATES_AUTO_RELOAD = True
     SESSION_COOKIE_SECURE = False
     JWT_COOKIE_SECURE = False
+    ENABLE_PHASE6_FOCUSED_INQUIRY = True
 
 
 class TestingConfig(BaseConfig):
@@ -158,6 +168,7 @@ class TestingConfig(BaseConfig):
     JWT_COOKIE_CSRF_PROTECT = False
     SESSION_COOKIE_SECURE = False
     JWT_COOKIE_SECURE = False
+    ENABLE_PHASE6_FOCUSED_INQUIRY = True
 
 
 class ProductionConfig(BaseConfig):
@@ -165,6 +176,7 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Lax"
     JWT_COOKIE_SECURE = True
+    ENABLE_PHASE6_FOCUSED_INQUIRY = False
 
 
 class StagingConfig(ProductionConfig):

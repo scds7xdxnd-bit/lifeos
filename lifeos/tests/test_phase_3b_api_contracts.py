@@ -52,7 +52,13 @@ def test_api_contracts_reference_valid_surface_authority():
 
 def test_api_contracts_are_versioned_and_read_only():
     semver = re.compile(r"^\d+\.\d+\.\d+$")
+    read_write_exceptions = {"inquiries.detail.v1"}
     for contract in API_CONTRACTS.values():
         assert semver.match(contract.version)
-        assert contract.method == "GET"
-        assert contract.read_only is True
+        assert contract.method in {"GET", "POST", "PATCH", "DELETE"}
+        if contract.method == "GET" and contract.name not in read_write_exceptions:
+            assert contract.read_only is True
+        elif contract.name in read_write_exceptions:
+            assert contract.read_only is False
+        else:
+            assert contract.read_only is False

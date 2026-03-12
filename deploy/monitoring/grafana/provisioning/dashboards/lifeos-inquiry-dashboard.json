@@ -1,0 +1,114 @@
+{
+  "title": "LifeOS Focused Inquiry v1",
+  "description": "Operational dashboard for Phase 6 focused inquiry rollout",
+  "tags": ["lifeos", "phase6", "inquiry"],
+  "timezone": "utc",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Inquiry Created / Generated / Viewed / Refined",
+      "type": "graph",
+      "targets": [
+        {"expr": "increase(lifeos_inquiry_created_total[5m])", "legendFormat": "created"},
+        {"expr": "increase(lifeos_inquiry_generated_total[5m])", "legendFormat": "generated"},
+        {"expr": "increase(lifeos_inquiry_viewed_total[5m])", "legendFormat": "viewed"},
+        {"expr": "increase(lifeos_inquiry_refined_total[5m])", "legendFormat": "refined"}
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Inquiry Generation Latency (p95)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(lifeos_inquiry_generation_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "yaxes": [{"label": "Duration", "format": "s"}]
+    },
+    {
+      "id": 3,
+      "title": "Inquiry Error Rate",
+      "type": "gauge",
+      "targets": [
+        {"expr": "lifeos:inquiry_error_rate:ratio", "legendFormat": "error_ratio"}
+      ],
+      "fieldConfig": {
+        "min": 0,
+        "max": 1,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"value": 0, "color": "green"},
+            {"value": 0.05, "color": "yellow"},
+            {"value": 0.1, "color": "red"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Empty Brief Rate",
+      "type": "gauge",
+      "targets": [
+        {"expr": "lifeos:inquiry_empty_brief_rate:ratio", "legendFormat": "empty_ratio"}
+      ],
+      "fieldConfig": {
+        "min": 0,
+        "max": 1,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"value": 0, "color": "green"},
+            {"value": 0.4, "color": "yellow"},
+            {"value": 0.6, "color": "red"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Evidence Coverage Ratio",
+      "type": "gauge",
+      "targets": [
+        {"expr": "lifeos:inquiry_evidence_coverage_ratio", "legendFormat": "coverage"}
+      ],
+      "fieldConfig": {
+        "min": 0,
+        "max": 1,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"value": 0, "color": "red"},
+            {"value": 0.5, "color": "yellow"},
+            {"value": 0.8, "color": "green"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Inquiry Endpoint Availability (5xx rate)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_http_request_latency_seconds_count{route=~\"/api/v1/inquiries.*\",status_code=~\"5..\"}[5m]))",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Migration Mismatch State",
+      "type": "stat",
+      "targets": [
+        {"expr": "max(lifeos_phase6_inquiry_migration_mismatch)", "legendFormat": "mismatch"}
+      ],
+      "colorMode": "value"
+    }
+  ],
+  "schemaVersion": 30,
+  "version": 1,
+  "refresh": "30s"
+}

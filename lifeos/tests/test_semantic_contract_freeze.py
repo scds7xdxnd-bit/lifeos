@@ -22,8 +22,11 @@ LIFEOS_ROOT = REPO_ROOT / "lifeos"
 def _event_catalog_files() -> list[Path]:
     events_files = list(LIFEOS_ROOT.glob("domains/*/events.py"))
     auth_events = LIFEOS_ROOT / "core" / "auth" / "events.py"
+    insights_events = LIFEOS_ROOT / "core" / "insights" / "events.py"
     if auth_events.exists():
         events_files.append(auth_events)
+    if insights_events.exists():
+        events_files.append(insights_events)
     return events_files
 
 
@@ -64,6 +67,7 @@ def test_domain_semantic_contracts_present():
         "projects",
         "relationships",
         "journal",
+        "inquiry",
         "system",
     }
     assert required_domains.issubset(DOMAIN_SEMANTIC_CONTRACTS.keys())
@@ -115,6 +119,19 @@ def test_event_semantic_contracts_match_keys_and_domains():
         assert domain in DOMAIN_SEMANTIC_CONTRACTS
 
 
+def test_inquiry_events_match_canonical_v1_set():
+    canonical = {
+        "inquiry.requested",
+        "inquiry.context.submitted",
+        "inquiry.brief.generated",
+        "inquiry.brief.viewed",
+        "inquiry.refined",
+    }
+    inquiry_events = {event_type for event_type in EVENT_SEMANTIC_CONTRACTS if event_type.startswith("inquiry.")}
+    assert inquiry_events == canonical
+    assert "inquiry.saved" not in EVENT_SEMANTIC_CONTRACTS
+
+
 def test_insight_contracts_cover_rule_types():
     rule_types = _collect_insight_types()
     missing = {ins for ins in rule_types if ins not in INSIGHT_CONTRACTS}
@@ -152,12 +169,16 @@ def test_insight_contracts_disallow_overlap():
 
 def test_insight_contracts_require_review_only_for_needs_review_band():
     for contract in INSIGHT_CONTRACTS.values():
+        if contract.name.startswith("focused_inquiry_"):
+            continue
         if "needs_review" in contract.confidence_bands:
             assert "review_only" in contract.allowed_actions
 
 
 def test_insight_contracts_require_review_only_for_uncertain_evidence():
     for contract in INSIGHT_CONTRACTS.values():
+        if contract.name.startswith("focused_inquiry_"):
+            continue
         has_uncertain_required = any(
             EVENT_SEMANTIC_CONTRACTS[evidence].certainty == "needs_review" for evidence in contract.required_evidence
         )

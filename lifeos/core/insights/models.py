@@ -31,3 +31,65 @@ class InsightRecord(db.Model):
     delivery_policy: Mapped[str] = mapped_column(db.String(32), nullable=False, default="feed")
     data: Mapped[dict] = mapped_column(db.JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
+
+
+class InquiryRequest(db.Model):
+    __tablename__ = "inquiry_request"
+    __table_args__ = (
+        db.Index("ix_inquiry_request_user_created_at", "user_id", "created_at"),
+        db.Index("ix_inquiry_request_user_normalized_hash", "user_id", "normalized_hash"),
+        db.Index("ix_inquiry_request_user_as_of", "user_id", "as_of_ts"),
+        db.Index(
+            "ix_inquiry_request_user_domain_timeframe",
+            "user_id",
+            "primary_domain",
+            "timeframe_start",
+            "timeframe_end",
+        ),
+        db.Index(
+            "ix_inquiry_request_user_hash_asof",
+            "user_id",
+            "normalized_hash",
+            "as_of_ts",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
+    question: Mapped[str] = mapped_column(db.Text, nullable=False)
+    lens: Mapped[str] = mapped_column(db.String(32), nullable=False)
+    primary_domain: Mapped[str] = mapped_column(db.String(32), nullable=False)
+    domains: Mapped[list] = mapped_column(db.JSON, nullable=False, default=list)
+    timeframe_start: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
+    timeframe_end: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
+    as_of_ts: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, index=True)
+    normalized_payload: Mapped[dict] = mapped_column(db.JSON, nullable=False, default=dict)
+    normalized_hash: Mapped[str] = mapped_column(db.String(64), nullable=False)
+    user_input_context: Mapped[str | None] = mapped_column(db.Text, nullable=True)
+    context_is_non_evidence: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=True)
+    last_version_number: Mapped[int] = mapped_column(db.Integer, nullable=False, default=0)
+    last_version_id: Mapped[int | None] = mapped_column(db.Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow, index=True)
+
+
+class InquiryBriefVersion(db.Model):
+    __tablename__ = "inquiry_brief_version"
+    __table_args__ = (
+        db.UniqueConstraint("inquiry_id", "version_number", name="uq_inquiry_version_number"),
+        db.Index("ix_inquiry_brief_user_inquiry_version", "user_id", "inquiry_id", "version_number"),
+        db.Index("ix_inquiry_brief_created_at", "created_at"),
+        db.Index("ix_inquiry_brief_hash", "brief_hash"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    inquiry_id: Mapped[int] = mapped_column(db.ForeignKey("inquiry_request.id"), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
+    version_number: Mapped[int] = mapped_column(db.Integer, nullable=False)
+    brief_payload: Mapped[dict] = mapped_column(db.JSON, nullable=False, default=dict)
+    brief_hash: Mapped[str] = mapped_column(db.String(64), nullable=False)
+    normalized_hash: Mapped[str] = mapped_column(db.String(64), nullable=False)
+    as_of_ts: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
+    evidence_refs: Mapped[list] = mapped_column(db.JSON, nullable=False, default=list)
+    parent_version_id: Mapped[int | None] = mapped_column(db.ForeignKey("inquiry_brief_version.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
