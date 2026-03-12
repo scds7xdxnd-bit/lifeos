@@ -36,7 +36,7 @@ def upgrade():
             "context_is_non_evidence",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("1"),
+            server_default=sa.text("true"),
         ),
         sa.Column("last_version_number", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("last_version_id", sa.Integer(), nullable=True),
