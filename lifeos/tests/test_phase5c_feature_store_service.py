@@ -331,3 +331,120 @@ def test_feature_store_module_exports():
     assert "FeatureStoreEntry" in feature_store_service.__all__
     assert "write_feature" in feature_store_service.__all__
     assert FeatureStoreEntry.__name__ == "FeatureStoreEntry"
+
+
+def test_latest_feature_returns_none_when_missing(app):
+    user_id = _default_user_id()
+    missing = latest_feature(
+        user_id=user_id,
+        entity_type="user",
+        entity_id=str(user_id),
+        feature_name="insight.never.created",
+    )
+    assert missing is None
+
+
+def test_read_features_filters_by_time_without_feature_name(app):
+    user_id = _default_user_id()
+    now = datetime.utcnow()
+    older = now - timedelta(days=2)
+    mid = now - timedelta(days=1)
+
+    write_feature(
+        build_feature_write(
+            user_id=user_id,
+            entity_type="user",
+            entity_id=str(user_id),
+            feature_name="insight.alpha",
+            value=1,
+            dtype="int",
+            window="7d",
+            as_of_ts=older,
+            computed_at=now,
+        )
+    )
+    write_feature(
+        build_feature_write(
+            user_id=user_id,
+            entity_type="user",
+            entity_id=str(user_id),
+            feature_name="insight.beta",
+            value=2,
+            dtype="int",
+            window="7d",
+            as_of_ts=mid,
+            computed_at=now,
+        )
+    )
+    write_feature(
+        build_feature_write(
+            user_id=user_id,
+            entity_type="user",
+            entity_id=str(user_id),
+            feature_name="insight.gamma",
+            value=3,
+            dtype="int",
+            window="7d",
+            as_of_ts=now,
+            computed_at=now,
+        )
+    )
+
+    rows = read_features(
+        user_id=user_id,
+        entity_type="user",
+        entity_id=str(user_id),
+        start_ts=mid,
+        end_ts=now,
+    )
+    assert [row.feature_name for row in rows] == ["insight.gamma", "insight.beta"]
+
+
+def test_write_feature_upsert_updates_metadata_fields(app):
+    user_id = _default_user_id()
+    now = datetime.utcnow()
+    as_of = now - timedelta(minutes=30)
+
+    first = write_feature(
+        build_feature_write(
+            user_id=user_id,
+            entity_type="user",
+            entity_id=str(user_id),
+            feature_name="insight.metadata.check",
+            value=1.5,
+            dtype="float",
+            window="30d",
+            as_of_ts=as_of,
+            computed_at=now,
+            source_event_types=["event.a"],
+            provenance_ref={"step": 1},
+            backfill_policy="allowed",
+            lifecycle_state="shadow",
+        )
+    )
+
+    updated = write_feature(
+        build_feature_write(
+            user_id=user_id,
+            entity_type="user",
+            entity_id=str(user_id),
+            feature_name="insight.metadata.check",
+            value=3.25,
+            dtype="float",
+            window="30d",
+            as_of_ts=as_of,
+            computed_at=now + timedelta(minutes=1),
+            source_event_types=["event.b", "event.c"],
+            provenance_ref={"step": 2, "source": "qa"},
+            backfill_policy="limited",
+            lifecycle_state="active_ready",
+            upsert_safe=True,
+        )
+    )
+
+    assert updated.id == first.id
+    assert float(updated.value) == pytest.approx(3.25)
+    assert updated.source_event_types == ["event.b", "event.c"]
+    assert updated.provenance_ref == {"step": 2, "source": "qa"}
+    assert updated.backfill_policy == "limited"
+    assert updated.lifecycle_state == "active_ready"
