@@ -79,6 +79,29 @@ class InquiryBriefVersion(db.Model):
         db.UniqueConstraint("inquiry_id", "version_number", name="uq_inquiry_version_number"),
         db.Index("ix_inquiry_brief_user_inquiry_version", "user_id", "inquiry_id", "version_number"),
         db.Index("ix_inquiry_brief_created_at", "created_at"),
+        db.Index("ix_inquiry_brief_user_created_at", "user_id", "created_at"),
+        db.Index("ix_inquiry_brief_user_domain_created", "user_id", "brief_domain", "created_at"),
+        db.Index("ix_inquiry_brief_user_expert_created", "user_id", "brief_expert_mode", "created_at"),
+        db.Index("ix_inquiry_brief_user_profile_created", "user_id", "brief_profile", "created_at"),
+        db.Index(
+            "ix_inquiry_brief_user_quality_state_created",
+            "user_id",
+            "quality_state",
+            "created_at",
+        ),
+        db.Index(
+            "ix_inquiry_brief_user_domain_quality_created",
+            "user_id",
+            "brief_domain",
+            "quality_state",
+            "created_at",
+        ),
+        db.Index(
+            "ix_inquiry_brief_user_coverage_created",
+            "user_id",
+            "quality_evidence_coverage_ratio",
+            "created_at",
+        ),
         db.Index("ix_inquiry_brief_hash", "brief_hash"),
     )
 
@@ -91,5 +114,19 @@ class InquiryBriefVersion(db.Model):
     normalized_hash: Mapped[str] = mapped_column(db.String(64), nullable=False)
     as_of_ts: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
     evidence_refs: Mapped[list] = mapped_column(db.JSON, nullable=False, default=list)
+    brief_profile: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
+    brief_profile_version: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
+    brief_strategy: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
+    brief_strategy_version: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
+    brief_domain: Mapped[str | None] = mapped_column(db.String(32), nullable=True)
+    brief_expert_mode: Mapped[bool | None] = mapped_column(db.Boolean, nullable=True)
+    finding_categories: Mapped[list | None] = mapped_column(db.JSON, nullable=True)
+    quality_findings_total: Mapped[int | None] = mapped_column(db.Integer, nullable=True)
+    quality_findings_with_evidence: Mapped[int | None] = mapped_column(db.Integer, nullable=True)
+    quality_evidence_coverage_ratio: Mapped[float | None] = mapped_column(db.Numeric(6, 4), nullable=True)
+    quality_structure_gaps: Mapped[list | None] = mapped_column(db.JSON, nullable=True)
+    quality_sparse_domains: Mapped[list | None] = mapped_column(db.JSON, nullable=True)
+    quality_refine_guidance: Mapped[list | None] = mapped_column(db.JSON, nullable=True)
+    quality_state: Mapped[str | None] = mapped_column(db.String(32), nullable=True)
     parent_version_id: Mapped[int | None] = mapped_column(db.ForeignKey("inquiry_brief_version.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)

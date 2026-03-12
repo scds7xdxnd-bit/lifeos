@@ -6,6 +6,7 @@ import pytest
 
 from lifeos.core.insights.ml.phase6_inquiry_contracts import (
     ALLOWED_INQUIRY_ACTIONS,
+    FIRST_WAVE_EXPERT_DOMAINS,
     INQUIRY_FUTURE_DATA_REQUIREMENTS,
     INQUIRY_FUTURE_SUPPORT_CONTRACTS,
     PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED,
@@ -27,8 +28,16 @@ def test_phase6_inquiry_ml_alignment_report_is_clean():
     assert report["non_canonical_confidence_labels"] == []
     assert report["missing_required_brief_fields"] == []
     assert report["missing_required_finding_fields"] == []
+    assert report["missing_required_brief_profile_fields"] == []
+    assert report["missing_required_quality_fields"] == []
     assert report["disallowed_output_fields_present"] == []
+    assert report["disallowed_brief_profile_fields_present"] == []
+    assert report["disallowed_quality_fields_present"] == []
     assert report["missing_context_non_evidence_fields"] == []
+    assert report["missing_quality_dsd_mappings"] == []
+    assert report["missing_profile_dsd_mappings"] == []
+    assert report["missing_first_wave_domains"] == []
+    assert report["extra_first_wave_domains"] == []
 
 
 def test_phase6_inquiry_ml_runtime_boundary_is_explicit():
@@ -36,10 +45,61 @@ def test_phase6_inquiry_ml_runtime_boundary_is_explicit():
     assert "non-runtime" in PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION.lower()
     assert "deterministic" in PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION.lower()
     assert ALLOWED_INQUIRY_ACTIONS == ("display", "refine_only")
+    assert set(FIRST_WAVE_EXPERT_DOMAINS) == {"finance", "habits", "projects", "skills"}
 
 
 def test_phase6_inquiry_ml_payload_validator_enforces_bounds():
     valid_payload = {
+        "summary": "Scoped inquiry summary.",
+        "findings": [
+            {
+                "claim": "Finance has records in range.",
+                "finding_category": "cashflow_coverage",
+                "evidence_refs": [{"source_kind": "event_record"}],
+                "confidence_label": "informational",
+                "uncertainty_note": "Bounded to selected timeframe.",
+                "source_domains": ["finance"],
+            }
+        ],
+        "context_non_evidence": {"label": "Context (not evidence)", "text": "", "note": ""},
+        "uncertainty_note": "Bounded evidence window.",
+        "limits": [],
+        "question": "What changed in finance this week?",
+        "lens": "domain",
+        "domains": ["finance"],
+        "timeframe": {"start": "2026-01-01", "end": "2026-01-31"},
+        "as_of_ts": "2026-01-31T23:59:59",
+        "generated_at": "2026-01-31T23:59:59",
+        "brief_profile": {
+            "profile": "finance_domain_expert_brief",
+            "profile_version": "1.0.0",
+            "strategy": "finance_rules_v1",
+            "strategy_version": "1.0.0",
+            "domain": "finance",
+            "expert_mode": True,
+            "finding_categories": ["cashflow_coverage"],
+        },
+        "quality_metadata": {
+            "findings_total": 1,
+            "findings_with_evidence": 1,
+            "evidence_coverage_ratio": 1.0,
+            "structure_gaps": [],
+            "sparse_domains": [],
+            "refine_guidance": ["Current brief structure has sufficient evidence coverage for this scope."],
+        },
+    }
+    assert validate_contract_payload(valid_payload) == []
+
+    invalid_payload = dict(valid_payload)
+    invalid_payload["answer"] = "auto-generated answer"
+    invalid_payload["findings"] = [dict(valid_payload["findings"][0], confidence_score=0.99)]
+    errors = validate_contract_payload(invalid_payload)
+    assert any(error.startswith("disallowed_brief_fields") for error in errors)
+    assert any(error.startswith("disallowed_finding_fields") for error in errors)
+
+
+def test_phase6_inquiry_ml_payload_validator_rejects_invalid_quality_metadata():
+    payload = {
         "summary": "Scoped inquiry summary.",
         "findings": [
             {
@@ -59,15 +119,68 @@ def test_phase6_inquiry_ml_payload_validator_enforces_bounds():
         "timeframe": {"start": "2026-01-01", "end": "2026-01-31"},
         "as_of_ts": "2026-01-31T23:59:59",
         "generated_at": "2026-01-31T23:59:59",
+        "quality_metadata": {
+            "findings_total": 1,
+            "findings_with_evidence": 2,
+            "evidence_coverage_ratio": 1.2,
+            "structure_gaps": "not-a-list",
+            "sparse_domains": [],
+            "refine_guidance": [],
+            "confidence_score": 0.97,
+        },
     }
-    assert validate_contract_payload(valid_payload) == []
+    errors = validate_contract_payload(payload)
+    assert "invalid_quality_findings_consistency" in errors
+    assert "invalid_quality_evidence_coverage_ratio" in errors
+    assert "invalid_quality_structure_gaps" in errors
+    assert any(error.startswith("disallowed_quality_fields") for error in errors)
 
-    invalid_payload = dict(valid_payload)
-    invalid_payload["answer"] = "auto-generated answer"
-    invalid_payload["findings"] = [dict(valid_payload["findings"][0], confidence_score=0.99)]
-    errors = validate_contract_payload(invalid_payload)
-    assert any(error.startswith("disallowed_brief_fields") for error in errors)
-    assert any(error.startswith("disallowed_finding_fields") for error in errors)
+
+def test_phase6_inquiry_ml_payload_validator_rejects_invalid_brief_profile():
+    payload = {
+        "summary": "Scoped inquiry summary.",
+        "findings": [
+            {
+                "claim": "Finance has records in range.",
+                "finding_category": "cashflow_coverage",
+                "evidence_refs": [{"source_kind": "event_record"}],
+                "confidence_label": "informational",
+                "uncertainty_note": "Bounded to selected timeframe.",
+                "source_domains": ["finance"],
+            }
+        ],
+        "context_non_evidence": {"label": "Context (not evidence)", "text": "", "note": ""},
+        "uncertainty_note": "Bounded evidence window.",
+        "limits": [],
+        "question": "What changed in finance this week?",
+        "lens": "domain",
+        "domains": ["finance"],
+        "timeframe": {"start": "2026-01-01", "end": "2026-01-31"},
+        "as_of_ts": "2026-01-31T23:59:59",
+        "generated_at": "2026-01-31T23:59:59",
+        "quality_metadata": {
+            "findings_total": 1,
+            "findings_with_evidence": 1,
+            "evidence_coverage_ratio": 1.0,
+            "structure_gaps": [],
+            "sparse_domains": [],
+            "refine_guidance": [],
+        },
+        "brief_profile": {
+            "profile": "other_profile",
+            "profile_version": "1.0.0",
+            "strategy": "other_rules",
+            "strategy_version": "1.0.0",
+            "domain": "relationships",
+            "expert_mode": True,
+            "finding_categories": ["other_category"],
+            "confidence_score": 0.91,
+        },
+    }
+    errors = validate_contract_payload(payload)
+    assert any(error.startswith("disallowed_brief_profile_fields") for error in errors)
+    assert "invalid_brief_profile_expert_domain" in errors
+    assert "invalid_finding_category_scope" in errors
 
 
 def test_phase6_inquiry_ml_future_scaffolds_remain_non_runtime():

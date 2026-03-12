@@ -1,4 +1,4 @@
-# Phase 6 Focused Inquiry v1 Ops Runbook
+# Phase 6/6.1 Focused Inquiry Ops Runbook
 
 Owner: DevOps / Platform
 Scope: rollout, observability, runtime verification for Focused Inquiry v1
@@ -44,17 +44,25 @@ Implemented metrics:
 - `lifeos_inquiry_generation_latency_seconds` (histogram)
 - `lifeos_inquiry_errors_total{stage,error_type}`
 - `lifeos_inquiry_empty_brief_total`
+- `lifeos_inquiry_low_coverage_total`
+- `lifeos_inquiry_refine_after_low_quality_total`
+- `lifeos_inquiry_quality_state_total{state}`
 - `lifeos_inquiry_findings_total`
 - `lifeos_inquiry_findings_with_evidence_total`
 - `lifeos_inquiry_error_rate` (runtime gauge)
 - `lifeos_inquiry_empty_brief_rate` (runtime gauge)
 - `lifeos_inquiry_evidence_coverage_ratio` (runtime gauge)
+- `lifeos_inquiry_low_coverage_rate` (runtime gauge)
+- `lifeos_inquiry_refine_after_low_quality_rate` (runtime gauge)
 - `lifeos_phase6_inquiry_migration_mismatch{expected_head}`
 
 Prometheus recording rules (Phase 6):
 - `lifeos:inquiry_error_rate:ratio`
 - `lifeos:inquiry_empty_brief_rate:ratio`
 - `lifeos:inquiry_evidence_coverage_ratio`
+- `lifeos:inquiry_low_coverage_rate:ratio`
+- `lifeos:inquiry_refine_after_low_quality_rate:ratio`
+- `lifeos:inquiry_quality_state_distribution:ratio`
 
 ## SECTION 3 — Monitoring / alerts
 
@@ -68,6 +76,9 @@ Alert coverage:
 - `Phase6InquiryEmptyBriefAnomaly`: empty brief ratio > 0.6 for 15m.
 - `Phase6InquiryEndpoint5xx`: sustained 5xx on `/api/v1/inquiries*` routes.
 - `Phase6InquiryMigrationMismatch`: runtime migration head mismatch.
+- `Phase61InquiryLowCoverageHigh`: low coverage ratio > 0.4 for 15m.
+- `Phase61InquiryRefineAfterLowQualityHigh`: refine-after-low-quality ratio > 0.5 for 15m.
+- `Phase61InquiryEmptyStateDominant`: quality state `empty` ratio > 0.3 for 15m.
 
 Dashboard coverage:
 - `deploy/monitoring/grafana/provisioning/dashboards/lifeos-inquiry-dashboard.json`
@@ -83,7 +94,7 @@ Checks covered:
 - required inquiry metrics exposed on `/metrics`
 - inquiry endpoint availability according to feature flag state
 - migration-applied state via `lifeos_phase6_inquiry_migration_mismatch`
-- Phase 6 alert state from Prometheus API (if reachable)
+- Phase 6/6.1 alert state from Prometheus API (if reachable)
 
 Usage:
 ```bash
@@ -106,7 +117,7 @@ Deploy checklist:
 Post-deploy verification:
 1. Run `scripts/ops/phase6_inquiry_rollout_check.sh`.
 2. Verify `/metrics` includes all inquiry metrics.
-3. Verify no Phase 6 alerts firing.
+3. Verify no Phase 6/6.1 alerts firing.
 4. Verify `lifeos_phase6_inquiry_migration_mismatch == 0`.
 
 Rollback checklist:
@@ -120,6 +131,8 @@ Known failure modes:
 - Elevated generation failures (`Phase6InquiryGenerationFailures`).
 - Latency regressions under load (`Phase6InquiryLatencyHigh`).
 - Data sparsity causing excessive empty briefs (`Phase6InquiryEmptyBriefAnomaly`).
+- Quality degradation spikes (`Phase61InquiryLowCoverageHigh`).
+- Excessive refinement loops after weak quality (`Phase61InquiryRefineAfterLowQualityHigh`).
 - Endpoint instability (`Phase6InquiryEndpoint5xx`).
 
 ## SECTION 6 — Verification output
@@ -128,8 +141,11 @@ Operational confirmation criteria:
 - Focused Inquiry endpoint is feature-gated and reversible without schema rollback.
 - Build identity remains visible (`/health`, `/api/bootstrap`).
 - Required inquiry metrics are emitted from runtime.
-- Phase 6 alerts and dashboard cover failures, latency, availability, empty-brief anomalies, and migration mismatch.
+- Phase 6/6.1 alerts and dashboard cover failures, latency, quality rates/distribution, and migration mismatch.
 - Rollout smoke checks exist and are executable from ops shell.
 
 Status statement template:
 - `Phase 6 Focused Inquiry v1 is deployable and observable under current platform constraints.`
+
+Related:
+- `lifeos/docs/ops/phase_7_domain_expert_briefs_ops.md` (first-wave domain expert rollout)

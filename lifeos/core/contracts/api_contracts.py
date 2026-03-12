@@ -245,6 +245,7 @@ INQUIRY_FINDING_ITEM = ApiObject(
     name="InquiryFindingItem",
     fields=[
         ApiField("claim", "string", "Finding claim text", "system", "stable"),
+        ApiField("finding_category", "string", "Domain finding category", "system", "stable"),
         ApiField("evidence_refs", "list[InquiryEvidenceRef]", "Evidence references", "system", "stable"),
         ApiField("confidence_label", "string", "Canonical confidence label", "system", "stable"),
         ApiField("uncertainty_note", "string", "Finding uncertainty note", "system", "stable"),
@@ -258,6 +259,43 @@ INQUIRY_CONTEXT_BLOCK = ApiObject(
         ApiField("label", "string", "Context block label", "system", "stable"),
         ApiField("text", "string", "User-provided context text", "user", "stable"),
         ApiField("note", "string|null", "Context handling note", "system", "stable"),
+    ],
+)
+
+INQUIRY_QUALITY_METADATA = ApiObject(
+    name="InquiryQualityMetadata",
+    fields=[
+        ApiField("findings_total", "integer", "Total findings count", "system", "stable"),
+        ApiField(
+            "findings_with_evidence",
+            "integer",
+            "Findings count with canonical evidence references",
+            "system",
+            "stable",
+        ),
+        ApiField(
+            "evidence_coverage_ratio",
+            "number",
+            "Coverage ratio of findings with canonical evidence references",
+            "system",
+            "stable",
+        ),
+        ApiField("structure_gaps", "list[string]", "Deterministic structural quality gaps", "system", "stable"),
+        ApiField("sparse_domains", "list[string]", "Domains with sparse observed coverage", "system", "stable"),
+        ApiField("refine_guidance", "list[string]", "Deterministic refinement guidance", "system", "stable"),
+    ],
+)
+
+INQUIRY_BRIEF_PROFILE = ApiObject(
+    name="InquiryBriefProfile",
+    fields=[
+        ApiField("profile", "string", "Brief profile key", "system", "stable"),
+        ApiField("profile_version", "string", "Brief profile version", "system", "stable"),
+        ApiField("strategy", "string", "Strategy identifier", "system", "stable"),
+        ApiField("strategy_version", "string", "Strategy version", "system", "stable"),
+        ApiField("domain", "string", "Profile domain scope", "system", "stable"),
+        ApiField("expert_mode", "boolean", "Domain expert strategy mode flag", "system", "stable"),
+        ApiField("finding_categories", "list[string]", "Finding categories in brief", "system", "stable"),
     ],
 )
 
@@ -281,6 +319,14 @@ INQUIRY_BRIEF_ITEM = ApiObject(
         ApiField("timeframe", "object", "Timeframe object", "user", "stable"),
         ApiField("as_of_ts", "string", "Deterministic as_of timestamp", "user", "stable"),
         ApiField("generated_at", "string", "Generated timestamp", "system", "stable"),
+        ApiField("brief_profile", "InquiryBriefProfile", "Domain brief profile metadata", "system", "stable"),
+        ApiField(
+            "quality_metadata",
+            "InquiryQualityMetadata",
+            "Deterministic brief quality metadata",
+            "system",
+            "stable",
+        ),
     ],
 )
 
@@ -628,9 +674,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
                 INQUIRY_CONTEXT_BLOCK,
+                INQUIRY_BRIEF_PROFILE,
+                INQUIRY_QUALITY_METADATA,
             ],
         ),
-        schema_hash="e59ab0dea2b7e3c0bae41f20fb96b9c3215684c744d131a1c04bc39de44a4fcb",
+        schema_hash="08bed1d7ef3625288a939e26481aed7f28330a3450a5b1cef2378a2c546f5172",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -654,9 +702,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
                 INQUIRY_CONTEXT_BLOCK,
+                INQUIRY_BRIEF_PROFILE,
+                INQUIRY_QUALITY_METADATA,
             ],
         ),
-        schema_hash="a0768b4a0003eabb355f199e625872495934e985ecdb893d9ae01847eef7c0bb",
+        schema_hash="2ac8d0fbdabf1eb64e9494e4b66e937d7822b99feb61a4c6a5d776b8c5a27e64",
         read_only=True,
         surface_key="insights:inquiry",
     ),
@@ -677,9 +727,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
                 INQUIRY_CONTEXT_BLOCK,
+                INQUIRY_BRIEF_PROFILE,
+                INQUIRY_QUALITY_METADATA,
             ],
         ),
-        schema_hash="db224ddd7e3b5efe5ce299a8f02318a5b27085194877e2955ae8bc7bb3e9bb63",
+        schema_hash="2c760d3a46f73a7f607b8d8ac5ac0b0908940b9568427a84dc15894e4fb5f656",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -701,9 +753,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
                 INQUIRY_CONTEXT_BLOCK,
+                INQUIRY_BRIEF_PROFILE,
+                INQUIRY_QUALITY_METADATA,
             ],
         ),
-        schema_hash="c1d42e763f078319485902a574d0300ee1fbb1b863728915e87dd8d3434cba89",
+        schema_hash="9189cd7f28d79b3af134cd50e994fe86f1d7650cf9245f9ca3bdaefd668863d5",
         read_only=False,
         surface_key="insights:inquiry",
     ),

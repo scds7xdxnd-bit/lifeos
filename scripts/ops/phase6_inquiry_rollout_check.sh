@@ -7,15 +7,32 @@ PYTHON_BIN="${PYTHON_BIN:-python3}"
 INQUIRY_FEATURE_ENABLED="${INQUIRY_FEATURE_ENABLED:-true}"
 INQUIRY_JWT="${INQUIRY_JWT:-}"
 EXPECT_MIGRATION_MATCH="${EXPECT_MIGRATION_MATCH:-true}"
+PHASE7_DOMAIN_EXPERT_ENABLED="${PHASE7_DOMAIN_EXPERT_ENABLED:-false}"
+PHASE7_FIRST_WAVE_DOMAINS="${PHASE7_FIRST_WAVE_DOMAINS:-finance,habits,projects,skills}"
+PHASE7_EXPECT_PROFILE_VERSION="${PHASE7_EXPECT_PROFILE_VERSION:-1.0.0}"
+PHASE7_EXPECT_STRATEGY_VERSION="${PHASE7_EXPECT_STRATEGY_VERSION:-1.0.0}"
 
 required_metrics=(
   "lifeos_inquiry_created_total"
   "lifeos_inquiry_generated_total"
+  "lifeos_inquiry_generated_by_domain_total"
   "lifeos_inquiry_viewed_total"
   "lifeos_inquiry_refined_total"
+  "lifeos_inquiry_refined_by_domain_total"
   "lifeos_inquiry_generation_latency_seconds_bucket"
+  "lifeos_inquiry_generation_latency_seconds_by_domain_bucket"
   "lifeos_inquiry_errors_total"
+  "lifeos_inquiry_errors_by_domain_total"
   "lifeos_inquiry_empty_brief_total"
+  "lifeos_inquiry_empty_brief_by_domain_total"
+  "lifeos_inquiry_findings_by_domain_total"
+  "lifeos_inquiry_findings_with_evidence_by_domain_total"
+  "lifeos_inquiry_low_coverage_total"
+  "lifeos_inquiry_low_coverage_by_domain_total"
+  "lifeos_inquiry_refine_after_low_quality_total"
+  "lifeos_inquiry_refine_after_low_quality_by_domain_total"
+  "lifeos_inquiry_quality_state_total"
+  "lifeos_inquiry_quality_state_by_domain_total"
   "lifeos_inquiry_evidence_coverage_ratio"
   "lifeos_phase6_inquiry_migration_mismatch"
 )
@@ -99,6 +116,37 @@ if [[ "${EXPECT_MIGRATION_MATCH}" == "true" ]]; then
 fi
 
 if curl -fsS "${PROM_URL}/api/v1/alerts" >/dev/null 2>&1; then
+  required_recordings=(
+    "lifeos:inquiry_error_rate:ratio"
+    "lifeos:inquiry_empty_brief_rate:ratio"
+    "lifeos:inquiry_evidence_coverage_ratio"
+    "lifeos:inquiry_low_coverage_rate:ratio"
+    "lifeos:inquiry_refine_after_low_quality_rate:ratio"
+    "lifeos:inquiry_quality_state_distribution:ratio"
+    "lifeos:inquiry_error_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_evidence_coverage_ratio_by_domain_profile"
+    "lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds"
+    "lifeos:inquiry_quality_state_distribution_by_domain_profile:ratio"
+  )
+  for recording in "${required_recordings[@]}"; do
+    query_json="$(curl -fsS --get --data-urlencode "query=${recording}" "${PROM_URL}/api/v1/query")"
+    QUERY_JSON="${query_json}" "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["QUERY_JSON"])
+result = payload.get("data", {}).get("result", [])
+if not isinstance(result, list):
+    print("ERROR: recording query returned invalid result payload", file=sys.stderr)
+    sys.exit(1)
+PY
+  done
+  echo "OK: required Phase 6/6.1 recording rules are queryable"
+
   alerts_json="$(curl -fsS "${PROM_URL}/api/v1/alerts")"
   ALERTS_JSON="${alerts_json}" "${PYTHON_BIN}" - <<'PY'
 import json
@@ -106,21 +154,73 @@ import os
 import sys
 
 payload = json.loads(os.environ["ALERTS_JSON"])
-alerts = payload.get("data", {}).get("alerts", [])
-firing = []
-for alert in alerts:
-    labels = alert.get("labels", {})
-    if labels.get("phase") == "6" and alert.get("state") == "firing":
-        firing.append(labels.get("alertname") or "unknown")
+  alerts = payload.get("data", {}).get("alerts", [])
+  firing = []
+  for alert in alerts:
+      labels = alert.get("labels", {})
+      phase = str(labels.get("phase") or "")
+      if phase in {"6", "6.1", "7"} and alert.get("state") == "firing":
+          firing.append(labels.get("alertname") or "unknown")
 
-if firing:
-    print("ERROR: Phase 6 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
-    sys.exit(1)
+  if firing:
+      print("ERROR: Phase 6/6.1/7 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
+      sys.exit(1)
 
-print("OK: no Phase 6 inquiry alerts firing")
+print("OK: no Phase 6/6.1/7 inquiry alerts firing")
 PY
+
+  if [[ "${PHASE7_DOMAIN_EXPERT_ENABLED}" == "true" ]]; then
+    rollout_query='sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills"}[30m])) by (domain, profile_version, strategy_version)'
+    rollout_json="$(curl -fsS --get --data-urlencode "query=${rollout_query}" "${PROM_URL}/api/v1/query")"
+    ROLLOUT_JSON="${rollout_json}" \
+    PHASE7_EXPECT_PROFILE_VERSION="${PHASE7_EXPECT_PROFILE_VERSION}" \
+    PHASE7_EXPECT_STRATEGY_VERSION="${PHASE7_EXPECT_STRATEGY_VERSION}" \
+    PHASE7_FIRST_WAVE_DOMAINS="${PHASE7_FIRST_WAVE_DOMAINS}" \
+    "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["ROLLOUT_JSON"])
+result = payload.get("data", {}).get("result", [])
+expected_domains = {d.strip() for d in os.environ["PHASE7_FIRST_WAVE_DOMAINS"].split(",") if d.strip()}
+expected_profile = os.environ["PHASE7_EXPECT_PROFILE_VERSION"]
+expected_strategy = os.environ["PHASE7_EXPECT_STRATEGY_VERSION"]
+
+if not result:
+    print("WARN: no Phase 7 expert-mode traffic observed yet; version-drift check skipped", file=sys.stderr)
+    sys.exit(0)
+
+domains_seen = set()
+for row in result:
+    metric = row.get("metric", {})
+    domain = str(metric.get("domain") or "")
+    profile_version = str(metric.get("profile_version") or "")
+    strategy_version = str(metric.get("strategy_version") or "")
+    if domain:
+        domains_seen.add(domain)
+    if profile_version != expected_profile:
+        print(
+            f"ERROR: domain={domain} has profile_version={profile_version}, expected={expected_profile}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if strategy_version != expected_strategy:
+        print(
+            f"ERROR: domain={domain} has strategy_version={strategy_version}, expected={expected_strategy}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+missing = sorted(expected_domains - domains_seen)
+if missing:
+    print("WARN: no recent expert-mode traffic for domains: " + ", ".join(missing), file=sys.stderr)
+
+print("OK: Phase 7 profile/strategy labels are within expected rollout versions")
+PY
+  fi
 else
   echo "WARN: Prometheus is unreachable at ${PROM_URL}; alert-state check skipped" >&2
 fi
 
-echo "Phase 6 focused inquiry rollout checks passed"
+echo "Phase 6/6.1/7 focused inquiry rollout checks passed"

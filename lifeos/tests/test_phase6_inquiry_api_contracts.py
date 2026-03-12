@@ -67,7 +67,28 @@ def test_inquiry_contracts_include_canonical_brief_fields():
     fields = set()
     for name in INQUIRY_CONTRACT_KEYS:
         fields.update(_contract_object_fields(name))
-    required = {"claim", "evidence_refs", "confidence_label", "uncertainty_note", "context_non_evidence"}
+    required = {
+        "claim",
+        "finding_category",
+        "evidence_refs",
+        "confidence_label",
+        "uncertainty_note",
+        "context_non_evidence",
+        "brief_profile",
+        "quality_metadata",
+        "profile",
+        "profile_version",
+        "strategy",
+        "strategy_version",
+        "expert_mode",
+        "finding_categories",
+        "findings_total",
+        "findings_with_evidence",
+        "evidence_coverage_ratio",
+        "structure_gaps",
+        "sparse_domains",
+        "refine_guidance",
+    }
     assert required.issubset(fields)
 
 
@@ -80,5 +101,21 @@ def test_inquiry_dsd_mappings_exist():
         "InquiryFindingItem.confidence_label",
         "InquiryFindingItem.uncertainty_note",
         "InquiryBriefItem.context_non_evidence",
+        "InquiryBriefItem.brief_profile",
+        "InquiryBriefItem.quality_metadata",
+        "InquiryFindingItem.finding_category",
+        "InquiryBriefProfile.profile",
+        "InquiryBriefProfile.profile_version",
+        "InquiryBriefProfile.strategy",
+        "InquiryBriefProfile.strategy_version",
+        "InquiryBriefProfile.domain",
+        "InquiryBriefProfile.expert_mode",
+        "InquiryBriefProfile.finding_categories",
+        "InquiryQualityMetadata.findings_total",
+        "InquiryQualityMetadata.findings_with_evidence",
+        "InquiryQualityMetadata.evidence_coverage_ratio",
+        "InquiryQualityMetadata.structure_gaps",
+        "InquiryQualityMetadata.sparse_domains",
+        "InquiryQualityMetadata.refine_guidance",
     }
     assert required.issubset(mapping.keys())

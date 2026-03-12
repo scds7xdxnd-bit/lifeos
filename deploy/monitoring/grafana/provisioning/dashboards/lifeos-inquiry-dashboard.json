@@ -1,7 +1,7 @@
 {
-  "title": "LifeOS Focused Inquiry v1",
-  "description": "Operational dashboard for Phase 6 focused inquiry rollout",
-  "tags": ["lifeos", "phase6", "inquiry"],
+  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7)",
+  "description": "Operational dashboard for focused inquiry rollout and domain expert quality signals",
+  "tags": ["lifeos", "phase6", "phase61", "phase7", "inquiry"],
   "timezone": "utc",
   "panels": [
     {
@@ -106,9 +106,147 @@
         {"expr": "max(lifeos_phase6_inquiry_migration_mismatch)", "legendFormat": "mismatch"}
       ],
       "colorMode": "value"
+    },
+    {
+      "id": 8,
+      "title": "Low Coverage Rate",
+      "type": "gauge",
+      "targets": [
+        {"expr": "lifeos:inquiry_low_coverage_rate:ratio", "legendFormat": "low_coverage_ratio"}
+      ],
+      "fieldConfig": {
+        "min": 0,
+        "max": 1,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"value": 0, "color": "green"},
+            {"value": 0.25, "color": "yellow"},
+            {"value": 0.4, "color": "red"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Refine After Low Quality Rate",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_refine_after_low_quality_rate:ratio",
+          "legendFormat": "refine_after_low_quality_ratio"
+        }
+      ],
+      "fieldConfig": {
+        "min": 0,
+        "max": 1,
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"value": 0, "color": "green"},
+            {"value": 0.35, "color": "yellow"},
+            {"value": 0.5, "color": "red"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Quality State Distribution",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_quality_state_distribution:ratio",
+          "legendFormat": "{{ state }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 11,
+      "title": "Phase 7 Domain Expert Generated Rate (5m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode=\"true\",domain=~\"finance|habits|projects|skills\"}[5m])) by (domain, profile_version, strategy_version)",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Phase 7 Domain Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_error_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance|habits|projects|skills\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 13,
+      "title": "Phase 7 Domain Latency p95 (seconds)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds{expert_mode=\"true\",domain=~\"finance|habits|projects|skills\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Duration", "format": "s"}]
+    },
+    {
+      "id": 14,
+      "title": "Phase 7 Domain Empty Brief Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance|habits|projects|skills\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 15,
+      "title": "Phase 7 Domain Low Coverage Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance|habits|projects|skills\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 16,
+      "title": "Phase 7 Domain Refine After Low Quality Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance|habits|projects|skills\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 17,
+      "title": "Phase 7 Domain Quality State Distribution",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_quality_state_distribution_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance|habits|projects|skills\"}",
+          "legendFormat": "{{ domain }} {{ state }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
     }
   ],
   "schemaVersion": 30,
-  "version": 1,
+  "version": 2,
   "refresh": "30s"
 }

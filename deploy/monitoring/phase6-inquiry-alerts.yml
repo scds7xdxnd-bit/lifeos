@@ -8,9 +8,22 @@ groups:
           or absent(lifeos_inquiry_viewed_total)
           or absent(lifeos_inquiry_refined_total)
           or absent(lifeos_inquiry_generation_latency_seconds_bucket)
+          or absent(lifeos_inquiry_generation_latency_seconds_by_domain_bucket)
           or absent(lifeos_inquiry_errors_total)
+          or absent(lifeos_inquiry_errors_by_domain_total)
           or absent(lifeos_inquiry_empty_brief_total)
+          or absent(lifeos_inquiry_empty_brief_by_domain_total)
+          or absent(lifeos_inquiry_generated_by_domain_total)
+          or absent(lifeos_inquiry_refined_by_domain_total)
+          or absent(lifeos_inquiry_low_coverage_total)
+          or absent(lifeos_inquiry_low_coverage_by_domain_total)
+          or absent(lifeos_inquiry_refine_after_low_quality_total)
+          or absent(lifeos_inquiry_refine_after_low_quality_by_domain_total)
+          or absent(lifeos_inquiry_quality_state_total)
+          or absent(lifeos_inquiry_quality_state_by_domain_total)
           or absent(lifeos_inquiry_evidence_coverage_ratio)
+          or absent(lifeos_inquiry_findings_by_domain_total)
+          or absent(lifeos_inquiry_findings_with_evidence_by_domain_total)
         for: 3m
         labels:
           severity: critical
@@ -39,6 +52,88 @@ groups:
           clamp_min(sum(rate(lifeos_inquiry_findings_with_evidence_total[15m])), 0)
           /
           clamp_min(sum(rate(lifeos_inquiry_findings_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_low_coverage_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_low_coverage_total[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_generated_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_refine_after_low_quality_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_refine_after_low_quality_total[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_refined_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_quality_state_distribution:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_quality_state_total[15m])) by (state)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_quality_state_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_error_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_errors_by_domain_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_generated_by_domain_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+            +
+            sum(rate(lifeos_inquiry_errors_by_domain_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_empty_brief_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_generated_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_low_coverage_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_generated_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_refine_after_low_quality_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_refined_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_evidence_coverage_ratio_by_domain_profile
+        expr: |
+          sum(rate(lifeos_inquiry_findings_with_evidence_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_findings_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(lifeos_inquiry_generation_latency_seconds_by_domain_bucket[5m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode, le)
+          )
+
+      - record: lifeos:inquiry_quality_state_distribution_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_quality_state_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode, state)
+          /
+          ignoring(state) group_left
+          clamp_min(
+            sum(rate(lifeos_inquiry_quality_state_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
 
       - alert: Phase6InquiryGenerationFailures
         expr: |
@@ -95,3 +190,133 @@ groups:
         annotations:
           summary: "Focused Inquiry migration mismatch"
           description: "Running web process does not match expected Phase 6 inquiry migration head."
+
+      - alert: Phase61InquiryLowCoverageHigh
+        expr: lifeos:inquiry_low_coverage_rate:ratio > 0.4
+        for: 15m
+        labels:
+          severity: warning
+          phase: "6.1"
+        annotations:
+          summary: "Focused Inquiry low coverage rate elevated"
+          description: "Low-coverage inquiry briefs exceeded 40% of generated briefs in the last 15 minutes."
+
+      - alert: Phase61InquiryRefineAfterLowQualityHigh
+        expr: |
+          lifeos:inquiry_refine_after_low_quality_rate:ratio > 0.5
+          and sum(rate(lifeos_inquiry_refined_total[15m])) > 0.01
+        for: 15m
+        labels:
+          severity: warning
+          phase: "6.1"
+        annotations:
+          summary: "Focused Inquiry refine-after-low-quality ratio high"
+          description: "More than 50% of refinements are following low-quality briefs over the last 15 minutes."
+
+      - alert: Phase61InquiryEmptyStateDominant
+        expr: lifeos:inquiry_quality_state_distribution:ratio{state="empty"} > 0.3
+        for: 15m
+        labels:
+          severity: warning
+          phase: "6.1"
+        annotations:
+          summary: "Focused Inquiry empty quality state dominant"
+          description: "The empty quality state accounts for over 30% of recent inquiry quality outcomes."
+
+      - alert: Phase7DomainInquiryErrorRateHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_error_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance|habits|projects|skills"}
+          ) > 0.15
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills"}[15m])
+          ) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          phase: "7"
+        annotations:
+          summary: "Phase 7 domain inquiry error rate high"
+          description: "One or more first-wave domain expert profiles exceeded a 15% inquiry error rate."
+
+      - alert: Phase7DomainInquiryLatencyHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds{expert_mode="true",domain=~"finance|habits|projects|skills"}
+          ) > 2.5
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills"}[15m])
+          ) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          phase: "7"
+        annotations:
+          summary: "Phase 7 domain inquiry latency high"
+          description: "One or more first-wave domain expert profiles exceeded 2.5s p95 generation latency."
+
+      - alert: Phase7DomainInquiryEmptyBriefHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance|habits|projects|skills"}
+          ) > 0.65
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills"}[15m])
+          ) > 0.01
+        for: 15m
+        labels:
+          severity: warning
+          phase: "7"
+        annotations:
+          summary: "Phase 7 domain empty brief anomaly"
+          description: "One or more first-wave domain expert profiles exceeded a 65% empty-brief rate."
+
+      - alert: Phase7DomainInquiryLowCoverageHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance|habits|projects|skills"}
+          ) > 0.45
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills"}[15m])
+          ) > 0.01
+        for: 15m
+        labels:
+          severity: warning
+          phase: "7"
+        annotations:
+          summary: "Phase 7 domain low coverage high"
+          description: "One or more first-wave domain expert profiles exceeded a 45% low-coverage rate."
+
+      - alert: Phase7DomainRefineAfterLowQualityHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance|habits|projects|skills"}
+          ) > 0.55
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_refined_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills"}[15m])
+          ) > 0.005
+        for: 15m
+        labels:
+          severity: warning
+          phase: "7"
+        annotations:
+          summary: "Phase 7 domain refine-after-low-quality high"
+          description: "One or more first-wave domain expert profiles exceeded a 55% refine-after-low-quality ratio."
+
+      - alert: Phase7DomainProfileVersionUnexpected
+        expr: |
+          sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills",profile_version!="1.0.0"}[15m])) > 0
+          or
+          sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills",strategy_version!="1.0.0"}[15m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          phase: "7"
+        annotations:
+          summary: "Phase 7 profile/strategy version drift detected"
+          description: "First-wave domain expert traffic includes unexpected profile_version or strategy_version labels."

@@ -29,6 +29,39 @@ def _feature_disabled_response():
     return jsonify({"ok": False, "error": "not_found"}), 404
 
 
+def _error_metric_labels(
+    *,
+    domain: str | None = None,
+    cross_domain: bool | None = None,
+) -> dict[str, object]:
+    resolved_domain = str(domain or "").strip().lower() or "unknown"
+    if cross_domain:
+        resolved_domain = "cross_domain"
+    return {
+        "domain": resolved_domain,
+        "profile": "unknown",
+        "profile_version": "unknown",
+        "strategy": "unknown",
+        "strategy_version": "unknown",
+        "expert_mode": False,
+    }
+
+
+def _labels_from_create_payload(payload: dict[str, object]) -> dict[str, object]:
+    domains = payload.get("domains")
+    if isinstance(domains, list):
+        normalized = [str(item).strip().lower() for item in domains if str(item).strip()]
+        if len(normalized) > 1:
+            return _error_metric_labels(domain="cross_domain", cross_domain=True)
+        if normalized:
+            return _error_metric_labels(domain=normalized[0], cross_domain=False)
+    domain = payload.get("domain")
+    return _error_metric_labels(
+        domain=str(domain) if domain is not None else None,
+        cross_domain=bool(payload.get("cross_domain")),
+    )
+
+
 @api_v1_inquiry_bp.post("")
 @api_v1_inquiry_bp.post("/")
 @jwt_required()
@@ -41,17 +74,21 @@ def create_inquiry_v1():
     try:
         data = InquiryCreateRequest.model_validate(payload)
     except ValidationError as exc:
-        record_inquiry_error("create", "validation_error")
+        record_inquiry_error("create", "validation_error", **_labels_from_create_payload(payload))
         return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
     except ValueError as exc:
-        record_inquiry_error("create", "validation_error")
+        record_inquiry_error("create", "validation_error", **_labels_from_create_payload(payload))
         return jsonify({"ok": False, "error": str(exc)}), 400
 
     user_id = int(get_jwt_identity())
+    create_labels = _error_metric_labels(
+        domain=data.domain,
+        cross_domain=data.cross_domain,
+    )
     try:
         inquiry, version, deduped = create_inquiry(user_id, data)
     except Exception:
-        record_inquiry_error("create", "internal_error")
+        record_inquiry_error("create", "internal_error", **create_labels)
         raise
     response = {
         "ok": True,
@@ -92,7 +129,7 @@ def list_inquiries_v1():
         limit = int(request.args.get("limit", 20))
         offset = int(request.args.get("offset", 0))
     except ValueError:
-        record_inquiry_error("list", "validation_error")
+        record_inquiry_error("list", "validation_error", **_error_metric_labels())
         return jsonify({"ok": False, "error": "validation_error"}), 400
     limit = max(1, min(limit, 100))
     offset = max(0, offset)
@@ -117,7 +154,7 @@ def get_inquiry_v1(inquiry_id: int):
     user_id = int(get_jwt_identity())
     payload = get_inquiry(user_id, inquiry_id)
     if payload is None:
-        record_inquiry_error("detail", "not_found")
+        record_inquiry_error("detail", "not_found", **_error_metric_labels())
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True, "inquiry": payload})
 
@@ -133,23 +170,27 @@ def refine_inquiry_v1(inquiry_id: int):
     try:
         data = InquiryRefineRequest.model_validate(payload)
     except ValidationError as exc:
-        record_inquiry_error("refine", "validation_error")
+        record_inquiry_error("refine", "validation_error", **_labels_from_create_payload(payload))
         return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
     except ValueError as exc:
-        record_inquiry_error("refine", "validation_error")
+        record_inquiry_error("refine", "validation_error", **_labels_from_create_payload(payload))
         return jsonify({"ok": False, "error": str(exc)}), 400
 
     user_id = int(get_jwt_identity())
+    refine_labels = _error_metric_labels(
+        domain=data.domain,
+        cross_domain=bool(data.cross_domain),
+    )
     try:
         inquiry, version = refine_inquiry(user_id, inquiry_id, data)
     except ValueError as exc:
         if str(exc) == "not_found":
-            record_inquiry_error("refine", "not_found")
+            record_inquiry_error("refine", "not_found", **refine_labels)
             return jsonify({"ok": False, "error": "not_found"}), 404
-        record_inquiry_error("refine", "validation_error")
+        record_inquiry_error("refine", "validation_error", **refine_labels)
         return jsonify({"ok": False, "error": str(exc)}), 400
     except Exception:
-        record_inquiry_error("refine", "internal_error")
+        record_inquiry_error("refine", "internal_error", **refine_labels)
         raise
 
     return jsonify(

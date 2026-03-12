@@ -1611,9 +1611,82 @@ select:focus {
   color: var(--text-strong);
 }
 
+.inquiry-domain-profile-summary {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+}
+
+.inquiry-domain-profile-meta {
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.inquiry-domain-categories-wrap {
+  margin-top: 0.55rem;
+}
+
+.inquiry-domain-subhead {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.inquiry-domain-categories {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.inquiry-domain-category-chip {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  color: var(--text-strong);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.inquiry-domain-refine-hints {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+  color: var(--text-strong);
+  font-size: 0.86rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
 .inquiry-findings {
   display: grid;
   gap: 0.7rem;
+}
+
+.inquiry-finding-section {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.inquiry-finding-section-head {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.inquiry-finding-section-label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.inquiry-finding-section-count {
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  padding: 0.05rem 0.38rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
 }
 
 .inquiry-finding {
@@ -1635,6 +1708,17 @@ select:focus {
 .inquiry-finding-claim {
   color: var(--text-strong);
   font-weight: 600;
+}
+
+.inquiry-finding-category {
+  display: inline-flex;
+  margin-bottom: 0.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
 .inquiry-finding-uncertainty {
@@ -1707,6 +1791,41 @@ select:focus {
   color: var(--text-strong);
   display: grid;
   gap: 0.2rem;
+}
+
+.inquiry-quality-summary {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+}
+
+.inquiry-quality-coverage {
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.inquiry-quality-wrap {
+  margin-top: 0.55rem;
+}
+
+.inquiry-quality-subhead {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.inquiry-quality-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+  color: var(--text-strong);
+  font-size: 0.86rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.inquiry-quality-actions {
+  margin-top: 0.6rem;
 }
 
 .inquiry-context-label {

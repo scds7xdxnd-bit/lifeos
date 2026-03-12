@@ -120,6 +120,20 @@
         <div id="inquiry-summary" class="inquiry-summary"></div>
       </div>
 
+      <div class="inquiry-block" id="inquiry-domain-profile-block">
+        <div class="inquiry-block-label">Domain Profile</div>
+        <div id="inquiry-domain-profile-summary" class="inquiry-domain-profile-summary"></div>
+        <div id="inquiry-domain-profile-meta" class="inquiry-domain-profile-meta"></div>
+        <div id="inquiry-domain-categories-wrap" class="inquiry-domain-categories-wrap" style="display:none;">
+          <div class="inquiry-domain-subhead">Finding categories</div>
+          <div id="inquiry-domain-categories" class="inquiry-domain-categories"></div>
+        </div>
+        <div id="inquiry-domain-refine-wrap" class="inquiry-domain-categories-wrap" style="display:none;">
+          <div class="inquiry-domain-subhead">Domain refine cues</div>
+          <ul id="inquiry-domain-refine-hints" class="inquiry-domain-refine-hints"></ul>
+        </div>
+      </div>
+
       <div class="inquiry-block">
         <div class="inquiry-block-label">Evidence</div>
         <div id="inquiry-findings" class="inquiry-findings"></div>
@@ -129,6 +143,27 @@
         <div class="inquiry-block-label">Uncertainty / Limits</div>
         <div id="inquiry-uncertainty" class="inquiry-uncertainty"></div>
         <ul id="inquiry-limits" class="inquiry-limits"></ul>
+      </div>
+
+      <div class="inquiry-block" id="inquiry-quality-block">
+        <div class="inquiry-block-label">Quality & Coverage (secondary)</div>
+        <div id="inquiry-quality-summary" class="inquiry-quality-summary"></div>
+        <div id="inquiry-quality-coverage" class="inquiry-quality-coverage"></div>
+        <div id="inquiry-quality-gap-wrap" class="inquiry-quality-wrap" style="display:none;">
+          <div class="inquiry-quality-subhead">Structure gaps</div>
+          <ul id="inquiry-quality-gaps" class="inquiry-quality-list"></ul>
+        </div>
+        <div id="inquiry-quality-sparse-wrap" class="inquiry-quality-wrap" style="display:none;">
+          <div class="inquiry-quality-subhead">Sparse domains</div>
+          <ul id="inquiry-quality-sparse" class="inquiry-quality-list"></ul>
+        </div>
+        <div id="inquiry-quality-guidance-wrap" class="inquiry-quality-wrap" style="display:none;">
+          <div class="inquiry-quality-subhead">Refine guidance</div>
+          <ul id="inquiry-quality-guidance" class="inquiry-quality-list"></ul>
+        </div>
+        <div class="inquiry-quality-actions">
+          <button type="button" class="btn btn-secondary" id="inquiry-quality-refine-btn" style="display:none;">Refine Inquiry</button>
+        </div>
       </div>
 
       <div class="inquiry-block">
@@ -209,9 +244,25 @@
     const briefStatus = document.getElementById('inquiry-brief-status');
     const versionList = document.getElementById('inquiry-version-list');
     const briefSummary = document.getElementById('inquiry-summary');
+    const domainProfileSummaryEl = document.getElementById('inquiry-domain-profile-summary');
+    const domainProfileMetaEl = document.getElementById('inquiry-domain-profile-meta');
+    const domainCategoriesWrap = document.getElementById('inquiry-domain-categories-wrap');
+    const domainCategoriesEl = document.getElementById('inquiry-domain-categories');
+    const domainRefineWrap = document.getElementById('inquiry-domain-refine-wrap');
+    const domainRefineHintsEl = document.getElementById('inquiry-domain-refine-hints');
     const findingsEl = document.getElementById('inquiry-findings');
     const uncertaintyEl = document.getElementById('inquiry-uncertainty');
     const limitsEl = document.getElementById('inquiry-limits');
+    const qualityBlock = document.getElementById('inquiry-quality-block');
+    const qualitySummaryEl = document.getElementById('inquiry-quality-summary');
+    const qualityCoverageEl = document.getElementById('inquiry-quality-coverage');
+    const qualityGapWrap = document.getElementById('inquiry-quality-gap-wrap');
+    const qualityGapsEl = document.getElementById('inquiry-quality-gaps');
+    const qualitySparseWrap = document.getElementById('inquiry-quality-sparse-wrap');
+    const qualitySparseEl = document.getElementById('inquiry-quality-sparse');
+    const qualityGuidanceWrap = document.getElementById('inquiry-quality-guidance-wrap');
+    const qualityGuidanceEl = document.getElementById('inquiry-quality-guidance');
+    const qualityRefineBtn = document.getElementById('inquiry-quality-refine-btn');
     const contextRender = document.getElementById('inquiry-context-render');
     const nextQuestionsEl = document.getElementById('inquiry-next-questions');
     const briefAlert = document.getElementById('inquiry-brief-alert');
@@ -219,6 +270,48 @@
     const historyRefresh = document.getElementById('inquiry-history-refresh');
     const historyEmpty = document.getElementById('inquiry-history-empty');
     const historyList = document.getElementById('inquiry-history-list');
+
+    const FIRST_WAVE_EXPERT_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills']);
+    const DOMAIN_CATEGORY_LABELS = {
+      finance: {
+        cashflow_coverage: 'Cashflow coverage',
+        ledger_signal: 'Ledger signal',
+        evidence_gap: 'Evidence gap',
+      },
+      habits: {
+        adherence_coverage: 'Adherence coverage',
+        consistency_signal: 'Consistency signal',
+        evidence_gap: 'Evidence gap',
+      },
+      projects: {
+        execution_coverage: 'Execution coverage',
+        completion_signal: 'Completion signal',
+        evidence_gap: 'Evidence gap',
+      },
+      skills: {
+        practice_coverage: 'Practice coverage',
+        progression_signal: 'Progression signal',
+        evidence_gap: 'Evidence gap',
+      },
+    };
+    const DOMAIN_REFINE_HINTS = {
+      finance: [
+        'Narrow to posting windows if activity spans mixed account types.',
+        'Specify one account or receivable scope for denser finance evidence.',
+      ],
+      habits: [
+        'Focus on one habit or cadence window for cleaner adherence signals.',
+        'Extend the date range when logs are sparse.',
+      ],
+      projects: [
+        'Constrain to one delivery window when completion records are mixed.',
+        'Use one project scope if evidence spans unrelated tasks.',
+      ],
+      skills: [
+        'Limit inquiry to one skill for clearer progression evidence.',
+        'Extend window if practice sessions are too sparse.',
+      ],
+    };
 
     const setStatus = (node, msg, tone = '') => {
       if (!node) return;
@@ -296,6 +389,141 @@
       if (normalized === 'informational') return 'Informational';
       if (normalized === 'confirmed') return 'Confirmed';
       return 'Unspecified';
+    };
+
+    const titleFromToken = (value) => String(value || '')
+      .replace(/[_-]+/g, ' ')
+      .trim()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const isFirstWaveExpertProfile = (profile) => {
+      const domain = String(profile?.domain || '').toLowerCase();
+      return Boolean(profile?.expert_mode) && FIRST_WAVE_EXPERT_DOMAINS.has(domain);
+    };
+
+    const categoryLabel = (category, domain) => {
+      const normalizedDomain = String(domain || '').toLowerCase();
+      const labels = DOMAIN_CATEGORY_LABELS[normalizedDomain] || {};
+      return labels[category] || titleFromToken(category) || 'Uncategorized';
+    };
+
+    const renderDomainProfile = (brief) => {
+      const profile = brief?.brief_profile;
+      if (!profile || typeof profile !== 'object') {
+        domainProfileSummaryEl.textContent = 'Generic inquiry brief profile.';
+        domainProfileMetaEl.textContent = '';
+        domainCategoriesWrap.style.display = 'none';
+        domainRefineWrap.style.display = 'none';
+        return;
+      }
+
+      const domain = String(profile.domain || '');
+      const domainLabel = domain ? labelForDomain(domain) : 'Inquiry';
+      const profileLabel = titleFromToken(profile.profile) || `${domainLabel} brief profile`;
+      const strategyLabel = titleFromToken(profile.strategy) || 'Generic strategy';
+      domainProfileSummaryEl.textContent = profile.expert_mode
+        ? `${domainLabel} expert brief profile active.`
+        : `${domainLabel} generic brief profile active.`;
+      domainProfileMetaEl.textContent =
+        `${profileLabel} (v${profile.profile_version || '1'}) · ${strategyLabel} (v${profile.strategy_version || '1'})`;
+
+      const categories = Array.isArray(profile.finding_categories) ? profile.finding_categories : [];
+      domainCategoriesEl.innerHTML = '';
+      if (!categories.length) {
+        domainCategoriesWrap.style.display = 'none';
+      } else {
+        categories.forEach((category) => {
+          const chip = document.createElement('span');
+          chip.className = 'inquiry-domain-category-chip';
+          chip.textContent = categoryLabel(category, domain);
+          domainCategoriesEl.appendChild(chip);
+        });
+        domainCategoriesWrap.style.display = 'block';
+      }
+
+      const hints = isFirstWaveExpertProfile(profile)
+        ? (DOMAIN_REFINE_HINTS[String(profile.domain || '').toLowerCase()] || [])
+        : [];
+      domainRefineHintsEl.innerHTML = '';
+      if (!hints.length) {
+        domainRefineWrap.style.display = 'none';
+      } else {
+        hints.forEach((hint) => {
+          const li = document.createElement('li');
+          li.textContent = hint;
+          domainRefineHintsEl.appendChild(li);
+        });
+        domainRefineWrap.style.display = 'block';
+      }
+    };
+
+    const clampCoverageRatio = (value) => {
+      const ratio = Number(value);
+      if (Number.isNaN(ratio) || ratio < 0) return 0;
+      if (ratio > 1) return 1;
+      return ratio;
+    };
+
+    const coveragePercentText = (value) => `${Math.round(clampCoverageRatio(value) * 100)}%`;
+
+    const renderSimpleList = (node, items = []) => {
+      if (!node) return;
+      node.innerHTML = '';
+      items.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        node.appendChild(li);
+      });
+    };
+
+    const renderQualityMetadata = (quality, briefProfile = null) => {
+      if (!qualityBlock) return;
+      const expertDomain = isFirstWaveExpertProfile(briefProfile) ? String(briefProfile.domain || '') : '';
+      qualityRefineBtn.textContent = expertDomain
+        ? `Refine ${labelForDomain(expertDomain)} Inquiry`
+        : 'Refine Inquiry';
+
+      const findingsTotal = Number(quality?.findings_total || 0);
+      const findingsWithEvidence = Number(quality?.findings_with_evidence || 0);
+      const coverageRatio = clampCoverageRatio(quality?.evidence_coverage_ratio || 0);
+      const structureGaps = Array.isArray(quality?.structure_gaps) ? quality.structure_gaps : [];
+      const sparseDomains = Array.isArray(quality?.sparse_domains) ? quality.sparse_domains : [];
+      const refineGuidance = Array.isArray(quality?.refine_guidance) ? quality.refine_guidance : [];
+
+      if (!quality || typeof quality !== 'object') {
+        qualitySummaryEl.textContent = 'Quality metadata unavailable for this brief version.';
+        qualityCoverageEl.textContent = '';
+        qualityGapWrap.style.display = 'none';
+        qualitySparseWrap.style.display = 'none';
+        qualityGuidanceWrap.style.display = 'none';
+        qualityRefineBtn.style.display = 'none';
+        return;
+      }
+
+      qualitySummaryEl.textContent =
+        `${findingsWithEvidence} of ${findingsTotal} findings include evidence references.`;
+      qualityCoverageEl.textContent = `Evidence coverage: ${coveragePercentText(coverageRatio)}`;
+
+      const gapItems = structureGaps.map((gap) => String(gap || '').replace(/_/g, ' ')).filter(Boolean);
+      qualityGapWrap.style.display = gapItems.length ? 'block' : 'none';
+      renderSimpleList(qualityGapsEl, gapItems);
+
+      const sparseItems = sparseDomains.map((domain) => labelForDomain(domain)).filter(Boolean);
+      qualitySparseWrap.style.display = sparseItems.length ? 'block' : 'none';
+      renderSimpleList(qualitySparseEl, sparseItems);
+
+      const guidanceItems = refineGuidance.map((item) => String(item || '')).filter(Boolean);
+      qualityGuidanceWrap.style.display = guidanceItems.length ? 'block' : 'none';
+      renderSimpleList(qualityGuidanceEl, guidanceItems);
+
+      const weakQuality = (
+        (findingsTotal > 0 && findingsWithEvidence < findingsTotal)
+        || coverageRatio < 1
+        || gapItems.length > 0
+        || sparseItems.length > 0
+        || guidanceItems.length > 0
+      );
+      qualityRefineBtn.style.display = weakQuality && !!state.selectedInquiry ? 'inline-flex' : 'none';
     };
 
     const ensureAuth = () => {
@@ -454,39 +682,87 @@
       briefStatus.innerHTML = `<span class="${confidenceClass(label)}">${confidenceText(label)}</span>`;
     };
 
-    const renderFindings = (findings = []) => {
+    const renderFindingCard = (finding, domain) => {
+      const card = document.createElement('div');
+      card.className = 'inquiry-finding';
+      const groupedEvidence = groupEvidenceByDomain(finding.evidence_refs || []);
+      const category = String(finding.finding_category || '').trim();
+      const categoryHtml = category
+        ? `<span class="inquiry-finding-category">${categoryLabel(category, domain)}</span>`
+        : '';
+
+      const evidenceHtml = groupedEvidence.map(([evidenceDomain, refs]) => {
+        const refsList = refs
+          .map((ref) => `<li>${evidenceText(ref)}</li>`)
+          .join('');
+        return `
+          <div class="inquiry-evidence-domain">
+            <div class="inquiry-evidence-domain-name">${labelForDomain(evidenceDomain)}</div>
+            <ul class="inquiry-evidence-list">${refsList || '<li>No evidence refs.</li>'}</ul>
+          </div>
+        `;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="inquiry-finding-head">
+          <div>
+            ${categoryHtml}
+            <div class="inquiry-finding-claim">${finding.claim || 'No claim provided.'}</div>
+          </div>
+          <span class="${confidenceClass(finding.confidence_label)}">${confidenceText(finding.confidence_label)}</span>
+        </div>
+        <div class="inquiry-finding-uncertainty">${finding.uncertainty_note || 'No uncertainty note provided.'}</div>
+        <div class="inquiry-finding-evidence">${evidenceHtml || '<div class="inquiry-empty-inline">No evidence refs.</div>'}</div>
+      `;
+      return card;
+    };
+
+    const renderFindings = (findings = [], briefProfile = null) => {
       findingsEl.innerHTML = '';
       if (!findings.length) {
         findingsEl.innerHTML = '<div class="inquiry-empty-inline">No findings were generated for this scope.</div>';
         return;
       }
 
+      const domain = String(briefProfile?.domain || '');
+      if (!isFirstWaveExpertProfile(briefProfile)) {
+        findings.forEach((finding) => {
+          findingsEl.appendChild(renderFindingCard(finding, domain));
+        });
+        return;
+      }
+
+      const grouped = new Map();
       findings.forEach((finding) => {
-        const card = document.createElement('div');
-        card.className = 'inquiry-finding';
-        const groupedEvidence = groupEvidenceByDomain(finding.evidence_refs || []);
+        const key = String(finding.finding_category || 'uncategorized');
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(finding);
+      });
 
-        const evidenceHtml = groupedEvidence.map(([domain, refs]) => {
-          const refsList = refs
-            .map((ref) => `<li>${evidenceText(ref)}</li>`)
-            .join('');
-          return `
-            <div class="inquiry-evidence-domain">
-              <div class="inquiry-evidence-domain-name">${labelForDomain(domain)}</div>
-              <ul class="inquiry-evidence-list">${refsList || '<li>No evidence refs.</li>'}</ul>
-            </div>
-          `;
-        }).join('');
+      const preferred = Array.isArray(briefProfile.finding_categories) ? briefProfile.finding_categories : [];
+      const orderedCategories = [
+        ...preferred.filter((key) => grouped.has(key)),
+        ...Array.from(grouped.keys())
+          .filter((key) => !preferred.includes(key))
+          .sort((a, b) => String(a).localeCompare(String(b))),
+      ];
 
-        card.innerHTML = `
-          <div class="inquiry-finding-head">
-            <div class="inquiry-finding-claim">${finding.claim || 'No claim provided.'}</div>
-            <span class="${confidenceClass(finding.confidence_label)}">${confidenceText(finding.confidence_label)}</span>
-          </div>
-          <div class="inquiry-finding-uncertainty">${finding.uncertainty_note || 'No uncertainty note provided.'}</div>
-          <div class="inquiry-finding-evidence">${evidenceHtml || '<div class="inquiry-empty-inline">No evidence refs.</div>'}</div>
+      orderedCategories.forEach((category) => {
+        const section = document.createElement('section');
+        section.className = 'inquiry-finding-section';
+
+        const heading = document.createElement('div');
+        heading.className = 'inquiry-finding-section-head';
+        heading.innerHTML = `
+          <span class="inquiry-finding-section-label">${categoryLabel(category, domain)}</span>
+          <span class="inquiry-finding-section-count">${grouped.get(category).length}</span>
         `;
-        findingsEl.appendChild(card);
+        section.appendChild(heading);
+
+        grouped.get(category).forEach((finding) => {
+          section.appendChild(renderFindingCard(finding, domain));
+        });
+        findingsEl.appendChild(section);
       });
     };
 
@@ -497,7 +773,9 @@
 
       const findings = Array.isArray(brief?.findings) ? brief.findings : [];
       renderBriefStatus(findings);
-      renderFindings(findings);
+      renderDomainProfile(brief);
+      renderFindings(findings, brief?.brief_profile || null);
+      renderQualityMetadata(brief?.quality_metadata, brief?.brief_profile || null);
 
       briefSummary.textContent = brief?.summary || 'No summary generated.';
       uncertaintyEl.textContent = brief?.uncertainty_note || 'No uncertainty note provided.';
@@ -854,6 +1132,15 @@
           hydrateFormFromInquiry(state.selectedInquiry);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+      });
+
+      qualityRefineBtn.addEventListener('click', () => {
+        if (!state.selectedInquiry) {
+          setStatus(setupStatus, 'Select an inquiry from history before refining.', 'warning');
+          return;
+        }
+        hydrateFormFromInquiry(state.selectedInquiry);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
       window.addEventListener('lifeos:auth-changed', (e) => {

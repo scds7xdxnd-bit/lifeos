@@ -12,11 +12,20 @@ from typing import Iterable
 from sqlalchemy import or_
 
 from lifeos.core.events.event_models import EventRecord
+from lifeos.core.insights.inquiry_quality import evaluate_inquiry_brief_quality
 from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryRefineRequest
+from lifeos.core.insights.inquiry_strategies import (
+    GENERIC_BRIEF_PROFILE,
+    enforce_claim_guardrail,
+    get_first_wave_strategy,
+    strategy_token_for_scope,
+)
+from lifeos.core.insights.inquiry_strategies.base import DomainStrategyProfile
 from lifeos.core.insights.models import InquiryBriefVersion, InquiryRequest, InsightRecord
 from lifeos.core.observability import (
     record_inquiry_created,
     record_inquiry_generated,
+    record_inquiry_refine_after_low_quality,
     record_inquiry_refined,
     record_inquiry_viewed,
 )
@@ -26,6 +35,7 @@ from lifeos.extensions import db
 INQUIRY_READ_CACHE_SCOPE = "inquiry.reads"
 MAX_EVIDENCE_EVENTS_PER_DOMAIN = 3
 MAX_EVIDENCE_INSIGHTS_PER_DOMAIN = 2
+LOW_COVERAGE_THRESHOLD = 0.8
 
 
 @dataclass(frozen=True)
@@ -115,6 +125,11 @@ def _normalized_payload(scope: InquiryScope) -> dict:
         "as_of_ts": scope.as_of_ts.isoformat(),
         "context_text": scope.context_text or "",
         "context_semantics": "non_evidence",
+        "strategy_profile_token": strategy_token_for_scope(
+            lens=scope.lens,
+            primary_domain=scope.primary_domain,
+            domains=scope.domains,
+        ),
     }
 
 
@@ -195,6 +210,156 @@ def _finding_confidence(*, event_count: int, insight_count: int, mixed_domains: 
     return "needs_review"
 
 
+def _strategy_profile_metadata(
+    *,
+    scope: InquiryScope,
+    strategy: DomainStrategyProfile | None,
+    finding_categories: list[str],
+) -> dict[str, object]:
+    if strategy is None:
+        return {
+            **GENERIC_BRIEF_PROFILE,
+            "domain": scope.primary_domain if scope.lens == "domain" else "cross_domain",
+            "expert_mode": False,
+            "finding_categories": sorted(set(finding_categories)),
+        }
+    return {
+        "profile": strategy.profile,
+        "profile_version": strategy.profile_version,
+        "strategy": strategy.strategy,
+        "strategy_version": strategy.strategy_version,
+        "domain": strategy.domain,
+        "expert_mode": True,
+        "finding_categories": sorted(set(finding_categories)),
+    }
+
+
+def _prioritize_domain_events(events: list[EventRecord], strategy: DomainStrategyProfile) -> list[EventRecord]:
+    return sorted(
+        events,
+        key=lambda event: (
+            strategy.event_priority(event.event_type),
+            event.created_at.isoformat() if event.created_at else "",
+            event.id,
+        ),
+    )
+
+
+def _prioritize_domain_insights(insights: list[InsightRecord], strategy: DomainStrategyProfile) -> list[InsightRecord]:
+    return sorted(
+        insights,
+        key=lambda insight: (
+            strategy.insight_priority(insight.kind),
+            insight.created_at.isoformat() if insight.created_at else "",
+            insight.id,
+        ),
+    )
+
+
+def _assemble_domain_expert_brief(
+    *,
+    strategy: DomainStrategyProfile,
+    scope: InquiryScope,
+    domain_events: list[EventRecord],
+    domain_insights: list[InsightRecord],
+) -> tuple[list[dict], list[str], list[dict], list[str]]:
+    prioritized_events = _prioritize_domain_events(domain_events, strategy)
+    prioritized_insights = _prioritize_domain_insights(domain_insights, strategy)
+
+    aggregate = _aggregate_ref(
+        domain=strategy.domain,
+        timeframe_start=scope.timeframe_start,
+        timeframe_end=scope.timeframe_end,
+        as_of_ts=scope.as_of_ts,
+        event_count=len(prioritized_events),
+        insight_count=len(prioritized_insights),
+    )
+    evidence_refs = [aggregate]
+    evidence_refs.extend(_serialize_event_ref(event) for event in prioritized_events[:MAX_EVIDENCE_EVENTS_PER_DOMAIN])
+    evidence_refs.extend(
+        _serialize_insight_ref(insight) for insight in prioritized_insights[:MAX_EVIDENCE_INSIGHTS_PER_DOMAIN]
+    )
+    evidence_refs = _sorted_evidence_refs(evidence_refs)
+
+    findings: list[dict] = []
+    limits: list[str] = []
+    refine_guidance = list(strategy.refine_guidance)
+    total_records = len(prioritized_events) + len(prioritized_insights)
+
+    if total_records == 0:
+        raw_claim = f"No canonical {strategy.domain} records were found in the selected inquiry timeframe."
+        claim = enforce_claim_guardrail(
+            raw_claim,
+            forbidden_tokens=strategy.forbidden_claim_tokens,
+            fallback=f"No canonical {strategy.domain} records were observed in the selected timeframe.",
+        )
+        findings.append(
+            {
+                "claim": claim,
+                "finding_category": strategy.gap_category,
+                "evidence_refs": evidence_refs,
+                "confidence_label": "needs_review",
+                "uncertainty_note": strategy.limitation_language[0],
+                "source_domains": [strategy.domain],
+            }
+        )
+        limits.append(f"{strategy.domain}: {strategy.limitation_language[0]}")
+        return findings, limits, evidence_refs, refine_guidance
+
+    coverage_claim = (
+        f"{strategy.domain.title()} evidence includes {len(prioritized_events)} events and "
+        f"{len(prioritized_insights)} related insight records in scope."
+    )
+    coverage_claim = enforce_claim_guardrail(
+        coverage_claim,
+        forbidden_tokens=strategy.forbidden_claim_tokens,
+        fallback=f"{strategy.domain.title()} evidence volume was observed in scope.",
+    )
+    findings.append(
+        {
+            "claim": coverage_claim,
+            "finding_category": strategy.coverage_category,
+            "evidence_refs": evidence_refs,
+            "confidence_label": _finding_confidence(
+                event_count=len(prioritized_events),
+                insight_count=len(prioritized_insights),
+                mixed_domains=False,
+            ),
+            "uncertainty_note": (
+                strategy.limitation_language[0] if total_records < 3 else strategy.limitation_language[1]
+            ),
+            "source_domains": [strategy.domain],
+        }
+    )
+
+    if prioritized_insights:
+        signal_claim = (
+            f"{strategy.domain.title()} derived signals are present in {len(prioritized_insights)} insight records."
+        )
+        signal_claim = enforce_claim_guardrail(
+            signal_claim,
+            forbidden_tokens=strategy.forbidden_claim_tokens,
+            fallback=f"{strategy.domain.title()} derived signals were observed in the selected timeframe.",
+        )
+        findings.append(
+            {
+                "claim": signal_claim,
+                "finding_category": strategy.signal_category,
+                "evidence_refs": evidence_refs,
+                "confidence_label": _finding_confidence(
+                    event_count=len(prioritized_events),
+                    insight_count=len(prioritized_insights),
+                    mixed_domains=False,
+                ),
+                "uncertainty_note": strategy.limitation_language[1],
+                "source_domains": [strategy.domain],
+            }
+        )
+
+    limits.append(f"{strategy.domain}: {strategy.limitation_language[1]}")
+    return findings, limits, evidence_refs, refine_guidance
+
+
 def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]]:
     prefix_filters = _domain_prefix_filters(scope.domains)
 
@@ -230,54 +395,77 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
     findings: list[dict] = []
     limits: list[str] = []
     provenance_refs: list[dict] = []
+    domain_refine_guidance: list[str] = []
+    applied_strategy = (
+        get_first_wave_strategy(scope.primary_domain) if scope.lens == "domain" and len(scope.domains) == 1 else None
+    )
 
-    for domain in scope.domains:
-        domain_events = events_by_domain[domain]
-        domain_insights = insights_by_domain[domain]
-        aggregate = _aggregate_ref(
-            domain=domain,
-            timeframe_start=scope.timeframe_start,
-            timeframe_end=scope.timeframe_end,
-            as_of_ts=scope.as_of_ts,
-            event_count=len(domain_events),
-            insight_count=len(domain_insights),
+    if applied_strategy:
+        domain = scope.primary_domain
+        strategy_findings, strategy_limits, strategy_refs, strategy_guidance = _assemble_domain_expert_brief(
+            strategy=applied_strategy,
+            scope=scope,
+            domain_events=events_by_domain.get(domain, []),
+            domain_insights=insights_by_domain.get(domain, []),
         )
-        evidence_refs = [aggregate]
-        evidence_refs.extend(_serialize_event_ref(event) for event in domain_events[:MAX_EVIDENCE_EVENTS_PER_DOMAIN])
-        evidence_refs.extend(
-            _serialize_insight_ref(insight) for insight in domain_insights[:MAX_EVIDENCE_INSIGHTS_PER_DOMAIN]
-        )
-        evidence_refs = _sorted_evidence_refs(evidence_refs)
-        provenance_refs.extend(evidence_refs)
+        findings.extend(strategy_findings)
+        limits.extend(strategy_limits)
+        provenance_refs.extend(strategy_refs)
+        domain_refine_guidance.extend(strategy_guidance)
+    else:
+        for domain in scope.domains:
+            domain_events = events_by_domain[domain]
+            domain_insights = insights_by_domain[domain]
+            aggregate = _aggregate_ref(
+                domain=domain,
+                timeframe_start=scope.timeframe_start,
+                timeframe_end=scope.timeframe_end,
+                as_of_ts=scope.as_of_ts,
+                event_count=len(domain_events),
+                insight_count=len(domain_insights),
+            )
+            evidence_refs = [aggregate]
+            evidence_refs.extend(
+                _serialize_event_ref(event) for event in domain_events[:MAX_EVIDENCE_EVENTS_PER_DOMAIN]
+            )
+            evidence_refs.extend(
+                _serialize_insight_ref(insight) for insight in domain_insights[:MAX_EVIDENCE_INSIGHTS_PER_DOMAIN]
+            )
+            evidence_refs = _sorted_evidence_refs(evidence_refs)
+            provenance_refs.extend(evidence_refs)
 
-        total_records = len(domain_events) + len(domain_insights)
-        if total_records == 0:
-            claim = f"No canonical {domain} records were found in the selected timeframe."
-            uncertainty_note = "Evidence is sparse for this domain in the selected window."
-            limits.append(f"{domain}: no canonical records in selected timeframe.")
-        else:
-            claim = f"{domain.title()} shows {len(domain_events)} events and {len(domain_insights)} related insights."
-            uncertainty_note = (
-                "Evidence is partial; treat this as a directional observation."
-                if total_records < 3
-                else "Bounded to selected timeframe and explicit domain scope."
+            total_records = len(domain_events) + len(domain_insights)
+            if total_records == 0:
+                claim = f"No canonical {domain} records were found in the selected timeframe."
+                uncertainty_note = "Evidence is sparse for this domain in the selected window."
+                limits.append(f"{domain}: no canonical records in selected timeframe.")
+            else:
+                claim = (
+                    f"{domain.title()} shows {len(domain_events)} events and "
+                    f"{len(domain_insights)} related insights."
+                )
+                uncertainty_note = (
+                    "Evidence is partial; treat this as a directional observation."
+                    if total_records < 3
+                    else "Bounded to selected timeframe and explicit domain scope."
+                )
+
+            confidence_label = _finding_confidence(
+                event_count=len(domain_events),
+                insight_count=len(domain_insights),
+                mixed_domains=False,
             )
 
-        confidence_label = _finding_confidence(
-            event_count=len(domain_events),
-            insight_count=len(domain_insights),
-            mixed_domains=False,
-        )
-
-        findings.append(
-            {
-                "claim": claim,
-                "evidence_refs": evidence_refs,
-                "confidence_label": confidence_label,
-                "uncertainty_note": uncertainty_note,
-                "source_domains": [domain],
-            }
-        )
+            findings.append(
+                {
+                    "claim": claim,
+                    "finding_category": "coverage",
+                    "evidence_refs": evidence_refs,
+                    "confidence_label": confidence_label,
+                    "uncertainty_note": uncertainty_note,
+                    "source_domains": [domain],
+                }
+            )
 
     if scope.lens == "cross_domain":
         covered_domains = [
@@ -307,6 +495,7 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
         findings.append(
             {
                 "claim": f"Cross-domain coverage was observed in {coverage} selected domains.",
+                "finding_category": "cross_domain_coverage",
                 "evidence_refs": cross_evidence_refs,
                 "confidence_label": _finding_confidence(
                     event_count=len(covered_domains),
@@ -328,12 +517,18 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
 
     total_events = len(events)
     total_insights = len(insights)
-    summary = (
-        f"Scoped inquiry for {scope.primary_domain} across {len(scope.domains)} domain(s). "
-        f"Evidence includes {total_events} events and {total_insights} prior insight records."
-    )
-    if total_events + total_insights == 0:
-        summary = f"Scoped inquiry for {scope.primary_domain} found no canonical records in the selected timeframe."
+    if applied_strategy:
+        summary = (
+            f"{scope.primary_domain.title()} domain expert brief ({applied_strategy.profile_version}) "
+            f"covers {total_events} events and {total_insights} prior insight records."
+        )
+    else:
+        summary = (
+            f"Scoped inquiry for {scope.primary_domain} across {len(scope.domains)} domain(s). "
+            f"Evidence includes {total_events} events and {total_insights} prior insight records."
+        )
+        if total_events + total_insights == 0:
+            summary = f"Scoped inquiry for {scope.primary_domain} found no canonical records in the selected timeframe."
 
     global_uncertainty = (
         "Evidence is bounded to the selected timeframe and explicit scope." if not limits else " ; ".join(limits)
@@ -359,6 +554,15 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
         "as_of_ts": scope.as_of_ts.isoformat(),
         "generated_at": scope.as_of_ts.isoformat(),
     }
+    payload["brief_profile"] = _strategy_profile_metadata(
+        scope=scope,
+        strategy=applied_strategy,
+        finding_categories=[str(item.get("finding_category") or "") for item in findings],
+    )
+    payload["quality_metadata"] = evaluate_inquiry_brief_quality(
+        payload,
+        preferred_refine_guidance=domain_refine_guidance,
+    )
     return payload, _sorted_evidence_refs(provenance_refs)
 
 
@@ -417,6 +621,93 @@ def _brief_evidence_stats(brief_payload: dict) -> tuple[int, int]:
         if any(ref.get("source_kind") in {"event_record", "insight_record"} for ref in refs):
             with_evidence += 1
     return total, with_evidence
+
+
+def _quality_state_from_metadata(quality_metadata: dict[str, object] | None) -> str | None:
+    if not isinstance(quality_metadata, dict):
+        return None
+    findings_total = int(quality_metadata.get("findings_total") or 0)
+    coverage = float(quality_metadata.get("evidence_coverage_ratio") or 0.0)
+    structure_gaps = list(quality_metadata.get("structure_gaps") or [])
+    sparse_domains = list(quality_metadata.get("sparse_domains") or [])
+    if findings_total == 0:
+        return "empty"
+    if coverage < LOW_COVERAGE_THRESHOLD:
+        return "low_coverage"
+    if structure_gaps or sparse_domains:
+        return "needs_refine"
+    return "sufficient"
+
+
+def _quality_storage_fields(brief_payload: dict) -> dict[str, object]:
+    quality_metadata = brief_payload.get("quality_metadata") if isinstance(brief_payload, dict) else None
+    if not isinstance(quality_metadata, dict):
+        return {
+            "quality_findings_total": None,
+            "quality_findings_with_evidence": None,
+            "quality_evidence_coverage_ratio": None,
+            "quality_structure_gaps": None,
+            "quality_sparse_domains": None,
+            "quality_refine_guidance": None,
+            "quality_state": None,
+        }
+    structure_gaps = sorted({str(item) for item in list(quality_metadata.get("structure_gaps") or []) if item})
+    sparse_domains = sorted({str(item) for item in list(quality_metadata.get("sparse_domains") or []) if item})
+    refine_guidance = [str(item) for item in list(quality_metadata.get("refine_guidance") or []) if item]
+    return {
+        "quality_findings_total": int(quality_metadata.get("findings_total") or 0),
+        "quality_findings_with_evidence": int(quality_metadata.get("findings_with_evidence") or 0),
+        "quality_evidence_coverage_ratio": float(quality_metadata.get("evidence_coverage_ratio") or 0.0),
+        "quality_structure_gaps": structure_gaps,
+        "quality_sparse_domains": sparse_domains,
+        "quality_refine_guidance": refine_guidance,
+        "quality_state": _quality_state_from_metadata(quality_metadata),
+    }
+
+
+def _brief_profile_storage_fields(brief_payload: dict) -> dict[str, object]:
+    brief_profile = brief_payload.get("brief_profile") if isinstance(brief_payload, dict) else None
+    if not isinstance(brief_profile, dict):
+        return {
+            "brief_profile": None,
+            "brief_profile_version": None,
+            "brief_strategy": None,
+            "brief_strategy_version": None,
+            "brief_domain": None,
+            "brief_expert_mode": None,
+            "finding_categories": None,
+        }
+    finding_categories = sorted({str(item) for item in list(brief_profile.get("finding_categories") or []) if item})
+    return {
+        "brief_profile": str(brief_profile.get("profile") or "") or None,
+        "brief_profile_version": str(brief_profile.get("profile_version") or "") or None,
+        "brief_strategy": str(brief_profile.get("strategy") or "") or None,
+        "brief_strategy_version": str(brief_profile.get("strategy_version") or "") or None,
+        "brief_domain": str(brief_profile.get("domain") or "") or None,
+        "brief_expert_mode": bool(brief_profile.get("expert_mode")),
+        "finding_categories": finding_categories,
+    }
+
+
+def _brief_profile_metric_labels(brief_payload: dict | None) -> dict[str, object]:
+    brief_profile = brief_payload.get("brief_profile") if isinstance(brief_payload, dict) else None
+    if not isinstance(brief_profile, dict):
+        return {
+            "domain": "unknown",
+            "profile": "unknown",
+            "profile_version": "unknown",
+            "strategy": "unknown",
+            "strategy_version": "unknown",
+            "expert_mode": False,
+        }
+    return {
+        "domain": str(brief_profile.get("domain") or "unknown"),
+        "profile": str(brief_profile.get("profile") or "unknown"),
+        "profile_version": str(brief_profile.get("profile_version") or "unknown"),
+        "strategy": str(brief_profile.get("strategy") or "unknown"),
+        "strategy_version": str(brief_profile.get("strategy_version") or "unknown"),
+        "expert_mode": bool(brief_profile.get("expert_mode")),
+    }
 
 
 def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryRequest, InquiryBriefVersion, bool]:
@@ -482,6 +773,8 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
     brief_payload, provenance_refs = _assemble_brief(scope, user_id)
     generation_latency_seconds = perf_counter() - generation_started
     brief_hash = _payload_hash(brief_payload)
+    quality_storage_fields = _quality_storage_fields(brief_payload)
+    brief_profile_storage_fields = _brief_profile_storage_fields(brief_payload)
     version = InquiryBriefVersion(
         inquiry_id=inquiry.id,
         user_id=user_id,
@@ -492,6 +785,8 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         as_of_ts=scope.as_of_ts,
         evidence_refs=provenance_refs,
         parent_version_id=None,
+        **quality_storage_fields,
+        **brief_profile_storage_fields,
     )
     db.session.add(version)
     db.session.flush()
@@ -513,11 +808,14 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
 
     record_inquiry_created()
     findings_total, findings_with_evidence = _brief_evidence_stats(brief_payload)
+    profile_labels = _brief_profile_metric_labels(brief_payload)
     record_inquiry_generated(
         latency_seconds=generation_latency_seconds,
         is_empty=findings_with_evidence == 0,
         findings_total=findings_total,
         findings_with_evidence=findings_with_evidence,
+        quality_metadata=brief_payload.get("quality_metadata") if isinstance(brief_payload, dict) else None,
+        **profile_labels,
     )
     return inquiry, version, False
 
@@ -577,7 +875,14 @@ def refine_inquiry(
         .order_by(InquiryBriefVersion.version_number.desc())
         .first()
     )
+    previous_quality_metadata: dict[str, object] | None = None
+    if previous and isinstance(previous.brief_payload, dict):
+        raw_quality = previous.brief_payload.get("quality_metadata")
+        if isinstance(raw_quality, dict):
+            previous_quality_metadata = raw_quality
+    previous_profile_labels = _brief_profile_metric_labels(previous.brief_payload if previous else None)
     previous_version_number = previous.version_number if previous else 0
+    record_inquiry_refine_after_low_quality(previous_quality_metadata, **previous_profile_labels)
 
     inquiry.question = scope.question
     inquiry.lens = scope.lens
@@ -616,6 +921,8 @@ def refine_inquiry(
     brief_payload, provenance_refs = _assemble_brief(scope, user_id)
     generation_latency_seconds = perf_counter() - generation_started
     brief_hash = _payload_hash(brief_payload)
+    quality_storage_fields = _quality_storage_fields(brief_payload)
+    brief_profile_storage_fields = _brief_profile_storage_fields(brief_payload)
     version = InquiryBriefVersion(
         inquiry_id=inquiry.id,
         user_id=user_id,
@@ -626,6 +933,8 @@ def refine_inquiry(
         as_of_ts=scope.as_of_ts,
         evidence_refs=provenance_refs,
         parent_version_id=previous.id if previous else None,
+        **quality_storage_fields,
+        **brief_profile_storage_fields,
     )
     db.session.add(version)
     db.session.flush()
@@ -645,12 +954,15 @@ def refine_inquiry(
     )
     db.session.commit()
     read_cache.bump(INQUIRY_READ_CACHE_SCOPE, user_id)
-    record_inquiry_refined()
+    profile_labels = _brief_profile_metric_labels(brief_payload)
+    record_inquiry_refined(**profile_labels)
     findings_total, findings_with_evidence = _brief_evidence_stats(brief_payload)
     record_inquiry_generated(
         latency_seconds=generation_latency_seconds,
         is_empty=findings_with_evidence == 0,
         findings_total=findings_total,
         findings_with_evidence=findings_with_evidence,
+        quality_metadata=brief_payload.get("quality_metadata") if isinstance(brief_payload, dict) else None,
+        **profile_labels,
     )
     return inquiry, version

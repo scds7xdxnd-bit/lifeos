@@ -32,7 +32,27 @@ def test_inquiry_contracts_expose_evidence_and_confidence_fields():
     names = set()
     for key in ("inquiries.create.v1", "inquiries.detail.v1", "inquiries.refine.v1"):
         names.update(_contract_field_names(key))
-    assert {"claim", "evidence_refs", "confidence_label", "uncertainty_note"}.issubset(names)
+    assert {
+        "claim",
+        "finding_category",
+        "evidence_refs",
+        "confidence_label",
+        "uncertainty_note",
+        "brief_profile",
+        "profile",
+        "profile_version",
+        "strategy",
+        "strategy_version",
+        "expert_mode",
+        "finding_categories",
+        "quality_metadata",
+        "findings_total",
+        "findings_with_evidence",
+        "evidence_coverage_ratio",
+        "structure_gaps",
+        "sparse_domains",
+        "refine_guidance",
+    }.issubset(names)
 
 
 def test_inquiry_contracts_do_not_expose_chat_transcript_fields():

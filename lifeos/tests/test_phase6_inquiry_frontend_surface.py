@@ -46,10 +46,48 @@ def test_inquiry_brief_surface_renders_summary_evidence_uncertainty_next_questio
     html = TEMPLATE_PATH.read_text(encoding="utf-8")
 
     assert 'id="inquiry-summary"' in html
+    assert 'id="inquiry-domain-profile-summary"' in html
+    assert 'id="inquiry-domain-categories"' in html
     assert 'id="inquiry-findings"' in html
     assert 'id="inquiry-uncertainty"' in html
     assert 'id="inquiry-next-questions"' in html
     assert 'id="inquiry-context-render"' in html
+
+
+@pytest.mark.unit
+def test_inquiry_quality_block_renders_secondary_coverage_and_guidance_fields():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert "Quality & Coverage (secondary)" in html
+    assert 'id="inquiry-quality-summary"' in html
+    assert 'id="inquiry-quality-coverage"' in html
+    assert 'id="inquiry-quality-gaps"' in html
+    assert 'id="inquiry-quality-sparse"' in html
+    assert 'id="inquiry-quality-guidance"' in html
+    assert "renderQualityMetadata" in html
+
+
+@pytest.mark.unit
+def test_inquiry_quality_weak_state_exposes_refine_affordance_without_chat_patterns():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8").lower()
+
+    assert 'id="inquiry-quality-refine-btn"' in html
+    assert "qualityrefinebtn.addeventlistener('click'" in html
+    assert "hydrateformfrominquiry(state.selectedinquiry)" in html
+    assert "conversation_id" not in html
+    assert "assistant_reply" not in html
+
+
+@pytest.mark.unit
+def test_inquiry_domain_expert_rendering_patterns_are_present_for_first_wave_domains():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert "Domain Profile" in html
+    assert "DOMAIN_REFINE_HINTS" in html
+    assert "isFirstWaveExpertProfile" in html
+    assert "finding_category" in html
+    assert "renderDomainProfile(brief)" in html
+    assert "renderFindings(findings, brief?.brief_profile || null)" in html
 
 
 @pytest.mark.unit

@@ -309,7 +309,103 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
                 stability="stable",
             ),
             SurfaceField(
+                label="Brief profile metadata",
+                meaning="Domain expert/generic brief profile metadata",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief profile key",
+                meaning="Brief profile identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief profile version",
+                meaning="Brief profile version",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief strategy key",
+                meaning="Strategy identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief strategy version",
+                meaning="Strategy version identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief profile domain",
+                meaning="Domain scope for brief profile",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief expert mode",
+                meaning="Whether domain expert strategy mode was used",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief finding categories",
+                meaning="Finding category list emitted by strategy",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief quality metadata",
+                meaning="Deterministic brief quality metadata",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Quality findings total",
+                meaning="Quality findings total",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Quality findings with evidence",
+                meaning="Quality findings with canonical evidence",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Quality evidence coverage ratio",
+                meaning="Quality evidence coverage ratio",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Quality structure gaps",
+                meaning="Deterministic structural quality gaps",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Quality sparse domains",
+                meaning="Domains with sparse observed evidence coverage",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Quality refine guidance",
+                meaning="Deterministic refinement guidance from quality evaluation",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
                 label="Finding claim", meaning="Finding claim text", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Finding category",
+                meaning="Domain finding category",
+                source="system_derived",
+                stability="stable",
             ),
             SurfaceField(
                 label="Finding evidence refs",

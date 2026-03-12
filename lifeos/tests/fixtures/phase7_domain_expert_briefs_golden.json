@@ -1,0 +1,126 @@
+{
+  "finance": {
+    "brief_profile": {
+      "profile": "finance_domain_expert_brief",
+      "profile_version": "1.0.0",
+      "strategy": "finance_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "finance",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "cashflow_coverage",
+      "ledger_signal",
+      "evidence_gap"
+    ],
+    "limitation_language": [
+      "Finance evidence is partial in this timeframe; treat totals as directional.",
+      "Finance evidence is bounded to this timeframe and account activity scope."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing timeframe around posting days for higher finance evidence density.",
+      "Refine by focusing on one account scope if the brief spans mixed finance activity."
+    ],
+    "forbidden_claim_tokens": [
+      "because",
+      "caused",
+      "guarantee",
+      "always",
+      "never",
+      "must"
+    ]
+  },
+  "habits": {
+    "brief_profile": {
+      "profile": "habits_domain_expert_brief",
+      "profile_version": "1.0.0",
+      "strategy": "habits_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "habits",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "adherence_coverage",
+      "consistency_signal",
+      "evidence_gap"
+    ],
+    "limitation_language": [
+      "Habit log evidence is sparse in this timeframe; treat adherence interpretation as partial.",
+      "Habit log evidence is bounded to explicit logs in the selected timeframe."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing scope to one habit and a tighter week window.",
+      "Refine by extending timeframe when logs are sparse for selected habits."
+    ],
+    "forbidden_claim_tokens": [
+      "because",
+      "caused",
+      "guarantee",
+      "always",
+      "never",
+      "must"
+    ]
+  },
+  "projects": {
+    "brief_profile": {
+      "profile": "projects_domain_expert_brief",
+      "profile_version": "1.0.0",
+      "strategy": "projects_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "projects",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "execution_coverage",
+      "completion_signal",
+      "evidence_gap"
+    ],
+    "limitation_language": [
+      "Project evidence is partial in this timeframe; completion interpretation is directional.",
+      "Project evidence is bounded to explicit task and activity records in scope."
+    ],
+    "required_refine_guidance": [
+      "Refine by limiting to a narrower project delivery window.",
+      "Refine by reducing domain scope to project execution only when activity is sparse."
+    ],
+    "forbidden_claim_tokens": [
+      "because",
+      "caused",
+      "guarantee",
+      "always",
+      "never",
+      "must"
+    ]
+  },
+  "skills": {
+    "brief_profile": {
+      "profile": "skills_domain_expert_brief",
+      "profile_version": "1.0.0",
+      "strategy": "skills_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "skills",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "practice_coverage",
+      "progression_signal",
+      "evidence_gap"
+    ],
+    "limitation_language": [
+      "Skill practice evidence is sparse in this timeframe; progression interpretation is directional.",
+      "Skill evidence is bounded to explicit practice/session records in selected scope."
+    ],
+    "required_refine_guidance": [
+      "Refine by focusing on one skill and a tighter practice window.",
+      "Refine by extending timeframe when practice records are sparse."
+    ],
+    "forbidden_claim_tokens": [
+      "because",
+      "caused",
+      "guarantee",
+      "always",
+      "never",
+      "must"
+    ]
+  }
+}
