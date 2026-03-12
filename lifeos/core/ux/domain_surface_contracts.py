@@ -98,6 +98,291 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
         ],
         tier=0,
     ),
+    # Tier 0: Focused Inquiry
+    "insights:inquiry": DomainSurfaceDefinition(
+        domain="insights",
+        surface_name="Focused Inquiry",
+        purpose="Provide one deterministic evidence-based brief for a scoped user question.",
+        primary_question="What exactly am I trying to understand right now?",
+        primary_action="Generate brief",
+        read_only_sections=[
+            SurfaceSection(name="Inquiry brief findings", editable=False),
+            SurfaceSection(name="Evidence references", editable=False),
+            SurfaceSection(name="Inquiry history", editable=False),
+        ],
+        editable_sections=[
+            SurfaceSection(
+                name="Inquiry scope form",
+                editable=True,
+                edit_entry="Generate brief",
+                requires_confirmation=True,
+            ),
+            SurfaceSection(
+                name="Refine scope",
+                editable=True,
+                edit_entry="Refine inquiry",
+                requires_confirmation=True,
+            ),
+        ],
+        confidence_rules=["informational", "needs_review", "confirmed"],
+        insight_contracts=["focused_inquiry_domain_brief", "focused_inquiry_cross_domain_brief"],
+        data_fields=[
+            SurfaceField(
+                label="Response ok", meaning="Response success flag", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Response deduped", meaning="Create dedupe indicator", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Response inquiry id", meaning="Inquiry identifier", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Response version id",
+                meaning="Brief version identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Response version number",
+                meaning="Brief version number",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Response inquiry",
+                meaning="Inquiry payload container",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Response items", meaning="Inquiry list payload", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Response total", meaning="Inquiry list total count", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Response limit", meaning="Inquiry list limit", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Response offset", meaning="Inquiry list offset", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Response latest brief",
+                meaning="Latest brief payload",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Response brief", meaning="Refine brief payload", source="system_derived", stability="stable"
+            ),
+            SurfaceField(label="Inquiry id", meaning="Inquiry id", source="system_derived", stability="stable"),
+            SurfaceField(
+                label="Question", meaning="Scoped inquiry question", source="user_entered", stability="stable"
+            ),
+            SurfaceField(
+                label="Lens", meaning="Domain or cross-domain inquiry lens", source="user_entered", stability="stable"
+            ),
+            SurfaceField(
+                label="Primary domain", meaning="Primary selected domain", source="user_entered", stability="stable"
+            ),
+            SurfaceField(
+                label="Selected domains",
+                meaning="Explicit selected domain list",
+                source="user_entered",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Timeframe object", meaning="Timeframe object", source="user_entered", stability="stable"
+            ),
+            SurfaceField(
+                label="Timeframe start", meaning="Timeframe start timestamp", source="user_entered", stability="stable"
+            ),
+            SurfaceField(
+                label="Timeframe end", meaning="Timeframe end timestamp", source="user_entered", stability="stable"
+            ),
+            SurfaceField(
+                label="As of timestamp",
+                meaning="Deterministic as_of timestamp",
+                source="user_entered",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Context block",
+                meaning="User context block labeled non-evidence",
+                source="user_entered",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Context label", meaning="Context block label", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Context note", meaning="Context block note", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Created timestamp",
+                meaning="Inquiry created timestamp",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Updated timestamp",
+                meaning="Inquiry updated timestamp",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Last version number",
+                meaning="Latest brief version number",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Latest brief object",
+                meaning="Latest brief version object",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Version history list", meaning="All brief versions", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Brief version id",
+                meaning="Brief version identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief version number",
+                meaning="Brief version number",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Parent version id",
+                meaning="Previous brief version link",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief created timestamp",
+                meaning="Brief version creation timestamp",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief hash", meaning="Brief deterministic hash", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Brief as of timestamp",
+                meaning="Brief as_of timestamp",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief payload", meaning="Inquiry brief payload", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Brief summary", meaning="Inquiry brief summary", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Brief findings", meaning="Inquiry brief findings", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Brief context non evidence",
+                meaning="Context section marked non-evidence",
+                source="user_entered",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief uncertainty note",
+                meaning="Inquiry-level uncertainty note",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Brief limits", meaning="Inquiry limits list", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Brief generated timestamp",
+                meaning="Brief generated timestamp",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Finding claim", meaning="Finding claim text", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Finding evidence refs",
+                meaning="Finding evidence references",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Finding confidence label",
+                meaning="Finding confidence label",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Finding uncertainty note",
+                meaning="Finding uncertainty note",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Finding source domains",
+                meaning="Finding source domain labels",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Evidence source kind",
+                meaning="Evidence source type",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Evidence source id",
+                meaning="Evidence source record id",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Evidence source ref",
+                meaning="Evidence source reference key",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Evidence event type",
+                meaning="Evidence source event type",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Evidence domain", meaning="Evidence source domain", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Evidence created at",
+                meaning="Evidence source timestamp",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Evidence event count",
+                meaning="Read-model event count evidence",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Evidence insight count",
+                meaning="Read-model insight count evidence",
+                source="system_derived",
+                stability="stable",
+            ),
+        ],
+        tier=0,
+    ),
     # Tier 1: Projects
     "projects:dashboard": DomainSurfaceDefinition(
         domain="projects",

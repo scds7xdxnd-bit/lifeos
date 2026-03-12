@@ -3,7 +3,7 @@ from datetime import datetime, date
 
 from flask_jwt_extended import create_access_token
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
@@ -107,3 +107,21 @@ def test_dashboard_api(app, client):
     assert data["upcoming_schedule"]
     assert data["upcoming_schedule"][0]["account_name"] == "Cash"
     assert data["forecast"]
+
+
+def test_dashboard_service_cache_hit_returns_cached_payload(app, monkeypatch):
+    from lifeos.domains.finance.services import dashboard_service
+
+    with app.app_context():
+        user = _seed_finance(app)
+        cached = {
+            "accounts": [],
+            "recent_transactions": [],
+            "upcoming_schedule": [],
+            "receivables_total": 0.0,
+            "forecast": [],
+        }
+        monkeypatch.setattr(dashboard_service.read_cache, "get", lambda scope, uid, key: cached)
+
+        result = dashboard_service.get_dashboard(user.id)
+        assert result == cached

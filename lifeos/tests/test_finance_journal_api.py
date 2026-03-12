@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from datetime import datetime
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.auth_service import issue_tokens
 from lifeos.core.users.schemas import UserCreateRequest

@@ -13,6 +13,12 @@ Canonical confidence terms used across events and insights. No numeric probabili
 - Confidence must be derivable deterministically.
 - Confidence labels are human-legible and consistent across domains.
 
+## Focused Inquiry Usage Rules (Binding)
+- Inquiry findings must use only the canonical vocabulary above.
+- User-provided context must never be assigned a confidence label as if it were system evidence; it must be labeled as user context.
+- If a finding combines confirmed evidence with unconfirmed/interpretive material, the finding confidence is capped at `needs_review`.
+- No numeric probability may be shown for inquiry findings.
+
 ## ML Scope
 - Treat `confirmed` as strong labels; `needs_review` and `suggested` are weak labels unless explicitly confirmed downstream.
 - Do not emit numeric probabilities in UI surfaces; map any internal scores to this vocabulary before exposure.

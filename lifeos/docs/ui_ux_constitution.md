@@ -80,3 +80,37 @@ For each domain: answer the primary user question first; hide complexity until i
 
 ## 10. Reference in Frontend PRs
 Include: “Aligned with UI/UX Constitution §X” and cite the domain contract applied.
+
+## 11. Focused Inquiry v1 Surface Contract (Binding)
+- Surface type: dedicated inquiry page/surface. Not chat, not dashboard, not feed replacement.
+- Primary user question: "What exactly am I trying to understand right now?"
+- Primary action: "Generate brief."
+- Entry point: explicit user intent from Insights/Navigation ("New Inquiry").
+- Interaction posture: guided analyst brief flow, not assistant conversation.
+
+### 11.1 Canonical Flow
+- Step 1 (scope): choose domain lens (or explicit cross-domain lens) and timeframe.
+- Step 2 (optional context): user may provide context text; UI must label it as user-provided context.
+- Step 3 (confirm): user confirms request and generates the brief.
+- Step 4 (review): render brief with findings, evidence links, confidence labels, and uncertainty notes.
+- Step 5 (refine): user may refine scope/timeframe/context and regenerate.
+- Step 6 (history): user can revisit prior inquiries and generated briefs.
+
+### 11.2 Read-First Hierarchy
+- Header: inquiry title, selected lens, timeframe.
+- Brief body: findings first, evidence references second, caveats/unknowns third.
+- Secondary controls: refine and history access.
+- Hidden until intent: advanced filters, raw record tables, any bulk controls.
+
+### 11.3 Evidence and Confidence Presentation
+- Every finding must show "Based on" references to canonical evidence sources.
+- Confidence labels must use only canonical vocabulary.
+- If evidence is mixed-quality, uncertainty must be explicit in the finding block.
+- User-provided context is displayed in a visually separate "Context (not evidence)" block.
+
+### 11.4 Explicit Anti-Patterns
+- Must not render as an open-ended chatbot transcript.
+- Must not inject dashboard-style dense KPI tiles into inquiry output.
+- Must not present ungrounded recommendations as facts.
+- Must not hide uncertainty or downgrade caveats for visual cleanliness.
+- Must not auto-expand into cross-domain claims without explicit evidence references.

@@ -17,7 +17,7 @@ from lifeos.domains.calendar.events import CALENDAR_EVENT_CREATED
 from lifeos.domains.finance.events import FINANCE_TRANSACTION_CREATED
 from lifeos.extensions import db
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "phase5b_insight_golden.json"
 

@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from flask_jwt_extended import create_access_token
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
@@ -131,3 +131,49 @@ def test_trial_balance_period_and_monthly(app, client):
     months = resp.get_json()["months"]
     assert months["2025-01"]["debit"] == 100
     assert months["2025-02"]["debit"] == 50
+
+
+def test_trial_balance_service_cache_hit_paths(app):
+    from lifeos.domains.finance.services import trial_balance_service
+
+    with app.app_context():
+        cached_totals = {"10": {"debit": 5.0, "credit": 1.0}}
+        cached_rollup = {"2025-01": {"debit": 5.0, "credit": 1.0}}
+        cached_view = {"accounts": [], "categories": []}
+
+        trial_balance_service.read_cache.clear()
+        assert trial_balance_service.calculate_trial_balance(1, as_of=date(2025, 1, 31)) == {}
+
+        from unittest.mock import patch
+
+        with patch.object(trial_balance_service.read_cache, "get", return_value=cached_totals):
+            totals = trial_balance_service.calculate_trial_balance(1, as_of=date(2025, 1, 31))
+            assert totals == {10: {"debit": 5.0, "credit": 1.0}}
+
+        with patch.object(trial_balance_service.read_cache, "get", return_value=cached_totals):
+            totals = trial_balance_service.period_balance(1, date(2025, 1, 1), date(2025, 1, 31))
+            assert totals == {10: {"debit": 5.0, "credit": 1.0}}
+
+        captured = {}
+
+        def _capture_set(scope, uid, key, value, ttl=None):
+            captured["scope"] = scope
+            captured["uid"] = uid
+            captured["key"] = key
+
+        with (
+            patch.object(trial_balance_service.read_cache, "get", return_value=None),
+            patch.object(
+                trial_balance_service.read_cache,
+                "set",
+                _capture_set,
+            ),
+        ):
+            trial_balance_service.period_balance(1, date(2025, 1, 1), date(2025, 1, 31))
+        assert captured["scope"] == trial_balance_service.FINANCE_READ_CACHE_SCOPE
+
+        with patch.object(trial_balance_service.read_cache, "get", return_value=cached_rollup):
+            assert trial_balance_service.monthly_rollup(1) == cached_rollup
+
+        with patch.object(trial_balance_service.read_cache, "get", return_value=cached_view):
+            assert trial_balance_service.trial_balance_view(1, as_of=date(2025, 1, 31)) == cached_view

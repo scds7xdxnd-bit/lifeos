@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import pytest
 from flask_jwt_extended import create_access_token
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
 from lifeos.extensions import db
-
-pytestmark = pytest.mark.integration
 
 
 def _create_user(app, email: str = "session-scope@example.com", password: str = "secret123") -> User:

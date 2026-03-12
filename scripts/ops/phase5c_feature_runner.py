@@ -135,6 +135,7 @@ def _write_counts(
             dtype="int",
             window=window,
             as_of_ts=as_of_ts,
+            computed_at=as_of_ts,
             feature_version=FEATURE_VERSION,
             source_event_types=source_types,
             provenance_ref=provenance,

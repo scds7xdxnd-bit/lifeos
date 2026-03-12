@@ -3,7 +3,7 @@ from datetime import date
 
 from flask_jwt_extended import create_access_token
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
@@ -60,3 +60,32 @@ def test_create_and_log_receivable(app, client):
     assert resp.status_code == 200
     items = resp.get_json()["items"]
     assert len(items) == 1
+
+
+def test_update_and_delete_receivable(app, client):
+    user = _create_user(app)
+    headers = _auth_headers(app, user.id)
+
+    created = client.post(
+        "/api/finance/receivables",
+        json={
+            "counterparty": "Delete Me Co",
+            "principal": 250,
+            "start_date": date.today().isoformat(),
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201
+    tracker_id = created.get_json()["tracker"]["id"]
+
+    updated = client.patch(
+        f"/api/finance/receivables/{tracker_id}",
+        json={"counterparty": "Updated Co"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.get_json()["tracker"]["counterparty"] == "Updated Co"
+
+    deleted = client.delete(f"/api/finance/receivables/{tracker_id}", headers=headers)
+    assert deleted.status_code == 200
+    assert deleted.get_json() == {"ok": True}

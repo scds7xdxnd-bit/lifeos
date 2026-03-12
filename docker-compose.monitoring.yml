@@ -42,6 +42,7 @@ services:
       - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/monitoring/prometheus.rules.yml:/etc/prometheus/rules.yml:ro
       - ./deploy/monitoring/phase3b-alerts.yml:/etc/prometheus/phase3b-alerts.yml:ro
+      - ./deploy/monitoring/phase6-inquiry-alerts.yml:/etc/prometheus/phase6-inquiry-alerts.yml:ro
       - lifeos-prometheus:/prometheus
     ports:
       - "9090:9090"

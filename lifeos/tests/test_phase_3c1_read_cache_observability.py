@@ -6,7 +6,23 @@ import uuid
 
 import pytest
 
-from lifeos.core.observability.metrics import READ_CACHE_HITS_TOTAL, READ_CACHE_MISSES_TOTAL
+from lifeos.core.observability.metrics import (
+    CONTRACT_VIOLATIONS_TOTAL,
+    EVENT_DISPATCH_LATENCY_SECONDS,
+    HTTP_REQUEST_LATENCY_SECONDS,
+    PROJECTION_CORRECTNESS_ERRORS_TOTAL,
+    PROJECTION_CORRECTNESS_TOTAL,
+    READ_CACHE_HITS_TOTAL,
+    READ_CACHE_MISSES_TOTAL,
+    REPLAY_DETERMINISM_FAILURES_TOTAL,
+    record_contract_violation,
+    record_event_dispatch_latency_seconds,
+    record_http_request_latency_seconds,
+    record_insight_latency_ms,
+    record_projection_check,
+    record_projection_error,
+    record_replay_determinism_failure,
+)
 from lifeos.core.read_cache import read_cache
 
 pytestmark = pytest.mark.unit
@@ -61,3 +77,44 @@ def test_read_cache_disabled_no_metrics(app):
 
     assert _counter_value(READ_CACHE_MISSES_TOTAL, scope) == miss_before
     assert _counter_value(READ_CACHE_HITS_TOTAL, scope) == hit_before
+
+
+def test_observability_metric_recorders_cover_guard_paths():
+    projection_before = PROJECTION_CORRECTNESS_TOTAL._value.get()
+    projection_error_before = PROJECTION_CORRECTNESS_ERRORS_TOTAL._value.get()
+    replay_before = REPLAY_DETERMINISM_FAILURES_TOTAL._value.get()
+    contract_before = CONTRACT_VIOLATIONS_TOTAL._value.get()
+
+    record_projection_check()
+    record_projection_error()
+    record_replay_determinism_failure()
+    record_contract_violation()
+
+    assert PROJECTION_CORRECTNESS_TOTAL._value.get() == projection_before + 1
+    assert PROJECTION_CORRECTNESS_ERRORS_TOTAL._value.get() == projection_error_before + 1
+    assert REPLAY_DETERMINISM_FAILURES_TOTAL._value.get() == replay_before + 1
+    assert CONTRACT_VIOLATIONS_TOTAL._value.get() == contract_before + 1
+
+    record_insight_latency_ms(None)
+    record_insight_latency_ms(250.0)
+
+    http_before = HTTP_REQUEST_LATENCY_SECONDS.labels(
+        method="unknown",
+        route="unknown",
+        status_code="0",
+    )._sum.get()
+    record_http_request_latency_seconds(None, method="GET", route="/ping", status_code="200")
+    record_http_request_latency_seconds(0.3, method="", route="", status_code="")
+    assert (
+        HTTP_REQUEST_LATENCY_SECONDS.labels(
+            method="unknown",
+            route="unknown",
+            status_code="0",
+        )._sum.get()
+        >= http_before + 0.3
+    )
+
+    event_before = EVENT_DISPATCH_LATENCY_SECONDS._sum.get()
+    record_event_dispatch_latency_seconds(None)
+    record_event_dispatch_latency_seconds(0.02)
+    assert EVENT_DISPATCH_LATENCY_SECONDS._sum.get() >= event_before + 0.02

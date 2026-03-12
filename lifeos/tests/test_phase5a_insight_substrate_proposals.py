@@ -25,7 +25,7 @@ from lifeos.domains.relationships.models.interaction_models import Interaction
 from lifeos.domains.relationships.models.person_models import Person
 from lifeos.extensions import db
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "phase5a_interpretation_golden.json"
 
@@ -416,3 +416,33 @@ def test_decide_proposal_api_invalid_action_returns_validation_error(app, client
         pytest.fail(f"Unexpected 500 response: {body}")
     assert resp.status_code == 400
     assert resp.get_json()["error"] == "validation_error"
+
+
+def test_list_proposals_api_rejects_invalid_pagination(app, client, user_with_tokens):
+    headers = _auth_headers(user_with_tokens["tokens"]["access_token"])
+    resp = client.get("/api/v1/insights/proposals?limit=bad", headers=headers)
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "validation_error"
+
+
+def test_legacy_proposals_route_forwards_to_v1(app, client, user_with_tokens):
+    with app.app_context():
+        user = user_with_tokens["user"]
+        _create_person(user.id, "Ada Lovelace")
+        payload = _calendar_payload(user.id, event_id="cal-legacy", title="Meeting with Ada Lovelace")
+        timeline_event = ingest_timeline_event(EventRecord(event_type="calendar.event.created", payload=payload))
+        interpretation = generate_interpretations_for_timeline_event(timeline_event)[0]
+
+    headers = _auth_headers(user_with_tokens["tokens"]["access_token"])
+    list_resp = client.get("/api/insights/proposals", headers=headers)
+    assert list_resp.status_code == 200
+    assert list_resp.get_json()["ok"] is True
+
+    csrf_token = _prime_csrf(client)
+    decide_resp = client.patch(
+        f"/api/insights/proposals/{interpretation.id}",
+        json={"action": "accepted"},
+        headers=_auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token),
+    )
+    assert decide_resp.status_code == 200
+    assert decide_resp.get_json()["ok"] is True

@@ -149,7 +149,7 @@ def list_entries(
         if normalized_tag:
             dialect = db.session.bind.dialect.name if db.session.bind else ""
             tag_variants = [normalized_tag, f"#{normalized_tag}"]
-            if dialect == "postgresql":
+            if dialect == "postgresql":  # pragma: no cover - exercised in Postgres integration environments
                 # Explicit JSONB containment to avoid LIKE fallback.
                 tag_literal = json.dumps([tag_variants[0]])
                 tag_literal_alt = json.dumps([tag_variants[1]])
@@ -171,7 +171,7 @@ def list_entries(
                     )
                     params[key] = variant
                 query = query.filter(sa.or_(*clauses)).params(**params)
-            else:
+            else:  # pragma: no cover - fallback for non-sqlite/non-postgres dialects
                 clauses = [JournalEntry.tags.contains([variant]) for variant in tag_variants if variant]
                 query = query.filter(sa.or_(*clauses))
     if search_text:

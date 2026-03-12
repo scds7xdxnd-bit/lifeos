@@ -79,6 +79,21 @@ Format:
   - Confidence bands: needs_review
   - Allowed actions: review_only
 
+## Inquiry Brief Contracts (Focused Inquiry v1)
+- focused_inquiry_domain_brief
+  - Description: A scoped inquiry brief generated from one domain lens.
+  - Required evidence: Contract-safe records/events/read models within selected domain and timeframe.
+  - Disallowed evidence: user-provided context as sole proof; events outside selected timeframe.
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_cross_domain_brief
+  - Description: A scoped inquiry brief generated from explicitly selected cross-domain lenses.
+  - Required evidence: Contract-safe records/events/read models from each selected domain.
+  - Disallowed evidence: Unselected domains; inferred causality without traceable evidence; user context as factual evidence.
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
 ## ML Scope
 - Insight contracts are binding for ML evaluation: evidence used for training/eval must be a subset of Required evidence and must exclude Disallowed evidence.
 - Confidence bands define allowable system behaviors; ML outputs must never exceed the contract (e.g., review_only remains review_only).

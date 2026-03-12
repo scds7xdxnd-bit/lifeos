@@ -82,6 +82,12 @@ DOMAIN_SEMANTIC_CONTRACTS: dict[str, DomainSemanticContract] = {
         asserts="User-authored entries and stated mood/tags.",
         must_not_infer="No mental health diagnosis or hidden intent.",
     ),
+    "inquiry": DomainSemanticContract(
+        domain="inquiry",
+        purpose="Capture user-scoped inquiry requests and deterministic evidence-based briefs.",
+        asserts="Scoped inquiry request metadata, bounded brief generation, and explicit refine/view lifecycle state.",
+        must_not_infer="No context-to-evidence promotion, no hidden causality, no autonomous actions.",
+    ),
     "system": DomainSemanticContract(
         domain="system",
         purpose="Record system and workflow events required for audit.",
@@ -470,6 +476,37 @@ EVENT_SEMANTIC_CONTRACTS: dict[str, EventSemanticContract] = {
     "journal.entry.deleted": EventSemanticContract(
         event_type="journal.entry.deleted",
         meaning="A journal entry was deleted.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    # Inquiry
+    "inquiry.requested": EventSemanticContract(
+        event_type="inquiry.requested",
+        meaning="A user requested a scoped inquiry brief.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    "inquiry.context.submitted": EventSemanticContract(
+        event_type="inquiry.context.submitted",
+        meaning="User-provided context text was submitted for an inquiry.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    "inquiry.brief.generated": EventSemanticContract(
+        event_type="inquiry.brief.generated",
+        meaning="The system generated an inquiry brief from bounded evidence.",
+        asserted_by="system",
+        certainty="informational",
+    ),
+    "inquiry.brief.viewed": EventSemanticContract(
+        event_type="inquiry.brief.viewed",
+        meaning="A user opened an inquiry brief.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    "inquiry.refined": EventSemanticContract(
+        event_type="inquiry.refined",
+        meaning="A user refined inquiry scope/timeframe/context and requested regeneration.",
         asserted_by="user",
         certainty="confirmed",
     ),

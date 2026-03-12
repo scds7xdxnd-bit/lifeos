@@ -11,12 +11,14 @@ from typing import Optional
 from flask import Flask, g, redirect, request, url_for
 from flask_jwt_extended import create_access_token
 from flask_login import current_user
+from sqlalchemy import text
 from sqlalchemy.engine import processors
 
 from lifeos.config import config_by_name
 from lifeos.core.auth.csrf import generate_csrf_token, get_session_id
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.insights.engine import insights_engine
+from lifeos.core.observability import set_phase6_inquiry_migration_mismatch
 from lifeos.extensions import init_extensions, login_manager
 
 
@@ -118,6 +120,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
             engine_opts["connect_args"] = connect_args
 
     init_extensions(app)
+    _record_phase6_inquiry_migration_state(app)
     _register_blueprints(app)
     _register_error_handlers(app)
     _register_auth_handlers(app)
@@ -177,6 +180,7 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.core.auth.controllers import auth_bp, auth_pages_bp  # local import to avoid circulars
     from lifeos.core.insights.api_v1 import api_v1_insights_bp
     from lifeos.core.insights.controllers import insights_api_bp
+    from lifeos.core.insights.inquiry_api_v1 import api_v1_inquiry_bp
     from lifeos.core.insights.pages import insights_pages_bp
     from lifeos.core.observability.controllers import metrics_bp
     from lifeos.core.users.controllers import user_api_bp, user_pages_bp
@@ -241,7 +245,9 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(project_pages_bp, url_prefix="/projects")
     app.register_blueprint(insights_api_bp, url_prefix="/api/insights")
     app.register_blueprint(api_v1_insights_bp, url_prefix="/api/v1/insights")
-    if not any(rule.rule == "/api/v1/insights/proposals" for rule in app.url_map.iter_rules()):
+    if app.config.get("ENABLE_PHASE6_FOCUSED_INQUIRY", False):
+        app.register_blueprint(api_v1_inquiry_bp, url_prefix="/api/v1/inquiries")
+    if not any(rule.rule == "/api/v1/insights/proposals" for rule in app.url_map.iter_rules()):  # pragma: no cover
         app.register_blueprint(insights_api_bp, url_prefix="/api/v1/insights")
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
@@ -253,6 +259,21 @@ def _register_blueprints(app: Flask) -> None:
     env = (app.config.get("ENV") or "").lower()
     if env != "production" or app.debug:
         app.register_blueprint(admin_debug_bp)
+
+
+def _record_phase6_inquiry_migration_state(app: Flask) -> None:
+    """Expose migration head mismatch state as a metric for rollout safety."""
+    expected_head = app.config.get("PHASE6_INQUIRY_MIGRATION_HEAD") or "unknown"
+    mismatch = True
+    try:
+        from lifeos.extensions import db
+
+        with app.app_context():
+            applied = db.session.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+        mismatch = expected_head not in set(applied or [])
+    except Exception:
+        mismatch = True
+    set_phase6_inquiry_migration_mismatch(str(expected_head), mismatch)
 
 
 def _register_error_handlers(app: Flask) -> None:

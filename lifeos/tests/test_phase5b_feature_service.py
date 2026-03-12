@@ -96,7 +96,7 @@ def test_resolve_event_date_from_payload():
     assert resolve_event_date(event) == date(2025, 1, 10)
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 def test_store_features_daily_upserts(app):
     with app.app_context():
         user = create_user(
@@ -126,7 +126,7 @@ def test_store_features_daily_upserts(app):
         assert float(rows[0].feature_value) == 3.5
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 def test_compute_features_for_user_window_filters_dates(app):
     with app.app_context():
         user = create_user(

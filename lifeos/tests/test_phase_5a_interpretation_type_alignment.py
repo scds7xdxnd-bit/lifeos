@@ -56,7 +56,7 @@ def test_optional_obligation_contract_has_no_writes():
     assert contract.correction_fields == []
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 def test_generated_interpretation_matches_contract(app):
     with app.app_context():
         user = create_user(

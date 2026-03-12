@@ -176,6 +176,28 @@ INSIGHT_CONTRACTS: dict[str, InsightContract] = {
         },
         allowed_actions=["display"],
     ),
+    "focused_inquiry_domain_brief": InsightContract(
+        name="focused_inquiry_domain_brief",
+        description="A scoped inquiry brief generated from one domain lens.",
+        required_evidence=["inquiry.requested", "inquiry.brief.generated"],
+        disallowed_evidence=["inquiry.context.submitted"],
+        confidence_bands={
+            "informational": "Evidence-backed finding with bounded scope.",
+            "needs_review": "Use when evidence is mixed or incomplete in the selected window.",
+        },
+        allowed_actions=["display", "refine_only"],
+    ),
+    "focused_inquiry_cross_domain_brief": InsightContract(
+        name="focused_inquiry_cross_domain_brief",
+        description="A scoped inquiry brief generated from explicit cross-domain lenses.",
+        required_evidence=["inquiry.requested", "inquiry.brief.generated", "inquiry.refined"],
+        disallowed_evidence=["inquiry.context.submitted"],
+        confidence_bands={
+            "informational": "Cross-domain evidence is explicit and bounded.",
+            "needs_review": "Cross-domain synthesis remains uncertain and must be treated conservatively.",
+        },
+        allowed_actions=["display", "refine_only"],
+    ),
 }
 
 
