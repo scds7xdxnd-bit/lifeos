@@ -108,7 +108,7 @@ bash scripts/ops/phase6_inquiry_rollout_check.sh
 ## SECTION 5 — Runbook
 
 Deploy checklist:
-1. Confirm migration chain includes `20260312_phase6_focused_inquiry_v1` and `20260312_phase6_inquiry_query_indexes`.
+1. Confirm migration chain head is `20260312_phase7_domain_expert_brief_metadata` (or the explicitly configured `PHASE6_INQUIRY_MIGRATION_HEAD`).
 2. Deploy web image with `BUILD_ID`/`LIFEOS_BUILD_ID` set.
 3. Set feature flag explicitly for target environment.
 4. Ensure Prometheus loads `phase6-inquiry-alerts.yml`.

@@ -94,6 +94,56 @@ Format:
   - Confidence bands: informational, needs_review
   - Allowed actions: display, refine_only
 
+## Domain Expert Brief Contracts (Phase 7 / 7.1)
+- focused_inquiry_finance_expert_brief
+  - Description: Deterministic finance-focused expert brief with finance-specific finding categories.
+  - Required evidence: finance.transaction.created, finance.journal.posted, finance.schedule.recomputed
+  - Disallowed evidence: user context as sole proof; unsupported causal claims
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_habits_expert_brief
+  - Description: Deterministic habits-focused expert brief with adherence/cadence framing.
+  - Required evidence: habits.habit.logged
+  - Disallowed evidence: habits.habit.inferred as confirmed fact
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_projects_expert_brief
+  - Description: Deterministic projects-focused expert brief with throughput/slippage framing.
+  - Required evidence: projects.task.completed, projects.task.logged
+  - Disallowed evidence: unsupported performance judgments
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_skills_expert_brief
+  - Description: Deterministic skills-focused expert brief with practice cadence framing.
+  - Required evidence: skills.practice.logged
+  - Disallowed evidence: unsupported proficiency assertions
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_journal_expert_brief
+  - Description: Deterministic journal-focused expert brief using explicit reflective signals.
+  - Required evidence: journal.entry.created, journal.entry.updated
+  - Disallowed evidence: psychological diagnosis, hidden-intent inference
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_relationships_expert_brief
+  - Description: Deterministic relationships-focused expert brief using interaction cadence evidence.
+  - Required evidence: relationships.interaction.logged, relationships.interaction.updated
+  - Disallowed evidence: relationship quality judgments, inferred intent/emotion of others
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_health_expert_brief
+  - Description: Deterministic health-focused expert brief using descriptive metric trends only.
+  - Required evidence: health.biometric.logged, health.metric.updated
+  - Disallowed evidence: diagnosis, treatment recommendation, clinical framing
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
 ## ML Scope
 - Insight contracts are binding for ML evaluation: evidence used for training/eval must be a subset of Required evidence and must exclude Disallowed evidence.
 - Confidence bands define allowable system behaviors; ML outputs must never exceed the contract (e.g., review_only remains review_only).

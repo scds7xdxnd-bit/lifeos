@@ -32,19 +32,9 @@ scrape_configs:
         regex: 'statsd_.*'
         action: keep
 
-  # PostgreSQL Database
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['db:5432']
-        labels:
-          service: 'postgres'
-
-  # Redis Cache
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis:6379']
-        labels:
-          service: 'redis'
+  # NOTE:
+  # Do not scrape raw database/cache TCP ports with Prometheus HTTP scrapes.
+  # Use postgres_exporter / redis_exporter endpoints if DB/Redis metrics are needed.
 
   # Container metrics from cAdvisor
   - job_name: 'cadvisor'

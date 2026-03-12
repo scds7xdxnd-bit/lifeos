@@ -22,6 +22,11 @@ HABITS_STRATEGY = DomainStrategyProfile(
         "Refine by narrowing scope to one habit and a tighter week window.",
         "Refine by extending timeframe when logs are sparse for selected habits.",
     ),
+    allowed_claim_prefixes=(
+        "Habits evidence includes",
+        "Habits derived signals are present",
+        "No canonical habits records were found",
+    ),
     forbidden_claim_tokens=("because", "caused", "guarantee", "always", "never", "must"),
     event_priority_prefixes=("habits.habit.logged", "habits.habit.updated", "habits.habit.created"),
     insight_priority_kinds=("habit_progress",),

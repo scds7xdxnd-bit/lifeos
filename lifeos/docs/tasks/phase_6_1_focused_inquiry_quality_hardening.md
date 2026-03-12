@@ -2,7 +2,7 @@
 
 **Audience:** Architecture, Backend, Frontend, QA, DevOps
 **Owner:** LifeOS Architecture
-**Status:** Open (quality hardening)
+**Status:** Complete (implemented and QA-approved)
 
 ---
 
@@ -49,3 +49,13 @@ Phase 6.1 operational hardening closes when:
 - baseline alert noise is quiet,
 - quality regressions trigger alerts,
 - rollout checks are reproducible.
+
+---
+
+## 6) Completion record
+
+Phase 6.1 closure is recorded with:
+- Deterministic quality-state metadata integrated into inquiry outputs.
+- Low-coverage and empty-brief handling hardened.
+- Deterministic refine guidance improved and verified.
+- Observability gates (quality/latency/error) operational with rollout checks.

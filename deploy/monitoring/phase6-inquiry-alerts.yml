@@ -320,3 +320,101 @@ groups:
         annotations:
           summary: "Phase 7 profile/strategy version drift detected"
           description: "First-wave domain expert traffic includes unexpected profile_version or strategy_version labels."
+
+      - alert: Phase71LaterWaveInquiryErrorRateHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_error_rate_by_domain_profile:ratio{expert_mode="true",domain=~"journal|relationships|health"}
+          ) > 0.18
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"journal|relationships|health"}[15m])
+          ) > 0.005
+        for: 10m
+        labels:
+          severity: warning
+          phase: "7.1"
+        annotations:
+          summary: "Phase 7.1 later-wave inquiry error rate high"
+          description: "One or more later-wave expert profiles exceeded an 18% inquiry error rate."
+
+      - alert: Phase71LaterWaveInquiryLatencyHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds{expert_mode="true",domain=~"journal|relationships|health"}
+          ) > 3
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"journal|relationships|health"}[15m])
+          ) > 0.005
+        for: 10m
+        labels:
+          severity: warning
+          phase: "7.1"
+        annotations:
+          summary: "Phase 7.1 later-wave inquiry latency high"
+          description: "One or more later-wave expert profiles exceeded 3s p95 generation latency."
+
+      - alert: Phase71LaterWaveInquiryEmptyBriefHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio{expert_mode="true",domain=~"journal|relationships|health"}
+          ) > 0.7
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"journal|relationships|health"}[15m])
+          ) > 0.005
+        for: 15m
+        labels:
+          severity: warning
+          phase: "7.1"
+        annotations:
+          summary: "Phase 7.1 later-wave empty brief anomaly"
+          description: "One or more later-wave expert profiles exceeded a 70% empty-brief rate."
+
+      - alert: Phase71LaterWaveInquiryLowCoverageHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio{expert_mode="true",domain=~"journal|relationships|health"}
+          ) > 0.5
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"journal|relationships|health"}[15m])
+          ) > 0.005
+        for: 15m
+        labels:
+          severity: warning
+          phase: "7.1"
+        annotations:
+          summary: "Phase 7.1 later-wave low coverage high"
+          description: "One or more later-wave expert profiles exceeded a 50% low-coverage rate."
+
+      - alert: Phase71LaterWaveRefineAfterLowQualityHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio{expert_mode="true",domain=~"journal|relationships|health"}
+          ) > 0.65
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_refined_by_domain_total{expert_mode="true",domain=~"journal|relationships|health"}[15m])
+          ) > 0.003
+        for: 15m
+        labels:
+          severity: warning
+          phase: "7.1"
+        annotations:
+          summary: "Phase 7.1 later-wave refine-after-low-quality high"
+          description: "One or more later-wave expert profiles exceeded a 65% refine-after-low-quality ratio."
+
+      - alert: Phase71LaterWaveProfileVersionUnexpected
+        expr: |
+          sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"journal|relationships|health",profile_version!="1.0.0"}[15m])) > 0
+          or
+          sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"journal|relationships|health",strategy_version!="1.0.0"}[15m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          phase: "7.1"
+        annotations:
+          summary: "Phase 7.1 profile/strategy version drift detected"
+          description: "Later-wave domain expert traffic includes unexpected profile_version or strategy_version labels."

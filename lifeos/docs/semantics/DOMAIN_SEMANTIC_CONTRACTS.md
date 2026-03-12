@@ -66,6 +66,14 @@ Canonical source for domain purpose and semantic boundaries.
 - Recommendation: optional follow-up prompt/question, never an autonomous action.
 - Forbidden: speculative mental/medical/financial conclusions beyond recorded evidence boundaries.
 
+## Later-Wave Domain Expert Guardrails (Phase 7.1, Binding)
+- Journal inquiry outputs may summarize explicit tags, mood fields, timestamps, and user-authored text anchors only.
+- Journal inquiry outputs must not include diagnosis, hidden-intent inference, or personality classification.
+- Relationships inquiry outputs may summarize explicit interaction logs and event-supported cadence only.
+- Relationships inquiry outputs must not include relationship quality judgments or inferred intent/emotion of other people.
+- Health inquiry outputs may summarize recorded metrics and deterministic trends only.
+- Health inquiry outputs must not include medical diagnosis, treatment recommendations, or clinical framing.
+
 ## ML Scope
 - ML consumes domain semantics to decide what can be treated as evidence; do not train on claims outside a domain's "Asserts".
 - No UI-filtered subsets are valid for training/eval; only canonical event streams and deterministic windows are allowed inputs.

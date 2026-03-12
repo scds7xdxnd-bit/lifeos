@@ -25,6 +25,36 @@ PHASE6_INQUIRY_FORBIDDEN_RUNTIME_CAPABILITIES = (
 INQUIRY_LENS_TYPES = ("domain", "cross_domain")
 ALLOWED_INQUIRY_ACTIONS = ("display", "refine_only")
 FIRST_WAVE_EXPERT_DOMAINS = ("finance", "habits", "projects", "skills")
+LATER_WAVE_EXPERT_DOMAINS = ("journal", "relationships", "health")
+ALL_EXPERT_DOMAINS = tuple(sorted({*FIRST_WAVE_EXPERT_DOMAINS, *LATER_WAVE_EXPERT_DOMAINS}))
+LATER_WAVE_DOMAIN_METADATA_CONTRACTS = {
+    "journal": {
+        "profile": "focused_inquiry_journal_expert_brief",
+        "profile_version": "1.0.0",
+        "strategy": "journal_rules_v1",
+        "strategy_version": "1.0.0",
+        "finding_categories": ("reflection_cadence", "mood_tag_pattern", "evidence_gap"),
+    },
+    "relationships": {
+        "profile": "focused_inquiry_relationships_expert_brief",
+        "profile_version": "1.0.0",
+        "strategy": "relationships_rules_v1",
+        "strategy_version": "1.0.0",
+        "finding_categories": ("interaction_cadence", "channel_distribution", "evidence_gap"),
+    },
+    "health": {
+        "profile": "focused_inquiry_health_expert_brief",
+        "profile_version": "1.0.0",
+        "strategy": "health_rules_v1",
+        "strategy_version": "1.0.0",
+        "finding_categories": ("metric_coverage", "trend_signal", "evidence_gap"),
+    },
+}
+LATER_WAVE_FORBIDDEN_TOKEN_REQUIREMENTS = {
+    "journal": ("diagnosis", "therapy", "hidden intent", "personality"),
+    "relationships": ("intent", "emotion of", "moral", "toxic"),
+    "health": ("diagnosis", "treatment", "clinical", "medical risk"),
+}
 REQUIRED_INQUIRY_QUALITY_FIELDS = (
     "findings_total",
     "findings_with_evidence",
@@ -276,7 +306,11 @@ def alignment_report() -> dict[str, object]:
     """Return alignment checks between inquiry runtime contracts and ML stubs."""
     from lifeos.core.contracts import api_contracts
     from lifeos.core.contracts.api_dsd_mappings import DSD_FIELD_MAPPINGS
-    from lifeos.core.insights.inquiry_strategies import FIRST_WAVE_DOMAIN_STRATEGIES
+    from lifeos.core.insights.inquiry_strategies import (
+        DOMAIN_STRATEGIES,
+        FIRST_WAVE_DOMAIN_STRATEGIES,
+        LATER_WAVE_DOMAIN_STRATEGIES,
+    )
     from lifeos.core.ux.domain_surface_contracts import DOMAIN_SURFACE_CONTRACTS
 
     inquiry_surface = DOMAIN_SURFACE_CONTRACTS.get("insights:inquiry")
@@ -302,8 +336,49 @@ def alignment_report() -> dict[str, object]:
     missing_quality_dsd_mappings = sorted(required_quality_dsd_keys - set(dsd_mapping.keys()))
     missing_profile_dsd_mappings = sorted(required_profile_dsd_keys - set(dsd_mapping.keys()))
 
-    strategy_domains = set(FIRST_WAVE_DOMAIN_STRATEGIES.keys())
-    expected_domains = set(FIRST_WAVE_EXPERT_DOMAINS)
+    strategy_domains = set(DOMAIN_STRATEGIES.keys())
+    expected_domains = set(ALL_EXPERT_DOMAINS)
+    first_wave_strategy_domains = set(FIRST_WAVE_DOMAIN_STRATEGIES.keys())
+    expected_first_wave_domains = set(FIRST_WAVE_EXPERT_DOMAINS)
+    later_wave_strategy_domains = set(LATER_WAVE_DOMAIN_STRATEGIES.keys())
+    expected_later_wave_domains = set(LATER_WAVE_EXPERT_DOMAINS)
+
+    later_wave_profile_mismatches: dict[str, dict[str, str]] = {}
+    later_wave_category_mismatches: dict[str, dict[str, list[str]]] = {}
+    later_wave_missing_forbidden_tokens: dict[str, list[str]] = {}
+    later_wave_invalid_versions: dict[str, dict[str, str]] = {}
+    for domain in sorted(expected_later_wave_domains & later_wave_strategy_domains):
+        strategy = LATER_WAVE_DOMAIN_STRATEGIES[domain]
+        expected = LATER_WAVE_DOMAIN_METADATA_CONTRACTS[domain]
+        profile_mismatch: dict[str, str] = {}
+        if strategy.profile != expected["profile"]:
+            profile_mismatch["profile"] = strategy.profile
+        if strategy.strategy != expected["strategy"]:
+            profile_mismatch["strategy"] = strategy.strategy
+        if profile_mismatch:
+            later_wave_profile_mismatches[domain] = profile_mismatch
+
+        version_mismatch: dict[str, str] = {}
+        if strategy.profile_version != expected["profile_version"]:
+            version_mismatch["profile_version"] = strategy.profile_version
+        if strategy.strategy_version != expected["strategy_version"]:
+            version_mismatch["strategy_version"] = strategy.strategy_version
+        if version_mismatch:
+            later_wave_invalid_versions[domain] = version_mismatch
+
+        expected_categories = set(expected["finding_categories"])
+        actual_categories = set(strategy.finding_categories)
+        if expected_categories != actual_categories:
+            later_wave_category_mismatches[domain] = {
+                "expected_only": sorted(expected_categories - actual_categories),
+                "actual_only": sorted(actual_categories - expected_categories),
+            }
+
+        required_tokens = {item.lower() for item in LATER_WAVE_FORBIDDEN_TOKEN_REQUIREMENTS[domain]}
+        actual_tokens = {item.lower() for item in strategy.forbidden_claim_tokens}
+        missing_tokens = sorted(required_tokens - actual_tokens)
+        if missing_tokens:
+            later_wave_missing_forbidden_tokens[domain] = missing_tokens
 
     confidence_labels = set()
     invalid_lenses: dict[str, str] = {}
@@ -333,8 +408,16 @@ def alignment_report() -> dict[str, object]:
         "missing_context_non_evidence_fields": sorted({"label", "text"} - context_fields),
         "missing_quality_dsd_mappings": missing_quality_dsd_mappings,
         "missing_profile_dsd_mappings": missing_profile_dsd_mappings,
-        "missing_first_wave_domains": sorted(expected_domains - strategy_domains),
-        "extra_first_wave_domains": sorted(strategy_domains - expected_domains),
+        "missing_first_wave_domains": sorted(expected_first_wave_domains - first_wave_strategy_domains),
+        "extra_first_wave_domains": sorted(first_wave_strategy_domains - expected_first_wave_domains),
+        "missing_expert_domains": sorted(expected_domains - strategy_domains),
+        "extra_expert_domains": sorted(strategy_domains - expected_domains),
+        "missing_later_wave_domains": sorted(expected_later_wave_domains - later_wave_strategy_domains),
+        "extra_later_wave_domains": sorted(later_wave_strategy_domains - expected_later_wave_domains),
+        "later_wave_profile_mismatches": later_wave_profile_mismatches,
+        "later_wave_invalid_versions": later_wave_invalid_versions,
+        "later_wave_category_mismatches": later_wave_category_mismatches,
+        "later_wave_missing_forbidden_tokens": later_wave_missing_forbidden_tokens,
     }
 
 
@@ -442,9 +525,7 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
             errors.append("invalid_brief_profile_domain")
         if not isinstance(brief_profile.get("expert_mode"), bool):
             errors.append("invalid_brief_profile_expert_mode")
-        elif (
-            brief_profile.get("expert_mode") and str(brief_profile.get("domain") or "") not in FIRST_WAVE_EXPERT_DOMAINS
-        ):
+        elif brief_profile.get("expert_mode") and str(brief_profile.get("domain") or "") not in ALL_EXPERT_DOMAINS:
             errors.append("invalid_brief_profile_expert_domain")
         categories = brief_profile.get("finding_categories")
         if not isinstance(categories, list) or any(
@@ -453,6 +534,11 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
             errors.append("invalid_brief_profile_finding_categories")
         else:
             normalized_categories = {item.strip() for item in categories}
+            domain_value = str(brief_profile.get("domain") or "")
+            if domain_value in LATER_WAVE_DOMAIN_METADATA_CONTRACTS:
+                allowed_categories = set(LATER_WAVE_DOMAIN_METADATA_CONTRACTS[domain_value]["finding_categories"])
+                if not normalized_categories.issubset(allowed_categories):
+                    errors.append("invalid_later_wave_finding_categories")
             if findings_categories and not set(findings_categories).issubset(normalized_categories):
                 errors.append("invalid_finding_category_scope")
     return errors
@@ -465,6 +551,10 @@ __all__ = [
     "INQUIRY_LENS_TYPES",
     "ALLOWED_INQUIRY_ACTIONS",
     "FIRST_WAVE_EXPERT_DOMAINS",
+    "LATER_WAVE_EXPERT_DOMAINS",
+    "ALL_EXPERT_DOMAINS",
+    "LATER_WAVE_DOMAIN_METADATA_CONTRACTS",
+    "LATER_WAVE_FORBIDDEN_TOKEN_REQUIREMENTS",
     "REQUIRED_BRIEF_PROFILE_FIELDS",
     "REQUIRED_INQUIRY_QUALITY_FIELDS",
     "REQUIRED_INQUIRY_BRIEF_FIELDS",

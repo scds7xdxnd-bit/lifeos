@@ -18,6 +18,7 @@ class DomainStrategyProfile:
     gap_category: str
     limitation_language: tuple[str, str]
     refine_guidance: tuple[str, ...]
+    allowed_claim_prefixes: tuple[str, ...]
     forbidden_claim_tokens: tuple[str, ...]
     event_priority_prefixes: tuple[str, ...]
     insight_priority_kinds: tuple[str, ...]
@@ -37,12 +38,22 @@ class DomainStrategyProfile:
         return len(self.insight_priority_kinds) + 1
 
 
-def enforce_claim_guardrail(claim: str, *, forbidden_tokens: tuple[str, ...], fallback: str) -> str:
+def enforce_claim_guardrail(
+    claim: str,
+    *,
+    allowed_prefixes: tuple[str, ...],
+    forbidden_tokens: tuple[str, ...],
+    fallback: str,
+) -> str:
+    normalized = claim.strip()
+    lowered = normalized.lower()
+    if not any(lowered.startswith(prefix.lower()) for prefix in allowed_prefixes):
+        return fallback
     lowered = claim.lower()
     for token in forbidden_tokens:
         if token in lowered:
             return fallback
-    return claim
+    return normalized
 
 
 __all__ = ["DomainStrategyProfile", "enforce_claim_guardrail"]

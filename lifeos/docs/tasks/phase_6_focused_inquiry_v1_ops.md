@@ -6,7 +6,7 @@ Owner: DevOps / Platform
 ## SECTION 1 — Feature rollout
 
 - Flag: `ENABLE_PHASE6_FOCUSED_INQUIRY`
-- Expected migration head marker: `PHASE6_INQUIRY_MIGRATION_HEAD=20260312_phase6_inquiry_query_indexes`
+- Expected migration head marker: `PHASE6_INQUIRY_MIGRATION_HEAD=20260312_phase7_domain_expert_brief_metadata`
 - Defaults:
   - local-dev/development/testing: enabled
   - staging/production: disabled by default, explicit enable required

@@ -3,7 +3,7 @@
 **Audience:** Architecture, Backend, Frontend, DB, QA, DevOps, ML (stub only)
 **Owner:** LifeOS Architecture
 **Preconditions:** Phase 5c readiness gates complete
-**Status:** Approved to Open (spec ratified)
+**Status:** Complete (implemented and semantically aligned)
 **Nature:** User-facing meaning surface (bounded, evidence-first)
 
 ---
@@ -120,3 +120,13 @@ Phase 6 closes when all are true:
 - Context is always shown as non-evidence unless independently corroborated.
 - Replay and deterministic checks pass for inquiry generation.
 - No constitutional/semantic violations introduced.
+
+---
+
+## 11) Completion record
+
+Phase 6 closure is recorded with:
+- Inquiry creation, detail, refine, and history/versioning implemented.
+- Deterministic evidence-based brief assembly in production path.
+- Inquiry lifecycle semantics aligned and enforced.
+- Confidence/uncertainty/context labeling verified by QA.

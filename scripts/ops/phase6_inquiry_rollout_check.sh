@@ -11,6 +11,10 @@ PHASE7_DOMAIN_EXPERT_ENABLED="${PHASE7_DOMAIN_EXPERT_ENABLED:-false}"
 PHASE7_FIRST_WAVE_DOMAINS="${PHASE7_FIRST_WAVE_DOMAINS:-finance,habits,projects,skills}"
 PHASE7_EXPECT_PROFILE_VERSION="${PHASE7_EXPECT_PROFILE_VERSION:-1.0.0}"
 PHASE7_EXPECT_STRATEGY_VERSION="${PHASE7_EXPECT_STRATEGY_VERSION:-1.0.0}"
+PHASE7_1_LATER_WAVE_ENABLED="${PHASE7_1_LATER_WAVE_ENABLED:-false}"
+PHASE7_1_LATER_WAVE_DOMAINS="${PHASE7_1_LATER_WAVE_DOMAINS:-journal,relationships,health}"
+PHASE7_1_EXPECT_PROFILE_VERSION="${PHASE7_1_EXPECT_PROFILE_VERSION:-1.0.0}"
+PHASE7_1_EXPECT_STRATEGY_VERSION="${PHASE7_1_EXPECT_STRATEGY_VERSION:-1.0.0}"
 
 required_metrics=(
   "lifeos_inquiry_created_total"
@@ -77,6 +81,12 @@ for metric in "${required_metrics[@]}"; do
   fi
 done
 echo "OK: required Phase 6 inquiry metrics are exposed"
+
+if grep -q '^lifeos_inquiry_forbidden_claim_block_total' <<< "${metrics_payload}"; then
+  echo "OK: optional forbidden-claim block counter metric is exposed"
+else
+  echo "WARN: optional forbidden-claim block counter metric is not emitted in this runtime" >&2
+fi
 
 inquiry_status="$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/v1/inquiries")"
 if [[ "${INQUIRY_FEATURE_ENABLED}" == "true" ]]; then
@@ -154,28 +164,34 @@ import os
 import sys
 
 payload = json.loads(os.environ["ALERTS_JSON"])
-  alerts = payload.get("data", {}).get("alerts", [])
-  firing = []
-  for alert in alerts:
-      labels = alert.get("labels", {})
-      phase = str(labels.get("phase") or "")
-      if phase in {"6", "6.1", "7"} and alert.get("state") == "firing":
-          firing.append(labels.get("alertname") or "unknown")
+alerts = payload.get("data", {}).get("alerts", [])
+firing = []
+for alert in alerts:
+    labels = alert.get("labels", {})
+    phase = str(labels.get("phase") or "")
+    if phase in {"6", "6.1", "7", "7.1"} and alert.get("state") == "firing":
+        firing.append(labels.get("alertname") or "unknown")
 
-  if firing:
-      print("ERROR: Phase 6/6.1/7 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
-      sys.exit(1)
+if firing:
+    print("ERROR: Phase 6/6.1/7/7.1 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
+    sys.exit(1)
 
-print("OK: no Phase 6/6.1/7 inquiry alerts firing")
+print("OK: no Phase 6/6.1/7/7.1 inquiry alerts firing")
 PY
 
-  if [[ "${PHASE7_DOMAIN_EXPERT_ENABLED}" == "true" ]]; then
-    rollout_query='sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance|habits|projects|skills"}[30m])) by (domain, profile_version, strategy_version)'
+  check_rollout_versions() {
+    local wave_name="${1}"
+    local domains="${2}"
+    local expected_profile="${3}"
+    local expected_strategy="${4}"
+    local rollout_query
+    rollout_query="sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode=\"true\",domain=~\"${domains//,/|}\"}[30m])) by (domain, profile_version, strategy_version)"
     rollout_json="$(curl -fsS --get --data-urlencode "query=${rollout_query}" "${PROM_URL}/api/v1/query")"
     ROLLOUT_JSON="${rollout_json}" \
-    PHASE7_EXPECT_PROFILE_VERSION="${PHASE7_EXPECT_PROFILE_VERSION}" \
-    PHASE7_EXPECT_STRATEGY_VERSION="${PHASE7_EXPECT_STRATEGY_VERSION}" \
-    PHASE7_FIRST_WAVE_DOMAINS="${PHASE7_FIRST_WAVE_DOMAINS}" \
+    WAVE_NAME="${wave_name}" \
+    EXPECTED_DOMAINS="${domains}" \
+    EXPECTED_PROFILE="${expected_profile}" \
+    EXPECTED_STRATEGY="${expected_strategy}" \
     "${PYTHON_BIN}" - <<'PY'
 import json
 import os
@@ -183,12 +199,13 @@ import sys
 
 payload = json.loads(os.environ["ROLLOUT_JSON"])
 result = payload.get("data", {}).get("result", [])
-expected_domains = {d.strip() for d in os.environ["PHASE7_FIRST_WAVE_DOMAINS"].split(",") if d.strip()}
-expected_profile = os.environ["PHASE7_EXPECT_PROFILE_VERSION"]
-expected_strategy = os.environ["PHASE7_EXPECT_STRATEGY_VERSION"]
+wave_name = os.environ["WAVE_NAME"]
+expected_domains = {d.strip() for d in os.environ["EXPECTED_DOMAINS"].split(",") if d.strip()}
+expected_profile = os.environ["EXPECTED_PROFILE"]
+expected_strategy = os.environ["EXPECTED_STRATEGY"]
 
 if not result:
-    print("WARN: no Phase 7 expert-mode traffic observed yet; version-drift check skipped", file=sys.stderr)
+    print(f"WARN: no {wave_name} expert-mode traffic observed yet; version-drift check skipped", file=sys.stderr)
     sys.exit(0)
 
 domains_seen = set()
@@ -201,26 +218,34 @@ for row in result:
         domains_seen.add(domain)
     if profile_version != expected_profile:
         print(
-            f"ERROR: domain={domain} has profile_version={profile_version}, expected={expected_profile}",
+            f"ERROR: wave={wave_name} domain={domain} has profile_version={profile_version}, expected={expected_profile}",
             file=sys.stderr,
         )
         sys.exit(1)
     if strategy_version != expected_strategy:
         print(
-            f"ERROR: domain={domain} has strategy_version={strategy_version}, expected={expected_strategy}",
+            f"ERROR: wave={wave_name} domain={domain} has strategy_version={strategy_version}, expected={expected_strategy}",
             file=sys.stderr,
         )
         sys.exit(1)
 
 missing = sorted(expected_domains - domains_seen)
 if missing:
-    print("WARN: no recent expert-mode traffic for domains: " + ", ".join(missing), file=sys.stderr)
+    print(f"WARN: no recent {wave_name} expert-mode traffic for domains: " + ", ".join(missing), file=sys.stderr)
 
-print("OK: Phase 7 profile/strategy labels are within expected rollout versions")
+print(f"OK: {wave_name} profile/strategy labels are within expected rollout versions")
 PY
+  }
+
+  if [[ "${PHASE7_DOMAIN_EXPERT_ENABLED}" == "true" ]]; then
+    check_rollout_versions "phase7-first-wave" "${PHASE7_FIRST_WAVE_DOMAINS}" "${PHASE7_EXPECT_PROFILE_VERSION}" "${PHASE7_EXPECT_STRATEGY_VERSION}"
+  fi
+
+  if [[ "${PHASE7_1_LATER_WAVE_ENABLED}" == "true" ]]; then
+    check_rollout_versions "phase7.1-later-wave" "${PHASE7_1_LATER_WAVE_DOMAINS}" "${PHASE7_1_EXPECT_PROFILE_VERSION}" "${PHASE7_1_EXPECT_STRATEGY_VERSION}"
   fi
 else
   echo "WARN: Prometheus is unreachable at ${PROM_URL}; alert-state check skipped" >&2
 fi
 
-echo "Phase 6/6.1/7 focused inquiry rollout checks passed"
+echo "Phase 6/6.1/7/7.1 focused inquiry rollout checks passed"

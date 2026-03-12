@@ -17,7 +17,7 @@ from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryRe
 from lifeos.core.insights.inquiry_strategies import (
     GENERIC_BRIEF_PROFILE,
     enforce_claim_guardrail,
-    get_first_wave_strategy,
+    get_domain_strategy,
     strategy_token_for_scope,
 )
 from lifeos.core.insights.inquiry_strategies.base import DomainStrategyProfile
@@ -290,6 +290,7 @@ def _assemble_domain_expert_brief(
         raw_claim = f"No canonical {strategy.domain} records were found in the selected inquiry timeframe."
         claim = enforce_claim_guardrail(
             raw_claim,
+            allowed_prefixes=strategy.allowed_claim_prefixes,
             forbidden_tokens=strategy.forbidden_claim_tokens,
             fallback=f"No canonical {strategy.domain} records were observed in the selected timeframe.",
         )
@@ -312,6 +313,7 @@ def _assemble_domain_expert_brief(
     )
     coverage_claim = enforce_claim_guardrail(
         coverage_claim,
+        allowed_prefixes=strategy.allowed_claim_prefixes,
         forbidden_tokens=strategy.forbidden_claim_tokens,
         fallback=f"{strategy.domain.title()} evidence volume was observed in scope.",
     )
@@ -338,6 +340,7 @@ def _assemble_domain_expert_brief(
         )
         signal_claim = enforce_claim_guardrail(
             signal_claim,
+            allowed_prefixes=strategy.allowed_claim_prefixes,
             forbidden_tokens=strategy.forbidden_claim_tokens,
             fallback=f"{strategy.domain.title()} derived signals were observed in the selected timeframe.",
         )
@@ -397,7 +400,7 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
     provenance_refs: list[dict] = []
     domain_refine_guidance: list[str] = []
     applied_strategy = (
-        get_first_wave_strategy(scope.primary_domain) if scope.lens == "domain" and len(scope.domains) == 1 else None
+        get_domain_strategy(scope.primary_domain) if scope.lens == "domain" and len(scope.domains) == 1 else None
     )
 
     if applied_strategy:

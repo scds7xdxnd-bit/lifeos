@@ -48,6 +48,7 @@ def test_inquiry_brief_surface_renders_summary_evidence_uncertainty_next_questio
     assert 'id="inquiry-summary"' in html
     assert 'id="inquiry-domain-profile-summary"' in html
     assert 'id="inquiry-domain-categories"' in html
+    assert 'id="inquiry-domain-safety-caution"' in html
     assert 'id="inquiry-findings"' in html
     assert 'id="inquiry-uncertainty"' in html
     assert 'id="inquiry-next-questions"' in html
@@ -84,10 +85,25 @@ def test_inquiry_domain_expert_rendering_patterns_are_present_for_first_wave_dom
 
     assert "Domain Profile" in html
     assert "DOMAIN_REFINE_HINTS" in html
-    assert "isFirstWaveExpertProfile" in html
+    assert "isExpertDomainProfile" in html
     assert "finding_category" in html
     assert "renderDomainProfile(brief)" in html
     assert "renderFindings(findings, brief?.brief_profile || null)" in html
+
+
+@pytest.mark.unit
+def test_inquiry_later_wave_domain_rendering_patterns_and_safety_copy_are_present():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert "journal: {" in html
+    assert "relationships: {" in html
+    assert "health: {" in html
+    assert "reflection_cadence" in html
+    assert "interaction_cadence" in html
+    assert "metric_coverage" in html
+    assert "renderDomainSafety(brief, findings)" in html
+    assert "does not infer intent, emotion, or quality judgments" in html
+    assert "does not provide diagnosis, treatment, or clinical conclusions" in html
 
 
 @pytest.mark.unit

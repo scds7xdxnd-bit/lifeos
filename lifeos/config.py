@@ -110,7 +110,7 @@ class BaseConfig:
     )
     PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
         "PHASE6_INQUIRY_MIGRATION_HEAD",
-        "20260312_phase6_inquiry_query_indexes",
+        "20260312_phase7_domain_expert_brief_metadata",
     )
 
     ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (

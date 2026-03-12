@@ -1,8 +1,11 @@
-# Phase 7 Domain Expert Briefs - Ops Runbook
+# Phase 7 Domain Expert Briefs - Ops Runbook (First-Wave)
 
 Owner: DevOps / Platform
-Scope: rollout, observability, and rollback safety for first-wave domain expert inquiry briefs
+Scope: rollout, observability, and rollback safety for first-wave domain expert inquiry briefs (`finance`, `habits`, `projects`, `skills`)
 Last updated: 2026-03-12
+
+For later-wave rollout (`journal`, `relationships`, `health`), use:
+- `lifeos/docs/ops/phase_7_1_later_wave_domain_expert_briefs_ops.md`
 
 ## 1) Rollout controls
 
@@ -78,7 +81,7 @@ Grafana dashboard:
 Script:
 - `scripts/ops/phase6_inquiry_rollout_check.sh`
 
-Phase 7 usage:
+Phase 7 first-wave usage:
 ```bash
 BASE_URL=http://localhost:8000 \
 PROM_URL=http://localhost:9090 \
@@ -97,7 +100,7 @@ Checks include:
 - inquiry endpoint health by feature-gate state
 - migration mismatch state
 - recording-rule queryability
-- phase 6/6.1/7 alert firing state
+- phase 6/6.1/7/7.1 alert firing state
 - profile/strategy version drift check for observed Phase 7 traffic
 
 ## 5) Deploy and rollback

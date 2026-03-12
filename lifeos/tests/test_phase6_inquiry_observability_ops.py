@@ -284,6 +284,30 @@ def test_phase7_alert_rule_coverage_exists():
         "Phase7DomainInquiryLowCoverageHigh",
         "Phase7DomainRefineAfterLowQualityHigh",
         "Phase7DomainProfileVersionUnexpected",
+        "Phase71LaterWaveInquiryErrorRateHigh",
+        "Phase71LaterWaveInquiryLatencyHigh",
+        "Phase71LaterWaveInquiryEmptyBriefHigh",
+        "Phase71LaterWaveInquiryLowCoverageHigh",
+        "Phase71LaterWaveRefineAfterLowQualityHigh",
+        "Phase71LaterWaveProfileVersionUnexpected",
+        'domain=~"journal|relationships|health"',
+    )
+    for token in required_tokens:
+        assert token in payload
+
+
+def test_phase71_ops_runbook_exists_with_rollout_controls():
+    runbook_path = (
+        Path(__file__).resolve().parents[1] / "docs" / "ops" / "phase_7_1_later_wave_domain_expert_briefs_ops.md"
+    )
+    payload = runbook_path.read_text(encoding="utf-8")
+    required_tokens = (
+        "PHASE7_1_LATER_WAVE_ENABLED",
+        "PHASE7_1_LATER_WAVE_DOMAINS",
+        "PHASE7_1_EXPECT_PROFILE_VERSION",
+        "PHASE7_1_EXPECT_STRATEGY_VERSION",
+        "Phase71LaterWaveInquiryErrorRateHigh",
+        "Phase71LaterWaveProfileVersionUnexpected",
     )
     for token in required_tokens:
         assert token in payload

@@ -2,7 +2,7 @@
 
 **Audience:** Architecture, Backend, Frontend, DB, QA, DevOps
 **Owner:** LifeOS Architecture
-**Status:** Open (first-wave rollout)
+**Status:** Complete (first-wave domains)
 **Nature:** Deterministic domain-specific inquiry brief hardening
 
 ---
@@ -72,3 +72,20 @@ Phase 7 operational readiness closes when:
 - dashboards and alerts catch regressions with low false-positive noise,
 - rollout checks are reproducible and include profile-version drift detection,
 - rollback path is documented and verified.
+
+---
+
+## 7) Completion record
+
+Phase 7 first-wave closure is recorded with:
+- Deterministic domain expert briefs for:
+  - Finance
+  - Habits
+  - Projects
+  - Skills
+- Domain strategy/profile metadata present and replay-stable.
+- Domain-specific finding categories and limitation language verified by QA.
+- Forbidden-claim guardrails validated for first-wave domains.
+- DevOps per-domain/profile observability gates green.
+
+Next phase: `phase_7_1_later_wave_domain_expert_briefs.md`

@@ -22,6 +22,11 @@ FINANCE_STRATEGY = DomainStrategyProfile(
         "Refine by narrowing timeframe around posting days for higher finance evidence density.",
         "Refine by focusing on one account scope if the brief spans mixed finance activity.",
     ),
+    allowed_claim_prefixes=(
+        "Finance evidence includes",
+        "Finance derived signals are present",
+        "No canonical finance records were found",
+    ),
     forbidden_claim_tokens=("because", "caused", "guarantee", "always", "never", "must"),
     event_priority_prefixes=(
         "finance.journal.posted",

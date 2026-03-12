@@ -1,0 +1,102 @@
+{
+  "journal": {
+    "brief_profile": {
+      "profile": "focused_inquiry_journal_expert_brief",
+      "profile_version": "1.0.0",
+      "strategy": "journal_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "journal",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "reflection_cadence",
+      "mood_tag_pattern",
+      "evidence_gap"
+    ],
+    "limitation_language": [
+      "Journal evidence is descriptive only and limited to explicit recorded entries.",
+      "Journal summary is bounded to tags, mood fields, timestamps, and explicit text anchors."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing to a shorter reflection window for clearer cadence signals.",
+      "Refine by specifying journal tags or mood filters in the inquiry question."
+    ],
+    "forbidden_claim_tokens": [
+      "diagnosis",
+      "depression",
+      "anxiety",
+      "personality",
+      "hidden intent",
+      "therapeutic",
+      "therapy",
+      "trauma"
+    ]
+  },
+  "relationships": {
+    "brief_profile": {
+      "profile": "focused_inquiry_relationships_expert_brief",
+      "profile_version": "1.0.0",
+      "strategy": "relationships_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "relationships",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "interaction_cadence",
+      "channel_distribution",
+      "evidence_gap"
+    ],
+    "limitation_language": [
+      "Relationships evidence is descriptive only and limited to explicit interaction logs and timestamps.",
+      "Relationships summary is bounded to cadence and calendar-linked records without quality judgments."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing the timeframe to one relationship cadence cycle.",
+      "Refine by focusing on one interaction channel when logs are mixed."
+    ],
+    "forbidden_claim_tokens": [
+      "toxic",
+      "healthy relationship",
+      "unhealthy relationship",
+      "good person",
+      "bad person",
+      "moral",
+      "intent",
+      "emotion of",
+      "should"
+    ]
+  },
+  "health": {
+    "brief_profile": {
+      "profile": "focused_inquiry_health_expert_brief",
+      "profile_version": "1.0.0",
+      "strategy": "health_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "health",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "metric_coverage",
+      "trend_signal",
+      "evidence_gap"
+    ],
+    "limitation_language": [
+      "Health evidence is descriptive and limited to recorded metrics in the selected timeframe.",
+      "Health summary is non-clinical and bounded to explicit baseline/trend records only."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing to one metric family and a tighter time window.",
+      "Refine by extending timeframe when recorded metrics are sparse."
+    ],
+    "forbidden_claim_tokens": [
+      "diagnosis",
+      "treatment",
+      "prescription",
+      "clinical",
+      "medical risk",
+      "disease",
+      "syndrome",
+      "should take"
+    ]
+  }
+}

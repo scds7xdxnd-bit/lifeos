@@ -124,6 +124,12 @@
         <div class="inquiry-block-label">Domain Profile</div>
         <div id="inquiry-domain-profile-summary" class="inquiry-domain-profile-summary"></div>
         <div id="inquiry-domain-profile-meta" class="inquiry-domain-profile-meta"></div>
+        <div id="inquiry-domain-safety-wrap" class="inquiry-domain-categories-wrap" style="display:none;">
+          <div class="inquiry-domain-subhead">Safety & Scope</div>
+          <div id="inquiry-domain-safety-summary" class="inquiry-domain-safety-summary"></div>
+          <div id="inquiry-domain-safety-caution" class="inquiry-domain-safety-caution"></div>
+          <ul id="inquiry-domain-safety-limits" class="inquiry-domain-safety-limits"></ul>
+        </div>
         <div id="inquiry-domain-categories-wrap" class="inquiry-domain-categories-wrap" style="display:none;">
           <div class="inquiry-domain-subhead">Finding categories</div>
           <div id="inquiry-domain-categories" class="inquiry-domain-categories"></div>
@@ -246,6 +252,10 @@
     const briefSummary = document.getElementById('inquiry-summary');
     const domainProfileSummaryEl = document.getElementById('inquiry-domain-profile-summary');
     const domainProfileMetaEl = document.getElementById('inquiry-domain-profile-meta');
+    const domainSafetyWrap = document.getElementById('inquiry-domain-safety-wrap');
+    const domainSafetySummaryEl = document.getElementById('inquiry-domain-safety-summary');
+    const domainSafetyCautionEl = document.getElementById('inquiry-domain-safety-caution');
+    const domainSafetyLimitsEl = document.getElementById('inquiry-domain-safety-limits');
     const domainCategoriesWrap = document.getElementById('inquiry-domain-categories-wrap');
     const domainCategoriesEl = document.getElementById('inquiry-domain-categories');
     const domainRefineWrap = document.getElementById('inquiry-domain-refine-wrap');
@@ -271,7 +281,7 @@
     const historyEmpty = document.getElementById('inquiry-history-empty');
     const historyList = document.getElementById('inquiry-history-list');
 
-    const FIRST_WAVE_EXPERT_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills']);
+    const EXPERT_RENDERED_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills', 'journal', 'relationships', 'health']);
     const DOMAIN_CATEGORY_LABELS = {
       finance: {
         cashflow_coverage: 'Cashflow coverage',
@@ -293,6 +303,21 @@
         progression_signal: 'Progression signal',
         evidence_gap: 'Evidence gap',
       },
+      journal: {
+        reflection_cadence: 'Reflection cadence',
+        mood_tag_pattern: 'Mood/tag pattern',
+        evidence_gap: 'Evidence gap',
+      },
+      relationships: {
+        interaction_cadence: 'Interaction cadence',
+        channel_distribution: 'Channel distribution',
+        evidence_gap: 'Evidence gap',
+      },
+      health: {
+        metric_coverage: 'Metric coverage',
+        trend_signal: 'Trend signal',
+        evidence_gap: 'Evidence gap',
+      },
     };
     const DOMAIN_REFINE_HINTS = {
       finance: [
@@ -310,6 +335,18 @@
       skills: [
         'Limit inquiry to one skill for clearer progression evidence.',
         'Extend window if practice sessions are too sparse.',
+      ],
+      journal: [
+        'Refine to one reflective theme across a tighter time window.',
+        'Include explicit tag focus if entries span mixed moods/topics.',
+      ],
+      relationships: [
+        'Refine to one relationship channel when interactions are mixed.',
+        'Use a narrower recency window to clarify cadence changes.',
+      ],
+      health: [
+        'Refine to one metric family when records mix multiple signals.',
+        'Extend the window if metric coverage is too sparse for trend reading.',
       ],
     };
 
@@ -396,9 +433,9 @@
       .trim()
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
-    const isFirstWaveExpertProfile = (profile) => {
+    const isExpertDomainProfile = (profile) => {
       const domain = String(profile?.domain || '').toLowerCase();
-      return Boolean(profile?.expert_mode) && FIRST_WAVE_EXPERT_DOMAINS.has(domain);
+      return Boolean(profile?.expert_mode) && EXPERT_RENDERED_DOMAINS.has(domain);
     };
 
     const categoryLabel = (category, domain) => {
@@ -412,6 +449,7 @@
       if (!profile || typeof profile !== 'object') {
         domainProfileSummaryEl.textContent = 'Generic inquiry brief profile.';
         domainProfileMetaEl.textContent = '';
+        domainSafetyWrap.style.display = 'none';
         domainCategoriesWrap.style.display = 'none';
         domainRefineWrap.style.display = 'none';
         return;
@@ -441,7 +479,7 @@
         domainCategoriesWrap.style.display = 'block';
       }
 
-      const hints = isFirstWaveExpertProfile(profile)
+      const hints = isExpertDomainProfile(profile)
         ? (DOMAIN_REFINE_HINTS[String(profile.domain || '').toLowerCase()] || [])
         : [];
       domainRefineHintsEl.innerHTML = '';
@@ -455,6 +493,80 @@
         });
         domainRefineWrap.style.display = 'block';
       }
+    };
+
+    const summarizeEvidenceWindow = (findings = []) => {
+      let refsCount = 0;
+      let latestTs = null;
+      findings.forEach((finding) => {
+        (finding.evidence_refs || []).forEach((ref) => {
+          refsCount += 1;
+          if (ref?.created_at) {
+            const ts = new Date(ref.created_at);
+            if (!Number.isNaN(ts.getTime())) {
+              if (!latestTs || ts.getTime() > latestTs.getTime()) latestTs = ts;
+            }
+          }
+        });
+      });
+      return {
+        refsCount,
+        latestLabel: latestTs ? latestTs.toLocaleDateString() : '',
+      };
+    };
+
+    const domainSafetyCopy = (domain, stats) => {
+      const latestSuffix = stats.latestLabel ? ` Latest evidence: ${stats.latestLabel}.` : '';
+      if (domain === 'journal') {
+        return {
+          summary: `Reflection evidence references: ${stats.refsCount}.${latestSuffix}`,
+          caution: 'Journal interpretation is descriptive only, based on recorded tags, mood signals, and timeframe context.',
+        };
+      }
+      if (domain === 'relationships') {
+        return {
+          summary: `Interaction evidence references: ${stats.refsCount}.${latestSuffix}`,
+          caution: 'Relationship interpretation is descriptive only and does not infer intent, emotion, or quality judgments.',
+        };
+      }
+      if (domain === 'health') {
+        return {
+          summary: `Health metric evidence references: ${stats.refsCount}.${latestSuffix}`,
+          caution: 'Health interpretation is descriptive only and does not provide diagnosis, treatment, or clinical conclusions.',
+        };
+      }
+      return {
+        summary: `Evidence references: ${stats.refsCount}.${latestSuffix}`,
+        caution: 'Interpretation is bounded to recorded evidence in the selected scope.',
+      };
+    };
+
+    const renderDomainSafety = (brief, findings = []) => {
+      const profile = brief?.brief_profile;
+      if (!isExpertDomainProfile(profile)) {
+        domainSafetyWrap.style.display = 'none';
+        return;
+      }
+
+      const domain = String(profile.domain || '').toLowerCase();
+      const stats = summarizeEvidenceWindow(findings);
+      const safety = domainSafetyCopy(domain, stats);
+      domainSafetySummaryEl.textContent = safety.summary;
+      domainSafetyCautionEl.textContent = safety.caution;
+
+      const limits = Array.isArray(brief?.limits) ? brief.limits.filter(Boolean).slice(0, 2) : [];
+      domainSafetyLimitsEl.innerHTML = '';
+      if (!limits.length) {
+        domainSafetyLimitsEl.style.display = 'none';
+      } else {
+        limits.forEach((limit) => {
+          const li = document.createElement('li');
+          li.textContent = limit;
+          domainSafetyLimitsEl.appendChild(li);
+        });
+        domainSafetyLimitsEl.style.display = 'grid';
+      }
+      domainSafetyWrap.style.display = 'block';
     };
 
     const clampCoverageRatio = (value) => {
@@ -478,7 +590,7 @@
 
     const renderQualityMetadata = (quality, briefProfile = null) => {
       if (!qualityBlock) return;
-      const expertDomain = isFirstWaveExpertProfile(briefProfile) ? String(briefProfile.domain || '') : '';
+      const expertDomain = isExpertDomainProfile(briefProfile) ? String(briefProfile.domain || '') : '';
       qualityRefineBtn.textContent = expertDomain
         ? `Refine ${labelForDomain(expertDomain)} Inquiry`
         : 'Refine Inquiry';
@@ -725,7 +837,7 @@
       }
 
       const domain = String(briefProfile?.domain || '');
-      if (!isFirstWaveExpertProfile(briefProfile)) {
+      if (!isExpertDomainProfile(briefProfile)) {
         findings.forEach((finding) => {
           findingsEl.appendChild(renderFindingCard(finding, domain));
         });
@@ -775,6 +887,7 @@
       renderBriefStatus(findings);
       renderDomainProfile(brief);
       renderFindings(findings, brief?.brief_profile || null);
+      renderDomainSafety(brief, findings);
       renderQualityMetadata(brief?.quality_metadata, brief?.brief_profile || null);
 
       briefSummary.textContent = brief?.summary || 'No summary generated.';

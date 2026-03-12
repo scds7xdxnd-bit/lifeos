@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-12 (v2.15 — Focused Inquiry v1 constitutional decision ratified)_
+_Last updated: 2026-03-12 (v2.16 — Phase 7 first-wave complete; Phase 7.1 approved)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -41,6 +41,9 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 4 Calendar Time-Canvas UI**: Verification-complete; feature-flagged calendar time-canvas renderer aligned to Apple-style interaction grammar with snapshots and QA sign-off.
 - **Phase 5a Insight Substrate & Proposal Infrastructure**: Complete; timeline ingestion, proposal interpretations, review/correction flow, and QA lifecycle verification complete.
 - **Phase 5b Deterministic Cross-Domain Insights**: Complete; feature computation, insight registry, rule emission, feed visibility, and feedback capture verified; QA sign-off recorded.
+- **Phase 6 Focused Inquiry v1**: Complete; deterministic evidence-based inquiry flow with lifecycle semantics, confidence/uncertainty output, and replay-safe brief generation.
+- **Phase 6.1 Focused Inquiry Quality Hardening**: Complete; inquiry quality transparency, deterministic refine guidance, and quality observability gates verified.
+- **Phase 7 Domain Expert Briefs (First-wave)**: Complete; deterministic domain expert strategies shipped for finance/habits/projects/skills with profile/version metadata and QA governance sign-off.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -139,9 +142,9 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 5c readiness execution remains additive/no-op only; Phase 3c-2 (event transport scaling) remains deferred by trigger policy.
-- Approved next product feature: Phase 6 Focused Inquiry v1 (spec complete, implementation pending).
-- Deferred: transport scaling (3c-2), advanced personalization, and any autonomous intelligence behavior.
+- Active: Phase 7.1 Later-Wave Domain Expert Briefs (journal, relationships, health) is approved to open.
+- Deferred: Phase 3c-2 transport scaling (trigger-based), cross-domain expert synthesis, and timeline intelligence foundations.
+- Forbidden in current window: omniscient assistant behavior, runtime ML decisioning, and autonomous action.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
@@ -1112,7 +1115,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.15 (Focused Inquiry v1 constitutional decision ratified; Phase 5c readiness active): 2026-03-12. Author: LifeOS Architect._
+_Constitution v2.16 (Phase 7 first-wave complete; Phase 7.1 later-wave approved): 2026-03-12. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1138,12 +1141,15 @@ _Constitution v2.15 (Focused Inquiry v1 constitutional decision ratified; Phase 
 - 🟡 Phase 3c-2 assessment opened: collecting outbox and dispatch telemetry before broker selection
 - ✅ Phase 5a complete: proposal substrate shipped; proposals endpoint fixed; QA lifecycle tests green
 - ✅ Phase 5b complete: rule-based insights emitted and verified; Phase 5c entry gate eligible
+- ✅ Phase 6 complete: focused inquiry flow delivered with deterministic evidence-based briefs
+- ✅ Phase 6.1 complete: inquiry quality hardening delivered and QA-approved
+- ✅ Phase 7 complete (first-wave): deterministic domain expert briefs for finance/habits/projects/skills
 
 ---
 
 # 21. Focused Inquiry v1 (Constitutional Decision, Binding)
 
-Focused Inquiry v1 is the next product feature after Phase 5c readiness. It is defined as a user-initiated, scoped, evidence-based brief generator and must preserve existing semantic law.
+Focused Inquiry v1 is the foundational inquiry feature introduced after Phase 5c readiness. It is defined as a user-initiated, scoped, evidence-based brief generator and must preserve existing semantic law.
 
 ## 21.1 Product Position
 - LifeOS is a personal evidence-based inquiry system, not a generic chatbot, not a dashboard-first tracker, and not an omniscient assistant.
@@ -1179,6 +1185,34 @@ Focused Inquiry v1 is the next product feature after Phase 5c readiness. It is d
   - `lifeos/docs/semantics/INSIGHT_CONTRACTS.md`
   - `lifeos/docs/semantics/CONFIDENCE_VOCABULARY.md`
 - Execution brief: `lifeos/docs/tasks/phase_6_focused_inquiry_v1.md`.
+
+---
+
+# 22. Phase 7.1 Later-Wave Domain Expert Briefs (Constitutional Decision, Binding)
+
+Phase 7.1 extends deterministic domain expert brief coverage to higher-semantic-risk domains:
+- Journal
+- Relationships
+- Health
+
+## 22.1 Phase objective
+- Deepen single-domain expert coverage before any cross-domain expert expansion.
+- Preserve deterministic replay, evidence-first output, and non-chat interaction model.
+
+## 22.2 Safety guardrails
+- Journal: no psychological diagnosis or hidden-intent inference.
+- Relationships: no relationship quality judgment and no inferred intent/emotion of others.
+- Health: no medical diagnosis, treatment recommendation, or clinical framing.
+- All findings must remain evidence-referenced and confidence-labeled using canonical vocabulary.
+
+## 22.3 Boundary and deferrals
+- In scope: later-wave domain strategy modules, domain-specific claim categories, and domain limitation language.
+- Deferred: cross-domain expert synthesis and timeline intelligence foundations.
+- Forbidden: omniscient assistant architecture, hidden personalization/ranking, runtime ML decisioning.
+
+## 22.4 Execution reference
+- `lifeos/docs/tasks/phase_7_domain_expert_briefs.md` (first-wave closure)
+- `lifeos/docs/tasks/phase_7_1_later_wave_domain_expert_briefs.md` (active phase brief)
 
 ---
 

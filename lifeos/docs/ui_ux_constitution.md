@@ -114,3 +114,19 @@ Include: “Aligned with UI/UX Constitution §X” and cite the domain contract 
 - Must not present ungrounded recommendations as facts.
 - Must not hide uncertainty or downgrade caveats for visual cleanliness.
 - Must not auto-expand into cross-domain claims without explicit evidence references.
+
+## 12. Domain Expert Briefs (Phase 7/7.1, Binding)
+- Domain expert briefs must remain within the same inquiry surface and flow; no new assistant shell is allowed.
+- Domain profile/version metadata must be visible but secondary to findings/evidence.
+- Domain-specific limitation language is required and must be explicit when evidence coverage is thin.
+
+### 12.1 First-wave and later-wave behavior
+- First-wave domains (finance, habits, projects, skills) may render specialized finding categories and deterministic refine guidance.
+- Later-wave domains (journal, relationships, health) must render stronger caution labels and explicit scope boundaries.
+- Later-wave domains must never infer diagnosis, relationship quality, or hidden intent.
+
+### 12.2 Presentation constraints
+- Findings still render as brief blocks, not conversational turns.
+- Evidence references remain mandatory for each finding.
+- Confidence labels remain canonical and human-legible.
+- Context remains labeled as "not evidence" and visually separated.

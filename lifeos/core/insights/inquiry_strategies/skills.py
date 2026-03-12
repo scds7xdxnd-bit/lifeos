@@ -22,6 +22,11 @@ SKILLS_STRATEGY = DomainStrategyProfile(
         "Refine by focusing on one skill and a tighter practice window.",
         "Refine by extending timeframe when practice records are sparse.",
     ),
+    allowed_claim_prefixes=(
+        "Skills evidence includes",
+        "Skills derived signals are present",
+        "No canonical skills records were found",
+    ),
     forbidden_claim_tokens=("because", "caused", "guarantee", "always", "never", "must"),
     event_priority_prefixes=(
         "skills.practice.logged",

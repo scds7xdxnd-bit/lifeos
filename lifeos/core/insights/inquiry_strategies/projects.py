@@ -22,6 +22,11 @@ PROJECTS_STRATEGY = DomainStrategyProfile(
         "Refine by limiting to a narrower project delivery window.",
         "Refine by reducing domain scope to project execution only when activity is sparse.",
     ),
+    allowed_claim_prefixes=(
+        "Projects evidence includes",
+        "Projects derived signals are present",
+        "No canonical projects records were found",
+    ),
     forbidden_claim_tokens=("because", "caused", "guarantee", "always", "never", "must"),
     event_priority_prefixes=(
         "projects.task.completed",

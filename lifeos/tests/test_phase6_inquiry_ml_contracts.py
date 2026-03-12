@@ -7,6 +7,7 @@ import pytest
 from lifeos.core.insights.ml.phase6_inquiry_contracts import (
     ALLOWED_INQUIRY_ACTIONS,
     FIRST_WAVE_EXPERT_DOMAINS,
+    LATER_WAVE_EXPERT_DOMAINS,
     INQUIRY_FUTURE_DATA_REQUIREMENTS,
     INQUIRY_FUTURE_SUPPORT_CONTRACTS,
     PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED,
@@ -38,6 +39,14 @@ def test_phase6_inquiry_ml_alignment_report_is_clean():
     assert report["missing_profile_dsd_mappings"] == []
     assert report["missing_first_wave_domains"] == []
     assert report["extra_first_wave_domains"] == []
+    assert report["missing_expert_domains"] == []
+    assert report["extra_expert_domains"] == []
+    assert report["missing_later_wave_domains"] == []
+    assert report["extra_later_wave_domains"] == []
+    assert report["later_wave_profile_mismatches"] == {}
+    assert report["later_wave_invalid_versions"] == {}
+    assert report["later_wave_category_mismatches"] == {}
+    assert report["later_wave_missing_forbidden_tokens"] == {}
 
 
 def test_phase6_inquiry_ml_runtime_boundary_is_explicit():
@@ -46,6 +55,7 @@ def test_phase6_inquiry_ml_runtime_boundary_is_explicit():
     assert "deterministic" in PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION.lower()
     assert ALLOWED_INQUIRY_ACTIONS == ("display", "refine_only")
     assert set(FIRST_WAVE_EXPERT_DOMAINS) == {"finance", "habits", "projects", "skills"}
+    assert set(LATER_WAVE_EXPERT_DOMAINS) == {"journal", "relationships", "health"}
 
 
 def test_phase6_inquiry_ml_payload_validator_enforces_bounds():
@@ -171,7 +181,7 @@ def test_phase6_inquiry_ml_payload_validator_rejects_invalid_brief_profile():
             "profile_version": "1.0.0",
             "strategy": "other_rules",
             "strategy_version": "1.0.0",
-            "domain": "relationships",
+            "domain": "calendar",
             "expert_mode": True,
             "finding_categories": ["other_category"],
             "confidence_score": 0.91,
@@ -181,6 +191,49 @@ def test_phase6_inquiry_ml_payload_validator_rejects_invalid_brief_profile():
     assert any(error.startswith("disallowed_brief_profile_fields") for error in errors)
     assert "invalid_brief_profile_expert_domain" in errors
     assert "invalid_finding_category_scope" in errors
+
+
+def test_phase6_inquiry_ml_payload_validator_accepts_later_wave_profile():
+    payload = {
+        "summary": "Scoped inquiry summary.",
+        "findings": [
+            {
+                "claim": "Journal evidence includes explicit entry cadence signals in this timeframe.",
+                "finding_category": "reflection_cadence",
+                "evidence_refs": [{"source_kind": "event_record"}],
+                "confidence_label": "informational",
+                "uncertainty_note": "Bounded to selected timeframe.",
+                "source_domains": ["journal"],
+            }
+        ],
+        "context_non_evidence": {"label": "Context (not evidence)", "text": "", "note": ""},
+        "uncertainty_note": "Bounded evidence window.",
+        "limits": [],
+        "question": "What happened in journal this week?",
+        "lens": "domain",
+        "domains": ["journal"],
+        "timeframe": {"start": "2026-01-01", "end": "2026-01-31"},
+        "as_of_ts": "2026-01-31T23:59:59",
+        "generated_at": "2026-01-31T23:59:59",
+        "brief_profile": {
+            "profile": "focused_inquiry_journal_expert_brief",
+            "profile_version": "1.0.0",
+            "strategy": "journal_rules_v1",
+            "strategy_version": "1.0.0",
+            "domain": "journal",
+            "expert_mode": True,
+            "finding_categories": ["reflection_cadence", "mood_tag_pattern", "evidence_gap"],
+        },
+        "quality_metadata": {
+            "findings_total": 1,
+            "findings_with_evidence": 1,
+            "evidence_coverage_ratio": 1.0,
+            "structure_gaps": [],
+            "sparse_domains": [],
+            "refine_guidance": [],
+        },
+    }
+    assert validate_contract_payload(payload) == []
 
 
 def test_phase6_inquiry_ml_future_scaffolds_remain_non_runtime():
