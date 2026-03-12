@@ -32,3 +32,19 @@ def list_insights():
             ],
         }
     )
+
+
+@insights_api_bp.get("/proposals")
+def list_proposals():
+    """Legacy proposals endpoint (v1 fallback)."""
+    from lifeos.core.insights.api_v1 import list_proposals_v1
+
+    return list_proposals_v1()
+
+
+@insights_api_bp.patch("/proposals/<int:interpretation_id>")
+def decide_proposal(interpretation_id: int):
+    """Legacy proposal decision endpoint (v1 fallback)."""
+    from lifeos.core.insights.api_v1 import decide_proposal_v1
+
+    return decide_proposal_v1(interpretation_id)

@@ -1,7 +1,6 @@
-# syntax=docker/dockerfile:1
 # Multi-stage build for LifeOS Flask application
 # Stage 1: Builder - compiles dependencies
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -10,52 +9,84 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     FLASK_APP=lifeos.wsgi \
     APP_ENV=production
 
+ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+    PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_BINARY=:none:
+
+RUN python - <<'EOF'
+import socket
+socket.setdefaulttimeout(120)
+EOF
+
 WORKDIR /app
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+RUN printf 'Acquire::ForceIPv4 "true";\n' > /etc/apt/apt.conf.d/99force-ipv4 \
+ && sed -i 's|http://deb.debian.org/debian|https://mirror.sg.gs/debian|g' /etc/apt/sources.list.d/debian.sources \
+ && sed -i 's|http://security.debian.org/debian-security|https://mirror.sg.gs/debian-security|g' /etc/apt/sources.list.d/debian.sources \
+ && apt-get update -o Acquire::Retries=10 \
+ && apt-get install -y --no-install-recommends build-essential libpq-dev git \
+ && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install dependencies to wheel format
 COPY lifeos/requirements.txt /tmp/requirements.txt
-RUN pip install --upgrade pip setuptools && \
-    pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r /tmp/requirements.txt
+RUN pip install --upgrade pip setuptools \
+    && pip wheel \
+    --no-cache-dir \
+    --no-build-isolation \
+    --wheel-dir /app/wheels \
+    -r /tmp/requirements.txt
 
 # Stage 2: Runtime - minimal production image
-FROM python:3.11-slim AS runtime
+FROM python:3.11-slim-bookworm AS runtime
 
 # Security: Run as non-root user
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN printf 'Acquire::ForceIPv4 "true";\n' > /etc/apt/apt.conf.d/99force-ipv4 \
+ && sed -i 's|http://deb.debian.org/debian|https://mirror.sg.gs/debian|g' /etc/apt/sources.list.d/debian.sources \
+ && sed -i 's|http://security.debian.org/debian-security|https://mirror.sg.gs/debian-security|g' /etc/apt/sources.list.d/debian.sources \
+ && apt-get update -o Acquire::Retries=10 \
+ && apt-get install -y --no-install-recommends \
+    ca-certificates \
     curl \
     libpq5 \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/* && \
-    addgroup --system lifeos && \
-    adduser --system --ingroup lifeos --home /app lifeos
+ && rm -rf /var/lib/apt/lists/* \
+ && addgroup --system lifeos \
+ && adduser --system --ingroup lifeos --home /app lifeos
+
+ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+    PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_BINARY=:none:
+
+RUN python - <<'EOF'
+import socket
+socket.setdefaulttimeout(120)
+EOF
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     FLASK_APP=lifeos.wsgi \
     APP_ENV=production \
+    MLSUGGESTER_MODEL_DIR=/app/lifeos/ml_assets \
     PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
 # Copy wheels from builder and install
 COPY --from=builder /app/wheels /tmp/wheels
-RUN pip install --upgrade pip && \
-    pip install --no-cache /tmp/wheels/* && \
+COPY lifeos/requirements.txt /tmp/requirements.txt
+RUN pip install --no-index --find-links=/tmp/wheels -r /tmp/requirements.txt && \
     rm -rf /tmp/wheels
 
 # Copy application code
 COPY --chown=lifeos:lifeos lifeos /app/lifeos
-COPY --chown=lifeos:lifeos flask_app /app/flask_app
 COPY --chown=lifeos:lifeos migrations /app/migrations
 COPY --chown=lifeos:lifeos alembic.ini /app/alembic.ini
 COPY --chown=lifeos:lifeos deploy /app/deploy
+COPY --chown=lifeos:lifeos scripts /app/scripts
 
 # Prepare application directories
 RUN chmod +x /app/deploy/scripts/*.sh && \

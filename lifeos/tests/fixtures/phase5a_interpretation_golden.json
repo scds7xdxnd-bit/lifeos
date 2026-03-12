@@ -1,0 +1,24 @@
+{
+  "interpretation": {
+    "interpretation_type": "calendar.relationship.interaction",
+    "status": "proposed",
+    "confidence": 0.55,
+    "evidence": "Calendar event \"Meeting with Ada Lovelace\" suggests an interaction with Ada Lovelace.",
+    "input_event_ids": ["calendar.event.created:cal-123"],
+    "proposed_writes": [
+      {
+        "action": "relationships.log_interaction",
+        "person_id": "__PERSON_ID__",
+        "date": "2025-01-05",
+        "method": "meeting",
+        "notes": "From calendar: Meeting with Ada Lovelace",
+        "calendar_event_id": "cal-123"
+      }
+    ],
+    "applied_writes": null,
+    "reversible_plan": {
+      "action": "relationships.delete_interaction",
+      "record_ref": "interaction_id"
+    }
+  }
+}

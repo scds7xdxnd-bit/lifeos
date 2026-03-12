@@ -16,7 +16,7 @@ from lifeos.domains.habits.events import (
 )
 from lifeos.domains.habits.models.habit_models import Habit, HabitLog
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def create_habit(

@@ -17,7 +17,7 @@ from lifeos.domains.projects.models.project_models import (
     ProjectTaskLog,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 _TASK_STATUSES = {"open", "in_progress", "completed", "blocked", "archived"}
 

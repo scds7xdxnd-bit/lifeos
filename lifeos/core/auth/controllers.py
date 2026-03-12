@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify, render_template, request, session
 from flask_jwt_extended import (
     create_access_token,
     get_jwt,
     get_jwt_identity,
     jwt_required,
 )
+from flask_login import login_user, logout_user
 from pydantic import ValidationError
 
 from lifeos.core.auth.auth_service import (
@@ -32,6 +33,7 @@ from lifeos.core.utils.decorators import csrf_protected
 from lifeos.extensions import limiter
 
 auth_bp = Blueprint("auth_api", __name__)
+auth_pages_bp = Blueprint("auth_pages", __name__)
 
 
 def _jsonable_errors(exc: ValidationError) -> list[dict]:
@@ -80,6 +82,8 @@ def register():
 @auth_bp.post("/login")
 @limiter.limit("10/minute")
 def login():
+    # Ensure login is stateless even if a stale Flask session cookie is present.
+    session.clear()
     payload = request.get_json(silent=True) or {}
     try:
         data = LoginRequest.model_validate(payload)
@@ -91,6 +95,7 @@ def login():
     user = authenticate_user(data.email, data.password)
     if not user:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
+    login_user(user, remember=False)
     tokens = issue_tokens(user)
     return jsonify(
         {
@@ -115,6 +120,8 @@ def refresh():
 @jwt_required(refresh=True)
 @csrf_protected
 def logout():
+    logout_user()
+    session.clear()
     jti = get_jwt().get("jti")
     if jti:
         revoke_refresh_token(jti)
@@ -178,3 +185,9 @@ def reset_password_route():
     except ValueError:
         return jsonify({"ok": False, "error": "invalid_token"}), 400
     return jsonify({"ok": True})
+
+
+@auth_pages_bp.get("/login")
+def login_page():
+    # Read-mode login page; keeps API unchanged.
+    return render_template("auth/login.html")

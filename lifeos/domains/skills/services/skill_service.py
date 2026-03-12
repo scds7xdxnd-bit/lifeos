@@ -15,7 +15,7 @@ from lifeos.domains.skills.events import (
 )
 from lifeos.domains.skills.models.skill_models import PracticeSession, Skill
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def create_skill(

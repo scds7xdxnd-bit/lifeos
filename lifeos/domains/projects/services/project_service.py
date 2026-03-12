@@ -13,7 +13,7 @@ from lifeos.domains.projects.events import (
 )
 from lifeos.domains.projects.models.project_models import Project
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 _PROJECT_STATUSES = {"active", "archived", "completed"}
 

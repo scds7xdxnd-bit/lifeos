@@ -2,17 +2,36 @@
 <div class="card" id="{{ component_id }}-card">
   <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
     <div>
+      <div class="meta">Health</div>
       <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-        <h2 style="margin:0;">Health</h2>
+        <h2 style="margin:0;">How is my baseline and what needs attention?</h2>
         {% set badge_domain = 'health' %}{% include "components/inferred_badge.html" %}
       </div>
-      <p style="margin:0; color:#5b6470;">Log biometrics, workouts, and meals; view daily/weekly summaries.</p>
+      <p style="margin:0; color:#5b6470;">Summaries are read-only snapshots. Log updates only when you intend to.</p>
     </div>
-    <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+      <button type="button" class="btn" id="{{ component_id }}-review-btn">Review today</button>
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-reload">Reload</button>
+    </div>
   </div>
   <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to manage health data.</div>
 
-  <div style="display:grid; gap:0.75rem; margin-top:0.75rem;">
+  <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+    <button type="button" class="text-link" id="{{ component_id }}-log-toggle">Log update</button>
+    <button type="button" class="text-link" id="{{ component_id }}-summary-toggle">View summaries</button>
+  </div>
+  <div id="{{ component_id }}-summary-controls" style="margin-top:0.75rem; display:none;">
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <input type="date" id="{{ component_id }}-daily-date">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-daily-btn">Daily summary</button>
+      <input type="date" id="{{ component_id }}-weekly-start">
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-weekly-btn">Weekly summary</button>
+    </div>
+  </div>
+  <div id="{{ component_id }}-summary" style="margin-top:0.75rem; display:none; color:#1f2430;"></div>
+  <div id="{{ component_id }}-recent" style="margin-top:0.75rem; display:grid; gap:0.5rem;"></div>
+
+  <div id="{{ component_id }}-log-panel" style="display:none; gap:0.75rem; margin-top:0.75rem;">
     <form id="{{ component_id }}-bio-form" style="display:grid; gap:0.5rem;">
       <strong>Biometric</strong>
       <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));">
@@ -71,18 +90,6 @@
       </div>
     </form>
   </div>
-
-  <div style="margin-top:0.75rem;">
-    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-      <input type="date" id="{{ component_id }}-daily-date">
-      <button type="button" class="btn btn-secondary" id="{{ component_id }}-daily-btn">Daily summary</button>
-      <input type="date" id="{{ component_id }}-weekly-start">
-      <button type="button" class="btn btn-secondary" id="{{ component_id }}-weekly-btn">Weekly summary</button>
-    </div>
-    <div id="{{ component_id }}-summary" style="margin-top:0.5rem; color:#1f2430;"></div>
-  </div>
-
-  <div id="{{ component_id }}-recent" style="margin-top:0.75rem; display:grid; gap:0.5rem;"></div>
 </div>
 
 <script>
@@ -101,6 +108,11 @@
     const weeklyBtn = el('weekly-btn');
     const summaryEl = el('summary');
     const recentEl = el('recent');
+    const reviewBtn = el('review-btn');
+    const logToggle = el('log-toggle');
+    const summaryToggle = el('summary-toggle');
+    const logPanel = el('log-panel');
+    const summaryControls = el('summary-controls');
 
     const authHeaders = (extra = {}) => {
       const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -116,10 +128,14 @@
     };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
+      const authed = lifeosAuth.isAuthenticated();
       [bioForm, workoutForm, nutritionForm].forEach((form) => {
         Array.from(form?.querySelectorAll('input, textarea, button') || []).forEach((node) => node.disabled = !authed);
       });
+      logToggle.disabled = !authed;
+      summaryToggle.disabled = !authed;
+      reviewBtn.disabled = !authed;
+      Array.from(summaryControls?.querySelectorAll('input, button') || []).forEach((node) => node.disabled = !authed);
       loginHint.style.display = authed ? 'none' : 'block';
       return authed;
     };
@@ -224,7 +240,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(bioStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A biometric entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A biometric entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(bioStatus, copy, 'error');
       }
     });
 
@@ -254,7 +276,13 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(workoutStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A workout entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A workout entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(workoutStatus, copy, 'error');
       }
     });
 
@@ -284,13 +312,36 @@
         fetchDaily();
       } else {
         const reason = body.error || res.status;
-        setStatus(nutritionStatus, reason === 401 ? 'Please log in.' : 'Unable to save.', 'error');
+        const copy = {
+          csrf_failed: 'Session expired. Refresh the page and try again.',
+          duplicate: 'A nutrition entry already exists for this date.',
+          401: 'Please log in.',
+          409: 'A nutrition entry already exists for this date.',
+        }[reason] || 'Unable to save.';
+        setStatus(nutritionStatus, copy, 'error');
       }
     });
 
     reloadBtn?.addEventListener('click', () => { fetchRecent(); fetchDaily(); fetchWeekly(); });
     dailyBtn?.addEventListener('click', fetchDaily);
     weeklyBtn?.addEventListener('click', fetchWeekly);
+    reviewBtn?.addEventListener('click', () => {
+      const first = recentEl.querySelector('.card');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    logToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = logPanel.style.display !== 'none';
+      logPanel.style.display = isOpen ? 'none' : 'grid';
+      logToggle.textContent = isOpen ? 'Log update' : 'Hide log';
+    });
+    summaryToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = summaryControls.style.display !== 'none';
+      summaryControls.style.display = isOpen ? 'none' : 'block';
+      summaryEl.style.display = isOpen ? 'none' : 'block';
+      summaryToggle.textContent = isOpen ? 'View summaries' : 'Hide summaries';
+    });
     window.addEventListener('lifeos:auth-changed', (e) => {
       ensureAuth();
       if (e.detail?.loggedIn) {
@@ -300,6 +351,11 @@
       } else {
         recentEl.innerHTML = '';
         summaryEl.textContent = '';
+        logPanel.style.display = 'none';
+        summaryControls.style.display = 'none';
+        summaryEl.style.display = 'none';
+        if (logToggle) logToggle.textContent = 'Log update';
+        if (summaryToggle) summaryToggle.textContent = 'View summaries';
       }
     });
 

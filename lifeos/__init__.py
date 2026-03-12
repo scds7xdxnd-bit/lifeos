@@ -3,17 +3,22 @@
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from flask import Flask, redirect, url_for
+from flask import Flask, g, redirect, request, url_for
+from flask_jwt_extended import create_access_token
+from flask_login import current_user
+from sqlalchemy import text
 from sqlalchemy.engine import processors
 
 from lifeos.config import config_by_name
-from lifeos.core.auth.csrf import generate_csrf_token
+from lifeos.core.auth.csrf import generate_csrf_token, get_session_id
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.insights.engine import insights_engine
+from lifeos.core.observability import set_phase6_inquiry_migration_mismatch
 from lifeos.extensions import init_extensions, login_manager
 
 
@@ -97,11 +102,29 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         except Exception:
             # If sqlite3 is unavailable or converters cannot be registered, continue with detect_types disabled.
             pass
+    else:
+        # Remove sqlite-specific connect_args that break Postgres/MySQL drivers in CI
+        engine_opts = app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
+        connect_args = engine_opts.get("connect_args") or {}
+        connect_args.pop("detect_types", None)
+        # Convert sqlite busy timeout to Postgres connect_timeout, otherwise drop it
+        if "timeout" in connect_args:
+            timeout_val = connect_args.pop("timeout")
+            is_postgres = db_uri.startswith("postgresql")
+            if is_postgres:
+                connect_args.setdefault("connect_timeout", timeout_val)
+        # If nothing remains, drop connect_args entirely
+        if not connect_args and "connect_args" in engine_opts:
+            engine_opts.pop("connect_args")
+        else:
+            engine_opts["connect_args"] = connect_args
 
     init_extensions(app)
+    _record_phase6_inquiry_migration_state(app)
     _register_blueprints(app)
     _register_error_handlers(app)
     _register_auth_handlers(app)
+    _register_observability_handlers(app)
 
     # Attach shared engines
     app.extensions["event_bus"] = event_bus
@@ -113,6 +136,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     calendar_interpreter.register_subscriptions()
     app.extensions["calendar_interpreter"] = calendar_interpreter
 
+    from lifeos.core.insights.timeline_ingestor import timeline_ingestor
+
+    timeline_ingestor.register_subscriptions()
+    app.extensions["timeline_ingestor"] = timeline_ingestor
+
     @app.get("/")
     def index():
         # Send users to the finance dashboard by default.
@@ -120,12 +148,21 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
     @app.get("/health")
     def health():
-        return {"ok": True}, 200
+        return {"ok": True, "build_id": app.config.get("BUILD_ID")}, 200
 
     @app.get("/api/v1/ping")
     def ping():
         """Lightweight endpoint for load-balancer health checks."""
         return {"pong": True}, 200
+
+    @app.get("/api/bootstrap")
+    def bootstrap():
+        """Return canonical session-bound CSRF token and build identity."""
+        return {
+            "ok": True,
+            "csrf_token": generate_csrf_token(),
+            "build_id": app.config.get("BUILD_ID"),
+        }, 200
 
     # Register CLI commands
     from lifeos.scripts.sync_calendars import register_commands
@@ -137,12 +174,19 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
 def _register_blueprints(app: Flask) -> None:
     """Lazy import and register all controllers."""
-    from lifeos.core.auth.controllers import auth_bp  # local import to avoid circulars
+    from lifeos.core.admin.controllers import admin_debug_bp
+    from lifeos.core.auth.admin_controllers import admin_auth_bp
+    from lifeos.core.auth.api_v1 import api_v1_auth_bp
+    from lifeos.core.auth.controllers import auth_bp, auth_pages_bp  # local import to avoid circulars
+    from lifeos.core.insights.api_v1 import api_v1_insights_bp
     from lifeos.core.insights.controllers import insights_api_bp
+    from lifeos.core.insights.inquiry_api_v1 import api_v1_inquiry_bp
     from lifeos.core.insights.pages import insights_pages_bp
+    from lifeos.core.observability.controllers import metrics_bp
     from lifeos.core.users.controllers import user_api_bp, user_pages_bp
     from lifeos.domains.calendar.controllers.calendar_api import calendar_api_bp
     from lifeos.domains.calendar.controllers.calendar_pages import calendar_pages_bp
+    from lifeos.domains.calendar.controllers.calendar_view_api import calendar_view_api_bp
 
     # Domain controllers (API + pages). Each module exposes *_bp variables.
     from lifeos.domains.finance.controllers.accounting_api import finance_api_bp
@@ -172,6 +216,9 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.domains.skills.controllers.skill_pages import skill_pages_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(auth_pages_bp, url_prefix="")
+    app.register_blueprint(api_v1_auth_bp, url_prefix="/api/v1/auth")
+    app.register_blueprint(admin_auth_bp, url_prefix="/admin/auth")
     app.register_blueprint(user_api_bp, url_prefix="/api/users")
     app.register_blueprint(user_pages_bp, url_prefix="/users")
 
@@ -197,9 +244,36 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(project_api_bp, url_prefix="/api/projects")
     app.register_blueprint(project_pages_bp, url_prefix="/projects")
     app.register_blueprint(insights_api_bp, url_prefix="/api/insights")
+    app.register_blueprint(api_v1_insights_bp, url_prefix="/api/v1/insights")
+    if app.config.get("ENABLE_PHASE6_FOCUSED_INQUIRY", False):
+        app.register_blueprint(api_v1_inquiry_bp, url_prefix="/api/v1/inquiries")
+    if not any(rule.rule == "/api/v1/insights/proposals" for rule in app.url_map.iter_rules()):  # pragma: no cover
+        app.register_blueprint(insights_api_bp, url_prefix="/api/v1/insights")
     app.register_blueprint(insights_pages_bp, url_prefix="/insights")
     app.register_blueprint(calendar_api_bp, url_prefix="/api/calendar")
+    app.register_blueprint(calendar_view_api_bp, url_prefix="/api/v1/calendar")
     app.register_blueprint(calendar_pages_bp, url_prefix="/calendar")
+    app.register_blueprint(metrics_bp)
+
+    # Admin/debug endpoints: register only in non-production or when debugging.
+    env = (app.config.get("ENV") or "").lower()
+    if env != "production" or app.debug:
+        app.register_blueprint(admin_debug_bp)
+
+
+def _record_phase6_inquiry_migration_state(app: Flask) -> None:
+    """Expose migration head mismatch state as a metric for rollout safety."""
+    expected_head = app.config.get("PHASE6_INQUIRY_MIGRATION_HEAD") or "unknown"
+    mismatch = True
+    try:
+        from lifeos.extensions import db
+
+        with app.app_context():
+            applied = db.session.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+        mismatch = expected_head not in set(applied or [])
+    except Exception:
+        mismatch = True
+    set_phase6_inquiry_migration_mismatch(str(expected_head), mismatch)
 
 
 def _register_error_handlers(app: Flask) -> None:
@@ -226,6 +300,20 @@ def _register_auth_handlers(app: Flask) -> None:
     """Login manager and template helpers."""
     login_manager.login_view = "auth_api.login"
 
+    def _is_auth_scope(path: str) -> bool:
+        return path == "/auth/me" or path.startswith("/api/")
+
+    def _is_same_origin_request() -> bool:
+        origin = request.headers.get("Origin")
+        if origin:
+            return origin.rstrip("/") == request.host_url.rstrip("/")
+        sec_fetch_site = request.headers.get("Sec-Fetch-Site")
+        if sec_fetch_site:
+            return sec_fetch_site == "same-origin"
+        # No browser-origin hints usually means non-browser API clients or tests.
+        # Mixed-auth rejection is only for browser same-origin flows.
+        return False
+
     @login_manager.user_loader
     def _load_user(user_id: str):
         from lifeos.core.users.models import User
@@ -235,6 +323,74 @@ def _register_auth_handlers(app: Flask) -> None:
     @app.context_processor
     def inject_csrf_token():
         return {"csrf_token": generate_csrf_token}
+
+    @app.before_request
+    def _reject_mixed_auth():
+        if request.method == "OPTIONS":
+            return None
+        if not _is_auth_scope(request.path):
+            return None
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return None
+        session_cookie_name = app.config.get("SESSION_COOKIE_NAME", "session")
+        if session_cookie_name not in request.cookies:
+            return None
+        if not _is_same_origin_request():
+            return None
+        request_id = request.headers.get("X-Request-Id") or request.headers.get("X-Request-ID")
+        app.logger.warning(
+            "mixed_auth_forbidden",
+            extra={
+                "event": "mixed_auth_forbidden",
+                "session_id": get_session_id(),
+                "build_id": app.config.get("BUILD_ID"),
+                "request_id": request_id,
+                "path": request.path,
+                "method": request.method,
+                "origin": request.headers.get("Origin"),
+            },
+        )
+        return {"ok": False, "error": "mixed_auth_forbidden"}, 403
+
+    @app.before_request
+    def _bridge_session_auth_for_scoped_jwt_routes():
+        if not _is_auth_scope(request.path):
+            return None
+        if request.headers.get("Authorization"):
+            return None
+        if not current_user.is_authenticated:
+            return None
+        claims = {"roles": getattr(current_user, "role_codes", [])}
+        access = create_access_token(identity=str(current_user.get_id()), additional_claims=claims)
+        request.environ["HTTP_AUTHORIZATION"] = f"Bearer {access}"
+        return None
+
+
+def _register_observability_handlers(app: Flask) -> None:
+    """Record HTTP request latency for observability."""
+    from lifeos.core.observability import record_http_request_latency_seconds
+
+    build_id = app.config.get("BUILD_ID")
+
+    @app.before_request
+    def _record_request_start():
+        g._request_start_time = time.perf_counter()
+
+    @app.after_request
+    def _record_request_latency(response):
+        start = getattr(g, "_request_start_time", None)
+        if start is not None:
+            route = request.url_rule.rule if request.url_rule else "unknown"
+            record_http_request_latency_seconds(
+                time.perf_counter() - start,
+                method=request.method,
+                route=route,
+                status_code=str(response.status_code),
+            )
+        if build_id:
+            response.headers["X-LifeOS-Build"] = build_id
+        return response
 
 
 # WSGI entrypoint compatibility

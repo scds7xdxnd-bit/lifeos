@@ -8,7 +8,7 @@ from lifeos.core.auth.auth_service import issue_tokens
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
 from lifeos.domains.journal.models import JournalEntry
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 from lifeos.domains.journal.events import JOURNAL_ENTRY_CREATED
 from lifeos.extensions import db
 

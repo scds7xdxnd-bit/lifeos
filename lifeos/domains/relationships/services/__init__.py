@@ -18,7 +18,7 @@ from lifeos.domains.relationships.events import (
 from lifeos.domains.relationships.models.interaction_models import Interaction
 from lifeos.domains.relationships.models.person_models import Person
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 
 def _latest_interaction_subquery(user_id: int):

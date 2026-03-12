@@ -12,7 +12,7 @@ from lifeos.domains.health.events import (
 )
 from lifeos.domains.health.models.health_models import Biometric, NutritionLog, Workout
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
 _INTENSITY = {"low", "medium", "high"}
 _MEAL_TYPES = {"breakfast", "lunch", "dinner", "snack", "other"}

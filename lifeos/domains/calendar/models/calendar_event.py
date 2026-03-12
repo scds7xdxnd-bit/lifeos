@@ -23,6 +23,10 @@ class CalendarEvent(db.Model):
         db.Index("ix_calendar_event_user_start", "user_id", "start_time"),
         db.Index("ix_calendar_event_user_end", "user_id", "end_time"),
         db.Index("ix_calendar_event_user_source", "user_id", "source"),
+        db.Index("ix_calendar_event_user_start_end", "user_id", "start_time", "end_time"),
+        db.Index("ix_calendar_event_user_start_id", "user_id", "start_time", "id"),
+        db.Index("ix_calendar_event_user_start_date", "user_id", "normalized_start_date"),
+        db.Index("ix_calendar_event_user_end_date", "user_id", "normalized_end_date"),
         db.Index(
             "ux_calendar_event_user_external",
             "user_id",
@@ -43,6 +47,8 @@ class CalendarEvent(db.Model):
     start_time: Mapped[datetime] = mapped_column(nullable=False, index=True)
     end_time: Mapped[datetime | None] = mapped_column(nullable=True)
     all_day: Mapped[bool] = mapped_column(default=False, nullable=False)
+    normalized_start_date: Mapped[datetime | None] = mapped_column(db.Date(), nullable=True)
+    normalized_end_date: Mapped[datetime | None] = mapped_column(db.Date(), nullable=True)
 
     # Location
     location: Mapped[str | None] = mapped_column(db.String(512))

@@ -3,13 +3,15 @@ from datetime import datetime, date
 
 from flask_jwt_extended import create_access_token
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.auth.password import hash_password
 from lifeos.core.users.models import User
 from lifeos.domains.finance.models.accounting_models import (
     Account,
     AccountCategory,
+    JournalEntry,
+    JournalLine,
     Transaction,
 )
 from lifeos.domains.finance.models.schedule_models import (
@@ -54,6 +56,22 @@ def _seed_finance(app):
         )
         db.session.add(acct)
         db.session.flush()
+        entry = JournalEntry(
+            user_id=user.id,
+            description="dashboard entry",
+            posted_at=datetime.utcnow(),
+        )
+        db.session.add(entry)
+        db.session.flush()
+        db.session.add(
+            JournalLine(
+                entry_id=entry.id,
+                account_id=acct.id,
+                debit=50,
+                credit=0,
+                memo="seed line",
+            )
+        )
         txn = Transaction(
             user_id=user.id,
             amount=50,
@@ -87,4 +105,23 @@ def test_dashboard_api(app, client):
     assert data["accounts"]
     assert data["recent_transactions"]
     assert data["upcoming_schedule"]
+    assert data["upcoming_schedule"][0]["account_name"] == "Cash"
     assert data["forecast"]
+
+
+def test_dashboard_service_cache_hit_returns_cached_payload(app, monkeypatch):
+    from lifeos.domains.finance.services import dashboard_service
+
+    with app.app_context():
+        user = _seed_finance(app)
+        cached = {
+            "accounts": [],
+            "recent_transactions": [],
+            "upcoming_schedule": [],
+            "receivables_total": 0.0,
+            "forecast": [],
+        }
+        monkeypatch.setattr(dashboard_service.read_cache, "get", lambda scope, uid, key: cached)
+
+        result = dashboard_service.get_dashboard(user.id)
+        assert result == cached

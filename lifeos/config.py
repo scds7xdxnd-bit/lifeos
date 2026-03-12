@@ -7,25 +7,44 @@ from datetime import timedelta
 from typing import Dict, Type
 
 from dotenv import load_dotenv
+from sqlalchemy.engine.url import make_url
 
 load_dotenv()
+
+
+def _engine_options_from_uri(uri: str) -> dict:
+    url = make_url(uri)
+    # Always keep pool_pre_ping, vary connect_args by dialect.
+    if url.get_backend_name() == "sqlite":
+        return {
+            "pool_pre_ping": True,
+            "connect_args": {"detect_types": 0, "timeout": 30},
+        }
+    if url.get_backend_name() in {"postgresql", "postgres"}:
+        timeout = int(os.environ.get("DB_CONNECT_TIMEOUT_SECONDS", "10"))
+        return {"pool_pre_ping": True, "connect_args": {"connect_timeout": timeout}}
+    return {"pool_pre_ping": True}
 
 
 class BaseConfig:
     """Base configuration loaded for all environments."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
+    BUILD_ID = (
+        os.environ.get("LIFEOS_BUILD_ID")
+        or os.environ.get("BUILD_ID")
+        or os.environ.get("GIT_SHA")
+        or os.environ.get("COMMIT_SHA")
+        or "unknown"
+    )
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///instance/lifeos.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        # Keep SQLite from returning datetime objects so SQLAlchemy can handle string parsing consistently.
-        # Also increase busy timeout to reduce "database is locked" errors under concurrent writes.
-        "connect_args": {"detect_types": 0, "timeout": 30},
-    }
+    SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
+    # Session-cookie primary auth: cookie transport security is environment-scoped
+    # via concrete config classes (dev/testing HTTP vs production HTTPS).
+    SESSION_COOKIE_SECURE = False
     PERMANENT_SESSION_LIFETIME = int(os.environ.get("SESSION_TTL_SECONDS", "86400"))
     WTF_CSRF_ENABLED = True
 
@@ -45,7 +64,17 @@ class BaseConfig:
         "yes",
     )
 
+    READ_CACHE_ENABLED = os.environ.get("READ_CACHE_ENABLED", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    READ_CACHE_DEFAULT_TTL_SECONDS = int(os.environ.get("READ_CACHE_DEFAULT_TTL_SECONDS", "30"))
+    READ_CACHE_VERSION_TTL_SECONDS = int(os.environ.get("READ_CACHE_VERSION_TTL_SECONDS", "86400"))
+    READ_CACHE_REDIS_URL = os.environ.get("READ_CACHE_REDIS_URL", os.environ.get("REDIS_URL", ""))
+
     STATIC_CACHE_MAX_AGE = int(os.environ.get("STATIC_CACHE_MAX_AGE", "3600"))
+    SEND_FILE_MAX_AGE_DEFAULT = STATIC_CACHE_MAX_AGE
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
     UPLOAD_ALLOWED_EXTENSIONS = set(
         (os.environ.get("UPLOAD_ALLOWED_EXTENSIONS") or "csv,png,jpg,jpeg,gif,pdf").split(",")
@@ -65,6 +94,46 @@ class BaseConfig:
     ENABLE_ML = os.environ.get("ENABLE_ML", "true").lower() in ("1", "true", "yes")
     MLSUGGESTER_MODEL_DIR = os.environ.get("MLSUGGESTER_MODEL_DIR", "flask_app")
 
+    ENABLE_PHASE5B_INSIGHTS = os.environ.get("ENABLE_PHASE5B_INSIGHTS", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    _phase5b_insight_types = [
+        item.strip() for item in os.environ.get("PHASE5B_INSIGHT_TYPES", "").split(",") if item.strip()
+    ]
+    PHASE5B_INSIGHT_TYPES = _phase5b_insight_types or None
+    ENABLE_PHASE6_FOCUSED_INQUIRY = os.environ.get("ENABLE_PHASE6_FOCUSED_INQUIRY", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
+        "PHASE6_INQUIRY_MIGRATION_HEAD",
+        "20260312_phase6_inquiry_query_indexes",
+    )
+
+    ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    PERSONALIZATION_ENABLED = os.environ.get("PERSONALIZATION_ENABLED", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ENABLE_INTERPRETATION_RELATIONSHIP = os.environ.get("ENABLE_INTERPRETATION_RELATIONSHIP", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ENABLE_INTERPRETATION_OBLIGATION = os.environ.get("ENABLE_INTERPRETATION_OBLIGATION", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
     # Google Calendar OAuth
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
@@ -81,25 +150,45 @@ class BaseConfig:
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     ENV = "development"
+    TEMPLATES_AUTO_RELOAD = True
+    SESSION_COOKIE_SECURE = False
+    JWT_COOKIE_SECURE = False
+    ENABLE_PHASE6_FOCUSED_INQUIRY = True
 
 
 class TestingConfig(BaseConfig):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
+    # Use file-backed SQLite so Alembic migrations and app share the same DB.
+    SQLALCHEMY_DATABASE_URI = os.environ.get("TEST_DATABASE_URL", "sqlite:///instance/test.db")
+    SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
+    READ_CACHE_ENABLED = False
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_COOKIE_CSRF_PROTECT = False
+    SESSION_COOKIE_SECURE = False
+    JWT_COOKIE_SECURE = False
+    ENABLE_PHASE6_FOCUSED_INQUIRY = True
 
 
 class ProductionConfig(BaseConfig):
     ENV = "production"
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    JWT_COOKIE_SECURE = True
+    ENABLE_PHASE6_FOCUSED_INQUIRY = False
+
+
+class StagingConfig(ProductionConfig):
+    ENV = "staging"
 
 
 config_by_name: Dict[str, Type[BaseConfig]] = {
     "development": DevelopmentConfig,
+    "local-dev": DevelopmentConfig,
     "testing": TestingConfig,
     "production": ProductionConfig,
+    "staging": StagingConfig,
+    # CI pipelines set APP_ENV=ci; map to testing defaults.
+    "ci": TestingConfig,
 }

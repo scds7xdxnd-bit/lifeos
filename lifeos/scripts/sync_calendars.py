@@ -80,3 +80,8 @@ def sync_calendars_command(user: int | None, provider: str):
 def register_commands(app):
     """Register CLI commands with the app."""
     app.cli.add_command(sync_calendars_command)
+    from lifeos.scripts.admin_reset_sessions import admin_reset_sessions_command
+    from lifeos.scripts.check_user_password import check_user_password_command
+
+    app.cli.add_command(admin_reset_sessions_command)
+    app.cli.add_command(check_user_password_command)

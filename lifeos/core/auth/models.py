@@ -60,6 +60,22 @@ class SessionToken(db.Model, TimestampMixin):
     expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
 
+class AuthSession(db.Model, TimestampMixin):
+    __tablename__ = "auth_session"
+    __table_args__ = (
+        db.UniqueConstraint("session_id", name="uq_auth_session_session_id"),
+        db.Index("ix_auth_session_user", "user_id"),
+        db.Index("ix_auth_session_user_state", "user_id", "lifecycle_state"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[str] = mapped_column(db.String(128), nullable=False)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), nullable=False)
+    lifecycle_state: Mapped[str] = mapped_column(db.String(32), nullable=False, default="active")
+    device_id: Mapped[str | None] = mapped_column(db.String(128), nullable=True)
+    invalidated_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+
 class JWTBlocklist(db.Model, TimestampMixin):
     __tablename__ = "jwt_blocklist"
 

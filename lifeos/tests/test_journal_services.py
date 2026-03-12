@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 from lifeos.core.users.schemas import UserCreateRequest
 from lifeos.core.users.services import create_user
@@ -164,10 +164,10 @@ def test_create_entry_strips_whitespace(app, test_user):
 
 
 def test_create_entry_mood_valid_range(app, test_user):
-    """Should accept mood within valid range (-5 to 5)."""
+    """Should accept mood within valid range (-5 to 10)."""
     with app.app_context():
         with patch("lifeos.domains.journal.services.journal_service.enqueue_outbox"):
-            for mood in [-5, -3, 0, 3, 5]:
+            for mood in [-5, -3, 0, 3, 5, 10]:
                 entry = journal_service.create_entry(
                     user_id=test_user.id,
                     title=f"Mood {mood}",
@@ -192,7 +192,7 @@ def test_create_entry_mood_invalid_below_min(app, test_user):
 
 
 def test_create_entry_mood_invalid_above_max(app, test_user):
-    """Should reject mood above maximum (5)."""
+    """Should reject mood above maximum (10)."""
     with app.app_context():
         with pytest.raises(ValueError, match="validation_error"):
             journal_service.create_entry(
@@ -200,7 +200,7 @@ def test_create_entry_mood_invalid_above_max(app, test_user):
                 title="Too Good",
                 body="Content",
                 entry_date=date.today(),
-                mood=6,
+                mood=11,
             )
 
 
@@ -281,6 +281,25 @@ def test_update_entry_partial(app, test_user):
             assert updated.body == "Keep body"  # Unchanged
             assert updated.mood == 5  # Updated
             assert updated.tags == ["original"]  # Unchanged
+
+
+def test_update_entry_normalizes_tags(app, test_user):
+    with app.app_context():
+        with patch("lifeos.domains.journal.services.journal_service.enqueue_outbox"):
+            entry = journal_service.create_entry(
+                user_id=test_user.id,
+                title="Tag Normalize",
+                body="Body",
+                entry_date=date.today(),
+                tags=["focus"],
+            )
+            updated = journal_service.update_entry(
+                test_user.id,
+                entry.id,
+                tags=[" #focus ", "focus", "", "#daily"],
+            )
+
+            assert updated.tags == ["focus", "daily"]
 
 
 def test_update_entry_not_found(app, test_user):
@@ -507,7 +526,6 @@ def test_list_entries_filter_by_mood(app, test_user):
         assert entries[0].title == "Happy"
 
 
-@pytest.mark.xfail(reason="SQLite JSON contains() filter does not work correctly with array fields")
 def test_list_entries_filter_by_tag(app, test_user):
     """Should filter by tag."""
     with app.app_context():
@@ -530,6 +548,28 @@ def test_list_entries_filter_by_tag(app, test_user):
         entries, total = journal_service.list_entries(test_user.id, tag="gratitude")
         assert total == 1
         assert entries[0].title == "Tagged"
+
+
+def test_list_entries_filter_by_tag_accepts_hash_prefix(app, test_user):
+    with app.app_context():
+        with patch("lifeos.domains.journal.services.journal_service.enqueue_outbox"):
+            journal_service.create_entry(
+                user_id=test_user.id,
+                title="Hash tag",
+                body="Content",
+                entry_date=date.today(),
+                tags=["gratitude"],
+            )
+
+        entries, total = journal_service.list_entries(test_user.id, tag="#gratitude")
+        assert total == 1
+        assert entries[0].title == "Hash tag"
+
+
+def test_normalize_tag_helpers_cover_edge_cases():
+    assert journal_service._normalize_tag(None) == ""
+    assert journal_service._normalize_tag("  #Focus ") == "Focus"
+    assert journal_service._normalize_tags(["#one", "one", "", "two", " #two "]) == ["one", "two"]
 
 
 def test_list_entries_search_text(app, test_user):

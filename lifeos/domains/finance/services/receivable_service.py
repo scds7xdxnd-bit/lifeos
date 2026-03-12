@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import List, Tuple
 
+from lifeos.core.read_cache import read_cache
 from lifeos.domains.finance.events import (
     FINANCE_RECEIVABLE_CREATED,
     FINANCE_RECEIVABLE_ENTRY_RECORDED,
@@ -16,7 +17,9 @@ from lifeos.domains.finance.models.receivable_models import (
     ReceivableTracker,
 )
 from lifeos.extensions import db
-from lifeos.platform.outbox import enqueue as enqueue_outbox
+from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
+
+FINANCE_READ_CACHE_SCOPE = "finance.reads"
 
 
 def create_receivable(
@@ -45,10 +48,13 @@ def create_receivable(
             "user_id": user_id,
             "principal": float(principal),
             "counterparty": counterparty,
+            "start_date": start_date.isoformat(),
+            "due_date": due_date.isoformat() if due_date else None,
         },
         user_id=user_id,
     )
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return tracker
 
 
@@ -60,6 +66,7 @@ def update_receivable(user_id: int, tracker_id: int, **fields) -> ReceivableTrac
         if key in fields and fields[key] is not None:
             setattr(tracker, key, fields[key])
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return tracker
 
 
@@ -69,6 +76,7 @@ def delete_receivable(user_id: int, tracker_id: int) -> bool:
         return False
     db.session.delete(tracker)
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return True
 
 
@@ -107,6 +115,7 @@ def record_receivable_entry(
         user_id=user_id,
     )
     db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
     return entry
 
 

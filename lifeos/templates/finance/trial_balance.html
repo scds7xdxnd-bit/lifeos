@@ -6,12 +6,17 @@
       <div>
         <h2 style="margin:0;">Trial Balance</h2>
         <p style="margin:0; color:#5b6470;">As-of balances, period totals, and monthly rollups.</p>
+        <p style="margin:0.25rem 0 0; color:#7a8599; font-size:0.9rem;">Read-only summary. Adjust dates only when you need to refine the view.</p>
       </div>
-      <button type="button" class="btn btn-secondary" id="tb-reload">Reload</button>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button type="button" class="btn" id="tb-review">Review balances</button>
+        <button type="button" class="btn btn-secondary" id="tb-toggle-filters" aria-expanded="false">Adjust dates</button>
+        <button type="button" class="btn btn-secondary" id="tb-reload">Refresh all</button>
+      </div>
     </div>
     <div id="tb-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to view trial balance.</div>
 
-    <div style="margin-top:0.75rem; display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-items:end;">
+    <div id="tb-filters" data-display="grid" style="margin-top:0.75rem; display:none; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-items:end;">
       <div class="field">
         <label for="tb-as-of">As of date</label>
         <input id="tb-as-of" type="date">
@@ -36,7 +41,8 @@
         <h3 style="margin:0;">Category Rollups</h3>
         <p style="margin:0; color:#5b6470;">Balances grouped by account category.</p>
       </div>
-      <div style="display:flex; gap:0.5rem; align-items:center;">
+      <button type="button" class="btn btn-secondary" id="tb-cat-toggle" aria-expanded="false">Filter categories</button>
+      <div id="tb-cat-controls" data-display="flex" style="display:none; gap:0.5rem; align-items:center;">
         <select id="tb-cat-filter" class="input" style="min-width:140px;">
           <option value="">All types</option>
           <option value="asset">Asset</option>
@@ -62,20 +68,23 @@
         <h3 style="margin:0;">Period totals</h3>
         <p style="margin:0; color:#5b6470;">Net by normal balance for a date range.</p>
       </div>
+      <button type="button" class="btn btn-secondary" id="tb-period-toggle" aria-expanded="false">Show period totals</button>
     </div>
-    <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items:end; margin-top:0.5rem;">
-      <div class="field">
-        <label for="tb-start">Start date</label>
-        <input id="tb-start" type="date">
+    <div id="tb-period-controls" data-display="block" style="display:none;">
+      <div style="display:grid; gap:0.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items:end; margin-top:0.5rem;">
+        <div class="field">
+          <label for="tb-start">Start date</label>
+          <input id="tb-start" type="date">
+        </div>
+        <div class="field">
+          <label for="tb-end">End date</label>
+          <input id="tb-end" type="date">
+        </div>
+        <button type="button" class="btn btn-secondary" id="tb-period-apply">Run period</button>
       </div>
-      <div class="field">
-        <label for="tb-end">End date</label>
-        <input id="tb-end" type="date">
-      </div>
-      <button type="button" class="btn btn-secondary" id="tb-period-apply">Run period</button>
+      <div id="tb-period-status" class="auth-status" style="margin-top:0.25rem;"></div>
+      <div id="tb-period-results" style="margin-top:0.5rem; display:grid; gap:0.35rem;"></div>
     </div>
-    <div id="tb-period-status" class="auth-status" style="margin-top:0.25rem;"></div>
-    <div id="tb-period-results" style="margin-top:0.5rem; display:grid; gap:0.35rem;"></div>
   </div>
 
   <div class="card">
@@ -84,14 +93,16 @@
         <h3 style="margin:0;">Monthly rollup</h3>
         <p style="margin:0; color:#5b6470;">Net per month by normal balance.</p>
       </div>
-      <button type="button" class="btn btn-secondary" id="tb-monthly-reload">Refresh</button>
+      <button type="button" class="btn btn-secondary" id="tb-monthly-toggle" aria-expanded="false">Show monthly rollup</button>
     </div>
     <div id="tb-monthly-status" class="auth-status" style="margin-top:0.25rem;"></div>
-    <div style="overflow-x:auto; margin-top:0.5rem;">
-      <table>
-        <thead><tr><th>Month</th><th>Debit normal</th><th>Credit normal</th><th>Net</th></tr></thead>
-        <tbody id="tb-monthly-body"></tbody>
-      </table>
+    <div id="tb-monthly-controls" data-display="block" style="display:none;">
+      <div style="overflow-x:auto; margin-top:0.5rem;">
+        <table>
+          <thead><tr><th>Month</th><th>Debit normal</th><th>Credit normal</th><th>Net</th></tr></thead>
+          <tbody id="tb-monthly-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -102,6 +113,9 @@
     const statusEl = document.getElementById('tb-status');
     const asOfInput = document.getElementById('tb-as-of');
     const applyBtn = document.getElementById('tb-apply');
+    const reviewBtn = document.getElementById('tb-review');
+    const filterToggle = document.getElementById('tb-toggle-filters');
+    const filterPanel = document.getElementById('tb-filters');
     const reloadBtn = document.getElementById('tb-reload');
     const loginHint = document.getElementById('tb-login-hint');
 
@@ -110,14 +124,19 @@
     const startInput = document.getElementById('tb-start');
     const endInput = document.getElementById('tb-end');
     const periodBtn = document.getElementById('tb-period-apply');
+    const periodToggle = document.getElementById('tb-period-toggle');
+    const periodPanel = document.getElementById('tb-period-controls');
 
     const monthlyStatus = document.getElementById('tb-monthly-status');
     const monthlyBody = document.getElementById('tb-monthly-body');
-    const monthlyBtn = document.getElementById('tb-monthly-reload');
+    const monthlyToggle = document.getElementById('tb-monthly-toggle');
+    const monthlyPanel = document.getElementById('tb-monthly-controls');
 
     const catStatus = document.getElementById('tb-cat-status');
     const catBody = document.getElementById('tb-cat-body');
     const catFilter = document.getElementById('tb-cat-filter');
+    const catToggle = document.getElementById('tb-cat-toggle');
+    const catControls = document.getElementById('tb-cat-controls');
 
     let lastCategories = [];
 
@@ -126,11 +145,34 @@
       node.textContent = msg || '';
       if (tone) node.dataset.tone = tone; else node.removeAttribute('data-tone');
     };
+    const resolveContractError = (body, res) => {
+      const error = body?.error;
+      if (res?.status === 409 || error === 'read_only_violation') {
+        return 'Read-only contract violation detected. Please refresh and report this issue.';
+      }
+      if (['contract_mismatch', 'contract_violation', 'schema_mismatch'].includes(error)) {
+        return 'Contract mismatch detected. Please refresh and try again.';
+      }
+      return '';
+    };
+
+    const togglePanel = (btn, panel) => {
+      if (!btn || !panel) return;
+      const isOpen = panel.style.display !== 'none';
+      const displayMode = panel.dataset.display || 'block';
+      panel.style.display = isOpen ? 'none' : displayMode;
+      btn.setAttribute('aria-expanded', (!isOpen).toString());
+    };
 
     const ensureAuth = () => {
-      const authed = !!lifeosAuth.getTokens().access_token;
-      [applyBtn, reloadBtn, periodBtn, monthlyBtn].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      const authed = lifeosAuth.isAuthenticated();
+      [applyBtn, reloadBtn, periodBtn, reviewBtn, filterToggle, periodToggle, monthlyToggle, catToggle].forEach((btn) => { if (btn) btn.disabled = !authed; });
+      [asOfInput, startInput, endInput, catFilter].forEach((inp) => { if (inp) inp.disabled = !authed; });
       loginHint.style.display = authed ? 'none' : 'block';
+      if (!authed) {
+        [filterPanel, catControls, periodPanel, monthlyPanel].forEach((panel) => { if (panel) panel.style.display = 'none'; });
+        [filterToggle, catToggle, periodToggle, monthlyToggle].forEach((btn) => { if (btn) btn.setAttribute('aria-expanded', 'false'); });
+      }
       return authed;
     };
 
@@ -195,6 +237,12 @@
       if (asOfInput.value) params.set('as_of', asOfInput.value);
       const res = await fetch(`/api/finance/trial_balance${params.toString() ? '?' + params.toString() : ''}`, { headers: lifeosAuth.authHeaders() });
       const body = await res.json().catch(() => ({}));
+      const contractError = resolveContractError(body, res);
+      if (contractError) {
+        setStatus(statusEl, contractError, 'error');
+        setStatus(catStatus, contractError, 'error');
+        return;
+      }
       if (res.ok && body.ok !== false) {
         renderRows(body.accounts || []);
         lastCategories = body.categories || [];
@@ -223,6 +271,11 @@
       const params = new URLSearchParams({ start: startInput.value, end: endInput.value });
       const res = await fetch(`/api/finance/trial_balance/period?${params.toString()}`, { headers: lifeosAuth.authHeaders() });
       const body = await res.json().catch(() => ({}));
+      const contractError = resolveContractError(body, res);
+      if (contractError) {
+        setStatus(periodStatus, contractError, 'error');
+        return;
+      }
       if (res.ok && body.ok !== false) {
         const totals = body.totals || {};
         // If API returns per-account map, collapse to simple sums.
@@ -274,6 +327,11 @@
       setStatus(monthlyStatus, 'Loading...');
       const res = await fetch('/api/finance/trial_balance/monthly', { headers: lifeosAuth.authHeaders() });
       const body = await res.json().catch(() => ({}));
+      const contractError = resolveContractError(body, res);
+      if (contractError) {
+        setStatus(monthlyStatus, contractError, 'error');
+        return;
+      }
       if (res.ok && body.ok !== false) {
         renderMonthly(body.months || {});
         setStatus(monthlyStatus, '');
@@ -283,10 +341,29 @@
       }
     };
 
+    reviewBtn?.addEventListener('click', fetchTrialBalance);
     applyBtn?.addEventListener('click', fetchTrialBalance);
     reloadBtn?.addEventListener('click', () => { fetchTrialBalance(); fetchPeriod(); fetchMonthly(); });
     periodBtn?.addEventListener('click', fetchPeriod);
-    monthlyBtn?.addEventListener('click', fetchMonthly);
+    filterToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      togglePanel(filterToggle, filterPanel);
+    });
+    catToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      togglePanel(catToggle, catControls);
+    });
+    periodToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      togglePanel(periodToggle, periodPanel);
+    });
+    monthlyToggle?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      togglePanel(monthlyToggle, monthlyPanel);
+      if (monthlyPanel.style.display !== 'none') {
+        fetchMonthly();
+      }
+    });
     window.addEventListener('lifeos:auth-changed', (e) => {
       ensureAuth();
       if (e.detail?.loggedIn) {
@@ -306,10 +383,17 @@
       }
     });
 
-    ensureAuth();
-    fetchTrialBalance();
-    fetchPeriod();
-    fetchMonthly();
+    const runInitial = () => {
+      ensureAuth();
+      fetchTrialBalance();
+      fetchPeriod();
+      fetchMonthly();
+    };
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(runInitial);
+    } else {
+      runInitial();
+    }
   })();
 </script>
 {% endblock %}

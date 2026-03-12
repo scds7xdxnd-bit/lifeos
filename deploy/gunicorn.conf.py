@@ -57,6 +57,7 @@ user = None
 group = None
 tmp_upload_dir = None
 preload_app = os.environ.get("GUNICORN_PRELOAD", "false").lower() in ("1", "true", "yes")
+reload = os.environ.get("GUNICORN_RELOAD", "false").lower() in ("1", "true", "yes")
 
 # ===== Security Settings =====
 # Limit request size to prevent abuse

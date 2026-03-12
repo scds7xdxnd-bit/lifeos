@@ -19,7 +19,7 @@ else
 fi
 
 echo "=== Checking Black Formatting ==="
-black --check lifeos/ --line-length=120 || {
+black --check lifeos/ || {
     echo "⚠️ Black check failed. Run 'black lifeos/' to fix formatting."
     exit 1
 }

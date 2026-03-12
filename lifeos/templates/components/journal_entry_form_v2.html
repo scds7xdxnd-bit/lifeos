@@ -1,6 +1,6 @@
 {# Updated Manual Journal Entry Form Component
    Reuses account_search_dropdown component for per-line typeahead + inline account creation
-   
+
    Usage:
    {% set component_id = 'journal' %}
    {% include "components/journal_entry_form_v2.html" %}
@@ -11,12 +11,17 @@
 <div class="card" id="{{ component_id }}-card">
   <div style="display:flex; justify-content: space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
     <div>
-      <h2 style="margin:0;">Journal entry</h2>
-      <p style="margin:0; color:#5b6470;">Record a balanced double-entry journal entry.</p>
+      <div class="meta">Finance Journal</div>
+      <h2 style="margin:0;">Record a journal entry</h2>
+      <p style="margin:0; color:#5b6470;">Creation is intentional. Review balances before posting.</p>
+    </div>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <button type="button" class="btn" id="{{ component_id }}-review-btn">Review entries</button>
+      <button type="button" class="btn btn-secondary" id="{{ component_id }}-form-toggle">New entry</button>
     </div>
   </div>
   <div id="{{ component_id }}-login-hint" style="margin-top:0.5rem; color:#b3352f; display:none;">Please log in to post journal entries.</div>
-  <form id="{{ component_id }}-form" autocomplete="off" style="margin-top:0.75rem; display:grid; gap:0.75rem;">
+  <form id="{{ component_id }}-form" autocomplete="off" style="margin-top:0.75rem; display:none; gap:0.75rem;">
     <div class="field">
       <label for="{{ component_id }}-description">Description</label>
       <input id="{{ component_id }}-description" name="description" type="text" placeholder="e.g., Monthly rent payment" maxlength="255">
@@ -75,14 +80,16 @@
     const postedAtInput = el('posted-at');
     const submitBtn = el('submit');
     const resetBtn = el('reset');
+    const toggleBtn = el('form-toggle');
     const totalDebitEl = el('total-debit');
     const totalCreditEl = el('total-credit');
     const diffEl = el('diff');
     const lines = [];
+    let dropdownListenerBound = false;
 
     const financeAuthState = () => {
       const tokens = lifeosAuth.getTokens();
-      const authed = !!tokens.access_token;
+      const authed = lifeosAuth.isAuthenticated();
       const hasRole = Array.isArray(tokens?.user?.role_codes) && tokens.user.role_codes.includes('finance:write');
       return { allowed: authed && hasRole, authed };
     };
@@ -92,6 +99,13 @@
       [submitBtn, resetBtn, addBtn, descriptionInput, postedAtInput].forEach((node) => { if (node) node.disabled = !allowed; });
       if (linesTable) {
         linesTable.querySelectorAll('input, select, textarea, button').forEach((node) => { node.disabled = !allowed; });
+      }
+      if (toggleBtn) {
+        toggleBtn.disabled = !allowed;
+        if (!allowed) {
+          toggleBtn.textContent = 'New entry';
+          form.style.display = 'none';
+        }
       }
       if (!allowed) {
         loginHint.textContent = authed ? 'Requires permission to post journal entries.' : 'Please log in to post journal entries.';
@@ -113,6 +127,21 @@
     };
 
     const formatMoney = (value) => Number(value || 0).toFixed(2);
+
+    toggleBtn?.addEventListener('click', () => {
+      if (!ensureAuth()) return;
+      const isOpen = form.style.display !== 'none';
+      form.style.display = isOpen ? 'none' : 'grid';
+      toggleBtn.textContent = isOpen ? 'New entry' : 'Hide entry form';
+    });
+
+    const closeDropdowns = (target) => {
+      if (!linesTable) return;
+      if (target?.closest?.('.account-search-wrapper')) return;
+      linesTable.querySelectorAll('.account-search-dropdown').forEach((dropdown) => {
+        dropdown.style.display = 'none';
+      });
+    };
 
     const renderTotals = () => {
       let debit = 0;
@@ -191,6 +220,10 @@
         const amountInput = tr.querySelector('input[data-field="amount"]');
         const memoInput = tr.querySelector('input[data-field="memo"]');
         const removeBtn = tr.querySelector('button[data-remove]');
+        const dropdownEl = tr.querySelector(`#${searchId}-dropdown`);
+        const loadingEl = tr.querySelector(`#${searchId}-loading`);
+        const resultsEl = tr.querySelector(`#${searchId}-results`);
+        const emptyEl = tr.querySelector(`#${searchId}-empty`);
 
         dcSelect.addEventListener('change', (e) => {
           lines[idx].dc = e.target.value === 'C' ? 'C' : 'D';
@@ -216,7 +249,7 @@
 
         // Initialize account search dropdown for this line with custom callback
         const searchInput = tr.querySelector(`#${searchId}-input`);
-        
+
         // Create debounced search with module availability check
         let debouncedSearch;
         const initDebouncedSearch = () => {
@@ -225,14 +258,14 @@
             setTimeout(initDebouncedSearch, 50);
             return;
           }
-          
+
           // Module is now available - create debounced search
           debouncedSearch = window.lifeosAccountSearch.createDebouncedSearch(
             (results) => renderAccountSearchResults(searchId, idx, results),
             300
           );
         };
-        
+
         // Also provide fallback for actual missing modules
         const createFallbackDebouncedSearch = () => {
           let timeoutId = null;
@@ -248,7 +281,7 @@
             }, 300);
           };
         };
-        
+
         // Initialize debounced search or fallback
         if (window.lifeosAccountSearch?.createDebouncedSearch) {
           initDebouncedSearch();
@@ -270,12 +303,12 @@
         searchInput.addEventListener('input', (e) => {
           const query = e.target.value;
           if (query.length === 0) {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+            if (dropdownEl) dropdownEl.style.display = 'none';
           } else {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'block';
-            document.getElementById(`${searchId}-loading`).style.display = 'block';
-            document.getElementById(`${searchId}-results`).style.display = 'block';
-            document.getElementById(`${searchId}-empty`).style.display = 'none';
+            if (dropdownEl) dropdownEl.style.display = 'block';
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (resultsEl) resultsEl.style.display = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
             debouncedSearch(query);
           }
         });
@@ -283,14 +316,7 @@
         // Focus event
         searchInput.addEventListener('focus', () => {
           if (searchInput.value.length > 0) {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'block';
-          }
-        });
-
-        // Click outside to close dropdown
-        document.addEventListener('click', (e) => {
-          if (!tr.contains(e.target)) {
-            document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+            if (dropdownEl) dropdownEl.style.display = 'block';
           }
         });
 
@@ -299,6 +325,11 @@
           searchInput.value = line.account_name;
         }
       });
+
+      if (!dropdownListenerBound) {
+        dropdownListenerBound = true;
+        document.addEventListener('click', (e) => closeDropdowns(e.target));
+      }
 
       renderTotals();
     };
@@ -314,14 +345,14 @@
         return;
       }
 
-      loadingMsg.style.display = 'none';
+      if (loadingMsg) loadingMsg.style.display = 'none';
       resultsContainer.innerHTML = '';
 
       if (!results || results.length === 0) {
-        emptyMsg.style.display = 'block';
+        if (emptyMsg) emptyMsg.style.display = 'block';
         resultsContainer.style.display = 'block';
       } else {
-        emptyMsg.style.display = 'none';
+        if (emptyMsg) emptyMsg.style.display = 'none';
         resultsContainer.style.display = 'block';
       }
 
@@ -345,7 +376,8 @@
           lines[lineIdx].account_id = result.id;
           lines[lineIdx].account_name = result.name;
           searchInput.value = result.name;
-          document.getElementById(`${searchId}-dropdown`).style.display = 'none';
+          const dropdownEl = document.getElementById(`${searchId}-dropdown`);
+          if (dropdownEl) dropdownEl.style.display = 'none';
           renderTotals();
         });
 
@@ -407,7 +439,7 @@
               <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #1f2430;">Create New Account</h3>
               <p style="margin: 0; color: #5b6470; font-size: 0.9rem;">Choose type and category for "<strong>${name}</strong>"</p>
             </div>
-            
+
             <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem;">
               <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s;">
                 <input type="radio" name="account-type" value="asset" checked style="margin-top: 0.25rem; cursor: pointer;">
@@ -445,7 +477,15 @@
                 </span>
               </label>
             </div>
-            
+
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.9rem; color: #1f2430;">Subtype (optional)</label>
+              <select id="inline-subtype-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
+                <option value="">Loading subtypes…</option>
+              </select>
+              <small id="inline-subtype-hint" style="color: #5b6470; font-size: 0.8rem; display: block; margin-top: 0.25rem;"></small>
+            </div>
+
             <div style="margin-bottom: 1.5rem;">
               <label style="display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.9rem; color: #1f2430;">Category (optional)</label>
               <select id="inline-category-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e0e5ec; border-radius: 6px; font-size: 0.9rem;">
@@ -456,10 +496,10 @@
               </div>
               <small style="color: #5b6470; font-size: 0.8rem;">Leave blank to use the default category for the selected type.</small>
             </div>
-            
-            <div style="display: flex; gap: 0.75rem;">
-              <button type="button" class="create-account-submit" class="btn" style="flex: 1; padding: 0.75rem; background: #0b4f9c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Account</button>
-              <button type="button" class="create-account-cancel" class="btn btn-secondary" style="flex: 1; padding: 0.75rem; background: #e0e5ec; color: #1f2430; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+
+          <div style="display: flex; gap: 0.75rem;">
+              <button type="button" class="btn create-account-submit" style="flex: 1; padding: 0.75rem; background: #0b4f9c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Account</button>
+              <button type="button" class="btn btn-secondary create-account-cancel" style="flex: 1; padding: 0.75rem; background: #e0e5ec; color: #1f2430; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
             </div>
             <div id="inline-create-error" style="margin-top: 0.5rem; color: #b3352f; font-size: 0.85rem;"></div>
           `;
@@ -470,8 +510,42 @@
 
           const categorySelect = modal.querySelector('#inline-category-select');
           const categoryNewInput = modal.querySelector('#inline-category-new');
+          const subtypeSelect = modal.querySelector('#inline-subtype-select');
+          const subtypeHint = modal.querySelector('#inline-subtype-hint');
           const errorEl = modal.querySelector('#inline-create-error');
           const typeRadios = modal.querySelectorAll('input[name="account-type"]');
+
+          // Populate subtypes for the given base type
+          const populateSubtypes = async (baseType) => {
+            if (!subtypeSelect) return;
+            subtypeSelect.innerHTML = '<option value="">— None / other —</option>';
+            subtypeSelect.disabled = true;
+            if (subtypeHint) {
+              subtypeHint.textContent = 'Loading subtypes...';
+            }
+            if (!window.lifeosAccountSubtypes?.getSubtypes) {
+              if (subtypeHint) subtypeHint.textContent = 'Subtype list unavailable (module not loaded).';
+              return;
+            }
+            try {
+              const subs = await window.lifeosAccountSubtypes.getSubtypes(baseType);
+              if (Array.isArray(subs) && subs.length) {
+                subs.forEach((sub) => {
+                  const opt = document.createElement('option');
+                  opt.value = sub;
+                  opt.textContent = sub.replace(/_/g, ' ');
+                  subtypeSelect.appendChild(opt);
+                });
+                subtypeSelect.disabled = false;
+                if (subtypeHint) subtypeHint.textContent = `${subs.length} subtype option(s) for ${baseType}`;
+              } else if (subtypeHint) {
+                subtypeHint.textContent = 'No subtype suggestions for this type.';
+              }
+            } catch (err) {
+              console.warn('Failed to load subtypes', err);
+              if (subtypeHint) subtypeHint.textContent = 'Unable to load subtypes. You can continue without one.';
+            }
+          };
 
           // Populate categories based on selected type
           const populateCategories = async (baseType) => {
@@ -493,12 +567,14 @@
 
           // Initialize with default selection
           populateCategories('asset');
+          populateSubtypes('asset');
 
           // Update categories when type changes
           typeRadios.forEach(radio => {
             radio.addEventListener('change', () => {
               if (radio.checked) {
                 populateCategories(radio.value);
+                populateSubtypes(radio.value);
               }
             });
           });
@@ -517,7 +593,8 @@
             const accountType = getSelectedType();
             const categoryId = categorySelect.value ? parseInt(categorySelect.value) : null;
             const categoryNameNew = categoryNewInput.value.trim() || null;
-            
+            const accountSubtype = subtypeSelect?.value || null;
+
             errorEl.textContent = '';
 
             try {
@@ -525,7 +602,7 @@
               const account = await window.lifeosAccountSearch?.createAccountInline?.(
                 name,
                 accountType,
-                null, // subtype
+                accountSubtype || null, // subtype
                 categoryId,
                 categoryNameNew
               );

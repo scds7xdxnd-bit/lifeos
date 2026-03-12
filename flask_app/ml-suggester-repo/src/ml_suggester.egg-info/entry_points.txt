@@ -1,2 +1,0 @@
-[console_scripts]
-ml-suggester = ml_suggester.cli:main

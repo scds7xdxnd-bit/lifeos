@@ -56,8 +56,17 @@ def list_events():
 
     try:
         params = CalendarEventListParams.model_validate(request.args)
-    except Exception:
-        return jsonify({"ok": False, "error": "validation_error"}), 400
+    except Exception as exc:
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": "validation_error",
+                    "details": getattr(exc, "errors", lambda: [])(),
+                }
+            ),
+            400,
+        )
 
     events = list_calendar_events(
         user_id=user_id,

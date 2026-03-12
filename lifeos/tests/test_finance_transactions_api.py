@@ -13,7 +13,7 @@ from lifeos.domains.finance.models.accounting_models import (
 )
 from lifeos.domains.finance.services.accounting_service import create_account
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 def _login_headers(client, email: str, password: str) -> dict[str, str]:

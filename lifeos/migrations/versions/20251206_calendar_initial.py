@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("start_time", sa.DateTime(), nullable=False),
         sa.Column("end_time", sa.DateTime(), nullable=True),
-        sa.Column("all_day", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("all_day", sa.Boolean(), server_default=sa.text("FALSE"), nullable=False),
         sa.Column("location", sa.String(length=512), nullable=True),
         sa.Column(
             "source",
@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column("external_id", sa.String(length=255), nullable=True),
         sa.Column("recurrence_rule", sa.String(length=255), nullable=True),
         sa.Column("color", sa.String(length=16), nullable=True),
-        sa.Column("is_private", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("is_private", sa.Boolean(), server_default=sa.text("FALSE"), nullable=False),
         sa.Column("tags", sa.JSON(), nullable=True),
         sa.Column("metadata", sa.JSON(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),

@@ -1,6 +1,6 @@
 # LifeOS Monitoring Stack Compose Override
 # Use: docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
-# 
+#
 # This stack adds monitoring infrastructure:
 # - Prometheus (metrics collection & storage)
 # - Grafana (visualization & dashboards)
@@ -41,6 +41,8 @@ services:
     volumes:
       - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/monitoring/prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+      - ./deploy/monitoring/phase3b-alerts.yml:/etc/prometheus/phase3b-alerts.yml:ro
+      - ./deploy/monitoring/phase6-inquiry-alerts.yml:/etc/prometheus/phase6-inquiry-alerts.yml:ro
       - lifeos-prometheus:/prometheus
     ports:
       - "9090:9090"
@@ -139,10 +141,10 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.47.0
     container_name: lifeos-cadvisor
     command:
-      - "--enable_metrics=cpu,memory,network,process,disk,fs"
+      - "--enable_metrics=cpu,memory,network,process,disk"
       - "--housekeeping_interval=30s"
       - "--disable_metrics=advtcp,tcp,udp,percpu,sched,hugetlb"
-      - "--log_level=info"
+      - "-logtostderr"
     ports:
       - "8080:8080"
     volumes:

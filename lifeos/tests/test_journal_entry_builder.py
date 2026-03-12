@@ -15,7 +15,7 @@ from lifeos.domains.finance.models.accounting_models import (
 )
 from lifeos.domains.finance.services.accounting_service import create_account
 from lifeos.extensions import db
-from lifeos.platform.outbox.models import OutboxMessage
+from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
 
 def _auth_headers(token: str, csrf_token: str | None = None) -> dict[str, str]:

@@ -393,7 +393,7 @@ class TestProjectEventEmission:
     def test_project_created_event_emitted(self, app, test_user):
         """Project creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="projects.project.created"
@@ -410,7 +410,7 @@ class TestProjectEventEmission:
     def test_project_updated_event_emitted(self, app, test_user):
         """Project update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Update Event Project")
 
@@ -429,7 +429,7 @@ class TestProjectEventEmission:
     def test_project_archived_event_emitted(self, app, test_user):
         """Project archive should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Archive Event Project")
 
@@ -448,7 +448,7 @@ class TestProjectEventEmission:
     def test_project_completed_event_emitted(self, app, test_user):
         """Project completion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Complete Event Project")
 
@@ -467,7 +467,7 @@ class TestProjectEventEmission:
     def test_task_created_event_emitted(self, app, test_user):
         """Task creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             project = create_project(test_user.id, name="Task Event Project")
 

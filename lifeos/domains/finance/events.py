@@ -5,6 +5,7 @@ from __future__ import annotations
 FINANCE_ACCOUNT_CREATED = "finance.account.created"
 FINANCE_ACCOUNT_CATEGORY_UPDATED = "finance.account.category_updated"
 FINANCE_TRANSACTION_CREATED = "finance.transaction.created"
+FINANCE_TRANSACTION_INFERRED = "finance.transaction.inferred"
 FINANCE_JOURNAL_POSTED = "finance.journal.posted"
 FINANCE_SCHEDULE_CREATED = "finance.schedule.created"
 FINANCE_SCHEDULE_UPDATED = "finance.schedule.updated"
@@ -51,6 +52,26 @@ EVENT_CATALOG = {
             "category": "str?",
             "counterparty": "str?",
             "occurred_at": "datetime",
+            "source": "str?",
+            "calendar_event_id": "int?",
+            "confidence_score": "float?",
+            "inferred_status": "str?",
+            "payload_version": "str",
+        },
+    },
+    FINANCE_TRANSACTION_INFERRED: {
+        "version": "v1",
+        "payload": {
+            "transaction_id": "int",
+            "calendar_event_id": "int",
+            "user_id": "int",
+            "confidence_score": "float",
+            "amount": "decimal?",
+            "description": "str?",
+            "payload_version": "str",
+            "model_version": "str?",
+            "is_false_positive": "bool?",
+            "is_false_negative": "bool?",
         },
     },
     FINANCE_JOURNAL_POSTED: {
@@ -78,10 +99,7 @@ EVENT_CATALOG = {
         "payload": {
             "row_id": "int",
             "user_id": "int",
-            "amount": "decimal?",
-            "account_id": "int?",
-            "event_date": "date?",
-            "memo": "str?",
+            "fields": "dict",
         },
     },
     FINANCE_SCHEDULE_DELETED: {
@@ -145,6 +163,7 @@ __all__ = [
     "FINANCE_ACCOUNT_CREATED",
     "FINANCE_ACCOUNT_CATEGORY_UPDATED",
     "FINANCE_TRANSACTION_CREATED",
+    "FINANCE_TRANSACTION_INFERRED",
     "FINANCE_JOURNAL_POSTED",
     "FINANCE_SCHEDULE_CREATED",
     "FINANCE_SCHEDULE_UPDATED",

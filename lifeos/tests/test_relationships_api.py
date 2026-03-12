@@ -1,6 +1,7 @@
 """Tests for Relationships domain API endpoints."""
 
 from datetime import date, timedelta
+from uuid import uuid4
 
 import pytest
 from flask_jwt_extended import create_access_token
@@ -19,7 +20,8 @@ from lifeos.extensions import db
 def test_user(app):
     """Create a test user for relationships API tests."""
     with app.app_context():
-        user = User(email="relationships-api@example.com", password_hash=hash_password("secret"))
+        unique_email = f"relationships-api+{uuid4().hex}@example.com"
+        user = User(email=unique_email, password_hash=hash_password("secret"))
         db.session.add(user)
         db.session.commit()
         return user
@@ -256,7 +258,6 @@ class TestInteractionsAPI:
         resp = client.get("/api/relationships/people/99999/interactions", headers=auth_headers)
         assert resp.status_code == 404
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - rejects date strings")
     def test_log_interaction_success(self, app, client, test_user, csrf_headers):
         """Log an interaction successfully."""
         with app.app_context():
@@ -279,7 +280,6 @@ class TestInteractionsAPI:
         assert data["ok"] is True
         assert data["interaction"]["method"] == "meeting"
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - rejects date strings")
     def test_log_interaction_minimal(self, app, client, test_user, csrf_headers):
         """Log interaction with minimal data."""
         with app.app_context():
@@ -294,7 +294,6 @@ class TestInteractionsAPI:
         )
         assert resp.status_code == 201
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - fails before person lookup")
     def test_log_interaction_person_not_found(self, client, csrf_headers):
         """Logging interaction for non-existent person fails."""
         payload = {"date": date.today().isoformat(), "method": "call"}
@@ -487,7 +486,6 @@ class TestRelationshipsAPIUserIsolation:
         resp = client.patch(f"/api/relationships/people/{person_id}", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
-    @pytest.mark.xfail(reason="Pydantic schema Optional[date] validation bug - fails before user isolation check")
     def test_cannot_log_interaction_other_user_person(self, app, client, test_user, csrf_headers):
         """Cannot log interaction for another user's person."""
         with app.app_context():

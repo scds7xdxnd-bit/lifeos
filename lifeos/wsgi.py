@@ -15,6 +15,16 @@ if str(PARENT) not in sys.path:
 if str(ROOT) in sys.path:
     sys.path.remove(str(ROOT))
 
+# Also remove the implicit "" entry when cwd == ROOT to avoid resolving our
+# lifeos/platform package before stdlib's platform during CLI invocations.
+if "" in sys.path:
+    try:
+        if Path.cwd().resolve() == ROOT:
+            sys.path.remove("")
+    except Exception:
+        # If anything goes wrong determining cwd, leave sys.path untouched.
+        pass
+
 from lifeos import create_app  # noqa: E402
 
 app = create_app()

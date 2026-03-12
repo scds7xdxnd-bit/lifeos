@@ -454,7 +454,7 @@ class TestHabitEventEmission:
     def test_habit_created_event_emitted(self, app, test_user):
         """Habit creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="habits.habit.created"
@@ -469,7 +469,7 @@ class TestHabitEventEmission:
     def test_habit_updated_event_emitted(self, app, test_user):
         """Habit update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             habit = create_habit(test_user.id, name="Update Event Habit")
 
@@ -486,7 +486,7 @@ class TestHabitEventEmission:
     def test_habit_deactivated_event_emitted(self, app, test_user):
         """Habit deactivation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             habit = create_habit(test_user.id, name="Deactivate Event Habit")
 
@@ -505,7 +505,7 @@ class TestHabitEventEmission:
     def test_habit_deleted_event_emitted(self, app, test_user):
         """Habit deletion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             habit = create_habit(test_user.id, name="Delete Event Habit")
 
@@ -522,7 +522,7 @@ class TestHabitEventEmission:
     def test_habit_logged_event_emitted(self, app, test_user):
         """Habit log should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             habit = create_habit(test_user.id, name="Log Event Habit")
 

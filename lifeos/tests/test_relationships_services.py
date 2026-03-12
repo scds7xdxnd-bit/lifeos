@@ -428,7 +428,7 @@ class TestRelationshipEventEmission:
     def test_person_created_event_emitted(self, app, test_user):
         """Person creation should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             initial_count = OutboxMessage.query.filter_by(
                 user_id=test_user.id, event_type="relationships.person.created"
@@ -445,7 +445,7 @@ class TestRelationshipEventEmission:
     def test_person_updated_event_emitted(self, app, test_user):
         """Person update should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             person = create_person(test_user.id, name="Update Event Person")
 
@@ -464,7 +464,7 @@ class TestRelationshipEventEmission:
     def test_person_deleted_event_emitted(self, app, test_user):
         """Person deletion should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             person = create_person(test_user.id, name="Delete Event Person")
 
@@ -483,7 +483,7 @@ class TestRelationshipEventEmission:
     def test_interaction_logged_event_emitted(self, app, test_user):
         """Interaction logging should emit event to outbox."""
         with app.app_context():
-            from lifeos.platform.outbox.models import OutboxMessage
+            from lifeos.lifeos_platform.outbox.models import OutboxMessage
 
             person = create_person(test_user.id, name="Interaction Event Person")
 
