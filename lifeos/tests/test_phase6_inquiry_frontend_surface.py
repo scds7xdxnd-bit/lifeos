@@ -35,6 +35,7 @@ def test_inquiry_setup_block_enforces_required_scope_and_context_rules():
     assert 'id="inquiry-question"' in html
     assert 'id="inquiry-primary-domain"' in html
     assert 'id="inquiry-cross-domain"' in html
+    assert 'id="inquiry-cross-domain-pair"' in html
     assert 'id="inquiry-domain-multi"' in html
     assert 'id="inquiry-context-panel" class="inquiry-context-panel" style="display:none;"' in html
     assert "Context (not evidence)" in html
@@ -86,9 +87,10 @@ def test_inquiry_domain_expert_rendering_patterns_are_present_for_first_wave_dom
     assert "Domain Profile" in html
     assert "DOMAIN_REFINE_HINTS" in html
     assert "isExpertDomainProfile" in html
+    assert "APPROVED_CROSS_DOMAIN_PAIRS" in html
     assert "finding_category" in html
     assert "renderDomainProfile(brief)" in html
-    assert "renderFindings(findings, brief?.brief_profile || null)" in html
+    assert "renderFindings(findings, brief)" in html
 
 
 @pytest.mark.unit
@@ -104,6 +106,21 @@ def test_inquiry_later_wave_domain_rendering_patterns_and_safety_copy_are_presen
     assert "renderDomainSafety(brief, findings)" in html
     assert "does not infer intent, emotion, or quality judgments" in html
     assert "does not provide diagnosis, treatment, or clinical conclusions" in html
+    assert "Observed alignment in recorded data across" in html
+    assert "Based on recorded events within the selected timeframe. Not causal proof." in html
+
+
+@pytest.mark.unit
+def test_cross_domain_pair_mode_is_explicit_and_approved_pairs_are_listed():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert "Approved domain pair profile" in html
+    assert "finance_habits_v1" in html
+    assert "projects_skills_v1" in html
+    assert "journal_habits_v1" in html
+    assert "health_habits_v1" in html
+    assert "projects_calendar_v1" in html
+    assert "relationships_journal_v1" in html
 
 
 @pytest.mark.unit

@@ -8,6 +8,8 @@ from lifeos.core.insights.ml.phase6_inquiry_contracts import (
     ALLOWED_INQUIRY_ACTIONS,
     FIRST_WAVE_EXPERT_DOMAINS,
     LATER_WAVE_EXPERT_DOMAINS,
+    PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS,
+    PHASE8_CROSS_DOMAIN_NON_RUNTIME_DECLARATION,
     INQUIRY_FUTURE_DATA_REQUIREMENTS,
     INQUIRY_FUTURE_SUPPORT_CONTRACTS,
     PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED,
@@ -37,6 +39,16 @@ def test_phase6_inquiry_ml_alignment_report_is_clean():
     assert report["missing_context_non_evidence_fields"] == []
     assert report["missing_quality_dsd_mappings"] == []
     assert report["missing_profile_dsd_mappings"] == []
+    assert report["missing_selected_domains_contract_fields"] == []
+    assert report["missing_phase8_dsd_mappings"] == []
+    assert report["missing_cross_domain_storage_fields"] == []
+    assert report["missing_phase8_pair_profiles"] == []
+    assert report["extra_phase8_pair_profiles"] == []
+    assert report["phase8_pair_profile_mismatches"] == {}
+    assert report["phase8_pair_version_mismatches"] == {}
+    assert report["phase8_pair_domain_mismatches"] == {}
+    assert report["phase8_pair_allowed_category_mismatches"] == {}
+    assert report["phase8_pair_forbidden_category_overlaps"] == {}
     assert report["missing_first_wave_domains"] == []
     assert report["extra_first_wave_domains"] == []
     assert report["missing_expert_domains"] == []
@@ -53,9 +65,19 @@ def test_phase6_inquiry_ml_runtime_boundary_is_explicit():
     assert PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED is False
     assert "non-runtime" in PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION.lower()
     assert "deterministic" in PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION.lower()
+    assert "non-runtime" in PHASE8_CROSS_DOMAIN_NON_RUNTIME_DECLARATION.lower()
+    assert "deterministic" in PHASE8_CROSS_DOMAIN_NON_RUNTIME_DECLARATION.lower()
     assert ALLOWED_INQUIRY_ACTIONS == ("display", "refine_only")
     assert set(FIRST_WAVE_EXPERT_DOMAINS) == {"finance", "habits", "projects", "skills"}
     assert set(LATER_WAVE_EXPERT_DOMAINS) == {"journal", "relationships", "health"}
+    assert set(PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS) == {
+        "finance__habits",
+        "projects__skills",
+        "habits__journal",
+        "habits__health",
+        "calendar__projects",
+        "journal__relationships",
+    }
 
 
 def test_phase6_inquiry_ml_payload_validator_enforces_bounds():
@@ -234,6 +256,97 @@ def test_phase6_inquiry_ml_payload_validator_accepts_later_wave_profile():
         },
     }
     assert validate_contract_payload(payload) == []
+
+
+def test_phase6_inquiry_ml_payload_validator_accepts_phase8_cross_domain_profile():
+    payload = {
+        "summary": "Cross-domain scope summary.",
+        "findings": [
+            {
+                "claim": "Cross-domain evidence shows observed alignment between selected records.",
+                "finding_category": "co_occurrence_observation",
+                "evidence_refs": [{"source_kind": "event_record"}],
+                "confidence_label": "needs_review",
+                "uncertainty_note": "Bounded to selected timeframe and explicit scope.",
+                "source_domains": ["finance", "habits"],
+            }
+        ],
+        "context_non_evidence": {"label": "Context (not evidence)", "text": "", "note": ""},
+        "uncertainty_note": "Bounded evidence window.",
+        "limits": [],
+        "question": "How do finance and habits align?",
+        "lens": "cross_domain",
+        "domains": ["finance", "habits"],
+        "timeframe": {"start": "2026-01-01", "end": "2026-01-31"},
+        "as_of_ts": "2026-01-31T23:59:59",
+        "generated_at": "2026-01-31T23:59:59",
+        "brief_profile": {
+            "profile": "finance_habits_v1",
+            "profile_version": "1.0.0",
+            "strategy": "cross_domain_pair_rules_v1",
+            "strategy_version": "1.0.0",
+            "domain": "finance+habits",
+            "expert_mode": True,
+            "finding_categories": ["co_occurrence_observation", "coverage_gap"],
+        },
+        "quality_metadata": {
+            "findings_total": 1,
+            "findings_with_evidence": 1,
+            "evidence_coverage_ratio": 1.0,
+            "structure_gaps": [],
+            "sparse_domains": [],
+            "refine_guidance": [],
+        },
+    }
+    assert validate_contract_payload(payload) == []
+
+
+def test_phase6_inquiry_ml_payload_validator_rejects_phase8_cross_domain_contract_violations():
+    payload = {
+        "summary": "Cross-domain scope summary.",
+        "findings": [
+            {
+                "claim": "Cross-domain evidence shows observed alignment between selected records.",
+                "finding_category": "psychological_interpretation",
+                "evidence_refs": [{"source_kind": "event_record"}],
+                "confidence_label": "needs_review",
+                "uncertainty_note": "Bounded to selected timeframe and explicit scope.",
+                "source_domains": ["finance", "habits"],
+            }
+        ],
+        "context_non_evidence": {"label": "Context (not evidence)", "text": "", "note": ""},
+        "uncertainty_note": "Bounded evidence window.",
+        "limits": [],
+        "question": "How do finance and habits align?",
+        "lens": "cross_domain",
+        "domains": ["finance", "projects"],
+        "timeframe": {"start": "2026-01-01", "end": "2026-01-31"},
+        "as_of_ts": "2026-01-31T23:59:59",
+        "generated_at": "2026-01-31T23:59:59",
+        "brief_profile": {
+            "profile": "finance_habits_v1",
+            "profile_version": "1.0.0",
+            "strategy": "cross_domain_pair_rules_v1",
+            "strategy_version": "1.0.0",
+            "domain": "finance+projects",
+            "expert_mode": True,
+            "finding_categories": ["psychological_interpretation"],
+        },
+        "quality_metadata": {
+            "findings_total": 1,
+            "findings_with_evidence": 1,
+            "evidence_coverage_ratio": 1.0,
+            "structure_gaps": [],
+            "sparse_domains": [],
+            "refine_guidance": [],
+        },
+    }
+    errors = validate_contract_payload(payload)
+    assert "invalid_cross_domain_profile_domains" in errors
+    assert "invalid_cross_domain_profile_domain" in errors
+    assert "invalid_cross_domain_profile_categories" in errors
+    assert "forbidden_cross_domain_profile_categories" in errors
+    assert "invalid_cross_domain_finding_categories" in errors
 
 
 def test_phase6_inquiry_ml_future_scaffolds_remain_non_runtime():

@@ -75,6 +75,17 @@
         <p class="inquiry-subtle">Cross-domain claims are generated only when selected domains are explicit and evidence-backed.</p>
       </div>
 
+      <div id="inquiry-cross-domain-pair-wrap" class="inquiry-domain-multi" style="display:none;">
+        <div class="inquiry-domain-multi-title">Approved domain pair profile</div>
+        <div class="field">
+          <label for="inquiry-cross-domain-pair">Domain pair</label>
+          <select id="inquiry-cross-domain-pair">
+            <option value="">Select approved pair...</option>
+          </select>
+          <small>Cross-domain pair profiles activate only for approved 2-domain scopes.</small>
+        </div>
+      </div>
+
       <div id="inquiry-domain-multi" class="inquiry-domain-multi" style="display:none;">
         <div class="inquiry-domain-multi-title">Additional domains (select one or more)</div>
         <div id="inquiry-domain-options" class="inquiry-domain-options"></div>
@@ -231,6 +242,8 @@
     const questionInput = document.getElementById('inquiry-question');
     const primaryDomainSelect = document.getElementById('inquiry-primary-domain');
     const crossDomainInput = document.getElementById('inquiry-cross-domain');
+    const crossDomainPairWrap = document.getElementById('inquiry-cross-domain-pair-wrap');
+    const crossDomainPairSelect = document.getElementById('inquiry-cross-domain-pair');
     const domainMulti = document.getElementById('inquiry-domain-multi');
     const domainOptions = document.getElementById('inquiry-domain-options');
     const timeframePreset = document.getElementById('inquiry-timeframe-preset');
@@ -282,7 +295,23 @@
     const historyList = document.getElementById('inquiry-history-list');
 
     const EXPERT_RENDERED_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills', 'journal', 'relationships', 'health']);
+    const APPROVED_CROSS_DOMAIN_PAIRS = [
+      { key: 'finance__habits', profile: 'finance_habits_v1', domains: ['finance', 'habits'] },
+      { key: 'projects__skills', profile: 'projects_skills_v1', domains: ['projects', 'skills'] },
+      { key: 'journal__habits', profile: 'journal_habits_v1', domains: ['journal', 'habits'] },
+      { key: 'health__habits', profile: 'health_habits_v1', domains: ['health', 'habits'] },
+      { key: 'projects__calendar', profile: 'projects_calendar_v1', domains: ['projects', 'calendar'] },
+      { key: 'relationships__journal', profile: 'relationships_journal_v1', domains: ['relationships', 'journal'] },
+    ];
     const DOMAIN_CATEGORY_LABELS = {
+      cross_domain: {
+        co_occurrence_observation: 'Co-occurrence observation',
+        temporal_alignment: 'Temporal alignment',
+        trend_alignment: 'Trend alignment',
+        coverage_gap: 'Coverage gap',
+        structural_dependency_observation: 'Structural dependency observation',
+        inconsistency_flag: 'Inconsistency flag',
+      },
       finance: {
         cashflow_coverage: 'Cashflow coverage',
         ledger_signal: 'Ledger signal',
@@ -412,6 +441,18 @@
       return found?.label || String(domain || 'Unknown');
     };
 
+    const labelForDomainPair = (domains = []) => {
+      const parts = domains.map((domain) => labelForDomain(domain));
+      return parts.join(' + ');
+    };
+
+    const findApprovedPair = (pairKey) => APPROVED_CROSS_DOMAIN_PAIRS.find((pair) => pair.key === pairKey) || null;
+
+    const findPairByDomains = (domains = []) => {
+      const key = Array.from(new Set(domains.filter(Boolean))).sort().join('__');
+      return APPROVED_CROSS_DOMAIN_PAIRS.find((pair) => pair.key === key) || null;
+    };
+
     const confidenceClass = (label) => {
       const normalized = String(label || '').toLowerCase();
       if (normalized === 'confirmed') return 'inquiry-label inquiry-label--confirmed';
@@ -456,7 +497,9 @@
       }
 
       const domain = String(profile.domain || '');
-      const domainLabel = domain ? labelForDomain(domain) : 'Inquiry';
+      const domainLabel = domain.includes('+')
+        ? labelForDomainPair(domain.split('+').map((item) => item.trim().toLowerCase()).filter(Boolean))
+        : (domain ? labelForDomain(domain) : 'Inquiry');
       const profileLabel = titleFromToken(profile.profile) || `${domainLabel} brief profile`;
       const strategyLabel = titleFromToken(profile.strategy) || 'Generic strategy';
       domainProfileSummaryEl.textContent = profile.expert_mode
@@ -543,16 +586,25 @@
 
     const renderDomainSafety = (brief, findings = []) => {
       const profile = brief?.brief_profile;
-      if (!isExpertDomainProfile(profile)) {
+      const selectedDomains = Array.isArray(brief?.domains) ? brief.domains : [];
+      const isCrossDomainPair = brief?.lens === 'cross_domain' && selectedDomains.length === 2;
+      if (!isCrossDomainPair && !isExpertDomainProfile(profile)) {
         domainSafetyWrap.style.display = 'none';
         return;
       }
 
-      const domain = String(profile.domain || '').toLowerCase();
-      const stats = summarizeEvidenceWindow(findings);
-      const safety = domainSafetyCopy(domain, stats);
-      domainSafetySummaryEl.textContent = safety.summary;
-      domainSafetyCautionEl.textContent = safety.caution;
+      if (isCrossDomainPair) {
+        const pairLabel = labelForDomainPair(selectedDomains);
+        domainSafetySummaryEl.textContent = `Observed alignment in recorded data across ${pairLabel}.`;
+        domainSafetyCautionEl.textContent =
+          'Based on recorded events within the selected timeframe. Not causal proof.';
+      } else {
+        const domain = String(profile.domain || '').toLowerCase();
+        const stats = summarizeEvidenceWindow(findings);
+        const safety = domainSafetyCopy(domain, stats);
+        domainSafetySummaryEl.textContent = safety.summary;
+        domainSafetyCautionEl.textContent = safety.caution;
+      }
 
       const limits = Array.isArray(brief?.limits) ? brief.limits.filter(Boolean).slice(0, 2) : [];
       domainSafetyLimitsEl.innerHTML = '';
@@ -671,6 +723,24 @@
       });
     };
 
+    const populateCrossDomainPairs = () => {
+      crossDomainPairSelect.innerHTML = '<option value="">Select approved pair...</option>';
+      APPROVED_CROSS_DOMAIN_PAIRS.forEach((pair) => {
+        const option = document.createElement('option');
+        option.value = pair.key;
+        option.textContent = `${labelForDomainPair(pair.domains)} (${pair.profile})`;
+        crossDomainPairSelect.appendChild(option);
+      });
+    };
+
+    const applyCrossDomainPairSelection = () => {
+      if (!crossDomainInput.checked) return;
+      const selected = findApprovedPair(crossDomainPairSelect.value);
+      if (!selected) return;
+      primaryDomainSelect.value = selected.domains[0];
+      primaryDomainSelect.dispatchEvent(new Event('change'));
+    };
+
     const applyPreset = (preset) => {
       if (preset === 'custom') return;
       const days = Number(preset);
@@ -685,10 +755,16 @@
 
     const currentScopePayload = () => {
       const question = questionInput.value.trim();
-      const primaryDomain = primaryDomainSelect.value;
       const crossDomain = crossDomainInput.checked;
-      const additional = selectedAdditionalDomains();
-      const domains = Array.from(new Set([primaryDomain, ...additional].filter(Boolean))).sort();
+      let primaryDomain = primaryDomainSelect.value;
+      let domains = Array.from(new Set([primaryDomain, ...selectedAdditionalDomains()].filter(Boolean))).sort();
+      if (crossDomain) {
+        const selectedPair = findApprovedPair(crossDomainPairSelect.value);
+        if (selectedPair) {
+          domains = [...selectedPair.domains];
+          primaryDomain = selectedPair.domains[0];
+        }
+      }
       const start = timeframeStart.value;
       const end = timeframeEnd.value;
       const asOfRaw = asOfInput.value;
@@ -716,6 +792,12 @@
       if (payload.timeframe_start > payload.timeframe_end) return 'Timeframe start must be before end.';
       if (payload.cross_domain && (!Array.isArray(payload.domains) || payload.domains.length < 2)) {
         return 'Cross-domain mode requires at least two selected domains.';
+      }
+      if (payload.cross_domain && !crossDomainPairSelect.value) {
+        return 'Select an approved cross-domain pair profile.';
+      }
+      if (payload.cross_domain && Array.isArray(payload.domains) && payload.domains.length !== 2) {
+        return 'Cross-domain pair mode requires exactly two domains.';
       }
       if (!payload.cross_domain && (!Array.isArray(payload.domains) || payload.domains.length !== 1)) {
         return 'Single-domain mode requires exactly one selected domain.';
@@ -829,17 +911,20 @@
       return card;
     };
 
-    const renderFindings = (findings = [], briefProfile = null) => {
+    const renderFindings = (findings = [], brief = null) => {
       findingsEl.innerHTML = '';
       if (!findings.length) {
         findingsEl.innerHTML = '<div class="inquiry-empty-inline">No findings were generated for this scope.</div>';
         return;
       }
 
+      const briefProfile = brief?.brief_profile || null;
       const domain = String(briefProfile?.domain || '');
-      if (!isExpertDomainProfile(briefProfile)) {
+      const isCrossDomainPair = brief?.lens === 'cross_domain' && Array.isArray(brief?.domains) && brief.domains.length === 2;
+      const categoryDomainContext = isCrossDomainPair ? 'cross_domain' : domain;
+      if (!isExpertDomainProfile(briefProfile) && !isCrossDomainPair) {
         findings.forEach((finding) => {
-          findingsEl.appendChild(renderFindingCard(finding, domain));
+          findingsEl.appendChild(renderFindingCard(finding, categoryDomainContext));
         });
         return;
       }
@@ -866,13 +951,13 @@
         const heading = document.createElement('div');
         heading.className = 'inquiry-finding-section-head';
         heading.innerHTML = `
-          <span class="inquiry-finding-section-label">${categoryLabel(category, domain)}</span>
+          <span class="inquiry-finding-section-label">${categoryLabel(category, categoryDomainContext)}</span>
           <span class="inquiry-finding-section-count">${grouped.get(category).length}</span>
         `;
         section.appendChild(heading);
 
         grouped.get(category).forEach((finding) => {
-          section.appendChild(renderFindingCard(finding, domain));
+          section.appendChild(renderFindingCard(finding, categoryDomainContext));
         });
         findingsEl.appendChild(section);
       });
@@ -886,7 +971,7 @@
       const findings = Array.isArray(brief?.findings) ? brief.findings : [];
       renderBriefStatus(findings);
       renderDomainProfile(brief);
-      renderFindings(findings, brief?.brief_profile || null);
+      renderFindings(findings, brief);
       renderDomainSafety(brief, findings);
       renderQualityMetadata(brief?.quality_metadata, brief?.brief_profile || null);
 
@@ -1010,9 +1095,16 @@
       const domains = Array.isArray(inquiry.domains) ? inquiry.domains : [];
       const isCross = (inquiry.lens === 'cross_domain') || domains.length > 1;
       crossDomainInput.checked = isCross;
-      domainMulti.style.display = isCross ? 'block' : 'none';
+      crossDomainPairWrap.style.display = isCross ? 'block' : 'none';
+      domainMulti.style.display = 'none';
+      primaryDomainSelect.disabled = isCross;
+      const matchedPair = findPairByDomains(domains);
+      crossDomainPairSelect.value = matchedPair ? matchedPair.key : '';
+      if (isCross && matchedPair) {
+        applyCrossDomainPairSelection();
+      }
       Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
-        node.checked = isCross && domains.includes(node.value) && node.value !== primaryDomainSelect.value;
+        node.checked = false;
       });
 
       timeframeStart.value = inquiry.timeframe?.start || '';
@@ -1049,6 +1141,9 @@
       contextPanel.style.display = 'none';
       contextToggle.textContent = 'Add optional context';
       crossDomainInput.checked = false;
+      crossDomainPairWrap.style.display = 'none';
+      crossDomainPairSelect.value = '';
+      primaryDomainSelect.disabled = false;
       domainMulti.style.display = 'none';
       Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
         node.checked = false;
@@ -1192,12 +1287,22 @@
 
       crossDomainInput.addEventListener('change', () => {
         const enabled = crossDomainInput.checked;
-        domainMulti.style.display = enabled ? 'block' : 'none';
-        if (!enabled) {
-          Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
-            node.checked = false;
-          });
+        crossDomainPairWrap.style.display = enabled ? 'block' : 'none';
+        domainMulti.style.display = 'none';
+        primaryDomainSelect.disabled = enabled;
+        Array.from(domainOptions.querySelectorAll('input[data-domain-option]')).forEach((node) => {
+          node.checked = false;
+        });
+        if (enabled && !crossDomainPairSelect.value && APPROVED_CROSS_DOMAIN_PAIRS.length) {
+          crossDomainPairSelect.value = APPROVED_CROSS_DOMAIN_PAIRS[0].key;
         }
+        if (enabled) {
+          applyCrossDomainPairSelection();
+        }
+      });
+
+      crossDomainPairSelect.addEventListener('change', () => {
+        applyCrossDomainPairSelection();
       });
 
       primaryDomainSelect.addEventListener('change', () => {
@@ -1272,6 +1377,7 @@
 
     const start = async () => {
       populateDomains();
+      populateCrossDomainPairs();
       bindEvents();
       resetFormState();
       ensureAuth();

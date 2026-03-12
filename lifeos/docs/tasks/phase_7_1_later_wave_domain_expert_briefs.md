@@ -3,7 +3,7 @@
 **Audience:** Architecture, Backend, Frontend, DB, QA, DevOps, ML (contracts-only)
 **Owner:** LifeOS Architecture
 **Preconditions:** Phase 7 first-wave complete and QA-approved
-**Status:** Approved to Open
+**Status:** Complete (later-wave domains delivered)
 **Nature:** Deterministic domain depth expansion (high-semantic-risk domains)
 
 ---
@@ -110,3 +110,18 @@ Phase 7.1 closes only when:
 - No timeline intelligence foundations.
 - No broad causal reasoning.
 - No assistant-first interaction model.
+
+---
+
+## 9) Completion record
+
+Phase 7.1 closure is recorded with:
+- Deterministic domain expert strategies shipped for:
+  - Journal
+  - Relationships
+  - Health
+- Later-wave forbidden-claim guardrails verified by QA.
+- Profile/version metadata and replay determinism validated.
+- Per-domain observability gates green in staged rollout.
+
+Next phase: `phase_8_cross_domain_inquiry_expansion.md`

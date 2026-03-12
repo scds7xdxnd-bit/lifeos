@@ -37,9 +37,15 @@ REQUIRED_METRICS = [
     "lifeos_inquiry_low_coverage_by_domain_total",
     "lifeos_inquiry_refine_after_low_quality_total",
     "lifeos_inquiry_refine_after_low_quality_by_domain_total",
+    "lifeos_inquiry_refine_after_low_coverage_total",
+    "lifeos_inquiry_refine_after_low_coverage_by_domain_total",
     "lifeos_inquiry_quality_state_total",
     "lifeos_inquiry_quality_state_by_domain_total",
     "lifeos_inquiry_evidence_coverage_ratio",
+    "lifeos_inquiry_blocked_claims_total",
+    "lifeos_inquiry_blocked_claims_by_domain_total",
+    "lifeos_inquiry_replay_mismatch_total",
+    "lifeos_inquiry_replay_mismatch_by_domain_total",
     "lifeos_phase6_inquiry_migration_mismatch",
 ]
 
@@ -199,6 +205,7 @@ def test_phase61_refine_after_low_quality_metric_increments(app, client):
     payload = client.get("/metrics").get_data(as_text=True)
     assert (_metric_value(payload, "lifeos_inquiry_refined_total") or 0.0) >= 1.0
     assert (_metric_value(payload, "lifeos_inquiry_refine_after_low_quality_total") or 0.0) >= 1.0
+    assert _metric_value(payload, "lifeos_inquiry_refine_after_low_coverage_total") is not None
     assert (
         _metric_value_for_label(
             payload,
@@ -208,6 +215,7 @@ def test_phase61_refine_after_low_quality_metric_increments(app, client):
         )
         or 0.0
     ) >= 1.0
+    assert "lifeos_inquiry_refine_after_low_coverage_by_domain_total" in payload
     assert _metric_sum(payload, "lifeos_inquiry_quality_state_total") >= 1.0
     assert (
         _metric_value_for_label(payload, "lifeos_inquiry_quality_state_by_domain_total", "domain", "cross_domain")
@@ -277,6 +285,7 @@ def test_phase7_alert_rule_coverage_exists():
         "lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio",
         "lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio",
         "lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_refine_after_low_coverage_rate_by_domain_profile:ratio",
         "lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds",
         "Phase7DomainInquiryErrorRateHigh",
         "Phase7DomainInquiryLatencyHigh",
@@ -290,6 +299,15 @@ def test_phase7_alert_rule_coverage_exists():
         "Phase71LaterWaveInquiryLowCoverageHigh",
         "Phase71LaterWaveRefineAfterLowQualityHigh",
         "Phase71LaterWaveProfileVersionUnexpected",
+        "Phase8CrossDomainPairErrorRateHigh",
+        "Phase8CrossDomainPairLatencyHigh",
+        "Phase8CrossDomainPairEmptyBriefHigh",
+        "Phase8CrossDomainPairLowCoverageHigh",
+        "Phase8CrossDomainPairRefineAfterLowCoverageHigh",
+        "Phase8CrossDomainPairBlockedClaimsSpike",
+        "Phase8CrossDomainPairReplayMismatchDetected",
+        "Phase8CrossDomainPairProfileVersionUnexpected",
+        'domain=~"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships"',
         'domain=~"journal|relationships|health"',
     )
     for token in required_tokens:
@@ -311,3 +329,47 @@ def test_phase71_ops_runbook_exists_with_rollout_controls():
     )
     for token in required_tokens:
         assert token in payload
+
+
+def test_phase8_ops_runbook_exists_with_rollout_controls():
+    runbook_path = (
+        Path(__file__).resolve().parents[1] / "docs" / "ops" / "phase_8_cross_domain_inquiry_expansion_ops.md"
+    )
+    payload = runbook_path.read_text(encoding="utf-8")
+    required_tokens = (
+        "ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES",
+        "PHASE8_ENABLED_PAIR_PROFILES",
+        "PHASE8_CROSS_DOMAIN_ENABLED",
+        "PHASE8_PAIR_PROFILES",
+        "PHASE8_EXPECT_PROFILE_VERSION",
+        "PHASE8_EXPECT_STRATEGY_VERSION",
+        "Phase8CrossDomainPairErrorRateHigh",
+        "Phase8CrossDomainPairBlockedClaimsSpike",
+        "Phase8CrossDomainPairReplayMismatchDetected",
+    )
+    for token in required_tokens:
+        assert token in payload
+
+
+def test_phase8_rollout_scripts_include_pair_controls():
+    phase6_script = (
+        Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "phase6_inquiry_rollout_check.sh"
+    ).resolve()
+    payload = phase6_script.read_text(encoding="utf-8")
+    required_tokens = (
+        "PHASE8_CROSS_DOMAIN_ENABLED",
+        "PHASE8_PAIR_PROFILES",
+        "PHASE8_EXPECT_PROFILE_VERSION",
+        "PHASE8_EXPECT_STRATEGY_VERSION",
+        "lifeos_inquiry_blocked_claims_total",
+        "lifeos_inquiry_replay_mismatch_total",
+        "lifeos:inquiry_replay_mismatch_rate_by_domain_profile:ratio",
+    )
+    for token in required_tokens:
+        assert token in payload
+
+    phase8_script = (
+        Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "phase8_cross_domain_rollout_check.sh"
+    ).resolve()
+    phase8_payload = phase8_script.read_text(encoding="utf-8")
+    assert "phase6_inquiry_rollout_check.sh" in phase8_payload

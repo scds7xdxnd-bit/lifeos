@@ -15,6 +15,10 @@ PHASE7_1_LATER_WAVE_ENABLED="${PHASE7_1_LATER_WAVE_ENABLED:-false}"
 PHASE7_1_LATER_WAVE_DOMAINS="${PHASE7_1_LATER_WAVE_DOMAINS:-journal,relationships,health}"
 PHASE7_1_EXPECT_PROFILE_VERSION="${PHASE7_1_EXPECT_PROFILE_VERSION:-1.0.0}"
 PHASE7_1_EXPECT_STRATEGY_VERSION="${PHASE7_1_EXPECT_STRATEGY_VERSION:-1.0.0}"
+PHASE8_CROSS_DOMAIN_ENABLED="${PHASE8_CROSS_DOMAIN_ENABLED:-false}"
+PHASE8_EXPECT_PROFILE_VERSION="${PHASE8_EXPECT_PROFILE_VERSION:-1.0.0}"
+PHASE8_EXPECT_STRATEGY_VERSION="${PHASE8_EXPECT_STRATEGY_VERSION:-1.0.0}"
+PHASE8_PAIR_PROFILES="${PHASE8_PAIR_PROFILES:-finance_habits_v1,projects_skills_v1,journal_habits_v1,health_habits_v1,projects_calendar_v1,relationships_journal_v1}"
 
 required_metrics=(
   "lifeos_inquiry_created_total"
@@ -35,9 +39,15 @@ required_metrics=(
   "lifeos_inquiry_low_coverage_by_domain_total"
   "lifeos_inquiry_refine_after_low_quality_total"
   "lifeos_inquiry_refine_after_low_quality_by_domain_total"
+  "lifeos_inquiry_refine_after_low_coverage_total"
+  "lifeos_inquiry_refine_after_low_coverage_by_domain_total"
   "lifeos_inquiry_quality_state_total"
   "lifeos_inquiry_quality_state_by_domain_total"
   "lifeos_inquiry_evidence_coverage_ratio"
+  "lifeos_inquiry_blocked_claims_total"
+  "lifeos_inquiry_blocked_claims_by_domain_total"
+  "lifeos_inquiry_replay_mismatch_total"
+  "lifeos_inquiry_replay_mismatch_by_domain_total"
   "lifeos_phase6_inquiry_migration_mismatch"
 )
 
@@ -80,13 +90,7 @@ for metric in "${required_metrics[@]}"; do
     exit 1
   fi
 done
-echo "OK: required Phase 6 inquiry metrics are exposed"
-
-if grep -q '^lifeos_inquiry_forbidden_claim_block_total' <<< "${metrics_payload}"; then
-  echo "OK: optional forbidden-claim block counter metric is exposed"
-else
-  echo "WARN: optional forbidden-claim block counter metric is not emitted in this runtime" >&2
-fi
+echo "OK: required Phase 6/6.1/7/7.1/8 inquiry metrics are exposed"
 
 inquiry_status="$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/v1/inquiries")"
 if [[ "${INQUIRY_FEATURE_ENABLED}" == "true" ]]; then
@@ -132,14 +136,18 @@ if curl -fsS "${PROM_URL}/api/v1/alerts" >/dev/null 2>&1; then
     "lifeos:inquiry_evidence_coverage_ratio"
     "lifeos:inquiry_low_coverage_rate:ratio"
     "lifeos:inquiry_refine_after_low_quality_rate:ratio"
+    "lifeos:inquiry_refine_after_low_coverage_rate:ratio"
     "lifeos:inquiry_quality_state_distribution:ratio"
     "lifeos:inquiry_error_rate_by_domain_profile:ratio"
     "lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio"
     "lifeos:inquiry_evidence_coverage_ratio_by_domain_profile"
     "lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio"
     "lifeos:inquiry_refine_after_low_quality_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_refine_after_low_coverage_rate_by_domain_profile:ratio"
     "lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds"
     "lifeos:inquiry_quality_state_distribution_by_domain_profile:ratio"
+    "lifeos:inquiry_blocked_claims_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_replay_mismatch_rate_by_domain_profile:ratio"
   )
   for recording in "${required_recordings[@]}"; do
     query_json="$(curl -fsS --get --data-urlencode "query=${recording}" "${PROM_URL}/api/v1/query")"
@@ -169,14 +177,14 @@ firing = []
 for alert in alerts:
     labels = alert.get("labels", {})
     phase = str(labels.get("phase") or "")
-    if phase in {"6", "6.1", "7", "7.1"} and alert.get("state") == "firing":
+    if phase in {"6", "6.1", "7", "7.1", "8"} and alert.get("state") == "firing":
         firing.append(labels.get("alertname") or "unknown")
 
 if firing:
     print("ERROR: Phase 6/6.1/7/7.1 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
     sys.exit(1)
 
-print("OK: no Phase 6/6.1/7/7.1 inquiry alerts firing")
+print("OK: no Phase 6/6.1/7/7.1/8 inquiry alerts firing")
 PY
 
   check_rollout_versions() {
@@ -244,8 +252,61 @@ PY
   if [[ "${PHASE7_1_LATER_WAVE_ENABLED}" == "true" ]]; then
     check_rollout_versions "phase7.1-later-wave" "${PHASE7_1_LATER_WAVE_DOMAINS}" "${PHASE7_1_EXPECT_PROFILE_VERSION}" "${PHASE7_1_EXPECT_STRATEGY_VERSION}"
   fi
+
+  if [[ "${PHASE8_CROSS_DOMAIN_ENABLED}" == "true" ]]; then
+    phase8_query="sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode=\"true\",profile=~\"${PHASE8_PAIR_PROFILES//,/|}\"}[30m])) by (profile, domain, profile_version, strategy_version)"
+    phase8_json="$(curl -fsS --get --data-urlencode "query=${phase8_query}" "${PROM_URL}/api/v1/query")"
+    PHASE8_JSON="${phase8_json}" \
+    PHASE8_PAIR_PROFILES="${PHASE8_PAIR_PROFILES}" \
+    PHASE8_EXPECT_PROFILE_VERSION="${PHASE8_EXPECT_PROFILE_VERSION}" \
+    PHASE8_EXPECT_STRATEGY_VERSION="${PHASE8_EXPECT_STRATEGY_VERSION}" \
+    "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["PHASE8_JSON"])
+result = payload.get("data", {}).get("result", [])
+expected_profiles = {item.strip() for item in os.environ["PHASE8_PAIR_PROFILES"].split(",") if item.strip()}
+expected_profile_version = os.environ["PHASE8_EXPECT_PROFILE_VERSION"]
+expected_strategy_version = os.environ["PHASE8_EXPECT_STRATEGY_VERSION"]
+
+if not result:
+    print("WARN: no Phase 8 pair-profile traffic observed yet; version-drift check skipped", file=sys.stderr)
+    sys.exit(0)
+
+seen_profiles: set[str] = set()
+for row in result:
+    metric = row.get("metric", {})
+    profile = str(metric.get("profile") or "")
+    domain = str(metric.get("domain") or "")
+    profile_version = str(metric.get("profile_version") or "")
+    strategy_version = str(metric.get("strategy_version") or "")
+    if expected_profiles and profile not in expected_profiles:
+        print(f"ERROR: unexpected Phase 8 profile label detected: profile={profile} domain={domain}", file=sys.stderr)
+        sys.exit(1)
+    seen_profiles.add(profile)
+    if profile_version != expected_profile_version:
+        print(
+            f"ERROR: Phase 8 profile_version drift for profile={profile} domain={domain}: {profile_version} != {expected_profile_version}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if strategy_version != expected_strategy_version:
+        print(
+            f"ERROR: Phase 8 strategy_version drift for profile={profile} domain={domain}: {strategy_version} != {expected_strategy_version}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+missing = sorted(expected_profiles - seen_profiles)
+if missing:
+    print("WARN: no recent Phase 8 traffic for profiles: " + ", ".join(missing), file=sys.stderr)
+print("OK: Phase 8 pair-profile versions are within expected rollout values")
+PY
+  fi
 else
   echo "WARN: Prometheus is unreachable at ${PROM_URL}; alert-state check skipped" >&2
 fi
 
-echo "Phase 6/6.1/7/7.1 focused inquiry rollout checks passed"
+echo "Phase 6/6.1/7/7.1/8 focused inquiry rollout checks passed"

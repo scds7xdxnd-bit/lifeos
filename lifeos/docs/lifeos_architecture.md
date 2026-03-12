@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-12 (v2.16 — Phase 7 first-wave complete; Phase 7.1 approved)_
+_Last updated: 2026-03-12 (v2.17 — Phase 7.1 complete; Phase 8 approved)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -44,6 +44,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 6 Focused Inquiry v1**: Complete; deterministic evidence-based inquiry flow with lifecycle semantics, confidence/uncertainty output, and replay-safe brief generation.
 - **Phase 6.1 Focused Inquiry Quality Hardening**: Complete; inquiry quality transparency, deterministic refine guidance, and quality observability gates verified.
 - **Phase 7 Domain Expert Briefs (First-wave)**: Complete; deterministic domain expert strategies shipped for finance/habits/projects/skills with profile/version metadata and QA governance sign-off.
+- **Phase 7.1 Later-Wave Domain Expert Briefs**: Complete; deterministic domain expert strategies shipped for journal/relationships/health with semantic guardrails and QA sign-off.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -142,9 +143,9 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 7.1 Later-Wave Domain Expert Briefs (journal, relationships, health) is approved to open.
-- Deferred: Phase 3c-2 transport scaling (trigger-based), cross-domain expert synthesis, and timeline intelligence foundations.
-- Forbidden in current window: omniscient assistant behavior, runtime ML decisioning, and autonomous action.
+- Active: Phase 8 Cross-Domain Inquiry Expansion is approved to open.
+- Deferred: Phase 3c-2 transport scaling (trigger-based) and timeline intelligence foundations.
+- Forbidden in current window: omniscient assistant behavior, runtime ML decisioning, autonomous action, and unbounded causal modeling.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
@@ -1115,7 +1116,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.16 (Phase 7 first-wave complete; Phase 7.1 later-wave approved): 2026-03-12. Author: LifeOS Architect._
+_Constitution v2.17 (Phase 7.1 complete; Phase 8 cross-domain inquiry approved): 2026-03-12. Author: LifeOS Architect._
 
 **Sprint Summary (2025-12-25):**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1144,6 +1145,7 @@ _Constitution v2.16 (Phase 7 first-wave complete; Phase 7.1 later-wave approved)
 - ✅ Phase 6 complete: focused inquiry flow delivered with deterministic evidence-based briefs
 - ✅ Phase 6.1 complete: inquiry quality hardening delivered and QA-approved
 - ✅ Phase 7 complete (first-wave): deterministic domain expert briefs for finance/habits/projects/skills
+- ✅ Phase 7.1 complete (later-wave): deterministic domain expert briefs for journal/relationships/health with safety guardrails
 
 ---
 
@@ -1213,6 +1215,37 @@ Phase 7.1 extends deterministic domain expert brief coverage to higher-semantic-
 ## 22.4 Execution reference
 - `lifeos/docs/tasks/phase_7_domain_expert_briefs.md` (first-wave closure)
 - `lifeos/docs/tasks/phase_7_1_later_wave_domain_expert_briefs.md` (active phase brief)
+
+---
+
+# 23. Phase 8 Cross-Domain Inquiry Expansion (Constitutional Decision, Binding)
+
+Phase 8 introduces deterministic cross-domain inquiry synthesis for approved domain pairs while preserving domain trust boundaries.
+
+## 23.1 Phase objective
+- Expand inquiry capability beyond single-domain depth into bounded multi-domain synthesis.
+- Preserve deterministic replay, evidence-first reasoning, and non-assistant interaction model.
+
+## 23.2 Approved initial pair profiles
+- Finance + Habits
+- Projects + Skills
+- Journal + Habits
+- Health + Habits
+- Projects + Calendar
+- Relationships + Journal
+
+## 23.3 Safety guardrails
+- Allowed outputs are observational and evidence-referenced only (co-occurrence, temporal alignment, coverage/structural gaps).
+- Forbidden outputs include psychological interpretation, medical inference, moral judgment, intent inference of others, and unsupported causality.
+- Cross-domain synthesis must not become free-form assistant narrative output.
+
+## 23.4 Boundary and deferrals
+- In scope: pair-profile strategy registry, deterministic evidence aggregation, deterministic synthesis rules.
+- Deferred: timeline intelligence, predictive systems, recommendation engines, and broad causal modeling.
+- Forbidden: omniscient assistant architecture, hidden personalization/ranking, runtime ML decisioning.
+
+## 23.5 Execution reference
+- `lifeos/docs/tasks/phase_8_cross_domain_inquiry_expansion.md`
 
 ---
 

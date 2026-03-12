@@ -161,8 +161,8 @@ def test_cross_domain_inquiry_keeps_generic_profile_no_expert_leak(app, client):
                     created_at=datetime(2026, 3, 2, 10, 0, 0),
                 ),
                 EventRecord(
-                    event_type="habits.habit.logged",
-                    payload={"habit_id": 5},
+                    event_type="journal.entry.created",
+                    payload={"title": "weekly reflection"},
                     user_id=user.id,
                     created_at=datetime(2026, 3, 3, 10, 0, 0),
                 ),
@@ -174,8 +174,8 @@ def test_cross_domain_inquiry_keeps_generic_profile_no_expert_leak(app, client):
     resp = client.post(
         "/api/v1/inquiries",
         json={
-            "question": "Compare finance and habits.",
-            "domains": ["finance", "habits"],
+            "question": "Compare finance and journal.",
+            "domains": ["finance", "journal"],
             "cross_domain": True,
             "timeframe_start": "2026-03-01",
             "timeframe_end": "2026-03-07",

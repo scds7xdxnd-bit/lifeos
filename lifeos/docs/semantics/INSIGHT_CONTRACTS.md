@@ -144,6 +144,49 @@ Format:
   - Confidence bands: informational, needs_review
   - Allowed actions: display, refine_only
 
+## Cross-Domain Expert Brief Contracts (Phase 8)
+- focused_inquiry_finance_habits_cross_brief
+  - Description: Deterministic cross-domain brief for Finance + Habits alignment patterns.
+  - Required evidence: finance.transaction.created, habits.habit.logged
+  - Disallowed evidence: unsupported causality, psychological interpretation
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_projects_skills_cross_brief
+  - Description: Deterministic cross-domain brief for Projects + Skills alignment patterns.
+  - Required evidence: projects.task.completed, projects.task.logged, skills.practice.logged
+  - Disallowed evidence: unsupported performance inference outside explicit records
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_journal_habits_cross_brief
+  - Description: Deterministic cross-domain brief for Journal + Habits co-occurrence and timing.
+  - Required evidence: journal.entry.created, habits.habit.logged
+  - Disallowed evidence: psychological diagnosis, hidden-intent inference
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_health_habits_cross_brief
+  - Description: Deterministic cross-domain brief for Health + Habits trend alignment.
+  - Required evidence: health.biometric.logged, health.metric.updated, habits.habit.logged
+  - Disallowed evidence: diagnosis, treatment recommendation, clinical framing
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_projects_calendar_cross_brief
+  - Description: Deterministic cross-domain brief for Projects + Calendar temporal alignment.
+  - Required evidence: projects.task.completed, projects.task.logged, calendar.event.created
+  - Disallowed evidence: unsupported causality and free-form narrative inference
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+- focused_inquiry_relationships_journal_cross_brief
+  - Description: Deterministic cross-domain brief for Relationships + Journal cadence/reflection alignment.
+  - Required evidence: relationships.interaction.logged, relationships.interaction.updated, journal.entry.created
+  - Disallowed evidence: relationship quality judgments, inferred intent/emotion of other people
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
 ## ML Scope
 - Insight contracts are binding for ML evaluation: evidence used for training/eval must be a subset of Required evidence and must exclude Disallowed evidence.
 - Confidence bands define allowable system behaviors; ML outputs must never exceed the contract (e.g., review_only remains review_only).

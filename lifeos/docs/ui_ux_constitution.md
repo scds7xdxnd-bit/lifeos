@@ -130,3 +130,20 @@ Include: “Aligned with UI/UX Constitution §X” and cite the domain contract 
 - Evidence references remain mandatory for each finding.
 - Confidence labels remain canonical and human-legible.
 - Context remains labeled as "not evidence" and visually separated.
+
+## 13. Cross-Domain Inquiry Expansion (Phase 8, Binding)
+- Cross-domain inquiry stays inside the same inquiry surface and interaction flow.
+- Cross-domain setup must require explicit domain-pair selection; no implicit omniscient mode.
+- Output remains structured findings, never assistant-style narrative/chat.
+
+### 13.1 Rendering requirements
+- Findings must show cross-domain claim category labels.
+- Evidence must be grouped and labeled per contributing domain.
+- Limitation language must be explicit for partial coverage or weak alignment.
+- Confidence labels remain canonical and secondary to evidence clarity.
+
+### 13.2 Explicit anti-patterns
+- No "AI explains your life" narrative framing.
+- No speculative causal storytelling between domains.
+- No clinical or psychological framing in cross-domain summaries.
+- No inferred intent/emotion framing for other people.

@@ -99,6 +99,7 @@ Format:
 - `inquiry.context.submitted` is context metadata only and is never evidence by itself.
 - `inquiry.brief.generated` certifies generation completion, not truth of all findings.
 - Inquiry events must preserve deterministic replay for identical request inputs and evidence windows.
+- Phase 8 may enrich inquiry event payload metadata with explicit cross-domain profile fields (e.g., selected domains, profile id/version) without introducing new lifecycle event types.
 
 ## ML Scope
 - ML may only attach to inference events and ML feedback events defined in the semantic registry; no new event types are allowed without a contract update.

@@ -84,6 +84,24 @@ class InquiryBriefVersion(db.Model):
         db.Index("ix_inquiry_brief_user_expert_created", "user_id", "brief_expert_mode", "created_at"),
         db.Index("ix_inquiry_brief_user_profile_created", "user_id", "brief_profile", "created_at"),
         db.Index(
+            "ix_inquiry_brief_user_cross_profile_created",
+            "user_id",
+            "cross_domain_profile",
+            "created_at",
+        ),
+        db.Index(
+            "ix_inquiry_brief_user_cross_profile_version_created",
+            "user_id",
+            "cross_domain_profile_version",
+            "created_at",
+        ),
+        db.Index(
+            "ix_inquiry_brief_user_selected_domains_created",
+            "user_id",
+            "selected_domains_key",
+            "created_at",
+        ),
+        db.Index(
             "ix_inquiry_brief_user_quality_state_created",
             "user_id",
             "quality_state",
@@ -120,7 +138,12 @@ class InquiryBriefVersion(db.Model):
     brief_strategy_version: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
     brief_domain: Mapped[str | None] = mapped_column(db.String(32), nullable=True)
     brief_expert_mode: Mapped[bool | None] = mapped_column(db.Boolean, nullable=True)
+    cross_domain_profile: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
+    cross_domain_profile_version: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
+    selected_domains: Mapped[list | None] = mapped_column(db.JSON, nullable=True)
+    selected_domains_key: Mapped[str | None] = mapped_column(db.String(128), nullable=True)
     finding_categories: Mapped[list | None] = mapped_column(db.JSON, nullable=True)
+    blocked_claim_count: Mapped[int | None] = mapped_column(db.Integer, nullable=True)
     quality_findings_total: Mapped[int | None] = mapped_column(db.Integer, nullable=True)
     quality_findings_with_evidence: Mapped[int | None] = mapped_column(db.Integer, nullable=True)
     quality_evidence_coverage_ratio: Mapped[float | None] = mapped_column(db.Numeric(6, 4), nullable=True)

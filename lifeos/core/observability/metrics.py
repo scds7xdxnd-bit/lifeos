@@ -179,6 +179,17 @@ INQUIRY_REFINE_AFTER_LOW_QUALITY_BY_DOMAIN_TOTAL = Counter(
     _INQUIRY_DOMAIN_LABELS,
 )
 
+INQUIRY_REFINE_AFTER_LOW_COVERAGE_TOTAL = Counter(
+    "lifeos_inquiry_refine_after_low_coverage_total",
+    "Total refine operations executed after low-coverage briefs",
+)
+
+INQUIRY_REFINE_AFTER_LOW_COVERAGE_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_refine_after_low_coverage_by_domain_total",
+    "Total refine-after-low-coverage operations by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
 INQUIRY_QUALITY_STATE_TOTAL = Counter(
     "lifeos_inquiry_quality_state_total",
     "Focused inquiry quality state distribution",
@@ -214,6 +225,33 @@ INQUIRY_LOW_COVERAGE_RATE = Gauge(
 INQUIRY_REFINE_AFTER_LOW_QUALITY_RATE = Gauge(
     "lifeos_inquiry_refine_after_low_quality_rate",
     "Focused inquiry refine-after-low-quality ratio",
+)
+
+INQUIRY_REFINE_AFTER_LOW_COVERAGE_RATE = Gauge(
+    "lifeos_inquiry_refine_after_low_coverage_rate",
+    "Focused inquiry refine-after-low-coverage ratio",
+)
+
+INQUIRY_BLOCKED_CLAIMS_TOTAL = Counter(
+    "lifeos_inquiry_blocked_claims_total",
+    "Total blocked cross-domain unsafe claims",
+)
+
+INQUIRY_BLOCKED_CLAIMS_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_blocked_claims_by_domain_total",
+    "Total blocked cross-domain unsafe claims by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_REPLAY_MISMATCH_TOTAL = Counter(
+    "lifeos_inquiry_replay_mismatch_total",
+    "Total detected inquiry replay mismatches for identical normalized inputs",
+)
+
+INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_replay_mismatch_by_domain_total",
+    "Total detected inquiry replay mismatches by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
 )
 
 PHASE6_INQUIRY_MIGRATION_MISMATCH = Gauge(
@@ -279,6 +317,9 @@ INQUIRY_FINDINGS_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 INQUIRY_FINDINGS_WITH_EVIDENCE_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 INQUIRY_LOW_COVERAGE_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 INQUIRY_REFINE_AFTER_LOW_QUALITY_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_REFINE_AFTER_LOW_COVERAGE_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_BLOCKED_CLAIMS_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 for _state in _QUALITY_STATES:
     INQUIRY_QUALITY_STATE_TOTAL.labels(state=_state).inc(0)
     INQUIRY_QUALITY_STATE_BY_DOMAIN_TOTAL.labels(state=_state, **_UNKNOWN_DOMAIN_LABELS).inc(0)
@@ -287,6 +328,7 @@ INQUIRY_EMPTY_BRIEF_RATE.set(0.0)
 INQUIRY_EVIDENCE_COVERAGE_RATIO.set(1.0)
 INQUIRY_LOW_COVERAGE_RATE.set(0.0)
 INQUIRY_REFINE_AFTER_LOW_QUALITY_RATE.set(0.0)
+INQUIRY_REFINE_AFTER_LOW_COVERAGE_RATE.set(0.0)
 
 _inquiry_generated_count = 0
 _inquiry_error_count = 0
@@ -296,6 +338,7 @@ _inquiry_findings_with_evidence_count = 0
 _inquiry_low_coverage_count = 0
 _inquiry_refined_count = 0
 _inquiry_refine_after_low_quality_count = 0
+_inquiry_refine_after_low_coverage_count = 0
 
 
 def record_insight_latency_ms(latency_ms: float) -> None:
@@ -391,6 +434,16 @@ def _is_low_quality_metadata(quality_metadata: Mapping[str, object] | None) -> b
     if findings_total == 0:
         return True
     return coverage < _LOW_COVERAGE_THRESHOLD or bool(structure_gaps) or bool(sparse_domains)
+
+
+def _is_low_coverage_metadata(quality_metadata: Mapping[str, object] | None) -> bool:
+    if not isinstance(quality_metadata, Mapping):
+        return False
+    findings_total = int(quality_metadata.get("findings_total") or 0)
+    coverage = float(quality_metadata.get("evidence_coverage_ratio") or 0.0)
+    if findings_total == 0:
+        return True
+    return coverage < _LOW_COVERAGE_THRESHOLD
 
 
 def _quality_state(quality_metadata: Mapping[str, object] | None) -> str:
@@ -511,6 +564,9 @@ def record_inquiry_refined(
     INQUIRY_REFINE_AFTER_LOW_QUALITY_RATE.set(
         _safe_ratio(_inquiry_refine_after_low_quality_count, _inquiry_refined_count)
     )
+    INQUIRY_REFINE_AFTER_LOW_COVERAGE_RATE.set(
+        _safe_ratio(_inquiry_refine_after_low_coverage_count, _inquiry_refined_count)
+    )
 
 
 def record_inquiry_refine_after_low_quality(
@@ -541,6 +597,84 @@ def record_inquiry_refine_after_low_quality(
     INQUIRY_REFINE_AFTER_LOW_QUALITY_RATE.set(
         _safe_ratio(_inquiry_refine_after_low_quality_count, _inquiry_refined_count)
     )
+
+
+def record_inquiry_refine_after_low_coverage(
+    previous_quality_metadata: Mapping[str, object] | None,
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record refine operations that occur after low-coverage briefs."""
+    global _inquiry_refine_after_low_coverage_count
+    if not _is_low_coverage_metadata(previous_quality_metadata):
+        return
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_REFINE_AFTER_LOW_COVERAGE_TOTAL.inc()
+    INQUIRY_REFINE_AFTER_LOW_COVERAGE_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+    _inquiry_refine_after_low_coverage_count += 1
+    INQUIRY_REFINE_AFTER_LOW_COVERAGE_RATE.set(
+        _safe_ratio(_inquiry_refine_after_low_coverage_count, _inquiry_refined_count)
+    )
+
+
+def record_inquiry_blocked_claims(
+    blocked_claim_count: int,
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record blocked cross-domain unsafe claims."""
+    count = max(0, int(blocked_claim_count or 0))
+    if count <= 0:
+        return
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_BLOCKED_CLAIMS_TOTAL.inc(count)
+    INQUIRY_BLOCKED_CLAIMS_BY_DOMAIN_TOTAL.labels(**domain_labels).inc(count)
+
+
+def record_inquiry_replay_mismatch(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record replay mismatch detections for identical normalized inputs."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_REPLAY_MISMATCH_TOTAL.inc()
+    INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
 
 
 def record_inquiry_error(

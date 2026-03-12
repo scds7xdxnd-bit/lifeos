@@ -19,11 +19,17 @@ groups:
           or absent(lifeos_inquiry_low_coverage_by_domain_total)
           or absent(lifeos_inquiry_refine_after_low_quality_total)
           or absent(lifeos_inquiry_refine_after_low_quality_by_domain_total)
+          or absent(lifeos_inquiry_refine_after_low_coverage_total)
+          or absent(lifeos_inquiry_refine_after_low_coverage_by_domain_total)
           or absent(lifeos_inquiry_quality_state_total)
           or absent(lifeos_inquiry_quality_state_by_domain_total)
           or absent(lifeos_inquiry_evidence_coverage_ratio)
           or absent(lifeos_inquiry_findings_by_domain_total)
           or absent(lifeos_inquiry_findings_with_evidence_by_domain_total)
+          or absent(lifeos_inquiry_blocked_claims_total)
+          or absent(lifeos_inquiry_blocked_claims_by_domain_total)
+          or absent(lifeos_inquiry_replay_mismatch_total)
+          or absent(lifeos_inquiry_replay_mismatch_by_domain_total)
         for: 3m
         labels:
           severity: critical
@@ -62,6 +68,12 @@ groups:
       - record: lifeos:inquiry_refine_after_low_quality_rate:ratio
         expr: |
           clamp_min(sum(rate(lifeos_inquiry_refine_after_low_quality_total[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_refined_total[15m])), 0.001)
+
+      - record: lifeos:inquiry_refine_after_low_coverage_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_refine_after_low_coverage_total[15m])), 0)
           /
           clamp_min(sum(rate(lifeos_inquiry_refined_total[15m])), 0.001)
 
@@ -109,6 +121,15 @@ groups:
             0.001
           )
 
+      - record: lifeos:inquiry_refine_after_low_coverage_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_refine_after_low_coverage_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_refined_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
       - record: lifeos:inquiry_evidence_coverage_ratio_by_domain_profile
         expr: |
           sum(rate(lifeos_inquiry_findings_with_evidence_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
@@ -132,6 +153,24 @@ groups:
           ignoring(state) group_left
           clamp_min(
             sum(rate(lifeos_inquiry_quality_state_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_blocked_claims_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_blocked_claims_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_generated_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:inquiry_replay_mismatch_rate_by_domain_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_replay_mismatch_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_inquiry_generated_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
             0.001
           )
 
@@ -418,3 +457,129 @@ groups:
         annotations:
           summary: "Phase 7.1 profile/strategy version drift detected"
           description: "Later-wave domain expert traffic includes unexpected profile_version or strategy_version labels."
+
+      - alert: Phase8CrossDomainPairErrorRateHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_error_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}
+          ) > 0.2
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}[15m])
+          ) > 0.003
+        for: 10m
+        labels:
+          severity: warning
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile inquiry error rate high"
+          description: "One or more Phase 8 pair profiles exceeded a 20% inquiry error rate."
+
+      - alert: Phase8CrossDomainPairLatencyHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}
+          ) > 3.0
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}[15m])
+          ) > 0.003
+        for: 10m
+        labels:
+          severity: warning
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile inquiry latency high"
+          description: "One or more Phase 8 pair profiles exceeded 3.0s p95 generation latency."
+
+      - alert: Phase8CrossDomainPairEmptyBriefHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}
+          ) > 0.7
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}[15m])
+          ) > 0.003
+        for: 15m
+        labels:
+          severity: warning
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile empty brief anomaly"
+          description: "One or more Phase 8 pair profiles exceeded a 70% empty-brief rate."
+
+      - alert: Phase8CrossDomainPairLowCoverageHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}
+          ) > 0.55
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}[15m])
+          ) > 0.003
+        for: 15m
+        labels:
+          severity: warning
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile low coverage high"
+          description: "One or more Phase 8 pair profiles exceeded a 55% low-coverage rate."
+
+      - alert: Phase8CrossDomainPairRefineAfterLowCoverageHigh
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_refine_after_low_coverage_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}
+          ) > 0.6
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_refined_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}[15m])
+          ) > 0.002
+        for: 15m
+        labels:
+          severity: warning
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile refine-after-low-coverage high"
+          description: "One or more Phase 8 pair profiles exceeded a 60% refine-after-low-coverage ratio."
+
+      - alert: Phase8CrossDomainPairBlockedClaimsSpike
+        expr: |
+          max by (domain, profile_version, strategy_version) (
+            lifeos:inquiry_blocked_claims_rate_by_domain_profile:ratio{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}
+          ) > 0.1
+          and
+          sum by (domain, profile_version, strategy_version) (
+            rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}[15m])
+          ) > 0.003
+        for: 10m
+        labels:
+          severity: warning
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile blocked claim spike"
+          description: "Blocked unsafe-claim activity exceeded 0.10 per generated brief for a Phase 8 pair profile."
+
+      - alert: Phase8CrossDomainPairReplayMismatchDetected
+        expr: |
+          sum(rate(lifeos_inquiry_replay_mismatch_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships"}[15m])) by (domain, profile_version, strategy_version) > 0
+        for: 5m
+        labels:
+          severity: critical
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile replay mismatch detected"
+          description: "Replay mismatch was detected for a Phase 8 pair profile under identical normalized input scope."
+
+      - alert: Phase8CrossDomainPairProfileVersionUnexpected
+        expr: |
+          sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships",profile_version!="1.0.0"}[15m])) > 0
+          or
+          sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode="true",domain=~"finance\\+habits|projects\\+skills|habits\\+journal|habits\\+health|calendar\\+projects|journal\\+relationships",strategy_version!="1.0.0"}[15m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          phase: "8"
+        annotations:
+          summary: "Phase 8 pair-profile version drift detected"
+          description: "Phase 8 pair-profile traffic includes unexpected profile_version or strategy_version labels."

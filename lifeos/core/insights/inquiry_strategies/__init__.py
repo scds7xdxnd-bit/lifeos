@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from lifeos.core.insights.inquiry_cross_domain.registry import get_cross_domain_strategy
 from lifeos.core.insights.inquiry_strategies.base import DomainStrategyProfile, enforce_claim_guardrail
 from lifeos.core.insights.inquiry_strategies.finance import FINANCE_STRATEGY
 from lifeos.core.insights.inquiry_strategies.habits import HABITS_STRATEGY
@@ -50,6 +51,10 @@ def strategy_token_for_scope(*, lens: str, primary_domain: str, domains: list[st
         strategy = get_domain_strategy(primary_domain)
         if strategy:
             return f"{strategy.profile}:{strategy.profile_version}:{strategy.strategy_version}"
+    if lens == "cross_domain" and len(domains) == 2:
+        pair_profile = get_cross_domain_strategy(domains)
+        if pair_profile:
+            return f"{pair_profile.profile}:{pair_profile.profile_version}:{pair_profile.strategy_version}"
     return (
         f"{GENERIC_BRIEF_PROFILE['profile']}:"
         f"{GENERIC_BRIEF_PROFILE['profile_version']}:"

@@ -74,6 +74,13 @@ Canonical source for domain purpose and semantic boundaries.
 - Health inquiry outputs may summarize recorded metrics and deterministic trends only.
 - Health inquiry outputs must not include medical diagnosis, treatment recommendations, or clinical framing.
 
+## Cross-Domain Inquiry Safety Model (Phase 8, Binding)
+- Cross-domain inquiry outputs must be observational and evidence-referenced across explicitly selected domains.
+- Allowed reasoning: co-occurrence, temporal alignment, trend alignment, and coverage/structural gap detection.
+- Cross-domain outputs must not assert unsupported causality.
+- Cross-domain outputs must not include psychological interpretation, moral judgment, medical inference, or inferred intent of other people.
+- User context remains non-evidence in cross-domain synthesis unless independently supported by canonical records.
+
 ## ML Scope
 - ML consumes domain semantics to decide what can be treated as evidence; do not train on claims outside a domain's "Asserts".
 - No UI-filtered subsets are valid for training/eval; only canonical event streams and deterministic windows are allowed inputs.

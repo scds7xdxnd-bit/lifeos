@@ -11,6 +11,10 @@ PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION = (
     "Focused Inquiry v1 is deterministic and rules-only. ML is non-runtime and non-decisioning "
     "for inquiry brief generation, confidence labels, and evidence selection."
 )
+PHASE8_CROSS_DOMAIN_NON_RUNTIME_DECLARATION = (
+    "Phase 8 cross-domain inquiry profiles are deterministic, rules-only, non-runtime scaffolding. "
+    "Cross-domain profile metadata is structured contract output, not model inference."
+)
 PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED = False
 PHASE6_INQUIRY_FORBIDDEN_RUNTIME_CAPABILITIES = (
     "runtime_model_scoring",
@@ -118,6 +122,79 @@ DISALLOWED_BRIEF_PROFILE_FIELDS = (
     "probability",
     "model_score",
     "rank_score",
+)
+FORBIDDEN_CROSS_DOMAIN_CLAIM_CATEGORIES = (
+    "psychological_interpretation",
+    "medical_inference",
+    "moral_judgment",
+    "intent_inference",
+    "unsupported_causality",
+)
+PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS = {
+    "finance__habits": {
+        "profile": "finance_habits_v1",
+        "profile_version": "1.0.0",
+        "strategy": "cross_domain_pair_rules_v1",
+        "strategy_version": "1.0.0",
+        "domains": ("finance", "habits"),
+    },
+    "projects__skills": {
+        "profile": "projects_skills_v1",
+        "profile_version": "1.0.0",
+        "strategy": "cross_domain_pair_rules_v1",
+        "strategy_version": "1.0.0",
+        "domains": ("projects", "skills"),
+    },
+    "habits__journal": {
+        "profile": "journal_habits_v1",
+        "profile_version": "1.0.0",
+        "strategy": "cross_domain_pair_rules_v1",
+        "strategy_version": "1.0.0",
+        "domains": ("journal", "habits"),
+    },
+    "habits__health": {
+        "profile": "health_habits_v1",
+        "profile_version": "1.0.0",
+        "strategy": "cross_domain_pair_rules_v1",
+        "strategy_version": "1.0.0",
+        "domains": ("health", "habits"),
+    },
+    "calendar__projects": {
+        "profile": "projects_calendar_v1",
+        "profile_version": "1.0.0",
+        "strategy": "cross_domain_pair_rules_v1",
+        "strategy_version": "1.0.0",
+        "domains": ("projects", "calendar"),
+    },
+    "journal__relationships": {
+        "profile": "relationships_journal_v1",
+        "profile_version": "1.0.0",
+        "strategy": "cross_domain_pair_rules_v1",
+        "strategy_version": "1.0.0",
+        "domains": ("journal", "relationships"),
+    },
+}
+PHASE8_APPROVED_PAIR_PROFILE_NAMES = tuple(
+    sorted({str(item["profile"]) for item in PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS.values()})
+)
+PHASE8_REQUIRED_CROSS_DOMAIN_STORAGE_FIELDS = (
+    "cross_domain_profile",
+    "cross_domain_profile_version",
+    "selected_domains",
+    "selected_domains_key",
+    "blocked_claim_count",
+)
+PHASE8_REQUIRED_SELECTED_DOMAIN_CONTRACT_KEYS = (
+    "InquiryItem.domains",
+    "InquiryBriefItem.domains",
+)
+PHASE8_REQUIRED_CROSS_DOMAIN_PROFILE_DSD_KEYS = (
+    "InquiryBriefProfile.profile",
+    "InquiryBriefProfile.profile_version",
+    "InquiryBriefProfile.strategy",
+    "InquiryBriefProfile.strategy_version",
+    "InquiryBriefProfile.domain",
+    "InquiryBriefProfile.finding_categories",
 )
 
 
@@ -306,17 +383,21 @@ def alignment_report() -> dict[str, object]:
     """Return alignment checks between inquiry runtime contracts and ML stubs."""
     from lifeos.core.contracts import api_contracts
     from lifeos.core.contracts.api_dsd_mappings import DSD_FIELD_MAPPINGS
+    from lifeos.core.insights.inquiry_cross_domain.pairs import PAIR_PROFILES
+    from lifeos.core.insights.inquiry_cross_domain.pairs.base import ALLOWED_CROSS_DOMAIN_CLAIM_CATEGORIES
     from lifeos.core.insights.inquiry_strategies import (
         DOMAIN_STRATEGIES,
         FIRST_WAVE_DOMAIN_STRATEGIES,
         LATER_WAVE_DOMAIN_STRATEGIES,
     )
+    from lifeos.core.insights.models import InquiryBriefVersion
     from lifeos.core.ux.domain_surface_contracts import DOMAIN_SURFACE_CONTRACTS
 
     inquiry_surface = DOMAIN_SURFACE_CONTRACTS.get("insights:inquiry")
     surface_inquiry_types = set(inquiry_surface.insight_contracts if inquiry_surface else [])
     ml_inquiry_types = set(INQUIRY_BRIEF_TYPE_CONTRACTS.keys())
 
+    inquiry_fields = {field.name for field in api_contracts.INQUIRY_ITEM.fields}
     brief_fields = {field.name for field in api_contracts.INQUIRY_BRIEF_ITEM.fields}
     finding_fields = {field.name for field in api_contracts.INQUIRY_FINDING_ITEM.fields}
     brief_profile_fields = {field.name for field in api_contracts.INQUIRY_BRIEF_PROFILE.fields}
@@ -333,8 +414,70 @@ def alignment_report() -> dict[str, object]:
     required_profile_dsd_keys = {"InquiryBriefItem.brief_profile", "InquiryFindingItem.finding_category"} | {
         f"InquiryBriefProfile.{field_name}" for field_name in REQUIRED_BRIEF_PROFILE_FIELDS
     }
+    required_phase8_dsd_keys = set(PHASE8_REQUIRED_CROSS_DOMAIN_PROFILE_DSD_KEYS) | set(
+        PHASE8_REQUIRED_SELECTED_DOMAIN_CONTRACT_KEYS
+    )
     missing_quality_dsd_mappings = sorted(required_quality_dsd_keys - set(dsd_mapping.keys()))
     missing_profile_dsd_mappings = sorted(required_profile_dsd_keys - set(dsd_mapping.keys()))
+    missing_phase8_dsd_mappings = sorted(required_phase8_dsd_keys - set(dsd_mapping.keys()))
+
+    missing_selected_domains_contract_fields: list[str] = []
+    if "domains" not in inquiry_fields:
+        missing_selected_domains_contract_fields.append("InquiryItem.domains")
+    if "domains" not in brief_fields:
+        missing_selected_domains_contract_fields.append("InquiryBriefItem.domains")
+
+    storage_columns = {column.name for column in InquiryBriefVersion.__table__.columns}
+    missing_cross_domain_storage_fields = sorted(set(PHASE8_REQUIRED_CROSS_DOMAIN_STORAGE_FIELDS) - storage_columns)
+
+    expected_pair_contracts = PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS
+    expected_pair_keys = set(expected_pair_contracts.keys())
+    registry_profiles = {profile.pair_key: profile for profile in PAIR_PROFILES}
+    registry_pair_keys = set(registry_profiles.keys())
+    allowed_categories = set(ALLOWED_CROSS_DOMAIN_CLAIM_CATEGORIES)
+    forbidden_categories = set(FORBIDDEN_CROSS_DOMAIN_CLAIM_CATEGORIES)
+    phase8_pair_profile_mismatches: dict[str, dict[str, str]] = {}
+    phase8_pair_version_mismatches: dict[str, dict[str, str]] = {}
+    phase8_pair_domain_mismatches: dict[str, dict[str, list[str]]] = {}
+    phase8_pair_allowed_category_mismatches: dict[str, dict[str, list[str]]] = {}
+    phase8_pair_forbidden_category_overlaps: dict[str, list[str]] = {}
+    for pair_key in sorted(expected_pair_keys & registry_pair_keys):
+        expected = expected_pair_contracts[pair_key]
+        actual = registry_profiles[pair_key]
+
+        profile_mismatch: dict[str, str] = {}
+        if actual.profile != expected["profile"]:
+            profile_mismatch["profile"] = actual.profile
+        if actual.strategy != expected["strategy"]:
+            profile_mismatch["strategy"] = actual.strategy
+        if profile_mismatch:
+            phase8_pair_profile_mismatches[pair_key] = profile_mismatch
+
+        version_mismatch: dict[str, str] = {}
+        if actual.profile_version != expected["profile_version"]:
+            version_mismatch["profile_version"] = actual.profile_version
+        if actual.strategy_version != expected["strategy_version"]:
+            version_mismatch["strategy_version"] = actual.strategy_version
+        if version_mismatch:
+            phase8_pair_version_mismatches[pair_key] = version_mismatch
+
+        expected_domains = sorted(expected["domains"])
+        actual_domains = sorted(actual.domains)
+        if expected_domains != actual_domains:
+            phase8_pair_domain_mismatches[pair_key] = {
+                "expected_only": sorted(set(expected_domains) - set(actual_domains)),
+                "actual_only": sorted(set(actual_domains) - set(expected_domains)),
+            }
+
+        actual_categories = set(actual.allowed_claim_categories)
+        if actual_categories != allowed_categories:
+            phase8_pair_allowed_category_mismatches[pair_key] = {
+                "expected_only": sorted(allowed_categories - actual_categories),
+                "actual_only": sorted(actual_categories - allowed_categories),
+            }
+        overlap = sorted(actual_categories & forbidden_categories)
+        if overlap:
+            phase8_pair_forbidden_category_overlaps[pair_key] = overlap
 
     strategy_domains = set(DOMAIN_STRATEGIES.keys())
     expected_domains = set(ALL_EXPERT_DOMAINS)
@@ -408,6 +551,16 @@ def alignment_report() -> dict[str, object]:
         "missing_context_non_evidence_fields": sorted({"label", "text"} - context_fields),
         "missing_quality_dsd_mappings": missing_quality_dsd_mappings,
         "missing_profile_dsd_mappings": missing_profile_dsd_mappings,
+        "missing_selected_domains_contract_fields": missing_selected_domains_contract_fields,
+        "missing_phase8_dsd_mappings": missing_phase8_dsd_mappings,
+        "missing_cross_domain_storage_fields": missing_cross_domain_storage_fields,
+        "missing_phase8_pair_profiles": sorted(expected_pair_keys - registry_pair_keys),
+        "extra_phase8_pair_profiles": sorted(registry_pair_keys - expected_pair_keys),
+        "phase8_pair_profile_mismatches": phase8_pair_profile_mismatches,
+        "phase8_pair_version_mismatches": phase8_pair_version_mismatches,
+        "phase8_pair_domain_mismatches": phase8_pair_domain_mismatches,
+        "phase8_pair_allowed_category_mismatches": phase8_pair_allowed_category_mismatches,
+        "phase8_pair_forbidden_category_overlaps": phase8_pair_forbidden_category_overlaps,
         "missing_first_wave_domains": sorted(expected_first_wave_domains - first_wave_strategy_domains),
         "extra_first_wave_domains": sorted(first_wave_strategy_domains - expected_first_wave_domains),
         "missing_expert_domains": sorted(expected_domains - strategy_domains),
@@ -525,7 +678,11 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
             errors.append("invalid_brief_profile_domain")
         if not isinstance(brief_profile.get("expert_mode"), bool):
             errors.append("invalid_brief_profile_expert_mode")
-        elif brief_profile.get("expert_mode") and str(brief_profile.get("domain") or "") not in ALL_EXPERT_DOMAINS:
+        elif (
+            brief_profile.get("expert_mode")
+            and str(brief_profile.get("domain") or "") not in ALL_EXPERT_DOMAINS
+            and str(brief_profile.get("profile") or "") not in PHASE8_APPROVED_PAIR_PROFILE_NAMES
+        ):
             errors.append("invalid_brief_profile_expert_domain")
         categories = brief_profile.get("finding_categories")
         if not isinstance(categories, list) or any(
@@ -541,11 +698,61 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
                     errors.append("invalid_later_wave_finding_categories")
             if findings_categories and not set(findings_categories).issubset(normalized_categories):
                 errors.append("invalid_finding_category_scope")
+
+            lens_value = str(payload.get("lens") or "")
+            profile_name = str(brief_profile.get("profile") or "")
+            pair_contract = next(
+                (
+                    contract
+                    for contract in PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS.values()
+                    if str(contract["profile"]) == profile_name
+                ),
+                None,
+            )
+            if pair_contract is not None:
+                if lens_value != "cross_domain":
+                    errors.append("invalid_cross_domain_profile_lens")
+                domains_raw = payload.get("domains")
+                if not isinstance(domains_raw, list):
+                    errors.append("invalid_selected_domains")
+                else:
+                    normalized_domains = sorted({str(item).strip() for item in domains_raw if str(item).strip()})
+                    expected_domains = sorted(pair_contract["domains"])
+                    if len(normalized_domains) != 2:
+                        errors.append("invalid_selected_domains_length")
+                    if normalized_domains != expected_domains:
+                        errors.append("invalid_cross_domain_profile_domains")
+
+                if str(brief_profile.get("profile_version") or "") != str(pair_contract["profile_version"]):
+                    errors.append("invalid_cross_domain_profile_version")
+                if str(brief_profile.get("strategy") or "") != str(pair_contract["strategy"]):
+                    errors.append("invalid_cross_domain_profile_strategy")
+                if str(brief_profile.get("strategy_version") or "") != str(pair_contract["strategy_version"]):
+                    errors.append("invalid_cross_domain_strategy_version")
+                if str(brief_profile.get("domain") or "") != "+".join(sorted(pair_contract["domains"])):
+                    errors.append("invalid_cross_domain_profile_domain")
+
+                allowed_cross_domain_categories = {
+                    "co_occurrence_observation",
+                    "temporal_alignment",
+                    "trend_alignment",
+                    "coverage_gap",
+                    "structural_dependency_observation",
+                    "inconsistency_flag",
+                }
+                forbidden_cross_domain_categories = set(FORBIDDEN_CROSS_DOMAIN_CLAIM_CATEGORIES)
+                if not normalized_categories.issubset(allowed_cross_domain_categories):
+                    errors.append("invalid_cross_domain_profile_categories")
+                if normalized_categories & forbidden_cross_domain_categories:
+                    errors.append("forbidden_cross_domain_profile_categories")
+                if findings_categories and not set(findings_categories).issubset(allowed_cross_domain_categories):
+                    errors.append("invalid_cross_domain_finding_categories")
     return errors
 
 
 __all__ = [
     "PHASE6_INQUIRY_V1_NON_RUNTIME_DECLARATION",
+    "PHASE8_CROSS_DOMAIN_NON_RUNTIME_DECLARATION",
     "PHASE6_INQUIRY_RUNTIME_DECISIONING_ENABLED",
     "PHASE6_INQUIRY_FORBIDDEN_RUNTIME_CAPABILITIES",
     "INQUIRY_LENS_TYPES",
@@ -562,6 +769,12 @@ __all__ = [
     "DISALLOWED_INQUIRY_OUTPUT_FIELDS",
     "DISALLOWED_BRIEF_PROFILE_FIELDS",
     "DISALLOWED_QUALITY_METADATA_FIELDS",
+    "FORBIDDEN_CROSS_DOMAIN_CLAIM_CATEGORIES",
+    "PHASE8_APPROVED_CROSS_DOMAIN_PAIR_CONTRACTS",
+    "PHASE8_APPROVED_PAIR_PROFILE_NAMES",
+    "PHASE8_REQUIRED_CROSS_DOMAIN_STORAGE_FIELDS",
+    "PHASE8_REQUIRED_SELECTED_DOMAIN_CONTRACT_KEYS",
+    "PHASE8_REQUIRED_CROSS_DOMAIN_PROFILE_DSD_KEYS",
     "InquiryBriefTypeContract",
     "InquiryFutureSupportContract",
     "InquiryDataRequirement",

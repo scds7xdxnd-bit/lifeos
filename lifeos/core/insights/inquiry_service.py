@@ -9,9 +9,13 @@ from datetime import datetime, time
 from time import perf_counter
 from typing import Iterable
 
+from flask import current_app, has_app_context
 from sqlalchemy import or_
 
 from lifeos.core.events.event_models import EventRecord
+from lifeos.core.insights.inquiry_cross_domain.engine import synthesize_cross_domain_brief
+from lifeos.core.insights.inquiry_cross_domain.pairs.base import CrossDomainPairProfile
+from lifeos.core.insights.inquiry_cross_domain.registry import get_cross_domain_strategy
 from lifeos.core.insights.inquiry_quality import evaluate_inquiry_brief_quality
 from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryRefineRequest
 from lifeos.core.insights.inquiry_strategies import (
@@ -23,10 +27,13 @@ from lifeos.core.insights.inquiry_strategies import (
 from lifeos.core.insights.inquiry_strategies.base import DomainStrategyProfile
 from lifeos.core.insights.models import InquiryBriefVersion, InquiryRequest, InsightRecord
 from lifeos.core.observability import (
+    record_inquiry_blocked_claims,
     record_inquiry_created,
     record_inquiry_generated,
+    record_inquiry_refine_after_low_coverage,
     record_inquiry_refine_after_low_quality,
     record_inquiry_refined,
+    record_inquiry_replay_mismatch,
     record_inquiry_viewed,
 )
 from lifeos.core.read_cache import read_cache
@@ -36,6 +43,11 @@ INQUIRY_READ_CACHE_SCOPE = "inquiry.reads"
 MAX_EVIDENCE_EVENTS_PER_DOMAIN = 3
 MAX_EVIDENCE_INSIGHTS_PER_DOMAIN = 2
 LOW_COVERAGE_THRESHOLD = 0.8
+_SOURCE_KIND_PRIORITY = {
+    "event_record": 0,
+    "insight_record": 1,
+    "read_model": 2,
+}
 
 
 @dataclass(frozen=True)
@@ -116,6 +128,25 @@ def _normalize_scope_from_refine(existing: InquiryRequest, data: InquiryRefineRe
 
 
 def _normalized_payload(scope: InquiryScope) -> dict:
+    strategy_profile_token = strategy_token_for_scope(
+        lens=scope.lens,
+        primary_domain=scope.primary_domain,
+        domains=scope.domains,
+    )
+    if scope.lens == "cross_domain" and len(scope.domains) == 2:
+        active_pair_profile = _resolve_cross_domain_profile(scope.domains)
+        if active_pair_profile is not None:
+            strategy_profile_token = (
+                f"{active_pair_profile.profile}:"
+                f"{active_pair_profile.profile_version}:"
+                f"{active_pair_profile.strategy_version}"
+            )
+        else:
+            strategy_profile_token = (
+                f"{GENERIC_BRIEF_PROFILE['profile']}:"
+                f"{GENERIC_BRIEF_PROFILE['profile_version']}:"
+                f"{GENERIC_BRIEF_PROFILE['strategy_version']}"
+            )
     return {
         "question": scope.question,
         "lens": scope.lens,
@@ -125,11 +156,7 @@ def _normalized_payload(scope: InquiryScope) -> dict:
         "as_of_ts": scope.as_of_ts.isoformat(),
         "context_text": scope.context_text or "",
         "context_semantics": "non_evidence",
-        "strategy_profile_token": strategy_token_for_scope(
-            lens=scope.lens,
-            primary_domain=scope.primary_domain,
-            domains=scope.domains,
-        ),
+        "strategy_profile_token": strategy_profile_token,
     }
 
 
@@ -202,6 +229,18 @@ def _sorted_evidence_refs(refs: list[dict]) -> list[dict]:
     )
 
 
+def _sorted_cross_domain_evidence_refs(refs: list[dict]) -> list[dict]:
+    return sorted(
+        refs,
+        key=lambda item: (
+            str(item.get("created_at") or ""),
+            _SOURCE_KIND_PRIORITY.get(str(item.get("source_kind") or ""), 99),
+            int(item.get("source_id") or 0),
+            str(item.get("source_ref") or ""),
+        ),
+    )
+
+
 def _finding_confidence(*, event_count: int, insight_count: int, mixed_domains: bool) -> str:
     if mixed_domains:
         return "needs_review"
@@ -214,8 +253,19 @@ def _strategy_profile_metadata(
     *,
     scope: InquiryScope,
     strategy: DomainStrategyProfile | None,
+    cross_domain_profile: CrossDomainPairProfile | None,
     finding_categories: list[str],
 ) -> dict[str, object]:
+    if cross_domain_profile is not None:
+        return {
+            "profile": cross_domain_profile.profile,
+            "profile_version": cross_domain_profile.profile_version,
+            "strategy": cross_domain_profile.strategy,
+            "strategy_version": cross_domain_profile.strategy_version,
+            "domain": cross_domain_profile.domain,
+            "expert_mode": True,
+            "finding_categories": sorted(set(finding_categories)),
+        }
     if strategy is None:
         return {
             **GENERIC_BRIEF_PROFILE,
@@ -232,6 +282,40 @@ def _strategy_profile_metadata(
         "expert_mode": True,
         "finding_categories": sorted(set(finding_categories)),
     }
+
+
+def _phase8_pair_profiles_enabled() -> bool:
+    if not has_app_context():
+        return False
+    return bool(current_app.config.get("ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES", False))
+
+
+def _phase8_enabled_pair_profiles() -> set[str] | None:
+    if not has_app_context():
+        return None
+    configured = current_app.config.get("PHASE8_ENABLED_PAIR_PROFILES")
+    if not configured:
+        return None
+    if isinstance(configured, str):
+        raw_items = configured.split(",")
+    else:
+        raw_items = list(configured)
+    allowed = {str(item).strip() for item in raw_items if str(item).strip()}
+    return allowed or None
+
+
+def _resolve_cross_domain_profile(domains: list[str]) -> CrossDomainPairProfile | None:
+    if len(domains) != 2:
+        return None
+    if not _phase8_pair_profiles_enabled():
+        return None
+    profile = get_cross_domain_strategy(domains)
+    if profile is None:
+        return None
+    allowed_profiles = _phase8_enabled_pair_profiles()
+    if allowed_profiles is not None and profile.profile not in allowed_profiles:
+        return None
+    return profile
 
 
 def _prioritize_domain_events(events: list[EventRecord], strategy: DomainStrategyProfile) -> list[EventRecord]:
@@ -399,11 +483,29 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
     limits: list[str] = []
     provenance_refs: list[dict] = []
     domain_refine_guidance: list[str] = []
+    blocked_claim_count = 0
+    active_cross_domain_profile = None
+    if scope.lens == "cross_domain" and len(scope.domains) == 2:
+        active_cross_domain_profile = _resolve_cross_domain_profile(scope.domains)
     applied_strategy = (
         get_domain_strategy(scope.primary_domain) if scope.lens == "domain" and len(scope.domains) == 1 else None
     )
 
-    if applied_strategy:
+    if active_cross_domain_profile:
+        synthesis = synthesize_cross_domain_brief(
+            profile=active_cross_domain_profile,
+            timeframe_start=scope.timeframe_start,
+            timeframe_end=scope.timeframe_end,
+            as_of_ts=scope.as_of_ts,
+            events_by_domain=events_by_domain,
+            insights_by_domain=insights_by_domain,
+        )
+        findings.extend(synthesis.findings)
+        limits.extend(synthesis.limits)
+        provenance_refs.extend(synthesis.provenance_refs)
+        domain_refine_guidance.extend(synthesis.refine_guidance)
+        blocked_claim_count = synthesis.blocked_claim_count
+    elif applied_strategy:
         domain = scope.primary_domain
         strategy_findings, strategy_limits, strategy_refs, strategy_guidance = _assemble_domain_expert_brief(
             strategy=applied_strategy,
@@ -470,7 +572,7 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
                 }
             )
 
-    if scope.lens == "cross_domain":
+    if scope.lens == "cross_domain" and active_cross_domain_profile is None:
         covered_domains = [
             domain for domain in scope.domains if len(events_by_domain[domain]) + len(insights_by_domain[domain]) > 0
         ]
@@ -520,7 +622,18 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
 
     total_events = len(events)
     total_insights = len(insights)
-    if applied_strategy:
+    if active_cross_domain_profile:
+        summary = (
+            f"Cross-domain pair brief ({active_cross_domain_profile.profile_version}) for "
+            f"{active_cross_domain_profile.domain} covers {total_events} events and "
+            f"{total_insights} prior insight records."
+        )
+        if total_events + total_insights == 0:
+            summary = (
+                f"Cross-domain pair brief for {active_cross_domain_profile.domain} found no canonical records "
+                "in the selected timeframe."
+            )
+    elif applied_strategy:
         summary = (
             f"{scope.primary_domain.title()} domain expert brief ({applied_strategy.profile_version}) "
             f"covers {total_events} events and {total_insights} prior insight records."
@@ -560,12 +673,17 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
     payload["brief_profile"] = _strategy_profile_metadata(
         scope=scope,
         strategy=applied_strategy,
+        cross_domain_profile=active_cross_domain_profile,
         finding_categories=[str(item.get("finding_category") or "") for item in findings],
     )
     payload["quality_metadata"] = evaluate_inquiry_brief_quality(
         payload,
         preferred_refine_guidance=domain_refine_guidance,
     )
+    if scope.lens == "cross_domain":
+        payload["blocked_claim_count"] = int(blocked_claim_count)
+    if active_cross_domain_profile is not None:
+        return payload, _sorted_cross_domain_evidence_refs(provenance_refs)
     return payload, _sorted_evidence_refs(provenance_refs)
 
 
@@ -692,6 +810,36 @@ def _brief_profile_storage_fields(brief_payload: dict) -> dict[str, object]:
     }
 
 
+def _cross_domain_storage_fields(brief_payload: dict) -> dict[str, object]:
+    if not isinstance(brief_payload, dict):
+        return {
+            "cross_domain_profile": None,
+            "cross_domain_profile_version": None,
+            "selected_domains": None,
+            "selected_domains_key": None,
+            "blocked_claim_count": None,
+        }
+    lens = str(brief_payload.get("lens") or "").strip().lower()
+    if lens != "cross_domain":
+        return {
+            "cross_domain_profile": None,
+            "cross_domain_profile_version": None,
+            "selected_domains": None,
+            "selected_domains_key": None,
+            "blocked_claim_count": None,
+        }
+    brief_profile = brief_payload.get("brief_profile") if isinstance(brief_payload.get("brief_profile"), dict) else {}
+    selected_domains = sorted({str(item) for item in list(brief_payload.get("domains") or []) if item})
+    selected_domains_key = "|".join(selected_domains) if selected_domains else None
+    return {
+        "cross_domain_profile": str(brief_profile.get("profile") or "") or None,
+        "cross_domain_profile_version": str(brief_profile.get("profile_version") or "") or None,
+        "selected_domains": selected_domains,
+        "selected_domains_key": selected_domains_key,
+        "blocked_claim_count": int(brief_payload.get("blocked_claim_count") or 0),
+    }
+
+
 def _brief_profile_metric_labels(brief_payload: dict | None) -> dict[str, object]:
     brief_profile = brief_payload.get("brief_profile") if isinstance(brief_payload, dict) else None
     if not isinstance(brief_profile, dict):
@@ -711,6 +859,25 @@ def _brief_profile_metric_labels(brief_payload: dict | None) -> dict[str, object
         "strategy_version": str(brief_profile.get("strategy_version") or "unknown"),
         "expert_mode": bool(brief_profile.get("expert_mode")),
     }
+
+
+def _has_replay_mismatch(
+    *,
+    user_id: int,
+    normalized_hash: str,
+    as_of_ts: datetime,
+    brief_hash: str,
+    exclude_version_id: int | None = None,
+) -> bool:
+    query = InquiryBriefVersion.query.filter(
+        InquiryBriefVersion.user_id == user_id,
+        InquiryBriefVersion.normalized_hash == normalized_hash,
+        InquiryBriefVersion.as_of_ts == as_of_ts,
+        InquiryBriefVersion.brief_hash != brief_hash,
+    )
+    if exclude_version_id is not None:
+        query = query.filter(InquiryBriefVersion.id != exclude_version_id)
+    return query.first() is not None
 
 
 def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryRequest, InquiryBriefVersion, bool]:
@@ -778,6 +945,7 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
     brief_hash = _payload_hash(brief_payload)
     quality_storage_fields = _quality_storage_fields(brief_payload)
     brief_profile_storage_fields = _brief_profile_storage_fields(brief_payload)
+    cross_domain_storage_fields = _cross_domain_storage_fields(brief_payload)
     version = InquiryBriefVersion(
         inquiry_id=inquiry.id,
         user_id=user_id,
@@ -790,6 +958,7 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         parent_version_id=None,
         **quality_storage_fields,
         **brief_profile_storage_fields,
+        **cross_domain_storage_fields,
     )
     db.session.add(version)
     db.session.flush()
@@ -820,6 +989,16 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         quality_metadata=brief_payload.get("quality_metadata") if isinstance(brief_payload, dict) else None,
         **profile_labels,
     )
+    if scope.lens == "cross_domain":
+        record_inquiry_blocked_claims(int(brief_payload.get("blocked_claim_count") or 0), **profile_labels)
+    if _has_replay_mismatch(
+        user_id=user_id,
+        normalized_hash=normalized_hash,
+        as_of_ts=scope.as_of_ts,
+        brief_hash=brief_hash,
+        exclude_version_id=version.id,
+    ):
+        record_inquiry_replay_mismatch(**profile_labels)
     return inquiry, version, False
 
 
@@ -886,6 +1065,7 @@ def refine_inquiry(
     previous_profile_labels = _brief_profile_metric_labels(previous.brief_payload if previous else None)
     previous_version_number = previous.version_number if previous else 0
     record_inquiry_refine_after_low_quality(previous_quality_metadata, **previous_profile_labels)
+    record_inquiry_refine_after_low_coverage(previous_quality_metadata, **previous_profile_labels)
 
     inquiry.question = scope.question
     inquiry.lens = scope.lens
@@ -926,6 +1106,7 @@ def refine_inquiry(
     brief_hash = _payload_hash(brief_payload)
     quality_storage_fields = _quality_storage_fields(brief_payload)
     brief_profile_storage_fields = _brief_profile_storage_fields(brief_payload)
+    cross_domain_storage_fields = _cross_domain_storage_fields(brief_payload)
     version = InquiryBriefVersion(
         inquiry_id=inquiry.id,
         user_id=user_id,
@@ -938,6 +1119,7 @@ def refine_inquiry(
         parent_version_id=previous.id if previous else None,
         **quality_storage_fields,
         **brief_profile_storage_fields,
+        **cross_domain_storage_fields,
     )
     db.session.add(version)
     db.session.flush()
@@ -968,4 +1150,14 @@ def refine_inquiry(
         quality_metadata=brief_payload.get("quality_metadata") if isinstance(brief_payload, dict) else None,
         **profile_labels,
     )
+    if scope.lens == "cross_domain":
+        record_inquiry_blocked_claims(int(brief_payload.get("blocked_claim_count") or 0), **profile_labels)
+    if _has_replay_mismatch(
+        user_id=user_id,
+        normalized_hash=normalized_hash,
+        as_of_ts=scope.as_of_ts,
+        brief_hash=brief_hash,
+        exclude_version_id=version.id,
+    ):
+        record_inquiry_replay_mismatch(**profile_labels)
     return inquiry, version

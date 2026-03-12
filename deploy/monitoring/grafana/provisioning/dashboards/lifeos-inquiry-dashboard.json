@@ -1,7 +1,7 @@
 {
-  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1)",
-  "description": "Operational dashboard for focused inquiry rollout and domain expert quality signals (first-wave + later-wave)",
-  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "inquiry"],
+  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8)",
+  "description": "Operational dashboard for focused inquiry rollout and domain/cross-domain expert quality signals",
+  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "inquiry"],
   "timezone": "utc",
   "panels": [
     {
@@ -330,12 +330,121 @@
     },
     {
       "id": 25,
-      "title": "Phase 7.1 Forbidden-Claim Block Rate (Optional Metric)",
+      "title": "Phase 8 Pair-Profile Blocked Claims Rate",
       "type": "graph",
       "targets": [
         {
-          "expr": "sum(rate(lifeos_inquiry_forbidden_claim_block_total{domain=~\"journal|relationships|health\"}[5m])) by (domain) or on() vector(0)",
-          "legendFormat": "{{ domain }}"
+          "expr": "sum(rate(lifeos_inquiry_blocked_claims_by_domain_total{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}[5m])) by (domain, profile_version, strategy_version)",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "title": "Phase 8 Pair-Profile Generated Rate (5m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}[5m])) by (domain, profile, profile_version, strategy_version)",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "title": "Phase 8 Pair-Profile Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_error_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 28,
+      "title": "Phase 8 Pair-Profile Latency p95 (seconds)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_generation_latency_p95_by_domain_profile:seconds{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Duration", "format": "s"}]
+    },
+    {
+      "id": 29,
+      "title": "Phase 8 Pair-Profile Empty Brief Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_empty_brief_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 30,
+      "title": "Phase 8 Pair-Profile Low Coverage Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_low_coverage_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 31,
+      "title": "Phase 8 Pair-Profile Refine After Low Coverage Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_refine_after_low_coverage_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 32,
+      "title": "Phase 8 Pair-Profile Blocked Claims Total (5m increase)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "increase(lifeos_inquiry_blocked_claims_by_domain_total{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}[5m])",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "title": "Phase 8 Pair-Profile Replay Mismatch Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_replay_mismatch_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
+          "legendFormat": "{{ domain }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 34,
+      "title": "Phase 8 Pair-Profile Version Drift",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\",profile_version!=\"1.0.0\"}[10m])) by (domain, profile_version)",
+          "legendFormat": "{{ domain }} profile={{ profile_version }}"
+        },
+        {
+          "expr": "sum(rate(lifeos_inquiry_generated_by_domain_total{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\",strategy_version!=\"1.0.0\"}[10m])) by (domain, strategy_version)",
+          "legendFormat": "{{ domain }} strategy={{ strategy_version }}"
         }
       ]
     }

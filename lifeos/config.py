@@ -108,9 +108,21 @@ class BaseConfig:
         "true",
         "yes",
     )
+    ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = os.environ.get(
+        "ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES",
+        "false",
+    ).lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    PHASE8_ENABLED_PAIR_PROFILES = (
+        tuple(item.strip() for item in os.environ.get("PHASE8_ENABLED_PAIR_PROFILES", "").split(",") if item.strip())
+        or None
+    )
     PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
         "PHASE6_INQUIRY_MIGRATION_HEAD",
-        "20260312_phase7_domain_expert_brief_metadata",
+        "20260312_phase8_cross_domain_inquiry_metadata",
     )
 
     ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
@@ -154,6 +166,7 @@ class DevelopmentConfig(BaseConfig):
     SESSION_COOKIE_SECURE = False
     JWT_COOKIE_SECURE = False
     ENABLE_PHASE6_FOCUSED_INQUIRY = True
+    ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = True
 
 
 class TestingConfig(BaseConfig):
@@ -169,6 +182,7 @@ class TestingConfig(BaseConfig):
     SESSION_COOKIE_SECURE = False
     JWT_COOKIE_SECURE = False
     ENABLE_PHASE6_FOCUSED_INQUIRY = True
+    ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = True
 
 
 class ProductionConfig(BaseConfig):
@@ -177,6 +191,7 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SAMESITE = "Lax"
     JWT_COOKIE_SECURE = True
     ENABLE_PHASE6_FOCUSED_INQUIRY = False
+    ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = False
 
 
 class StagingConfig(ProductionConfig):

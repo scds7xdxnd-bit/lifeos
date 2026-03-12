@@ -1,0 +1,200 @@
+{
+  "calendar__projects": {
+    "brief_profile": {
+      "profile": "projects_calendar_v1",
+      "profile_version": "1.0.0",
+      "strategy": "cross_domain_pair_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "calendar+projects",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "co_occurrence_observation",
+      "temporal_alignment",
+      "trend_alignment",
+      "coverage_gap",
+      "structural_dependency_observation",
+      "inconsistency_flag"
+    ],
+    "limitation_language": [
+      "Cross-domain synthesis is descriptive and bounded to explicit projects and calendar records.",
+      "No causal interpretation is applied across domains."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing to one project delivery window and matching calendar period.",
+      "Refine by extending timeframe when either domain has sparse records."
+    ],
+    "forbidden_claim_tokens": [
+      "caused",
+      "because",
+      "guarantee",
+      "always",
+      "never"
+    ]
+  },
+  "finance__habits": {
+    "brief_profile": {
+      "profile": "finance_habits_v1",
+      "profile_version": "1.0.0",
+      "strategy": "cross_domain_pair_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "finance+habits",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "co_occurrence_observation",
+      "temporal_alignment",
+      "trend_alignment",
+      "coverage_gap",
+      "structural_dependency_observation",
+      "inconsistency_flag"
+    ],
+    "limitation_language": [
+      "Cross-domain synthesis is descriptive and bounded to explicit finance and habits records.",
+      "No causal interpretation is applied across domains."
+    ],
+    "required_refine_guidance": [
+      "Refine by tightening timeframe to check co-occurrence windows.",
+      "Refine by clarifying whether spend or adherence cadence is primary."
+    ],
+    "forbidden_claim_tokens": [
+      "caused",
+      "because",
+      "diagnosis",
+      "treatment",
+      "therapy"
+    ]
+  },
+  "habits__health": {
+    "brief_profile": {
+      "profile": "health_habits_v1",
+      "profile_version": "1.0.0",
+      "strategy": "cross_domain_pair_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "habits+health",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "co_occurrence_observation",
+      "temporal_alignment",
+      "trend_alignment",
+      "coverage_gap",
+      "structural_dependency_observation",
+      "inconsistency_flag"
+    ],
+    "limitation_language": [
+      "Cross-domain synthesis is descriptive and bounded to explicit health and habits records.",
+      "No diagnosis, treatment, or medical risk scoring is applied."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing to one metric family and one habit cadence window.",
+      "Refine by extending timeframe when health metric coverage is sparse."
+    ],
+    "forbidden_claim_tokens": [
+      "diagnosis",
+      "treatment",
+      "clinical",
+      "medical risk",
+      "prescription"
+    ]
+  },
+  "habits__journal": {
+    "brief_profile": {
+      "profile": "journal_habits_v1",
+      "profile_version": "1.0.0",
+      "strategy": "cross_domain_pair_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "habits+journal",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "co_occurrence_observation",
+      "temporal_alignment",
+      "trend_alignment",
+      "coverage_gap",
+      "structural_dependency_observation",
+      "inconsistency_flag"
+    ],
+    "limitation_language": [
+      "Cross-domain synthesis is descriptive and bounded to explicit journal and habits records.",
+      "No psychological interpretation is applied across domains."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing to specific journal reflection windows.",
+      "Refine by clarifying which habit cadence to compare against journal records."
+    ],
+    "forbidden_claim_tokens": [
+      "diagnosis",
+      "personality",
+      "hidden intent",
+      "therapy",
+      "trauma"
+    ]
+  },
+  "journal__relationships": {
+    "brief_profile": {
+      "profile": "relationships_journal_v1",
+      "profile_version": "1.0.0",
+      "strategy": "cross_domain_pair_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "journal+relationships",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "co_occurrence_observation",
+      "temporal_alignment",
+      "trend_alignment",
+      "coverage_gap",
+      "structural_dependency_observation",
+      "inconsistency_flag"
+    ],
+    "limitation_language": [
+      "Cross-domain synthesis is descriptive and bounded to explicit relationships and journal records.",
+      "No relationship quality judgment or intent inference is applied."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing to a shorter social interaction cadence window.",
+      "Refine by focusing journal scope on explicit entries linked to selected timeframe."
+    ],
+    "forbidden_claim_tokens": [
+      "toxic",
+      "moral",
+      "intent",
+      "emotion of",
+      "personality"
+    ]
+  },
+  "projects__skills": {
+    "brief_profile": {
+      "profile": "projects_skills_v1",
+      "profile_version": "1.0.0",
+      "strategy": "cross_domain_pair_rules_v1",
+      "strategy_version": "1.0.0",
+      "domain": "projects+skills",
+      "expert_mode": true
+    },
+    "allowed_finding_categories": [
+      "co_occurrence_observation",
+      "temporal_alignment",
+      "trend_alignment",
+      "coverage_gap",
+      "structural_dependency_observation",
+      "inconsistency_flag"
+    ],
+    "limitation_language": [
+      "Cross-domain synthesis is descriptive and bounded to explicit projects and skills records.",
+      "No causal interpretation is applied across domains."
+    ],
+    "required_refine_guidance": [
+      "Refine by narrowing to one project interval and matching skill practice window.",
+      "Refine by extending timeframe when either domain has sparse evidence."
+    ],
+    "forbidden_claim_tokens": [
+      "caused",
+      "because",
+      "guarantee",
+      "always",
+      "never"
+    ]
+  }
+}
