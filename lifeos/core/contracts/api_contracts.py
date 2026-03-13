@@ -241,6 +241,18 @@ INQUIRY_EVIDENCE_REF = ApiObject(
     ],
 )
 
+INQUIRY_TIMELINE_CONTEXT = ApiObject(
+    name="InquiryTimelineContext",
+    fields=[
+        ApiField("claim_type", "string", "Timeline claim class", "system", "stable"),
+        ApiField("active_window_label", "string", "Active window label", "system", "stable"),
+        ApiField("comparison_label", "string", "Comparison reference label", "system", "stable"),
+        ApiField("window_spec_token", "string", "Window specification token", "system", "stable"),
+        ApiField("baseline_policy_token", "string", "Baseline policy token", "system", "stable"),
+        ApiField("coverage_status", "string", "Temporal coverage status", "system", "stable"),
+    ],
+)
+
 INQUIRY_FINDING_ITEM = ApiObject(
     name="InquiryFindingItem",
     fields=[
@@ -252,6 +264,7 @@ INQUIRY_FINDING_ITEM = ApiObject(
         ApiField("confidence_label", "string", "Canonical confidence label", "system", "stable"),
         ApiField("uncertainty_note", "string", "Finding uncertainty note", "system", "stable"),
         ApiField("source_domains", "list[string]", "Source domains for finding", "system", "stable"),
+        ApiField("timeline_context", "InquiryTimelineContext|null", "Timeline comparison context", "system", "stable"),
     ],
 )
 
@@ -346,6 +359,39 @@ INQUIRY_PRODUCTIZATION_METADATA = ApiObject(
     ],
 )
 
+INQUIRY_TIMELINE_COVERAGE = ApiObject(
+    name="InquiryTimelineCoverage",
+    fields=[
+        ApiField("prior_window_available", "boolean", "Prior comparable window availability", "system", "stable"),
+        ApiField("baseline_windows_available", "integer", "Available baseline windows", "system", "stable"),
+        ApiField("baseline_windows_required", "integer", "Required baseline windows", "system", "stable"),
+        ApiField(
+            "recurrence_windows_available", "integer", "Comparable windows available for recurrence", "system", "stable"
+        ),
+        ApiField("trend_windows_available", "integer", "Comparable windows available for trend", "system", "stable"),
+    ],
+)
+
+INQUIRY_TIMELINE_METADATA = ApiObject(
+    name="InquiryTimelineMetadata",
+    fields=[
+        ApiField("timeline_profile_id", "string", "Timeline profile id", "system", "stable"),
+        ApiField("timeline_profile_version", "string", "Timeline profile version", "system", "stable"),
+        ApiField("timeline_engine_version", "string", "Timeline engine version", "system", "stable"),
+        ApiField("window_spec_token", "string", "Window specification token", "system", "stable"),
+        ApiField("active_window_token", "string|null", "Active window token", "system", "stable"),
+        ApiField("comparison_window_token", "string|null", "Primary comparison window token", "system", "stable"),
+        ApiField("baseline_policy_token", "string", "Baseline policy token", "system", "stable"),
+        ApiField("timezone_token", "string", "Captured timezone token", "system", "stable"),
+        ApiField("as_of_ts", "string", "Timeline as_of timestamp", "system", "stable"),
+        ApiField("evidence_manifest_hash", "string", "Timeline evidence manifest hash", "system", "stable"),
+        ApiField("timeline_summary_hash", "string", "Timeline summary hash", "system", "stable"),
+        ApiField("comparison_coverage", "InquiryTimelineCoverage", "Timeline comparison coverage", "system", "stable"),
+        ApiField("finding_count", "integer", "Timeline finding count", "system", "stable"),
+        ApiField("insufficiency_count", "integer", "Timeline insufficiency count", "system", "stable"),
+    ],
+)
+
 INQUIRY_BRIEF_ITEM = ApiObject(
     name="InquiryBriefItem",
     fields=[
@@ -378,6 +424,7 @@ INQUIRY_BRIEF_ITEM = ApiObject(
         ApiField("as_of_ts", "string", "Deterministic as_of timestamp", "user", "stable"),
         ApiField("generated_at", "string", "Generated timestamp", "system", "stable"),
         ApiField("brief_profile", "InquiryBriefProfile", "Domain brief profile metadata", "system", "stable"),
+        ApiField("timeline_metadata", "InquiryTimelineMetadata|null", "Timeline replay metadata", "system", "stable"),
         ApiField(
             "quality_metadata",
             "InquiryQualityMetadata",
@@ -731,8 +778,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
+                INQUIRY_TIMELINE_COVERAGE,
+                INQUIRY_TIMELINE_METADATA,
                 INQUIRY_QUALITY_METADATA,
                 INQUIRY_DIRECT_ANSWER,
                 INQUIRY_ANSWERABILITY,
@@ -740,7 +790,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="f23b84af03f87910e9a9f9c27c9cd5ea640d6713d9845338956671fd16fd75a6",
+        schema_hash="646a3b776571487b9ab92c5fc8b152e117963202c126c5bf3358b76b95973d30",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -763,8 +813,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
+                INQUIRY_TIMELINE_COVERAGE,
+                INQUIRY_TIMELINE_METADATA,
                 INQUIRY_QUALITY_METADATA,
                 INQUIRY_DIRECT_ANSWER,
                 INQUIRY_ANSWERABILITY,
@@ -772,7 +825,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="04104df593af8913c3adf040e642008cd16360b89a0997a73fb1286c5e8ef220",
+        schema_hash="2a9eecd0f48e6db176caf6691d2636c81510388a52c526749055bb6692108765",
         read_only=True,
         surface_key="insights:inquiry",
     ),
@@ -792,8 +845,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
+                INQUIRY_TIMELINE_COVERAGE,
+                INQUIRY_TIMELINE_METADATA,
                 INQUIRY_QUALITY_METADATA,
                 INQUIRY_DIRECT_ANSWER,
                 INQUIRY_ANSWERABILITY,
@@ -801,7 +857,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="7221d716935211f7162a5161dfc72f9c2b45241e1bd53ab5bc65372ebcab306f",
+        schema_hash="ca4ef63b14d27cf291f2314a7d98c6f5e8e55fcabdbb0025e244ae9bdab17715",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -822,8 +878,11 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
+                INQUIRY_TIMELINE_COVERAGE,
+                INQUIRY_TIMELINE_METADATA,
                 INQUIRY_QUALITY_METADATA,
                 INQUIRY_DIRECT_ANSWER,
                 INQUIRY_ANSWERABILITY,
@@ -831,7 +890,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="98649dca5e7b3b0325c8b0984a40ece78bcce1ca8ef9f22d11bf88d8cca2f49b",
+        schema_hash="0bf4d16791bce717995ce75bd6805bed26b0d9037335d80c654e28d121c1fbb1",
         read_only=False,
         surface_key="insights:inquiry",
     ),

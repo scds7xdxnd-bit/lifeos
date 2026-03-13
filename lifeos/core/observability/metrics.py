@@ -254,6 +254,44 @@ INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL = Counter(
     _INQUIRY_DOMAIN_LABELS,
 )
 
+TIMELINE_PROFILE_USAGE_TOTAL = Counter(
+    "lifeos_timeline_profile_usage_total",
+    "Timeline profile usage count by inquiry profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+TIMELINE_GENERATION_LATENCY_SECONDS = Histogram(
+    "lifeos_timeline_generation_latency_seconds",
+    "Timeline generation latency in seconds",
+    _INQUIRY_DOMAIN_LABELS,
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0),
+)
+
+TIMELINE_INSUFFICIENCY_TOTAL = Counter(
+    "lifeos_timeline_insufficiency_total",
+    "Timeline insufficiency count across generated summaries",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+TIMELINE_BASELINE_COVERAGE_WINDOWS = Histogram(
+    "lifeos_timeline_baseline_coverage_windows",
+    "Timeline baseline coverage window count",
+    _INQUIRY_DOMAIN_LABELS,
+    buckets=(0, 1, 2, 3, 4, 5, 6),
+)
+
+TIMELINE_BLOCKED_CLAIMS_TOTAL = Counter(
+    "lifeos_timeline_blocked_claims_total",
+    "Blocked timeline forbidden-claim count",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+TIMELINE_REPLAY_MISMATCH_TOTAL = Counter(
+    "lifeos_timeline_replay_mismatch_total",
+    "Timeline replay mismatch detections",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
 INQUIRY_PRODUCTIZATION_TOTAL = Counter(
     "lifeos_inquiry_productization_total",
     "Total focused inquiry productization runs",
@@ -756,6 +794,82 @@ def record_inquiry_replay_mismatch(
     )
     INQUIRY_REPLAY_MISMATCH_TOTAL.inc()
     INQUIRY_REPLAY_MISMATCH_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+
+def record_timeline_generated(
+    *,
+    latency_seconds: float | None,
+    insufficiency_count: int,
+    baseline_windows_available: int,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record timeline generation metrics for Phase 9 profiles."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    TIMELINE_PROFILE_USAGE_TOTAL.labels(**domain_labels).inc()
+    if latency_seconds is not None:
+        TIMELINE_GENERATION_LATENCY_SECONDS.labels(**domain_labels).observe(max(0.0, latency_seconds))
+    TIMELINE_BASELINE_COVERAGE_WINDOWS.labels(**domain_labels).observe(max(0, int(baseline_windows_available or 0)))
+    insufficiency = max(0, int(insufficiency_count or 0))
+    if insufficiency > 0:
+        TIMELINE_INSUFFICIENCY_TOTAL.labels(**domain_labels).inc(insufficiency)
+
+
+def record_timeline_blocked_claims(
+    blocked_claim_count: int,
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record blocked timeline forbidden claims."""
+    count = max(0, int(blocked_claim_count or 0))
+    if count <= 0:
+        return
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    TIMELINE_BLOCKED_CLAIMS_TOTAL.labels(**domain_labels).inc(count)
+
+
+def record_timeline_replay_mismatch(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record timeline replay mismatch detections."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    TIMELINE_REPLAY_MISMATCH_TOTAL.labels(**domain_labels).inc()
 
 
 def record_inquiry_productization(

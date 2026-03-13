@@ -208,3 +208,24 @@ def test_weak_answerability_remains_bounded_and_non_overstated():
     lower = str(result.direct_answer["text"]).lower()
     for token in ("always", "never", "guarantee", "definitely", "certainly", "caused", "because"):
         assert token not in lower
+
+
+def test_evidence_backed_gap_only_findings_remain_weak_answerable():
+    result = productize_inquiry_brief(
+        question="Did my habit pattern persist?",
+        domains=["habits"],
+        findings=[
+            _finding(
+                claim="No canonical habits records were found in the selected inquiry timeframe.",
+                category="evidence_gap",
+                confidence="needs_review",
+                domain="habits",
+                source_kind="read_model",
+                source_id=0,
+            )
+        ],
+        limits=["Habit log evidence is sparse in this timeframe; treat adherence interpretation as partial."],
+        incoming_refine_guidance=["Refine by extending timeframe when logs are sparse for selected habits."],
+    )
+    assert result.answerability["classification"] == "weak_answerable"
+    assert result.answerability["supporting_finding_count"] == 1

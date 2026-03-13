@@ -1,0 +1,409 @@
+{
+  "history_cases": [
+    {
+      "name": "dense_finance_history",
+      "timezone": "Asia/Seoul",
+      "request": {
+        "question": "How has finance changed over time?",
+        "domain": "finance",
+        "cross_domain": false,
+        "timeframe_start": "2026-02-22",
+        "timeframe_end": "2026-02-28",
+        "as_of_ts": "2026-02-28T23:00:00"
+      },
+      "events": [
+        {
+          "event_type": "finance.transaction.created",
+          "created_at": "2026-02-01T09:00:00",
+          "payload": {
+            "amount": 40,
+            "occurred_at": "2026-02-01T09:00:00"
+          }
+        },
+        {
+          "event_type": "finance.transaction.created",
+          "created_at": "2026-02-08T09:00:00",
+          "payload": {
+            "amount": 50,
+            "occurred_at": "2026-02-08T09:00:00"
+          }
+        },
+        {
+          "event_type": "finance.transaction.created",
+          "created_at": "2026-02-15T09:00:00",
+          "payload": {
+            "amount": 60,
+            "occurred_at": "2026-02-15T09:00:00"
+          }
+        },
+        {
+          "event_type": "finance.transaction.created",
+          "created_at": "2026-02-22T09:00:00",
+          "payload": {
+            "amount": 80,
+            "occurred_at": "2026-02-22T09:00:00"
+          }
+        },
+        {
+          "event_type": "finance.transaction.created",
+          "created_at": "2026-03-01T00:00:00",
+          "payload": {
+            "amount": 999,
+            "occurred_at": "2026-02-25T09:00:00"
+          }
+        }
+      ],
+      "expects": {
+        "timeline_profile_id": "finance_timeline_v1",
+        "insufficiency_min": 0,
+        "requires_recurrence": true,
+        "allows_answerability": [
+          "strong_answerable",
+          "partial_answerable"
+        ]
+      }
+    },
+    {
+      "name": "sparse_habits_history",
+      "timezone": "UTC",
+      "request": {
+        "question": "Did my habit pattern persist?",
+        "domain": "habits",
+        "cross_domain": false,
+        "timeframe_start": "2026-03-01",
+        "timeframe_end": "2026-03-07",
+        "as_of_ts": "2026-03-07T23:00:00"
+      },
+      "events": [
+        {
+          "event_type": "habits.habit.logged",
+          "created_at": "2026-03-07T08:00:00",
+          "payload": {
+            "habit_id": 1,
+            "logged_date": "2026-03-07"
+          }
+        }
+      ],
+      "expects": {
+        "timeline_profile_id": "habits_timeline_v1",
+        "insufficiency_min": 1,
+        "requires_recurrence": false,
+        "allows_answerability": [
+          "strong_answerable",
+          "weak_answerable",
+          "partial_answerable"
+        ]
+      }
+    },
+    {
+      "name": "sparse_no_history_habits",
+      "timezone": "UTC",
+      "request": {
+        "question": "Did my habit pattern persist?",
+        "domain": "habits",
+        "cross_domain": false,
+        "timeframe_start": "2026-03-01",
+        "timeframe_end": "2026-03-07",
+        "as_of_ts": "2026-03-07T23:00:00"
+      },
+      "events": [],
+      "expects": {
+        "timeline_profile_id": "habits_timeline_v1",
+        "insufficiency_min": 1,
+        "requires_recurrence": false,
+        "allows_answerability": [
+          "weak_answerable"
+        ]
+      }
+    },
+    {
+      "name": "single_window_only_projects",
+      "timezone": "UTC",
+      "request": {
+        "question": "How did project activity change?",
+        "domain": "projects",
+        "cross_domain": false,
+        "timeframe_start": "2026-03-10",
+        "timeframe_end": "2026-03-10",
+        "as_of_ts": "2026-03-10T23:00:00"
+      },
+      "events": [
+        {
+          "event_type": "projects.task.completed",
+          "created_at": "2026-03-10T09:00:00",
+          "payload": {
+            "task_id": 101,
+            "completed_at": "2026-03-10T09:00:00"
+          }
+        }
+      ],
+      "expects": {
+        "timeline_profile_id": "projects_timeline_v1",
+        "insufficiency_min": 1,
+        "requires_recurrence": false,
+        "allows_answerability": [
+          "weak_answerable",
+          "partial_answerable",
+          "strong_answerable"
+        ]
+      }
+    },
+    {
+      "name": "dst_boundary_calendar",
+      "timezone": "America/New_York",
+      "request": {
+        "question": "How did scheduled activity change over time?",
+        "domain": "calendar",
+        "cross_domain": false,
+        "timeframe_start": "2026-03-08",
+        "timeframe_end": "2026-03-14",
+        "as_of_ts": "2026-03-14T23:00:00"
+      },
+      "events": [
+        {
+          "event_type": "calendar.event.created",
+          "created_at": "2026-03-01T06:30:00",
+          "payload": {
+            "event_id": 11,
+            "title": "Pre-DST check",
+            "start_time": "2026-03-01T01:30:00-05:00"
+          }
+        },
+        {
+          "event_type": "calendar.event.created",
+          "created_at": "2026-03-08T06:30:00",
+          "payload": {
+            "event_id": 12,
+            "title": "DST boundary",
+            "start_time": "2026-03-08T01:30:00-05:00"
+          }
+        },
+        {
+          "event_type": "calendar.event.created",
+          "created_at": "2026-03-08T08:30:00",
+          "payload": {
+            "event_id": 13,
+            "title": "Post shift",
+            "start_time": "2026-03-08T03:30:00-04:00"
+          }
+        }
+      ],
+      "expects": {
+        "timeline_profile_id": "calendar_timeline_v1",
+        "insufficiency_min": 0,
+        "requires_recurrence": true,
+        "allows_answerability": [
+          "strong_answerable",
+          "partial_answerable"
+        ]
+      }
+    }
+  ],
+  "window_semantics_cases": [
+    {
+      "name": "dst_new_york_week_window",
+      "timeframe_start": "2026-03-08T00:00:00",
+      "timeframe_end": "2026-03-14T23:59:59",
+      "as_of_ts": "2026-03-14T23:00:00",
+      "timezone_token": "America/New_York",
+      "baseline_window_count": 3,
+      "expected_duration_days": 7,
+      "token_contains": [
+        "phase9_window_spec_v1",
+        "d7",
+        "tz:America/New_York"
+      ]
+    },
+    {
+      "name": "month_length_variation_february",
+      "timeframe_start": "2026-02-01T00:00:00",
+      "timeframe_end": "2026-02-28T23:59:59",
+      "as_of_ts": "2026-02-28T23:00:00",
+      "timezone_token": "UTC",
+      "baseline_window_count": 3,
+      "expected_duration_days": 28,
+      "token_contains": [
+        "phase9_window_spec_v1",
+        "d28",
+        "tz:UTC"
+      ]
+    }
+  ],
+  "pair_cases": [
+    {
+      "name": "finance_habits_pair",
+      "timezone": "UTC",
+      "request": {
+        "question": "Did finance and habits stay aligned over time?",
+        "domains": [
+          "finance",
+          "habits"
+        ],
+        "cross_domain": true,
+        "timeframe_start": "2026-03-08",
+        "timeframe_end": "2026-03-14",
+        "as_of_ts": "2026-03-14T23:00:00"
+      },
+      "events": [
+        {
+          "event_type": "finance.transaction.created",
+          "created_at": "2026-03-01T09:00:00",
+          "payload": {
+            "amount": 45,
+            "occurred_at": "2026-03-01T09:00:00"
+          }
+        },
+        {
+          "event_type": "habits.habit.logged",
+          "created_at": "2026-03-01T10:00:00",
+          "payload": {
+            "habit_id": 3,
+            "logged_date": "2026-03-01"
+          }
+        },
+        {
+          "event_type": "finance.transaction.created",
+          "created_at": "2026-03-08T09:00:00",
+          "payload": {
+            "amount": 60,
+            "occurred_at": "2026-03-08T09:00:00"
+          }
+        },
+        {
+          "event_type": "habits.habit.logged",
+          "created_at": "2026-03-08T10:00:00",
+          "payload": {
+            "habit_id": 3,
+            "logged_date": "2026-03-08"
+          }
+        }
+      ],
+      "expects": {
+        "timeline_profile_id": "finance_habits_timeline_v1",
+        "required_category": "approved_pair_alignment_persistence",
+        "required_domains": [
+          "finance",
+          "habits"
+        ]
+      }
+    },
+    {
+      "name": "projects_skills_pair",
+      "timezone": "UTC",
+      "request": {
+        "question": "Did projects and skills stay aligned over time?",
+        "domains": [
+          "projects",
+          "skills"
+        ],
+        "cross_domain": true,
+        "timeframe_start": "2026-03-08",
+        "timeframe_end": "2026-03-14",
+        "as_of_ts": "2026-03-14T23:00:00"
+      },
+      "events": [
+        {
+          "event_type": "projects.task.completed",
+          "created_at": "2026-03-01T09:00:00",
+          "payload": {
+            "task_id": 1,
+            "completed_at": "2026-03-01T09:00:00"
+          }
+        },
+        {
+          "event_type": "skills.practice.logged",
+          "created_at": "2026-03-01T10:00:00",
+          "payload": {
+            "skill_id": 1,
+            "practiced_at": "2026-03-01T10:00:00",
+            "duration_minutes": 30
+          }
+        },
+        {
+          "event_type": "projects.task.completed",
+          "created_at": "2026-03-08T09:00:00",
+          "payload": {
+            "task_id": 2,
+            "completed_at": "2026-03-08T09:00:00"
+          }
+        },
+        {
+          "event_type": "skills.practice.logged",
+          "created_at": "2026-03-08T10:00:00",
+          "payload": {
+            "skill_id": 1,
+            "practiced_at": "2026-03-08T10:00:00",
+            "duration_minutes": 45
+          }
+        }
+      ],
+      "expects": {
+        "timeline_profile_id": "projects_skills_timeline_v1",
+        "required_category": "approved_pair_alignment_persistence",
+        "required_domains": [
+          "projects",
+          "skills"
+        ]
+      }
+    },
+    {
+      "name": "projects_calendar_pair",
+      "timezone": "UTC",
+      "request": {
+        "question": "Did projects and calendar stay aligned over time?",
+        "domains": [
+          "projects",
+          "calendar"
+        ],
+        "cross_domain": true,
+        "timeframe_start": "2026-03-08",
+        "timeframe_end": "2026-03-14",
+        "as_of_ts": "2026-03-14T23:00:00"
+      },
+      "events": [
+        {
+          "event_type": "projects.task.completed",
+          "created_at": "2026-03-01T09:00:00",
+          "payload": {
+            "task_id": 9,
+            "completed_at": "2026-03-01T09:00:00"
+          }
+        },
+        {
+          "event_type": "calendar.event.created",
+          "created_at": "2026-03-01T10:00:00",
+          "payload": {
+            "event_id": 20,
+            "title": "Milestone sync",
+            "start_time": "2026-03-01T10:00:00"
+          }
+        },
+        {
+          "event_type": "projects.task.completed",
+          "created_at": "2026-03-08T09:00:00",
+          "payload": {
+            "task_id": 10,
+            "completed_at": "2026-03-08T09:00:00"
+          }
+        },
+        {
+          "event_type": "calendar.event.created",
+          "created_at": "2026-03-08T10:00:00",
+          "payload": {
+            "event_id": 21,
+            "title": "Delivery review",
+            "start_time": "2026-03-08T10:00:00"
+          }
+        }
+      ],
+      "expects": {
+        "timeline_profile_id": "projects_calendar_timeline_v1",
+        "required_category": "approved_pair_alignment_persistence",
+        "required_domains": [
+          "calendar",
+          "projects"
+        ]
+      }
+    }
+  ]
+}

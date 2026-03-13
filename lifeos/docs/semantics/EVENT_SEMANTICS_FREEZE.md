@@ -102,6 +102,7 @@ Format:
 - Phase 8 may enrich inquiry event payload metadata with explicit cross-domain profile fields (e.g., selected domains, profile id/version) without introducing new lifecycle event types.
 - Phase 8.1 may enrich inquiry payload metadata with answerability/quality fields (e.g., answerability class, relevance summary markers) without introducing new lifecycle event types.
 - Phase 9 may enrich inquiry payload metadata with timeline profile/version, window specification, baseline policy token, comparison coverage, and temporal summary hash fields without introducing new lifecycle event types.
+- Phase 10 may enrich inquiry payload metadata with canonical brief hash, humanization version, humanized brief hash, and technical-view availability flags without introducing new lifecycle event types.
 
 ## ML Scope
 - ML may only attach to inference events and ML feedback events defined in the semantic registry; no new event types are allowed without a contract update.

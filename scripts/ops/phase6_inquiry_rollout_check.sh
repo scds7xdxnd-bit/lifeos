@@ -24,6 +24,17 @@ PHASE8_1_EXPECT_PRODUCTIZATION_VERSION="${PHASE8_1_EXPECT_PRODUCTIZATION_VERSION
 PHASE8_1_CANARY_PROFILE="${PHASE8_1_CANARY_PROFILE:-}"
 PHASE8_1_CANARY_MIN_DIRECT_ANSWER_RATE="${PHASE8_1_CANARY_MIN_DIRECT_ANSWER_RATE:-0.55}"
 PHASE8_1_CANARY_MAX_WEAK_RATE="${PHASE8_1_CANARY_MAX_WEAK_RATE:-0.70}"
+PHASE9_TIMELINE_ENABLED="${PHASE9_TIMELINE_ENABLED:-false}"
+PHASE9_FIRST_WAVE_DOMAINS="${PHASE9_FIRST_WAVE_DOMAINS:-finance,habits,projects,skills,calendar}"
+PHASE9_APPROVED_PAIR_DOMAINS="${PHASE9_APPROVED_PAIR_DOMAINS:-finance+habits,projects+skills,calendar+projects}"
+PHASE9_EXPECTED_PROFILES="${PHASE9_EXPECTED_PROFILES:-finance_timeline_v1,habits_timeline_v1,projects_timeline_v1,skills_timeline_v1,calendar_timeline_v1,finance_habits_timeline_v1,projects_skills_timeline_v1,projects_calendar_timeline_v1}"
+PHASE9_EXPECT_PROFILE_VERSION="${PHASE9_EXPECT_PROFILE_VERSION:-1.0.0}"
+PHASE9_EXPECT_STRATEGY_VERSION="${PHASE9_EXPECT_STRATEGY_VERSION:-1.0.0}"
+PHASE9_CANARY_DOMAIN="${PHASE9_CANARY_DOMAIN:-}"
+PHASE9_CANARY_MAX_INSUFFICIENCY_RATE="${PHASE9_CANARY_MAX_INSUFFICIENCY_RATE:-0.80}"
+PHASE9_CANARY_MAX_LATENCY_P95="${PHASE9_CANARY_MAX_LATENCY_P95:-1.20}"
+PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE="${PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE:-0.10}"
+PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT="${PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT:-0}"
 
 required_metrics=(
   "lifeos_inquiry_created_total"
@@ -68,6 +79,17 @@ required_metrics=(
   "lifeos_phase6_inquiry_migration_mismatch"
 )
 
+if [[ "${PHASE9_TIMELINE_ENABLED}" == "true" ]]; then
+  required_metrics+=(
+    "lifeos_timeline_profile_usage_total"
+    "lifeos_timeline_generation_latency_seconds_bucket"
+    "lifeos_timeline_insufficiency_total"
+    "lifeos_timeline_baseline_coverage_windows_bucket"
+    "lifeos_timeline_blocked_claims_total"
+    "lifeos_timeline_replay_mismatch_total"
+  )
+fi
+
 health_json="$(curl -fsS "${BASE_URL}/health")"
 HEALTH_JSON="${health_json}" "${PYTHON_BIN}" - <<'PY'
 import json
@@ -107,7 +129,7 @@ for metric in "${required_metrics[@]}"; do
     exit 1
   fi
 done
-echo "OK: required Phase 6/6.1/7/7.1/8/8.1 inquiry metrics are exposed"
+echo "OK: required Phase 6/6.1/7/7.1/8/8.1/9 inquiry metrics are exposed"
 
 inquiry_status="$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/v1/inquiries")"
 if [[ "${INQUIRY_FEATURE_ENABLED}" == "true" ]]; then
@@ -181,6 +203,17 @@ if curl -fsS "${PROM_URL}/api/v1/alerts" >/dev/null 2>&1; then
     "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio"
     "lifeos:inquiry_productization_replay_mismatch_count"
     "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile"
+    "lifeos:timeline_profile_usage_rate_by_profile:per_second"
+    "lifeos:timeline_generation_latency_p95_by_profile:seconds"
+    "lifeos:timeline_error_rate_by_profile:ratio"
+    "lifeos:timeline_insufficiency_rate_by_profile:ratio"
+    "lifeos:timeline_baseline_coverage_avg_windows_by_profile"
+    "lifeos:timeline_baseline_coverage_distribution_by_profile:ratio"
+    "lifeos:timeline_blocked_claims_rate_by_profile:ratio"
+    "lifeos:timeline_replay_mismatch_count_by_profile"
+    "lifeos:timeline_replay_mismatch_rate_by_profile:ratio"
+    "lifeos:timeline_output_presence_rate:ratio"
+    "lifeos:timeline_output_presence_rate_by_domain:ratio"
   )
   for recording in "${required_recordings[@]}"; do
     query_json="$(curl -fsS --get --data-urlencode "query=${recording}" "${PROM_URL}/api/v1/query")"
@@ -196,7 +229,7 @@ if not isinstance(result, list):
     sys.exit(1)
 PY
   done
-  echo "OK: required Phase 6/6.1/7/7.1/8/8.1 recording rules are queryable"
+  echo "OK: required Phase 6/6.1/7/7.1/8/8.1/9 recording rules are queryable"
 
   alerts_json="$(curl -fsS "${PROM_URL}/api/v1/alerts")"
   ALERTS_JSON="${alerts_json}" "${PYTHON_BIN}" - <<'PY'
@@ -210,14 +243,14 @@ firing = []
 for alert in alerts:
     labels = alert.get("labels", {})
     phase = str(labels.get("phase") or "")
-    if phase in {"6", "6.1", "7", "7.1", "8", "8.1"} and alert.get("state") == "firing":
+    if phase in {"6", "6.1", "7", "7.1", "8", "8.1", "9"} and alert.get("state") == "firing":
         firing.append(labels.get("alertname") or "unknown")
 
 if firing:
-    print("ERROR: Phase 6/6.1/7/7.1/8/8.1 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
+    print("ERROR: Phase 6/6.1/7/7.1/8/8.1/9 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
     sys.exit(1)
 
-print("OK: no Phase 6/6.1/7/7.1/8/8.1 inquiry alerts firing")
+print("OK: no Phase 6/6.1/7/7.1/8/8.1/9 inquiry alerts firing")
 PY
 
   check_rollout_versions() {
@@ -459,8 +492,162 @@ print(f"OK: observed productization metadata version matches expected ({expected
 PY
     fi
   fi
+
+  if [[ "${PHASE9_TIMELINE_ENABLED}" == "true" ]]; then
+    phase9_domains_regex="${PHASE9_FIRST_WAVE_DOMAINS//,/|}"
+    if [[ -n "${PHASE9_APPROVED_PAIR_DOMAINS}" ]]; then
+      phase9_domains_regex="${phase9_domains_regex}|${PHASE9_APPROVED_PAIR_DOMAINS//,/|}"
+    fi
+    phase9_domains_regex="${phase9_domains_regex//+/\\+}"
+
+    phase9_usage_query="sum(rate(lifeos_timeline_profile_usage_total{domain=~\"${phase9_domains_regex}\"}[30m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)"
+    phase9_usage_json="$(curl -fsS --get --data-urlencode "query=${phase9_usage_query}" "${PROM_URL}/api/v1/query")"
+    PHASE9_USAGE_JSON="${phase9_usage_json}" \
+    PHASE9_FIRST_WAVE_DOMAINS="${PHASE9_FIRST_WAVE_DOMAINS}" \
+    PHASE9_APPROVED_PAIR_DOMAINS="${PHASE9_APPROVED_PAIR_DOMAINS}" \
+    PHASE9_EXPECTED_PROFILES="${PHASE9_EXPECTED_PROFILES}" \
+    PHASE9_EXPECT_PROFILE_VERSION="${PHASE9_EXPECT_PROFILE_VERSION}" \
+    PHASE9_EXPECT_STRATEGY_VERSION="${PHASE9_EXPECT_STRATEGY_VERSION}" \
+    "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["PHASE9_USAGE_JSON"])
+rows = payload.get("data", {}).get("result", [])
+expected_domains = {
+    item.strip()
+    for item in (os.environ["PHASE9_FIRST_WAVE_DOMAINS"] + "," + os.environ["PHASE9_APPROVED_PAIR_DOMAINS"]).split(",")
+    if item.strip()
+}
+expected_profiles = {item.strip() for item in os.environ["PHASE9_EXPECTED_PROFILES"].split(",") if item.strip()}
+expected_profile_version = os.environ["PHASE9_EXPECT_PROFILE_VERSION"]
+expected_strategy_version = os.environ["PHASE9_EXPECT_STRATEGY_VERSION"]
+
+if not rows:
+    print("WARN: no Phase 9 timeline traffic observed yet; profile validation skipped", file=sys.stderr)
+    sys.exit(0)
+
+seen_profiles: set[str] = set()
+for row in rows:
+    metric = row.get("metric", {})
+    domain = str(metric.get("domain") or "")
+    profile = str(metric.get("profile") or "")
+    profile_version = str(metric.get("profile_version") or "")
+    strategy_version = str(metric.get("strategy_version") or "")
+
+    if domain and domain not in expected_domains:
+        print(f"ERROR: unexpected Phase 9 timeline domain label observed: {domain}", file=sys.stderr)
+        sys.exit(1)
+    if profile and profile not in expected_profiles:
+        print(f"ERROR: unexpected Phase 9 timeline profile observed: {profile}", file=sys.stderr)
+        sys.exit(1)
+    if profile_version != expected_profile_version:
+        print(
+            f"ERROR: Phase 9 profile_version drift for profile={profile} domain={domain}: {profile_version} != {expected_profile_version}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if strategy_version != expected_strategy_version:
+        print(
+            f"ERROR: Phase 9 strategy_version drift for profile={profile} domain={domain}: {strategy_version} != {expected_strategy_version}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if profile:
+        seen_profiles.add(profile)
+
+missing = sorted(expected_profiles - seen_profiles)
+if missing:
+    print("WARN: no recent Phase 9 traffic for profiles: " + ", ".join(missing), file=sys.stderr)
+
+print("OK: Phase 9 timeline profiles and versions are within expected rollout values")
+PY
+
+    if [[ -n "${PHASE9_CANARY_DOMAIN}" ]]; then
+      phase9_latency_query="max(lifeos:timeline_generation_latency_p95_by_profile:seconds{domain=\"${PHASE9_CANARY_DOMAIN}\"})"
+      phase9_insuff_query="max(lifeos:timeline_insufficiency_rate_by_profile:ratio{domain=\"${PHASE9_CANARY_DOMAIN}\"})"
+      phase9_blocked_query="max(lifeos:timeline_blocked_claims_rate_by_profile:ratio{domain=\"${PHASE9_CANARY_DOMAIN}\"})"
+      phase9_replay_query="max(lifeos:timeline_replay_mismatch_count_by_profile{domain=\"${PHASE9_CANARY_DOMAIN}\"})"
+      phase9_latency_json="$(curl -fsS --get --data-urlencode "query=${phase9_latency_query}" "${PROM_URL}/api/v1/query")"
+      phase9_insuff_json="$(curl -fsS --get --data-urlencode "query=${phase9_insuff_query}" "${PROM_URL}/api/v1/query")"
+      phase9_blocked_json="$(curl -fsS --get --data-urlencode "query=${phase9_blocked_query}" "${PROM_URL}/api/v1/query")"
+      phase9_replay_json="$(curl -fsS --get --data-urlencode "query=${phase9_replay_query}" "${PROM_URL}/api/v1/query")"
+      PHASE9_LATENCY_JSON="${phase9_latency_json}" \
+      PHASE9_INSUFF_JSON="${phase9_insuff_json}" \
+      PHASE9_BLOCKED_JSON="${phase9_blocked_json}" \
+      PHASE9_REPLAY_JSON="${phase9_replay_json}" \
+      PHASE9_CANARY_DOMAIN="${PHASE9_CANARY_DOMAIN}" \
+      PHASE9_CANARY_MAX_INSUFFICIENCY_RATE="${PHASE9_CANARY_MAX_INSUFFICIENCY_RATE}" \
+      PHASE9_CANARY_MAX_LATENCY_P95="${PHASE9_CANARY_MAX_LATENCY_P95}" \
+      PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE="${PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE}" \
+      PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT="${PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT}" \
+      "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+
+def _first_value(raw: str) -> float | None:
+    payload = json.loads(raw)
+    result = payload.get("data", {}).get("result", [])
+    if not result:
+        return None
+    value = result[0].get("value", [None, None])[1]
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+domain = os.environ["PHASE9_CANARY_DOMAIN"]
+max_insuff = float(os.environ["PHASE9_CANARY_MAX_INSUFFICIENCY_RATE"])
+max_latency = float(os.environ["PHASE9_CANARY_MAX_LATENCY_P95"])
+max_blocked = float(os.environ["PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE"])
+max_replay = float(os.environ["PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT"])
+
+latency = _first_value(os.environ["PHASE9_LATENCY_JSON"])
+insuff = _first_value(os.environ["PHASE9_INSUFF_JSON"])
+blocked = _first_value(os.environ["PHASE9_BLOCKED_JSON"])
+replay = _first_value(os.environ["PHASE9_REPLAY_JSON"])
+
+if latency is None and insuff is None and blocked is None and replay is None:
+    print(f"WARN: no Phase 9 canary series for domain={domain}; threshold checks skipped", file=sys.stderr)
+    sys.exit(0)
+
+if latency is not None and latency > max_latency:
+    print(
+        f"ERROR: Phase 9 canary domain={domain} latency_p95={latency:.3f} above threshold {max_latency:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if insuff is not None and insuff > max_insuff:
+    print(
+        f"ERROR: Phase 9 canary domain={domain} insufficiency_rate={insuff:.3f} above threshold {max_insuff:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if blocked is not None and blocked > max_blocked:
+    print(
+        f"ERROR: Phase 9 canary domain={domain} blocked_claims_rate={blocked:.3f} above threshold {max_blocked:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if replay is not None and replay > max_replay:
+    print(
+        f"ERROR: Phase 9 canary domain={domain} replay_mismatch_count={replay:.3f} above threshold {max_replay:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+print(f"OK: Phase 9 canary thresholds satisfied for domain={domain}")
+PY
+    fi
+  fi
 else
   echo "WARN: Prometheus is unreachable at ${PROM_URL}; alert-state check skipped" >&2
 fi
 
-echo "Phase 6/6.1/7/7.1/8/8.1 focused inquiry rollout checks passed"
+echo "Phase 6/6.1/7/7.1/8/8.1/9 focused inquiry rollout checks passed"

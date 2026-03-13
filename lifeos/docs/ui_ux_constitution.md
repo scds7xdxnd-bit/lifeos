@@ -196,3 +196,30 @@ Include: “Aligned with UI/UX Constitution §X” and cite the domain contract 
 - Inquiry should surface only a small set of temporal findings per brief; do not turn the surface into a monitoring cockpit.
 - Comparison metadata must stay legible but visually secondary to the answer itself.
 - If coverage is too thin for a safe temporal interpretation, show the insufficiency note instead of a weak pseudo-pattern.
+
+## 16. Insight Humanization Layer (Phase 10, Binding)
+- Inquiry becomes humanized-by-default in Phase 10, but the canonical technical brief must remain available inside the same surface.
+- The first thing a user sees should be the simplest correct explanation, not the fullest technical serialization.
+- Humanization must preserve read-first structure and must not turn the surface into a chatbot or story transcript.
+
+### 16.1 Default visible structure
+- Default humanized blocks may include:
+  - "What stands out"
+  - "Why it matters"
+  - "How sure this is"
+  - "What to review next"
+- A collapsed "Technical brief" or equivalent canonical expansion must remain available on the same page.
+- Evidence traceability must remain visible from the default reading surface, even if detailed technical metadata moves into the collapsed technical view.
+
+### 16.2 What humanization may do
+- Use shorter section names.
+- Simplify technical terminology into ordinary-user language.
+- Compress repetitive caveats and metadata.
+- Reorder sections so the clearest meaning appears first.
+- Explain why cited evidence matters using bounded deterministic phrasing.
+
+### 16.3 What humanization must not do
+- No chat bubbles, assistant transcript framing, or fake conversational tone.
+- No removal of material uncertainty, limitations, or evidence existence.
+- No advice posture, recommendations, emotional interpretation, or causal storytelling.
+- No hiding of the canonical technical brief behind a separate workflow or secondary page.

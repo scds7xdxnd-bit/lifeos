@@ -12,6 +12,7 @@ ANSWERABILITY_CLASSES = (
 )
 
 CANONICAL_EVIDENCE_SOURCE_KINDS = {"event_record", "insight_record", "read_model"}
+_GAP_ONLY_CATEGORIES = {"coverage_gap", "evidence_gap"}
 _CONFIDENCE_RANK = {
     "confirmed": 3,
     "informational": 2,
@@ -19,6 +20,14 @@ _CONFIDENCE_RANK = {
     "needs_review": 0,
 }
 _CATEGORY_PRIORITY = {
+    "approved_pair_alignment_persistence": 9,
+    "baseline_relative_change": 8,
+    "prior_window_comparison": 7,
+    "recurrence_observation": 6,
+    "continuity_or_break": 5,
+    "trend_direction": 4,
+    "volatility_description": 3,
+    "episodic_vs_sustained": 2,
     "coverage_gap": 6,
     "inconsistency_flag": 5,
     "temporal_alignment": 4,
@@ -128,7 +137,15 @@ def _answerability_from_findings(findings: list[dict]) -> dict[str, object]:
         for finding in findings
         if _CONFIDENCE_RANK.get(str(finding.get("confidence_label") or ""), 0) >= _CONFIDENCE_RANK["informational"]
     )
+    only_gap_findings = all(str(finding.get("finding_category") or "") in _GAP_ONLY_CATEGORIES for finding in findings)
     coverage_ratio = round(with_evidence / total, 4) if total else 0.0
+    if only_gap_findings and high_confidence <= 0:
+        return {
+            "classification": "weak_answerable",
+            "reason": "Only coverage-gap findings were generated for the selected scope.",
+            "evidence_coverage_ratio": coverage_ratio,
+            "supporting_finding_count": with_evidence,
+        }
     if coverage_ratio >= 0.85 and high_confidence >= 1:
         return {
             "classification": "strong_answerable",

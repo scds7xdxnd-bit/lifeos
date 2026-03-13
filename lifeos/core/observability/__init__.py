@@ -21,6 +21,9 @@ from lifeos.core.observability.metrics import (
     record_read_cache_hit,
     record_read_cache_miss,
     record_replay_determinism_failure,
+    record_timeline_blocked_claims,
+    record_timeline_generated,
+    record_timeline_replay_mismatch,
     set_phase6_inquiry_migration_mismatch,
 )
 
@@ -45,5 +48,8 @@ __all__ = [
     "record_read_cache_hit",
     "record_read_cache_miss",
     "record_replay_determinism_failure",
+    "record_timeline_blocked_claims",
+    "record_timeline_generated",
+    "record_timeline_replay_mismatch",
     "set_phase6_inquiry_migration_mismatch",
 ]

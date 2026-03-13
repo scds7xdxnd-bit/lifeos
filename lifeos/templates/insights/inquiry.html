@@ -147,9 +147,21 @@
         <div id="inquiry-answerability-reason" class="inquiry-answerability-reason"></div>
       </div>
 
+      <div class="inquiry-block" id="inquiry-timeline-block" style="display:none;">
+        <div class="inquiry-block-label">Timeline Findings</div>
+        <div id="inquiry-timeline-meta" class="inquiry-timeline-meta"></div>
+        <div id="inquiry-timeline-coverage" class="inquiry-timeline-coverage"></div>
+        <div id="inquiry-timeline-sections" class="inquiry-timeline-sections"></div>
+      </div>
+
       <div class="inquiry-block" id="inquiry-bounded-patterns-block">
         <div class="inquiry-block-label">What This Means</div>
         <ul id="inquiry-bounded-patterns" class="inquiry-bounded-patterns"></ul>
+      </div>
+
+      <div class="inquiry-block" id="inquiry-refine-guidance-block">
+        <div class="inquiry-block-label">Refine Guidance</div>
+        <ul id="inquiry-refine-guidance" class="inquiry-next-questions"></ul>
       </div>
 
       <div class="inquiry-block" id="inquiry-domain-profile-block">
@@ -205,10 +217,6 @@
         </div>
       </div>
 
-      <div class="inquiry-block" id="inquiry-refine-guidance-block">
-        <div class="inquiry-block-label">Refine Guidance</div>
-        <ul id="inquiry-refine-guidance" class="inquiry-refine-guidance"></ul>
-      </div>
 
       <div class="inquiry-block">
         <div class="inquiry-block-label">Context (not evidence)</div>
@@ -296,6 +304,10 @@
     const answerabilityPillEl = document.getElementById('inquiry-answerability-pill');
     const answerabilityCoverageEl = document.getElementById('inquiry-answerability-coverage');
     const answerabilityReasonEl = document.getElementById('inquiry-answerability-reason');
+    const timelineBlockEl = document.getElementById('inquiry-timeline-block');
+    const timelineMetaEl = document.getElementById('inquiry-timeline-meta');
+    const timelineCoverageEl = document.getElementById('inquiry-timeline-coverage');
+    const timelineSectionsEl = document.getElementById('inquiry-timeline-sections');
     const boundedPatternsEl = document.getElementById('inquiry-bounded-patterns');
     const domainProfileSummaryEl = document.getElementById('inquiry-domain-profile-summary');
     const domainProfileMetaEl = document.getElementById('inquiry-domain-profile-meta');
@@ -331,6 +343,12 @@
     const historyList = document.getElementById('inquiry-history-list');
 
     const EXPERT_RENDERED_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills', 'journal', 'relationships', 'health']);
+    const TIMELINE_FIRST_WAVE_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills', 'calendar']);
+    const TIMELINE_FIRST_WAVE_APPROVED_PAIR_KEYS = new Set([
+      'finance__habits',
+      'projects__skills',
+      'projects__calendar',
+    ]);
     const APPROVED_CROSS_DOMAIN_PAIRS = [
       { key: 'finance__habits', profile: 'finance_habits_v1', domains: ['finance', 'habits'] },
       { key: 'projects__skills', profile: 'projects_skills_v1', domains: ['projects', 'skills'] },
@@ -384,6 +402,23 @@
         evidence_gap: 'Evidence gap',
       },
     };
+    const TIMELINE_SECTION_BY_CLAIM_TYPE = {
+      prior_window_comparison: 'Compared with prior window',
+      baseline_relative_change: 'Change over time',
+      trend_direction: 'Change over time',
+      recurrence_observation: 'Recurring pattern',
+      continuity_or_break: 'Recurring pattern',
+      volatility_description: 'Stability / instability',
+      episodic_vs_sustained: 'Recent or sustained',
+      approved_pair_alignment_persistence: 'Recent or sustained',
+    };
+    const TIMELINE_SECTION_ORDER = [
+      'Change over time',
+      'Compared with prior window',
+      'Recurring pattern',
+      'Stability / instability',
+      'Recent or sustained',
+    ];
     const DOMAIN_REFINE_HINTS = {
       finance: [
         'Narrow to posting windows if activity spans mixed account types.',
@@ -487,6 +522,22 @@
     const findPairByDomains = (domains = []) => {
       const key = Array.from(new Set(domains.filter(Boolean))).sort().join('__');
       return APPROVED_CROSS_DOMAIN_PAIRS.find((pair) => pair.key === key) || null;
+    };
+
+    const timelineScopeAllowed = (brief) => {
+      const domains = Array.isArray(brief?.domains) ? brief.domains.map((item) => String(item || '').toLowerCase()) : [];
+      if (brief?.lens === 'domain' && domains.length === 1) {
+        return TIMELINE_FIRST_WAVE_DOMAINS.has(domains[0]);
+      }
+      if (brief?.lens === 'cross_domain' && domains.length === 2) {
+        const key = [...domains].sort().join('__');
+        return TIMELINE_FIRST_WAVE_APPROVED_PAIR_KEYS.has(key);
+      }
+      return false;
+    };
+
+    const isTimelineFinding = (finding) => {
+      return Boolean(finding && typeof finding === 'object' && finding.timeline_context && typeof finding.timeline_context === 'object');
     };
 
     const confidenceClass = (label) => {
@@ -969,10 +1020,117 @@
       return card;
     };
 
+    const timelineSectionLabel = (claimType) => {
+      const key = String(claimType || '').toLowerCase();
+      return TIMELINE_SECTION_BY_CLAIM_TYPE[key] || 'Change over time';
+    };
+
+    const renderTimelineFindingCard = (finding) => {
+      const context = finding.timeline_context || {};
+      const activeLabel = String(context.active_window_label || '').trim();
+      const comparisonLabel = String(context.comparison_label || '').trim();
+      const coverageStatus = String(context.coverage_status || '').toLowerCase();
+      const groupedEvidence = groupEvidenceByDomain(finding.evidence_refs || []);
+      const noEvidenceRefs = groupedEvidence.length === 0;
+      const isInsufficient = coverageStatus === 'insufficient'
+        || String(finding.uncertainty_note || '').toLowerCase().includes('insufficient')
+        || String(finding.uncertainty_note || '').toLowerCase().includes('sparse')
+        || noEvidenceRefs;
+
+      const card = document.createElement('div');
+      card.className = `inquiry-timeline-finding${isInsufficient ? ' is-insufficient' : ''}`;
+      const evidenceHtml = groupedEvidence.map(([evidenceDomain, refs]) => {
+        const refsList = refs.map((ref) => `<li>${evidenceText(ref)}</li>`).join('');
+        return `
+          <div class="inquiry-evidence-domain">
+            <div class="inquiry-evidence-domain-name">${labelForDomain(evidenceDomain)}</div>
+            <ul class="inquiry-evidence-list">${refsList || '<li>No evidence refs.</li>'}</ul>
+          </div>
+        `;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="inquiry-timeline-finding-head">
+          <div class="inquiry-timeline-finding-claim">${finding.claim || 'No temporal claim provided.'}</div>
+          <span class="${confidenceClass(finding.confidence_label)}">${confidenceText(finding.confidence_label)}</span>
+        </div>
+        <div class="inquiry-timeline-finding-labels">
+          <span class="inquiry-timeline-chip">Active window: ${activeLabel || 'Unavailable'}</span>
+          <span class="inquiry-timeline-chip">Compared with: ${comparisonLabel || 'Unavailable'}</span>
+        </div>
+        <div class="inquiry-timeline-finding-note">${finding.uncertainty_note || 'No temporal uncertainty note provided.'}</div>
+        ${isInsufficient ? `<div class="inquiry-timeline-insufficiency">${noEvidenceRefs ? 'Insufficient temporal provenance: no evidence references were returned for this finding.' : 'Insufficient history for full temporal interpretation in this scope.'}</div>` : ''}
+        <div class="inquiry-finding-evidence">${evidenceHtml || '<div class="inquiry-empty-inline">No evidence refs.</div>'}</div>
+      `;
+      return card;
+    };
+
+    const renderTimelineMetadata = (brief, temporalFindings = []) => {
+      const metadata = brief?.timeline_metadata;
+      if (!timelineScopeAllowed(brief) || (!metadata && !temporalFindings.length)) {
+        timelineBlockEl.style.display = 'none';
+        timelineMetaEl.textContent = '';
+        timelineCoverageEl.textContent = '';
+        timelineSectionsEl.innerHTML = '';
+        return;
+      }
+
+      const profileId = String(metadata?.timeline_profile_id || 'timeline_unavailable');
+      const profileVersion = String(metadata?.timeline_profile_version || '1');
+      const timezoneToken = String(metadata?.timezone_token || 'UTC');
+      const windowToken = String(metadata?.window_spec_token || 'unknown');
+      const baselineToken = String(metadata?.baseline_policy_token || 'unknown');
+      const insuffCount = Number(metadata?.insufficiency_count || 0);
+      const coverage = metadata?.comparison_coverage || {};
+      const priorAvailable = Boolean(coverage.prior_window_available);
+      const baselineAvail = Number(coverage.baseline_windows_available || 0);
+      const baselineReq = Number(coverage.baseline_windows_required || 0);
+      const recurrenceAvail = Number(coverage.recurrence_windows_available || 0);
+      const trendAvail = Number(coverage.trend_windows_available || 0);
+
+      timelineMetaEl.textContent =
+        `Profile ${profileId} (v${profileVersion}) · Window ${windowToken} · Baseline ${baselineToken} · Timezone ${timezoneToken}`;
+      timelineCoverageEl.textContent =
+        `Prior window ${priorAvailable ? 'available' : 'unavailable'} · Baseline windows ${baselineAvail}/${baselineReq} · Recurrence windows ${recurrenceAvail} · Trend windows ${trendAvail}` +
+        `${insuffCount > 0 ? ` · ${insuffCount} insufficiency note${insuffCount === 1 ? '' : 's'}` : ''}`;
+
+      timelineSectionsEl.innerHTML = '';
+      if (!temporalFindings.length) {
+        timelineSectionsEl.innerHTML = '<div class="inquiry-empty-inline">No temporal findings were generated for this scope.</div>';
+        timelineBlockEl.style.display = 'block';
+        return;
+      }
+
+      const grouped = new Map();
+      temporalFindings.forEach((finding) => {
+        const section = timelineSectionLabel(finding?.timeline_context?.claim_type || finding?.finding_category);
+        if (!grouped.has(section)) grouped.set(section, []);
+        grouped.get(section).push(finding);
+      });
+
+      const ordered = [
+        ...TIMELINE_SECTION_ORDER.filter((name) => grouped.has(name)),
+        ...Array.from(grouped.keys()).filter((name) => !TIMELINE_SECTION_ORDER.includes(name)).sort((a, b) => a.localeCompare(b)),
+      ];
+      ordered.forEach((sectionName) => {
+        const section = document.createElement('section');
+        section.className = 'inquiry-timeline-section';
+        section.innerHTML = `<div class="inquiry-timeline-section-title">${sectionName}</div>`;
+        grouped.get(sectionName).forEach((finding) => {
+          section.appendChild(renderTimelineFindingCard(finding));
+        });
+        timelineSectionsEl.appendChild(section);
+      });
+      timelineBlockEl.style.display = 'block';
+    };
+
     const renderFindings = (findings = [], brief = null) => {
       findingsEl.innerHTML = '';
       if (!findings.length) {
-        findingsEl.innerHTML = '<div class="inquiry-empty-inline">No findings were generated for this scope.</div>';
+        const hasTimelineFindings = Array.isArray(brief?.findings) && brief.findings.some((item) => isTimelineFinding(item));
+        findingsEl.innerHTML = hasTimelineFindings
+          ? '<div class="inquiry-empty-inline">No additional non-temporal findings were generated for this scope.</div>'
+          : '<div class="inquiry-empty-inline">No findings were generated for this scope.</div>';
         return;
       }
 
@@ -1080,6 +1238,7 @@
     };
 
     const renderProductizedRefineGuidance = (brief) => {
+      if (!refineGuidanceEl) return;
       const guidance = Array.isArray(brief?.refine_guidance) ? brief.refine_guidance : [];
       refineGuidanceEl.innerHTML = '';
       if (!guidance.length) {
@@ -1099,12 +1258,15 @@
       briefContent.style.display = 'block';
 
       const findings = Array.isArray(brief?.findings) ? brief.findings : [];
+      const temporalFindings = findings.filter((finding) => isTimelineFinding(finding));
+      const nonTemporalFindings = findings.filter((finding) => !isTimelineFinding(finding));
       renderBriefStatus(findings);
       renderDirectAnswer(brief);
       renderAnswerability(brief);
+      renderTimelineMetadata(brief, temporalFindings);
       renderBoundedPatterns(brief);
       renderDomainProfile(brief);
-      renderFindings(findings, brief);
+      renderFindings(nonTemporalFindings, brief);
       renderDomainSafety(brief, findings);
       renderQualityMetadata(brief?.quality_metadata, brief?.brief_profile || null);
       renderProductizedRefineGuidance(brief);

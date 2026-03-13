@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-13 (v2.19 — Phase 8.1 complete; Phase 9 approved)_
+_Last updated: 2026-03-13 (v2.20 — Phase 9 complete; Phase 10 approved)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -47,6 +47,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 7.1 Later-Wave Domain Expert Briefs**: Complete; deterministic domain expert strategies shipped for journal/relationships/health with semantic guardrails and QA sign-off.
 - **Phase 8 Cross-Domain Inquiry Expansion**: Complete; deterministic pair-profile synthesis shipped with safety taxonomy, replay determinism, and per-pair observability gates.
 - **Phase 8.1 Inquiry Productization and Decision-Useful Briefs**: Complete; direct-answer shaping, deterministic evidence relevance ordering, answerability metadata, and concise limitation/refine guidance verified without expanding inference breadth.
+- **Phase 9 Timeline Intelligence Foundations**: Complete; deterministic temporal pattern interpretation shipped with replay-stable windowing, baseline/version metadata, and approved-pair persistence support without introducing causal or predictive claims.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -145,9 +146,9 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 9 Timeline Intelligence Foundations is approved to open.
-- Deferred: Phase 3c-2 transport scaling (trigger-based), recommendation layer, causal explanation layer, and predictive modeling foundations.
-- Forbidden in current window: omniscient assistant behavior, runtime ML decisioning, autonomous action, hidden personalization, causal overreach, and predictive modeling.
+- Active: Phase 10 Insight Humanization Layer is approved to open.
+- Deferred: Phase 3c-2 transport scaling (trigger-based), recommendation layer, causal explanation layer, and predictive / forecasting foundations.
+- Forbidden in current window: omniscient assistant behavior, assistant-chat UX, runtime ML decisioning, autonomous action, hidden personalization, semantic drift, causal overreach, and predictive modeling.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
@@ -245,6 +246,7 @@ lifeos/
 │   │   ├── phase_8_cross_domain_inquiry_expansion.md
 │   │   ├── phase_8_1_inquiry_productization.md
 │   │   ├── phase_9_timeline_intelligence_foundations.md
+│   │   ├── phase_10_insight_humanization_layer.md
 │   │   └── archive/
 │   │       ├── calendar_subsystem_refactor.md
 │   │       ├── calendar_subsystem_refactor_ops.md
@@ -305,6 +307,9 @@ Planned (not yet in repo; Phase 3c or approved interim hygiene):
 
 Planned (approved, not yet in repo; Phase 9 timeline intelligence):
 - `lifeos/core/timeline/` with `semantics.py`, `contracts.py`, `registry.py`, `feature_builder.py`, `window_comparator.py`, `baseline_estimator.py`, `recurrence_engine.py`, `drift_detector.py`, `summary_assembler.py`, and `adapters/`
+
+Planned (approved, not yet in repo; Phase 10 humanization):
+- `lifeos/core/insights/inquiry_humanization/` with `contracts.py`, `phrasebook.py`, `terminology.py`, `structure_compressor.py`, `section_prioritizer.py`, `duplication_reducer.py`, `evidence_explainer.py`, `assembler.py`, and `adapters/`
 
 **Layering Rules:**
 - Controllers: HTTP validation, authz only; delegate to services
@@ -1127,7 +1132,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.19 (Phase 8.1 complete; Phase 9 timeline intelligence foundations approved): 2026-03-13. Author: LifeOS Architect._
+_Constitution v2.20 (Phase 9 complete; Phase 10 insight humanization layer approved): 2026-03-13. Author: LifeOS Architect._
 
 **Sprint Summary:**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1159,6 +1164,7 @@ _Constitution v2.19 (Phase 8.1 complete; Phase 9 timeline intelligence foundatio
 - ✅ Phase 7.1 complete (later-wave): deterministic domain expert briefs for journal/relationships/health with safety guardrails
 - ✅ Phase 8 complete: deterministic cross-domain inquiry synthesis for approved domain pairs
 - ✅ Phase 8.1 complete: inquiry productization delivered with decision-useful direct answers and answerability metadata
+- ✅ Phase 9 complete: deterministic timeline intelligence delivered with replay-safe temporal interpretation and metadata
 
 ---
 
@@ -1365,6 +1371,72 @@ Phase 9 introduces deterministic temporal pattern interpretation for inquiry wit
   - `lifeos/docs/semantics/EVENT_SEMANTICS_FREEZE.md`
 - `lifeos/docs/semantics/CONFIDENCE_VOCABULARY.md` remains unchanged.
 - Execution reference: `lifeos/docs/tasks/phase_9_timeline_intelligence_foundations.md`
+
+---
+
+# 26. Phase 10 Insight Humanization Layer (Constitutional Decision, Binding)
+
+Phase 10 introduces a deterministic humanization layer that transforms canonical inquiry briefs into ordinary-user-readable explanations without changing meaning, evidence boundaries, confidence semantics, or auditability.
+
+## 26.1 Phase objective
+- Improve readability, interpretability, and brevity for ordinary users while preserving canonical inquiry truth conditions.
+- Make inquiry answer the user’s practical reading questions first: what happened, why it matters, how sure the system is, and what to review next.
+
+## 26.2 Product position
+- Semantic correctness and human comprehensibility are distinct requirements.
+- Canonical inquiry remains the semantic source of truth.
+- Humanization is a presentation transformation over canonical inquiry, not a new inference stage, assistant behavior, or recommendation system.
+
+## 26.3 Canonical vs humanized model
+- LifeOS now has two output layers:
+  - canonical brief layer: semantically precise, replay-auditable, technical source of truth
+  - humanized brief layer: deterministic user-facing rendering derived from the canonical brief
+- Canonical output must always remain available.
+- Humanized output is the default visible reading surface in inquiry.
+
+## 26.4 Architectural placement
+- Humanization lives after canonical inquiry assembly, productization, and timeline interpretation.
+- It does not replace reasoning, evidence selection, confidence assignment, or timeline computation.
+- Planned shared location: `lifeos/core/insights/inquiry_humanization/`
+- Core shared components:
+  - `contracts.py`: canonical-to-humanized transformation contracts and version metadata
+  - `phrasebook.py`: approved plain-language substitutions and bounded phrases
+  - `terminology.py`: technical-term simplification rules
+  - `structure_compressor.py`: section compression and shortening rules
+  - `section_prioritizer.py`: default reading order for humanized blocks
+  - `duplication_reducer.py`: caveat and metadata repetition reduction
+  - `evidence_explainer.py`: deterministic "why this matters" rendering from canonical evidence references
+  - `assembler.py`: humanized brief assembly
+  - `adapters/`: domain and approved-pair phrasing adapters limited to wording and ordering only
+
+## 26.5 Determinism and equivalence law
+- Humanization must be byte-stable for the same canonical brief payload, canonical brief hash, and humanization version.
+- Humanization version is part of replay identity.
+- Humanization must not:
+  - add claims,
+  - remove material limitations,
+  - intensify confidence,
+  - hide evidence existence,
+  - introduce advice, causality, diagnosis, or prediction.
+- Humanized blocks must remain traceable back to canonical finding identifiers.
+
+## 26.6 UX scope
+- Inquiry becomes humanized-by-default with a collapsed but accessible canonical/technical brief.
+- Forbidden UI patterns in Phase 10:
+  - chat bubbles or assistant transcripts,
+  - fake conversational framing,
+  - multiple competing panels,
+  - dashboard overload,
+  - hiding technical access behind obscure navigation.
+
+## 26.7 Docs and execution references
+- Required updates:
+  - `lifeos/docs/ui_ux_constitution.md`
+  - `lifeos/docs/semantics/INSIGHT_CONTRACTS.md`
+  - `lifeos/docs/semantics/DOMAIN_SEMANTIC_CONTRACTS.md`
+  - `lifeos/docs/semantics/EVENT_SEMANTICS_FREEZE.md`
+- `lifeos/docs/semantics/CONFIDENCE_VOCABULARY.md` remains unchanged.
+- Execution reference: `lifeos/docs/tasks/phase_10_insight_humanization_layer.md`
 
 ---
 

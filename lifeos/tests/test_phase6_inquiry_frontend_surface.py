@@ -51,6 +51,10 @@ def test_inquiry_brief_surface_renders_summary_evidence_uncertainty_next_questio
     assert 'id="inquiry-direct-answer-support"' in html
     assert 'id="inquiry-answerability-pill"' in html
     assert 'id="inquiry-answerability-reason"' in html
+    assert 'id="inquiry-timeline-block"' in html
+    assert 'id="inquiry-timeline-meta"' in html
+    assert 'id="inquiry-timeline-coverage"' in html
+    assert 'id="inquiry-timeline-sections"' in html
     assert 'id="inquiry-bounded-patterns"' in html
     assert 'id="inquiry-domain-profile-summary"' in html
     assert 'id="inquiry-domain-categories"' in html
@@ -99,7 +103,7 @@ def test_inquiry_domain_expert_rendering_patterns_are_present_for_first_wave_dom
     assert "relevance_reason" in html
     assert "Why this evidence matters" in html
     assert "renderDomainProfile(brief)" in html
-    assert "renderFindings(findings, brief)" in html
+    assert "renderFindings(nonTemporalFindings, brief)" in html
 
 
 @pytest.mark.unit
@@ -130,6 +134,42 @@ def test_cross_domain_pair_mode_is_explicit_and_approved_pairs_are_listed():
     assert "health_habits_v1" in html
     assert "projects_calendar_v1" in html
     assert "relationships_journal_v1" in html
+
+
+@pytest.mark.unit
+def test_inquiry_timeline_surface_renders_bounded_phase9_sections_without_dashboard_shift():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert "Timeline Findings" in html
+    assert "Change over time" in html
+    assert "Compared with prior window" in html
+    assert "Recurring pattern" in html
+    assert "Stability / instability" in html
+    assert "Recent or sustained" in html
+    assert "Active window:" in html
+    assert "Compared with:" in html
+    assert "Insufficient history for full temporal interpretation in this scope." in html
+    assert "renderTimelineMetadata(brief, temporalFindings)" in html
+    assert "timeline_context" in html
+    assert "timeline_metadata" in html
+    assert "kpi_tiles" not in html.lower()
+    assert "chart_series" not in html.lower()
+
+
+@pytest.mark.unit
+def test_inquiry_timeline_scope_gates_match_first_wave_phase9_policy():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert "TIMELINE_FIRST_WAVE_DOMAINS" in html
+    assert "'finance'" in html
+    assert "'habits'" in html
+    assert "'projects'" in html
+    assert "'skills'" in html
+    assert "'calendar'" in html
+    assert "TIMELINE_FIRST_WAVE_APPROVED_PAIR_KEYS" in html
+    assert "'finance__habits'" in html
+    assert "'projects__skills'" in html
+    assert "'projects__calendar'" in html
 
 
 @pytest.mark.unit

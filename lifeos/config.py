@@ -120,6 +120,20 @@ class BaseConfig:
         tuple(item.strip() for item in os.environ.get("PHASE8_ENABLED_PAIR_PROFILES", "").split(",") if item.strip())
         or None
     )
+    ENABLE_PHASE9_TIMELINE_INTELLIGENCE = os.environ.get(
+        "ENABLE_PHASE9_TIMELINE_INTELLIGENCE",
+        "false",
+    ).lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    PHASE9_ENABLED_TIMELINE_PROFILES = (
+        tuple(
+            item.strip() for item in os.environ.get("PHASE9_ENABLED_TIMELINE_PROFILES", "").split(",") if item.strip()
+        )
+        or None
+    )
     PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
         "PHASE6_INQUIRY_MIGRATION_HEAD",
         "20260312_phase8_cross_domain_inquiry_metadata",

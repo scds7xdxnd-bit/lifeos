@@ -135,6 +135,44 @@ REQUIRED_PRODUCTIZATION_METADATA_FIELDS = (
     "limitation_redundancy_removed",
     "direct_answer_present",
 )
+REQUIRED_TIMELINE_METADATA_FIELDS = (
+    "timeline_profile_id",
+    "timeline_profile_version",
+    "window_spec_token",
+    "baseline_policy_token",
+    "timezone_token",
+    "as_of_ts",
+    "evidence_manifest_hash",
+    "timeline_summary_hash",
+    "comparison_coverage",
+    "finding_count",
+    "insufficiency_count",
+)
+REQUIRED_TIMELINE_CONTEXT_FIELDS = (
+    "claim_type",
+    "active_window_label",
+    "comparison_label",
+    "window_spec_token",
+    "baseline_policy_token",
+    "coverage_status",
+)
+REQUIRED_TIMELINE_COVERAGE_FIELDS = (
+    "prior_window_available",
+    "baseline_windows_available",
+    "baseline_windows_required",
+    "recurrence_windows_available",
+    "trend_windows_available",
+)
+TIMELINE_CLAIM_TYPES = (
+    "recurrence_observation",
+    "continuity_or_break",
+    "prior_window_comparison",
+    "baseline_relative_change",
+    "trend_direction",
+    "volatility_description",
+    "episodic_vs_sustained",
+    "approved_pair_alignment_persistence",
+)
 PHASE8_1_ALLOWED_ANSWERABILITY_CLASSES = (
     "strong_answerable",
     "partial_answerable",
@@ -291,6 +329,22 @@ INQUIRY_BRIEF_TYPE_CONTRACTS: dict[str, InquiryBriefTypeContract] = {
     ),
     "focused_inquiry_cross_domain_brief": InquiryBriefTypeContract(
         inquiry_type="focused_inquiry_cross_domain_brief",
+        lens="cross_domain",
+        allowed_actions=ALLOWED_INQUIRY_ACTIONS,
+        allowed_confidence_labels=("informational", "needs_review"),
+        required_brief_fields=REQUIRED_INQUIRY_BRIEF_FIELDS,
+        required_finding_fields=REQUIRED_INQUIRY_FINDING_FIELDS,
+    ),
+    "focused_inquiry_timeline_domain_brief": InquiryBriefTypeContract(
+        inquiry_type="focused_inquiry_timeline_domain_brief",
+        lens="domain",
+        allowed_actions=ALLOWED_INQUIRY_ACTIONS,
+        allowed_confidence_labels=("informational", "needs_review"),
+        required_brief_fields=REQUIRED_INQUIRY_BRIEF_FIELDS,
+        required_finding_fields=REQUIRED_INQUIRY_FINDING_FIELDS,
+    ),
+    "focused_inquiry_timeline_cross_domain_brief": InquiryBriefTypeContract(
+        inquiry_type="focused_inquiry_timeline_cross_domain_brief",
         lens="cross_domain",
         allowed_actions=ALLOWED_INQUIRY_ACTIONS,
         allowed_confidence_labels=("informational", "needs_review"),
@@ -736,6 +790,18 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
             confidence = str(finding.get("confidence_label") or "")
             if confidence and confidence not in CONFIDENCE_VOCABULARY:
                 errors.append(f"invalid_confidence_label:{idx}:{confidence}")
+            timeline_context = finding.get("timeline_context")
+            if timeline_context is not None:
+                if not isinstance(timeline_context, Mapping):
+                    errors.append(f"invalid_timeline_context:{idx}")
+                else:
+                    timeline_keys = set(timeline_context.keys())
+                    missing_timeline = sorted(set(REQUIRED_TIMELINE_CONTEXT_FIELDS) - timeline_keys)
+                    if missing_timeline:
+                        errors.append(f"missing_timeline_context_fields:{idx}:{','.join(missing_timeline)}")
+                    claim_type = str(timeline_context.get("claim_type") or "")
+                    if claim_type not in TIMELINE_CLAIM_TYPES:
+                        errors.append(f"invalid_timeline_claim_type:{idx}:{claim_type or 'missing'}")
 
     quality_metadata = payload.get("quality_metadata")
     if not isinstance(quality_metadata, Mapping):
@@ -895,6 +961,24 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
             if present != expected_present:
                 errors.append("invalid_productization_direct_answer_consistency")
 
+    timeline_metadata = payload.get("timeline_metadata")
+    if timeline_metadata is not None:
+        if not isinstance(timeline_metadata, Mapping):
+            errors.append("invalid_timeline_metadata")
+        else:
+            timeline_keys = set(timeline_metadata.keys())
+            missing_timeline = sorted(set(REQUIRED_TIMELINE_METADATA_FIELDS) - timeline_keys)
+            if missing_timeline:
+                errors.append(f"missing_timeline_metadata_fields:{','.join(missing_timeline)}")
+            coverage = timeline_metadata.get("comparison_coverage")
+            if not isinstance(coverage, Mapping):
+                errors.append("invalid_timeline_comparison_coverage")
+            else:
+                coverage_keys = set(coverage.keys())
+                missing_coverage = sorted(set(REQUIRED_TIMELINE_COVERAGE_FIELDS) - coverage_keys)
+                if missing_coverage:
+                    errors.append(f"missing_timeline_coverage_fields:{','.join(missing_coverage)}")
+
     brief_profile = payload.get("brief_profile")
     if not isinstance(brief_profile, Mapping):
         errors.append("invalid_brief_profile")
@@ -986,6 +1070,7 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
                     "coverage_gap",
                     "structural_dependency_observation",
                     "inconsistency_flag",
+                    "approved_pair_alignment_persistence",
                 }
                 forbidden_cross_domain_categories = set(FORBIDDEN_CROSS_DOMAIN_CLAIM_CATEGORIES)
                 if not normalized_categories.issubset(allowed_cross_domain_categories):

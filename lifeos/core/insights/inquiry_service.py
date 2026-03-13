@@ -38,8 +38,17 @@ from lifeos.core.observability import (
     record_inquiry_refined,
     record_inquiry_replay_mismatch,
     record_inquiry_viewed,
+    record_timeline_blocked_claims,
+    record_timeline_generated,
+    record_timeline_replay_mismatch,
 )
 from lifeos.core.read_cache import read_cache
+from lifeos.core.timeline.contracts import TimelineRequest as Phase9TimelineRequest
+from lifeos.core.timeline.contracts import TimelineSummary
+from lifeos.core.timeline.registry import get_domain_timeline_profile, get_pair_timeline_profile
+from lifeos.core.timeline.semantics import resolve_timezone_token
+from lifeos.core.timeline.summary_assembler import assemble_timeline_summary
+from lifeos.core.users.services import get_user
 from lifeos.extensions import db
 
 INQUIRY_READ_CACHE_SCOPE = "inquiry.reads"
@@ -130,7 +139,12 @@ def _normalize_scope_from_refine(existing: InquiryRequest, data: InquiryRefineRe
     )
 
 
-def _normalized_payload(scope: InquiryScope) -> dict:
+def _normalized_payload(
+    scope: InquiryScope,
+    *,
+    timezone_token: str,
+    timeline_profile_token: str | None = None,
+) -> dict:
     strategy_profile_token = strategy_token_for_scope(
         lens=scope.lens,
         primary_domain=scope.primary_domain,
@@ -157,9 +171,11 @@ def _normalized_payload(scope: InquiryScope) -> dict:
         "timeframe_start": scope.timeframe_start.isoformat(),
         "timeframe_end": scope.timeframe_end.isoformat(),
         "as_of_ts": scope.as_of_ts.isoformat(),
+        "timezone_token": timezone_token,
         "context_text": scope.context_text or "",
         "context_semantics": "non_evidence",
         "strategy_profile_token": strategy_profile_token,
+        "timeline_profile_token": timeline_profile_token or "",
     }
 
 
@@ -321,6 +337,85 @@ def _resolve_cross_domain_profile(domains: list[str]) -> CrossDomainPairProfile 
     return profile
 
 
+def _resolve_timeline_profile(scope: InquiryScope):
+    if scope.lens == "domain" and len(scope.domains) == 1:
+        return get_domain_timeline_profile(scope.primary_domain)
+    if scope.lens == "cross_domain" and len(scope.domains) == 2:
+        return get_pair_timeline_profile(scope.domains)
+    return None
+
+
+def _load_timeline_events(*, user_id: int, domains: list[str], as_of_ts: datetime) -> dict[str, list[EventRecord]]:
+    events = (
+        EventRecord.query.filter(EventRecord.user_id == user_id)
+        .filter(EventRecord.created_at <= as_of_ts)
+        .filter(or_(*_domain_prefix_filters(domains)))
+        .order_by(EventRecord.created_at.asc(), EventRecord.id.asc())
+        .all()
+    )
+    events_by_domain: dict[str, list[EventRecord]] = {domain: [] for domain in domains}
+    for event in events:
+        domain = _domain_from_event_type(event.event_type)
+        if domain in events_by_domain:
+            events_by_domain[domain].append(event)
+    return events_by_domain
+
+
+def _timeline_metadata(summary: TimelineSummary | None) -> dict[str, object] | None:
+    if summary is None:
+        return None
+    return {
+        "timeline_profile_id": summary.profile_id,
+        "timeline_profile_version": summary.profile_version,
+        "timeline_engine_version": summary.timeline_engine_version,
+        "window_spec_token": summary.window_spec_token,
+        "active_window_token": summary.active_window_token,
+        "comparison_window_token": summary.comparison_window_token,
+        "baseline_policy_token": summary.baseline_policy_token,
+        "timezone_token": summary.timezone_token,
+        "as_of_ts": summary.as_of_ts,
+        "evidence_manifest_hash": summary.evidence_manifest_hash,
+        "timeline_summary_hash": summary.timeline_summary_hash,
+        "comparison_coverage": {
+            "prior_window_available": summary.coverage.prior_window_available,
+            "baseline_windows_available": summary.coverage.baseline_windows_available,
+            "baseline_windows_required": summary.coverage.baseline_windows_required,
+            "recurrence_windows_available": summary.coverage.recurrence_windows_available,
+            "trend_windows_available": summary.coverage.trend_windows_available,
+        },
+        "finding_count": len(summary.findings),
+        "insufficiency_count": summary.insufficiency_count,
+    }
+
+
+def _timeline_findings(summary: TimelineSummary | None) -> list[dict]:
+    if summary is None:
+        return []
+    return [
+        {
+            "claim": item.claim,
+            "finding_category": item.finding_category,
+            "evidence_refs": list(item.evidence_refs),
+            "confidence_label": item.confidence_label,
+            "uncertainty_note": item.uncertainty_note,
+            "source_domains": list(item.source_domains),
+            "timeline_context": dict(item.timeline_context),
+        }
+        for item in summary.findings
+    ]
+
+
+def _timeline_refine_guidance(summary: TimelineSummary | None) -> list[str]:
+    if summary is None:
+        return []
+    if summary.insufficiency_count <= 0:
+        return []
+    return [
+        "Refine by extending the timeframe or selecting a shorter comparison window. "
+        "Likely gain: improve closed-window temporal coverage."
+    ]
+
+
 def _prioritize_domain_events(events: list[EventRecord], strategy: DomainStrategyProfile) -> list[EventRecord]:
     return sorted(
         events,
@@ -450,7 +545,12 @@ def _assemble_domain_expert_brief(
     return findings, limits, evidence_refs, refine_guidance
 
 
-def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict], dict[str, object]]:
+def _assemble_brief(
+    scope: InquiryScope,
+    user_id: int,
+    *,
+    timezone_token: str,
+) -> tuple[dict, list[dict], dict[str, object]]:
     prefix_filters = _domain_prefix_filters(scope.domains)
 
     events = (
@@ -487,6 +587,7 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
     provenance_refs: list[dict] = []
     domain_refine_guidance: list[str] = []
     blocked_claim_count = 0
+    timeline_summary: TimelineSummary | None = None
     active_cross_domain_profile = None
     if scope.lens == "cross_domain" and len(scope.domains) == 2:
         active_cross_domain_profile = _resolve_cross_domain_profile(scope.domains)
@@ -615,6 +716,34 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
             }
         )
 
+    timeline_profile = _resolve_timeline_profile(scope)
+    if timeline_profile is not None:
+        timeline_events = _load_timeline_events(
+            user_id=user_id,
+            domains=scope.domains,
+            as_of_ts=scope.as_of_ts,
+        )
+        timeline_summary = assemble_timeline_summary(
+            Phase9TimelineRequest(
+                lens=scope.lens,
+                domains=tuple(scope.domains),
+                primary_domain=scope.primary_domain,
+                timeframe_start=scope.timeframe_start,
+                timeframe_end=scope.timeframe_end,
+                as_of_ts=scope.as_of_ts,
+                timezone_token=timezone_token,
+                profile=timeline_profile,
+                events_by_domain={domain: tuple(items) for domain, items in timeline_events.items()},
+            )
+        )
+        timeline_findings = _timeline_findings(timeline_summary)
+        findings.extend(timeline_findings)
+        limits.extend(list(timeline_summary.limits))
+        domain_refine_guidance.extend(_timeline_refine_guidance(timeline_summary))
+        blocked_claim_count += int(timeline_summary.blocked_claim_count or 0)
+        for finding in timeline_findings:
+            provenance_refs.extend(list(finding.get("evidence_refs") or []))
+
     findings = sorted(
         findings,
         key=lambda item: (
@@ -648,6 +777,10 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
         )
         if total_events + total_insights == 0:
             summary = f"Scoped inquiry for {scope.primary_domain} found no canonical records in the selected timeframe."
+    if timeline_summary is not None:
+        summary = (
+            f"{summary} Timeline interpretation uses {timeline_summary.profile_version} over fixed comparable windows."
+        )
 
     productization_started = perf_counter()
     try:
@@ -698,6 +831,7 @@ def _assemble_brief(scope: InquiryScope, user_id: int) -> tuple[dict, list[dict]
         payload,
         preferred_refine_guidance=productized.refine_guidance,
     )
+    payload["timeline_metadata"] = _timeline_metadata(timeline_summary)
     if scope.lens == "cross_domain":
         payload["blocked_claim_count"] = int(blocked_claim_count)
     productization_stats = {
@@ -885,6 +1019,23 @@ def _brief_profile_metric_labels(brief_payload: dict | None) -> dict[str, object
     }
 
 
+def _timeline_metric_labels(brief_payload: dict | None) -> dict[str, object] | None:
+    if not isinstance(brief_payload, dict):
+        return None
+    timeline_metadata = brief_payload.get("timeline_metadata")
+    brief_profile = brief_payload.get("brief_profile") if isinstance(brief_payload.get("brief_profile"), dict) else {}
+    if not isinstance(timeline_metadata, dict):
+        return None
+    return {
+        "domain": str(brief_profile.get("domain") or "unknown"),
+        "profile": str(timeline_metadata.get("timeline_profile_id") or "unknown"),
+        "profile_version": str(timeline_metadata.get("timeline_profile_version") or "unknown"),
+        "strategy": "phase9_timeline_v1",
+        "strategy_version": "1.0.0",
+        "expert_mode": bool(brief_profile.get("expert_mode")),
+    }
+
+
 def _has_replay_mismatch(
     *,
     user_id: int,
@@ -906,7 +1057,14 @@ def _has_replay_mismatch(
 
 def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryRequest, InquiryBriefVersion, bool]:
     scope = _normalize_scope_from_create(data)
-    normalized_payload = _normalized_payload(scope)
+    user = get_user(user_id)
+    timezone_token = resolve_timezone_token(user.timezone if user else None)
+    timeline_profile = _resolve_timeline_profile(scope)
+    normalized_payload = _normalized_payload(
+        scope,
+        timezone_token=timezone_token,
+        timeline_profile_token=timeline_profile.profile_token if timeline_profile is not None else None,
+    )
     normalized_hash = _payload_hash(normalized_payload)
 
     existing = (
@@ -964,7 +1122,11 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         )
 
     generation_started = perf_counter()
-    brief_payload, provenance_refs, productization_stats = _assemble_brief(scope, user_id)
+    brief_payload, provenance_refs, productization_stats = _assemble_brief(
+        scope,
+        user_id,
+        timezone_token=timezone_token,
+    )
     generation_latency_seconds = perf_counter() - generation_started
     brief_hash = _payload_hash(brief_payload)
     quality_storage_fields = _quality_storage_fields(brief_payload)
@@ -997,6 +1159,29 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
             "version_id": version.id,
             "brief_hash": brief_hash,
             "as_of_ts": scope.as_of_ts.isoformat(),
+            **(
+                {
+                    "timeline_profile_id": brief_payload.get("timeline_metadata", {}).get("timeline_profile_id"),
+                    "timeline_profile_version": brief_payload.get("timeline_metadata", {}).get(
+                        "timeline_profile_version"
+                    ),
+                    "timeline_engine_version": brief_payload.get("timeline_metadata", {}).get(
+                        "timeline_engine_version"
+                    ),
+                    "window_spec_token": brief_payload.get("timeline_metadata", {}).get("window_spec_token"),
+                    "active_window_token": brief_payload.get("timeline_metadata", {}).get("active_window_token"),
+                    "comparison_window_token": brief_payload.get("timeline_metadata", {}).get(
+                        "comparison_window_token"
+                    ),
+                    "baseline_policy_token": brief_payload.get("timeline_metadata", {}).get("baseline_policy_token"),
+                    "timezone_token": brief_payload.get("timeline_metadata", {}).get("timezone_token"),
+                    "evidence_manifest_hash": brief_payload.get("timeline_metadata", {}).get("evidence_manifest_hash"),
+                    "comparison_coverage": brief_payload.get("timeline_metadata", {}).get("comparison_coverage"),
+                    "timeline_summary_hash": brief_payload.get("timeline_metadata", {}).get("timeline_summary_hash"),
+                }
+                if isinstance(brief_payload.get("timeline_metadata"), dict)
+                else {}
+            ),
         },
     )
     db.session.commit()
@@ -1020,6 +1205,21 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         limitation_redundancy_removed=int(productization_stats.get("limitation_redundancy_removed") or 0),
         **profile_labels,
     )
+    timeline_labels = _timeline_metric_labels(brief_payload)
+    if timeline_labels is not None:
+        timeline_metadata = brief_payload.get("timeline_metadata") if isinstance(brief_payload, dict) else {}
+        comparison_coverage = (
+            timeline_metadata.get("comparison_coverage")
+            if isinstance(timeline_metadata, dict) and isinstance(timeline_metadata.get("comparison_coverage"), dict)
+            else {}
+        )
+        record_timeline_generated(
+            latency_seconds=generation_latency_seconds,
+            insufficiency_count=int((timeline_metadata or {}).get("insufficiency_count") or 0),
+            baseline_windows_available=int((comparison_coverage or {}).get("baseline_windows_available") or 0),
+            **timeline_labels,
+        )
+        record_timeline_blocked_claims(int(brief_payload.get("blocked_claim_count") or 0), **timeline_labels)
     if scope.lens == "cross_domain":
         record_inquiry_blocked_claims(int(brief_payload.get("blocked_claim_count") or 0), **profile_labels)
     if _has_replay_mismatch(
@@ -1030,6 +1230,8 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
         exclude_version_id=version.id,
     ):
         record_inquiry_replay_mismatch(**profile_labels)
+        if timeline_labels is not None:
+            record_timeline_replay_mismatch(**timeline_labels)
     return inquiry, version, False
 
 
@@ -1080,7 +1282,14 @@ def refine_inquiry(
         raise ValueError("not_found")
 
     scope = _normalize_scope_from_refine(inquiry, data)
-    normalized_payload = _normalized_payload(scope)
+    user = get_user(user_id)
+    timezone_token = resolve_timezone_token(user.timezone if user else None)
+    timeline_profile = _resolve_timeline_profile(scope)
+    normalized_payload = _normalized_payload(
+        scope,
+        timezone_token=timezone_token,
+        timeline_profile_token=timeline_profile.profile_token if timeline_profile is not None else None,
+    )
     normalized_hash = _payload_hash(normalized_payload)
 
     previous = (
@@ -1132,7 +1341,11 @@ def refine_inquiry(
         )
 
     generation_started = perf_counter()
-    brief_payload, provenance_refs, productization_stats = _assemble_brief(scope, user_id)
+    brief_payload, provenance_refs, productization_stats = _assemble_brief(
+        scope,
+        user_id,
+        timezone_token=timezone_token,
+    )
     generation_latency_seconds = perf_counter() - generation_started
     brief_hash = _payload_hash(brief_payload)
     quality_storage_fields = _quality_storage_fields(brief_payload)
@@ -1166,6 +1379,29 @@ def refine_inquiry(
             "version_id": version.id,
             "brief_hash": brief_hash,
             "as_of_ts": scope.as_of_ts.isoformat(),
+            **(
+                {
+                    "timeline_profile_id": brief_payload.get("timeline_metadata", {}).get("timeline_profile_id"),
+                    "timeline_profile_version": brief_payload.get("timeline_metadata", {}).get(
+                        "timeline_profile_version"
+                    ),
+                    "timeline_engine_version": brief_payload.get("timeline_metadata", {}).get(
+                        "timeline_engine_version"
+                    ),
+                    "window_spec_token": brief_payload.get("timeline_metadata", {}).get("window_spec_token"),
+                    "active_window_token": brief_payload.get("timeline_metadata", {}).get("active_window_token"),
+                    "comparison_window_token": brief_payload.get("timeline_metadata", {}).get(
+                        "comparison_window_token"
+                    ),
+                    "baseline_policy_token": brief_payload.get("timeline_metadata", {}).get("baseline_policy_token"),
+                    "timezone_token": brief_payload.get("timeline_metadata", {}).get("timezone_token"),
+                    "evidence_manifest_hash": brief_payload.get("timeline_metadata", {}).get("evidence_manifest_hash"),
+                    "comparison_coverage": brief_payload.get("timeline_metadata", {}).get("comparison_coverage"),
+                    "timeline_summary_hash": brief_payload.get("timeline_metadata", {}).get("timeline_summary_hash"),
+                }
+                if isinstance(brief_payload.get("timeline_metadata"), dict)
+                else {}
+            ),
         },
     )
     db.session.commit()
@@ -1188,6 +1424,21 @@ def refine_inquiry(
         limitation_redundancy_removed=int(productization_stats.get("limitation_redundancy_removed") or 0),
         **profile_labels,
     )
+    timeline_labels = _timeline_metric_labels(brief_payload)
+    if timeline_labels is not None:
+        timeline_metadata = brief_payload.get("timeline_metadata") if isinstance(brief_payload, dict) else {}
+        comparison_coverage = (
+            timeline_metadata.get("comparison_coverage")
+            if isinstance(timeline_metadata, dict) and isinstance(timeline_metadata.get("comparison_coverage"), dict)
+            else {}
+        )
+        record_timeline_generated(
+            latency_seconds=generation_latency_seconds,
+            insufficiency_count=int((timeline_metadata or {}).get("insufficiency_count") or 0),
+            baseline_windows_available=int((comparison_coverage or {}).get("baseline_windows_available") or 0),
+            **timeline_labels,
+        )
+        record_timeline_blocked_claims(int(brief_payload.get("blocked_claim_count") or 0), **timeline_labels)
     if scope.lens == "cross_domain":
         record_inquiry_blocked_claims(int(brief_payload.get("blocked_claim_count") or 0), **profile_labels)
     if _has_replay_mismatch(
@@ -1198,4 +1449,6 @@ def refine_inquiry(
         exclude_version_id=version.id,
     ):
         record_inquiry_replay_mismatch(**profile_labels)
+        if timeline_labels is not None:
+            record_timeline_replay_mismatch(**timeline_labels)
     return inquiry, version

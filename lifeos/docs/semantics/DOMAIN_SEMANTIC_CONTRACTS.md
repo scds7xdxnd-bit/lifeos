@@ -104,6 +104,16 @@ Canonical source for domain purpose and semantic boundaries.
   - treating change as a recommendation.
 - User context remains non-evidence in temporal interpretation unless independently supported by canonical domain records/events.
 
+## Insight Humanization Equivalence Rule (Phase 10, Binding)
+- Humanization may simplify wording and structure, but it must not change what the underlying domain facts mean.
+- Canonical inquiry output remains semantically authoritative; humanized output is a derived explanation layer only.
+- Humanization must not:
+  - invent new domain meaning,
+  - add causes, motives, or advice,
+  - hide material limitations,
+  - convert uncertainty into polished certainty.
+- If a humanized sentence cannot be traced back to canonical inquiry content, it is invalid.
+
 ## ML Scope
 - ML consumes domain semantics to decide what can be treated as evidence; do not train on claims outside a domain's "Asserts".
 - No UI-filtered subsets are valid for training/eval; only canonical event streams and deterministic windows are allowed inputs.

@@ -1,7 +1,7 @@
 {
-  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8/8.1)",
-  "description": "Operational dashboard for focused inquiry rollout, domain/cross-domain expert quality signals, and productization usefulness",
-  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "phase81", "inquiry"],
+  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8/8.1/9)",
+  "description": "Operational dashboard for focused inquiry rollout, domain/cross-domain expert quality signals, productization usefulness, and Phase 9 timeline intelligence",
+  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "phase81", "phase9", "inquiry", "timeline"],
   "timezone": "utc",
   "panels": [
     {
@@ -596,6 +596,116 @@
         {
           "expr": "lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio{expert_mode=\"true\",domain=~\"finance\\\\+habits|projects\\\\+skills|habits\\\\+journal|habits\\\\+health|calendar\\\\+projects|journal\\\\+relationships\"}",
           "legendFormat": "weak {{ domain }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 45,
+      "title": "Phase 9 Timeline Profile Usage Rate (5m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_timeline_profile_usage_total{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}[5m])) by (domain, profile, profile_version, strategy_version)",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }} s{{ strategy_version }}"
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "title": "Phase 9 Timeline Latency p95 (seconds)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_generation_latency_p95_by_profile:seconds{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Duration", "format": "s"}]
+    },
+    {
+      "id": 47,
+      "title": "Phase 9 Timeline Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_error_rate_by_profile:ratio{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 48,
+      "title": "Phase 9 Temporal Insufficiency Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_insufficiency_rate_by_profile:ratio{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 49,
+      "title": "Phase 9 Baseline Coverage (avg windows)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_baseline_coverage_avg_windows_by_profile{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Windows", "format": "short"}]
+    },
+    {
+      "id": 50,
+      "title": "Phase 9 Baseline Coverage Distribution (bucket ratio)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_baseline_coverage_distribution_by_profile:ratio{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }} {{ profile }} le={{ le }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 51,
+      "title": "Phase 9 Timeline Blocked Claims Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_blocked_claims_rate_by_profile:ratio{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 52,
+      "title": "Phase 9 Timeline Replay Mismatch Count (15m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_replay_mismatch_count_by_profile{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "title": "Phase 9 Timeline Output Presence Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:timeline_output_presence_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:timeline_output_presence_rate_by_domain:ratio{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
+          "legendFormat": "{{ domain }}"
         }
       ],
       "yaxes": [{"label": "Ratio", "format": "percentunit"}]

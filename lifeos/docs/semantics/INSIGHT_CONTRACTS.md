@@ -235,6 +235,33 @@ Format:
   - recommendations or intervention directives
 - Temporal findings remain observational. Confidence describes evidence support, not the probability that a pattern will continue.
 
+## Insight Humanization Contracts (Phase 10)
+- focused_inquiry_humanized_brief
+  - Description: Deterministic humanized rendering of a canonical inquiry brief for ordinary-user readability.
+  - Required evidence: the canonical inquiry brief, canonical finding identifiers, canonical evidence references, canonical confidence labels, and canonical limitations.
+  - Disallowed evidence: any net-new domain facts, inferred motives, causal explanations, recommendations, predictions, emotional interpretation, or user context as a substitute for canonical support.
+  - Confidence bands: informational, needs_review
+  - Allowed actions: display, refine_only
+
+## Insight Humanization Rules (Phase 10, Binding)
+- Allowed transformations:
+  - shortening,
+  - plain-language substitution,
+  - section renaming,
+  - deterministic section reordering,
+  - duplication reduction,
+  - evidence-to-meaning explanation,
+  - compression of technical metadata into expandable technical view.
+- Forbidden transformations:
+  - changing truth conditions,
+  - adding new claims,
+  - intensifying confidence,
+  - hiding material uncertainty,
+  - replacing evidence with vague unsupported prose,
+  - advice or recommendation framing,
+  - assistant-like conversational framing.
+- Canonical brief remains the source of truth. Humanized output is a derived presentation layer only.
+
 ## ML Scope
 - Insight contracts are binding for ML evaluation: evidence used for training/eval must be a subset of Required evidence and must exclude Disallowed evidence.
 - Confidence bands define allowable system behaviors; ML outputs must never exceed the contract (e.g., review_only remains review_only).

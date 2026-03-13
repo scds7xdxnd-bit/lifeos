@@ -42,6 +42,12 @@ groups:
           or absent(lifeos_inquiry_answerability_by_domain_total)
           or absent(lifeos_inquiry_limitation_redundancy_removed_total)
           or absent(lifeos_inquiry_limitation_redundancy_removed_by_domain_total)
+          or absent(lifeos_timeline_profile_usage_total)
+          or absent(lifeos_timeline_generation_latency_seconds_bucket)
+          or absent(lifeos_timeline_insufficiency_total)
+          or absent(lifeos_timeline_baseline_coverage_windows_bucket)
+          or absent(lifeos_timeline_blocked_claims_total)
+          or absent(lifeos_timeline_replay_mismatch_total)
         for: 3m
         labels:
           severity: critical
@@ -302,6 +308,90 @@ groups:
       - record: lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile
         expr: |
           sum(increase(lifeos_inquiry_replay_mismatch_by_domain_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+
+      - record: lifeos:timeline_profile_usage_rate_by_profile:per_second
+        expr: |
+          sum(rate(lifeos_timeline_profile_usage_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+
+      - record: lifeos:timeline_generation_latency_p95_by_profile:seconds
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(lifeos_timeline_generation_latency_seconds_bucket[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode, le)
+          )
+
+      - record: lifeos:timeline_error_rate_by_profile:ratio
+        expr: |
+          sum(rate(lifeos_inquiry_errors_by_domain_total{stage="timeline"}[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_timeline_profile_usage_total[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+            +
+            sum(rate(lifeos_inquiry_errors_by_domain_total{stage="timeline"}[10m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:timeline_insufficiency_rate_by_profile:ratio
+        expr: |
+          sum(rate(lifeos_timeline_insufficiency_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_timeline_profile_usage_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:timeline_baseline_coverage_avg_windows_by_profile
+        expr: |
+          sum(rate(lifeos_timeline_baseline_coverage_windows_sum[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_timeline_baseline_coverage_windows_count[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:timeline_baseline_coverage_distribution_by_profile:ratio
+        expr: |
+          sum(rate(lifeos_timeline_baseline_coverage_windows_bucket[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode, le)
+          /
+          ignoring(le) group_left
+          clamp_min(
+            sum(rate(lifeos_timeline_baseline_coverage_windows_count[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:timeline_blocked_claims_rate_by_profile:ratio
+        expr: |
+          sum(rate(lifeos_timeline_blocked_claims_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_timeline_profile_usage_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:timeline_replay_mismatch_count_by_profile
+        expr: |
+          sum(increase(lifeos_timeline_replay_mismatch_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+
+      - record: lifeos:timeline_replay_mismatch_rate_by_profile:ratio
+        expr: |
+          sum(rate(lifeos_timeline_replay_mismatch_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)
+          /
+          clamp_min(
+            sum(rate(lifeos_timeline_profile_usage_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode),
+            0.001
+          )
+
+      - record: lifeos:timeline_output_presence_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_timeline_profile_usage_total[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_generated_total[15m])), 0.001)
+
+      - record: lifeos:timeline_output_presence_rate_by_domain:ratio
+        expr: |
+          sum(rate(lifeos_timeline_profile_usage_total[15m])) by (domain)
+          /
+          clamp_min(sum(rate(lifeos_inquiry_generated_by_domain_total[15m])) by (domain), 0.001)
 
       - alert: Phase6InquiryGenerationFailures
         expr: |
@@ -795,3 +885,116 @@ groups:
         annotations:
           summary: "Phase 8.1 productization replay mismatch detected"
           description: "Replay mismatch detected while inquiry productization is active for at least one profile."
+
+      - alert: Phase9TimelineGenerationLatencyHigh
+        expr: |
+          max by (domain, profile, profile_version, strategy_version) (
+            lifeos:timeline_generation_latency_p95_by_profile:seconds{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}
+          ) > 1.2
+          and
+          sum by (domain, profile, profile_version, strategy_version) (
+            rate(lifeos_timeline_profile_usage_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}[15m])
+          ) > 0.003
+        for: 10m
+        labels:
+          severity: warning
+          phase: "9"
+        annotations:
+          summary: "Phase 9 timeline generation latency high"
+          description: "At least one Phase 9 timeline profile exceeded 1.2s p95 generation latency under active traffic."
+
+      - alert: Phase9TimelineErrorRateHigh
+        expr: |
+          max by (domain, profile, profile_version, strategy_version) (
+            lifeos:timeline_error_rate_by_profile:ratio{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}
+          ) > 0.08
+          and
+          sum by (domain, profile, profile_version, strategy_version) (
+            rate(lifeos_timeline_profile_usage_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}[15m])
+          ) > 0.003
+        for: 10m
+        labels:
+          severity: warning
+          phase: "9"
+        annotations:
+          summary: "Phase 9 timeline stage error rate high"
+          description: "Timeline-stage errors exceeded 8% for one or more active Phase 9 timeline profiles."
+
+      - alert: Phase9TimelineInsufficiencyRateHigh
+        expr: |
+          max by (domain, profile, profile_version, strategy_version) (
+            lifeos:timeline_insufficiency_rate_by_profile:ratio{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}
+          ) > 0.85
+          and
+          sum by (domain, profile, profile_version, strategy_version) (
+            rate(lifeos_timeline_profile_usage_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}[15m])
+          ) > 0.003
+        for: 15m
+        labels:
+          severity: warning
+          phase: "9"
+        annotations:
+          summary: "Phase 9 temporal insufficiency rate high"
+          description: "Temporal insufficiency exceeded 0.85 per generated timeline summary for one or more Phase 9 profiles."
+
+      - alert: Phase9TimelineBlockedClaimsSpike
+        expr: |
+          max by (domain, profile, profile_version, strategy_version) (
+            lifeos:timeline_blocked_claims_rate_by_profile:ratio{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}
+          ) > 0.1
+          and
+          sum by (domain, profile, profile_version, strategy_version) (
+            rate(lifeos_timeline_profile_usage_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}[15m])
+          ) > 0.003
+        for: 10m
+        labels:
+          severity: warning
+          phase: "9"
+        annotations:
+          summary: "Phase 9 timeline blocked-claim spike"
+          description: "Blocked forbidden temporal claims exceeded 0.10 per timeline summary for an active Phase 9 profile."
+
+      - alert: Phase9TimelineReplayMismatchDetected
+        expr: |
+          sum(increase(lifeos_timeline_replay_mismatch_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}[15m])) by (domain, profile, profile_version, strategy_version) > 0
+          and
+          sum by (domain, profile, profile_version, strategy_version) (
+            rate(lifeos_timeline_profile_usage_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}[15m])
+          ) > 0.001
+        for: 5m
+        labels:
+          severity: critical
+          phase: "9"
+        annotations:
+          summary: "Phase 9 timeline replay mismatch detected"
+          description: "Replay mismatch detected for one or more active Phase 9 timeline profiles."
+
+      - alert: Phase9TimelineOutputPresenceLow
+        expr: |
+          min by (domain) (
+            lifeos:timeline_output_presence_rate_by_domain:ratio{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}
+          ) < 0.85
+          and
+          sum by (domain) (
+            rate(lifeos_inquiry_generated_by_domain_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects"}[15m])
+          ) > 0.005
+        for: 15m
+        labels:
+          severity: warning
+          phase: "9"
+        annotations:
+          summary: "Phase 9 timeline output presence low"
+          description: "Timeline metadata presence dropped below 85% for at least one Phase 9 rollout domain/pair under active inquiry traffic."
+
+      - alert: Phase9TimelineProfileVersionUnexpected
+        expr: |
+          sum(rate(lifeos_timeline_profile_usage_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects",profile_version!="1.0.0"}[15m])) > 0
+          or
+          sum(rate(lifeos_timeline_profile_usage_total{domain=~"finance|habits|projects|skills|calendar|finance\\+habits|projects\\+skills|calendar\\+projects",strategy_version!="1.0.0"}[15m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          phase: "9"
+        annotations:
+          summary: "Phase 9 timeline profile/strategy version drift detected"
+          description: "Phase 9 timeline usage includes unexpected profile_version or strategy_version labels."
