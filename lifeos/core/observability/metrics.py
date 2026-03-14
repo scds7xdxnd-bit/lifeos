@@ -361,6 +361,114 @@ INQUIRY_LIMITATION_REDUNDANCY_REMOVED_BY_DOMAIN_TOTAL = Counter(
     _INQUIRY_DOMAIN_LABELS,
 )
 
+INQUIRY_HUMANIZATION_RENDER_TOTAL = Counter(
+    "lifeos_inquiry_humanization_render_total",
+    "Total successful inquiry humanization renders",
+)
+
+INQUIRY_HUMANIZATION_RENDER_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_humanization_render_by_domain_total",
+    "Total successful inquiry humanization renders by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_HUMANIZATION_RENDER_LATENCY_SECONDS = Histogram(
+    "lifeos_inquiry_humanization_render_latency_seconds",
+    "Focused inquiry humanization render latency in seconds",
+    buckets=(0.0005, 0.001, 0.003, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5),
+)
+
+INQUIRY_HUMANIZATION_RENDER_LATENCY_SECONDS_BY_DOMAIN = Histogram(
+    "lifeos_inquiry_humanization_render_latency_seconds_by_domain",
+    "Focused inquiry humanization render latency in seconds by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+    buckets=(0.0005, 0.001, 0.003, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5),
+)
+
+INQUIRY_HUMANIZATION_FAILURE_TOTAL = Counter(
+    "lifeos_inquiry_humanization_failure_total",
+    "Total inquiry humanization rendering failures",
+)
+
+INQUIRY_HUMANIZATION_FAILURE_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_humanization_failure_by_domain_total",
+    "Total inquiry humanization rendering failures by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_HUMANIZATION_FALLBACK_TOTAL = Counter(
+    "lifeos_inquiry_humanization_fallback_total",
+    "Total fallbacks to canonical inquiry rendering",
+    ["reason"],
+)
+
+INQUIRY_HUMANIZATION_FALLBACK_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_humanization_fallback_by_domain_total",
+    "Total fallbacks to canonical inquiry rendering by domain strategy profile",
+    (*_INQUIRY_DOMAIN_LABELS, "reason"),
+)
+
+INQUIRY_HUMANIZATION_EQUIVALENCE_VIOLATION_TOTAL = Counter(
+    "lifeos_inquiry_humanization_equivalence_violation_total",
+    "Total inquiry humanization equivalence violations",
+)
+
+INQUIRY_HUMANIZATION_EQUIVALENCE_VIOLATION_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_humanization_equivalence_violation_by_domain_total",
+    "Total inquiry humanization equivalence violations by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_HUMANIZED_OUTPUT_TOTAL = Counter(
+    "lifeos_inquiry_humanized_output_total",
+    "Total inquiry responses carrying humanized output",
+)
+
+INQUIRY_HUMANIZED_OUTPUT_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_humanized_output_by_domain_total",
+    "Total inquiry responses carrying humanized output by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_HUMANIZED_VIEW_TOTAL = Counter(
+    "lifeos_inquiry_humanized_view_total",
+    "Total inquiry detail views where humanized output is available",
+)
+
+INQUIRY_HUMANIZED_VIEW_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_humanized_view_by_domain_total",
+    "Total inquiry detail views where humanized output is available by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_TECHNICAL_BRIEF_EXPANDED_TOTAL = Counter(
+    "lifeos_inquiry_technical_brief_expanded_total",
+    "Total inquiry technical-brief expansion requests",
+)
+
+INQUIRY_TECHNICAL_BRIEF_EXPANDED_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_technical_brief_expanded_by_domain_total",
+    "Total inquiry technical-brief expansion requests by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_REFINE_AFTER_HUMANIZED_VIEW_TOTAL = Counter(
+    "lifeos_inquiry_refine_after_humanized_view_total",
+    "Total refinements performed after a viewed humanized brief",
+)
+
+INQUIRY_REFINE_AFTER_HUMANIZED_VIEW_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_refine_after_humanized_view_by_domain_total",
+    "Total refinements performed after a viewed humanized brief by domain strategy profile",
+    _INQUIRY_DOMAIN_LABELS,
+)
+
+INQUIRY_HUMANIZATION_VERSION_TOTAL = Counter(
+    "lifeos_inquiry_humanization_version_total",
+    "Observed inquiry humanization and canonical version tuples",
+    (*_INQUIRY_DOMAIN_LABELS, "humanization_version", "canonical_version"),
+)
+
 PHASE6_INQUIRY_MIGRATION_MISMATCH = Gauge(
     "lifeos_phase6_inquiry_migration_mismatch",
     "Focused Inquiry migration mismatch state (1=mismatch, 0=applied)",
@@ -370,6 +478,12 @@ PHASE6_INQUIRY_MIGRATION_MISMATCH = Gauge(
 _LOW_COVERAGE_THRESHOLD = 0.8
 _QUALITY_STATES = ("sufficient", "low_coverage", "empty", "needs_refine", "unknown")
 _ANSWERABILITY_CLASSES = ("strong_answerable", "partial_answerable", "weak_answerable", "unknown")
+_HUMANIZATION_FALLBACK_REASONS = (
+    "feature_disabled",
+    "render_error",
+    "equivalence_violation",
+    "missing_metadata",
+)
 
 
 def _domain_metric_labels(
@@ -433,6 +547,23 @@ INQUIRY_PRODUCTIZATION_LATENCY_SECONDS_BY_DOMAIN.labels(**_UNKNOWN_DOMAIN_LABELS
 INQUIRY_PRODUCTIZATION_ERRORS_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 INQUIRY_DIRECT_ANSWER_PRESENT_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 INQUIRY_LIMITATION_REDUNDANCY_REMOVED_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_HUMANIZATION_RENDER_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_HUMANIZATION_RENDER_LATENCY_SECONDS_BY_DOMAIN.labels(**_UNKNOWN_DOMAIN_LABELS)
+INQUIRY_HUMANIZATION_FAILURE_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_HUMANIZATION_FALLBACK_BY_DOMAIN_TOTAL.labels(reason="feature_disabled", **_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_HUMANIZATION_EQUIVALENCE_VIOLATION_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_HUMANIZED_OUTPUT_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_HUMANIZED_VIEW_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_TECHNICAL_BRIEF_EXPANDED_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_REFINE_AFTER_HUMANIZED_VIEW_BY_DOMAIN_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+INQUIRY_HUMANIZATION_VERSION_TOTAL.labels(
+    humanization_version="unknown",
+    canonical_version="unknown",
+    **_UNKNOWN_DOMAIN_LABELS,
+).inc(0)
+for _reason in _HUMANIZATION_FALLBACK_REASONS:
+    INQUIRY_HUMANIZATION_FALLBACK_TOTAL.labels(reason=_reason).inc(0)
+INQUIRY_HUMANIZATION_RENDER_LATENCY_SECONDS.observe(0)
 for _state in _QUALITY_STATES:
     INQUIRY_QUALITY_STATE_TOTAL.labels(state=_state).inc(0)
     INQUIRY_QUALITY_STATE_BY_DOMAIN_TOTAL.labels(state=_state, **_UNKNOWN_DOMAIN_LABELS).inc(0)
@@ -936,6 +1067,176 @@ def record_inquiry_productization_error(
     )
     INQUIRY_PRODUCTIZATION_ERRORS_TOTAL.inc()
     INQUIRY_PRODUCTIZATION_ERRORS_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+
+def record_inquiry_humanization_render(
+    *,
+    latency_seconds: float | None,
+    humanization_version: str | None,
+    canonical_version: str | None,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record successful inquiry humanization render metadata."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_HUMANIZATION_RENDER_TOTAL.inc()
+    INQUIRY_HUMANIZATION_RENDER_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+    INQUIRY_HUMANIZED_OUTPUT_TOTAL.inc()
+    INQUIRY_HUMANIZED_OUTPUT_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+    INQUIRY_HUMANIZATION_VERSION_TOTAL.labels(
+        humanization_version=str(humanization_version or "unknown"),
+        canonical_version=str(canonical_version or "unknown"),
+        **domain_labels,
+    ).inc()
+    if latency_seconds is not None:
+        duration = max(0.0, latency_seconds)
+        INQUIRY_HUMANIZATION_RENDER_LATENCY_SECONDS.observe(duration)
+        INQUIRY_HUMANIZATION_RENDER_LATENCY_SECONDS_BY_DOMAIN.labels(**domain_labels).observe(duration)
+
+
+def record_inquiry_humanization_failure(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record inquiry humanization render failures."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_HUMANIZATION_FAILURE_TOTAL.inc()
+    INQUIRY_HUMANIZATION_FAILURE_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+
+def record_inquiry_humanization_fallback(
+    reason: str,
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record fallback to canonical rendering for inquiry responses."""
+    fallback_reason = str(reason or "").strip() or "unknown"
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_HUMANIZATION_FALLBACK_TOTAL.labels(reason=fallback_reason).inc()
+    INQUIRY_HUMANIZATION_FALLBACK_BY_DOMAIN_TOTAL.labels(reason=fallback_reason, **domain_labels).inc()
+
+
+def record_inquiry_humanization_equivalence_violation(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record explicit humanization equivalence violations."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_HUMANIZATION_EQUIVALENCE_VIOLATION_TOTAL.inc()
+    INQUIRY_HUMANIZATION_EQUIVALENCE_VIOLATION_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+
+def record_inquiry_humanized_view(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record inquiry detail views where a humanized brief is available."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_HUMANIZED_VIEW_TOTAL.inc()
+    INQUIRY_HUMANIZED_VIEW_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+
+def record_inquiry_technical_brief_expanded(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record explicit technical-brief expansion requests."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_TECHNICAL_BRIEF_EXPANDED_TOTAL.inc()
+    INQUIRY_TECHNICAL_BRIEF_EXPANDED_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
+
+
+def record_inquiry_refine_after_humanized_view(
+    *,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record refine operations after a viewed humanized brief."""
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_REFINE_AFTER_HUMANIZED_VIEW_TOTAL.inc()
+    INQUIRY_REFINE_AFTER_HUMANIZED_VIEW_BY_DOMAIN_TOTAL.labels(**domain_labels).inc()
 
 
 def record_inquiry_error(

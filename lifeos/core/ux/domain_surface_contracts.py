@@ -320,6 +320,12 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
                 label="Brief limits", meaning="Inquiry limits list", source="system_derived", stability="stable"
             ),
             SurfaceField(
+                label="Brief limitation items",
+                meaning="Canonical limitation item list",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
                 label="Brief refine guidance",
                 meaning="Productized refine guidance list",
                 source="system_derived",
@@ -398,6 +404,12 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
                 stability="stable",
             ),
             SurfaceField(
+                label="Brief humanized rendering",
+                meaning="Deterministic derived humanized brief rendering",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
                 label="Brief quality metadata",
                 meaning="Deterministic brief quality metadata",
                 source="system_derived",
@@ -436,6 +448,12 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
             SurfaceField(
                 label="Quality refine guidance",
                 meaning="Deterministic refinement guidance from quality evaluation",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Canonical finding id",
+                meaning="Stable canonical finding traceability identifier",
                 source="system_derived",
                 stability="stable",
             ),
@@ -487,6 +505,18 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
             SurfaceField(
                 label="Finding timeline context",
                 meaning="Timeline comparison context for a finding",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Canonical limitation id",
+                meaning="Stable canonical limitation traceability identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Limitation text",
+                meaning="Canonical limitation text",
                 source="system_derived",
                 stability="stable",
             ),
@@ -772,6 +802,120 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
             SurfaceField(
                 label="Timeline trend windows available",
                 meaning="Comparable windows available for trend",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized canonical brief hash",
+                meaning="Canonical brief hash used to derive the humanized brief",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanization version",
+                meaning="Deterministic humanization layer version",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized brief hash",
+                meaning="Deterministic humanized brief hash",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Technical view available",
+                meaning="Whether the canonical technical brief remains available alongside the humanized view",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized answer text",
+                meaning="Default humanized answer text",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized answer source finding ids",
+                meaning="Canonical finding ids supporting the humanized answer",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized answer source limitation ids",
+                meaning="Canonical limitation ids supporting the humanized answer",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized block id",
+                meaning="Humanized block identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized block text",
+                meaning="Humanized block text",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized block source finding ids",
+                meaning="Canonical finding ids linked to a humanized block",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized block source limitation ids",
+                meaning="Canonical limitation ids linked to a humanized block",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized block evidence refs",
+                meaning="Evidence refs exposed on a humanized block",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized block confidence label",
+                meaning="Canonical confidence label preserved on a humanized block",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized section id",
+                meaning="Humanized section identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized section title",
+                meaning="Humanized section title",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized section blocks",
+                meaning="Humanized section block list",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized brief metadata",
+                meaning="Humanized brief replay metadata",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized brief answer",
+                meaning="Humanized brief answer block",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Humanized brief sections",
+                meaning="Humanized brief section list",
                 source="system_derived",
                 stability="stable",
             ),

@@ -16,6 +16,11 @@ from lifeos.core.events.event_models import EventRecord
 from lifeos.core.insights.inquiry_cross_domain.engine import synthesize_cross_domain_brief
 from lifeos.core.insights.inquiry_cross_domain.pairs.base import CrossDomainPairProfile
 from lifeos.core.insights.inquiry_cross_domain.registry import get_cross_domain_strategy
+from lifeos.core.insights.inquiry_humanization import (
+    HumanizationRequest,
+    humanize_inquiry_brief,
+    serialize_humanized_brief,
+)
 from lifeos.core.insights.inquiry_productization import productize_inquiry_brief
 from lifeos.core.insights.inquiry_quality import evaluate_inquiry_brief_quality
 from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryRefineRequest
@@ -31,12 +36,19 @@ from lifeos.core.observability import (
     record_inquiry_blocked_claims,
     record_inquiry_created,
     record_inquiry_generated,
+    record_inquiry_humanization_equivalence_violation,
+    record_inquiry_humanization_failure,
+    record_inquiry_humanization_fallback,
+    record_inquiry_humanization_render,
+    record_inquiry_humanized_view,
     record_inquiry_productization,
     record_inquiry_productization_error,
+    record_inquiry_refine_after_humanized_view,
     record_inquiry_refine_after_low_coverage,
     record_inquiry_refine_after_low_quality,
     record_inquiry_refined,
     record_inquiry_replay_mismatch,
+    record_inquiry_technical_brief_expanded,
     record_inquiry_viewed,
     record_timeline_blocked_claims,
     record_timeline_generated,
@@ -182,6 +194,104 @@ def _normalized_payload(
 def _payload_hash(payload: dict) -> str:
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _humanization_enabled() -> bool:
+    return bool(current_app.config.get("ENABLE_PHASE10_INQUIRY_HUMANIZATION", False)) if has_app_context() else False
+
+
+def _canonicalize_brief_payload(payload: dict) -> dict:
+    rendered = dict(payload)
+    findings: list[dict] = []
+    for idx, item in enumerate(list(payload.get("findings") or []), start=1):
+        if not isinstance(item, dict):
+            continue
+        row = dict(item)
+        row["finding_id"] = str(row.get("finding_id") or f"finding_{idx}")
+        findings.append(row)
+    limitation_items: list[dict[str, str]] = []
+    for idx, item in enumerate(list(payload.get("limits") or []), start=1):
+        text = " ".join(str(item or "").strip().split())
+        if not text:
+            continue
+        limitation_items.append({"limitation_id": f"limitation_{idx}", "text": text})
+    rendered["findings"] = findings
+    rendered["limitation_items"] = limitation_items
+    return rendered
+
+
+def _render_humanized_brief(
+    brief_payload: dict,
+    *,
+    brief_hash: str,
+    emit_metrics: bool = True,
+) -> dict[str, object] | None:
+    profile_labels = _brief_profile_metric_labels(brief_payload)
+    canonical_version = (
+        str((brief_payload.get("productization_metadata") or {}).get("version") or "unknown")
+        if isinstance(brief_payload, dict)
+        else "unknown"
+    )
+    if not _humanization_enabled():
+        if emit_metrics:
+            record_inquiry_humanization_fallback(reason="feature_disabled", **profile_labels)
+        return None
+
+    started = perf_counter()
+    try:
+        rendered = serialize_humanized_brief(
+            humanize_inquiry_brief(
+                HumanizationRequest(
+                    canonical_brief=brief_payload,
+                    canonical_brief_hash=brief_hash,
+                )
+            )
+        )
+    except Exception:
+        if emit_metrics:
+            record_inquiry_humanization_failure(**profile_labels)
+            record_inquiry_humanization_fallback(reason="render_error", **profile_labels)
+        return None
+
+    latency_seconds = perf_counter() - started
+    metadata = rendered.get("metadata") if isinstance(rendered, dict) else None
+    if not isinstance(metadata, dict):
+        if emit_metrics:
+            record_inquiry_humanization_fallback(reason="missing_metadata", **profile_labels)
+        return None
+    if str(metadata.get("canonical_brief_hash") or "") != str(brief_hash):
+        if emit_metrics:
+            record_inquiry_humanization_equivalence_violation(**profile_labels)
+            record_inquiry_humanization_fallback(reason="equivalence_violation", **profile_labels)
+        return None
+
+    if emit_metrics:
+        record_inquiry_humanization_render(
+            latency_seconds=latency_seconds,
+            humanization_version=str(metadata.get("humanization_version") or "unknown"),
+            canonical_version=canonical_version,
+            **profile_labels,
+        )
+    return rendered
+
+
+def _serialize_brief_payload(brief_payload: dict, *, brief_hash: str) -> dict:
+    rendered = dict(brief_payload)
+    rendered["humanized_brief"] = _render_humanized_brief(brief_payload, brief_hash=brief_hash)
+    return rendered
+
+
+def _humanization_event_metadata(brief_payload: dict, *, brief_hash: str) -> dict[str, object]:
+    humanized = _render_humanized_brief(brief_payload, brief_hash=brief_hash, emit_metrics=False)
+    metadata = humanized.get("metadata") if isinstance(humanized, dict) else None
+    if not isinstance(metadata, dict):
+        return {}
+    return {
+        "canonical_brief_hash": metadata.get("canonical_brief_hash"),
+        "humanization_version": metadata.get("humanization_version"),
+        "humanized_brief_hash": metadata.get("humanized_brief_hash"),
+        "technical_view_available": metadata.get("technical_view_available"),
+    }
 
 
 def _domain_prefix_filters(domains: Iterable[str]) -> list:
@@ -827,6 +937,7 @@ def _assemble_brief(
         cross_domain_profile=active_cross_domain_profile,
         finding_categories=[str(item.get("finding_category") or "") for item in productized.findings],
     )
+    payload = _canonicalize_brief_payload(payload)
     payload["quality_metadata"] = evaluate_inquiry_brief_quality(
         payload,
         preferred_refine_guidance=productized.refine_guidance,
@@ -864,7 +975,7 @@ def _serialize_version(version: InquiryBriefVersion) -> dict:
         "created_at": version.created_at.isoformat() if version.created_at else None,
         "brief_hash": version.brief_hash,
         "as_of_ts": version.as_of_ts.isoformat() if version.as_of_ts else None,
-        "brief": version.brief_payload,
+        "brief": _serialize_brief_payload(version.brief_payload, brief_hash=version.brief_hash),
     }
 
 
@@ -1036,6 +1147,36 @@ def _timeline_metric_labels(brief_payload: dict | None) -> dict[str, object] | N
     }
 
 
+def _has_humanized_payload(brief_payload: dict | None, *, brief_hash: str | None = None) -> bool:
+    if not isinstance(brief_payload, dict):
+        return False
+    if isinstance(brief_payload.get("humanized_brief"), dict):
+        return True
+    if brief_hash:
+        rendered = _render_humanized_brief(brief_payload, brief_hash=brief_hash, emit_metrics=False)
+        return isinstance(rendered, dict)
+    return False
+
+
+def _was_version_viewed(user_id: int, inquiry_id: int, version_id: int | None) -> bool:
+    if not version_id:
+        return False
+    recent = (
+        EventRecord.query.filter_by(user_id=user_id, event_type="inquiry.brief.viewed")
+        .order_by(EventRecord.created_at.desc(), EventRecord.id.desc())
+        .limit(200)
+        .all()
+    )
+    for item in recent:
+        payload = item.payload if isinstance(item.payload, dict) else {}
+        if int(payload.get("inquiry_id") or 0) != inquiry_id:
+            continue
+        if int(payload.get("version_id") or 0) != version_id:
+            continue
+        return True
+    return False
+
+
 def _has_replay_mismatch(
     *,
     user_id: int,
@@ -1159,6 +1300,7 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
             "version_id": version.id,
             "brief_hash": brief_hash,
             "as_of_ts": scope.as_of_ts.isoformat(),
+            **_humanization_event_metadata(brief_payload, brief_hash=brief_hash),
             **(
                 {
                     "timeline_profile_id": brief_payload.get("timeline_metadata", {}).get("timeline_profile_id"),
@@ -1251,7 +1393,7 @@ def list_inquiries(user_id: int, *, limit: int = 20, offset: int = 0) -> tuple[l
     return items, total
 
 
-def get_inquiry(user_id: int, inquiry_id: int) -> dict | None:
+def get_inquiry(user_id: int, inquiry_id: int, *, technical_view_expanded: bool = False) -> dict | None:
     inquiry = InquiryRequest.query.filter_by(id=inquiry_id, user_id=user_id).first()
     if not inquiry:
         return None
@@ -1271,6 +1413,13 @@ def get_inquiry(user_id: int, inquiry_id: int) -> dict | None:
     record_inquiry_viewed()
     payload = _serialize_inquiry(inquiry, latest)
     payload["versions"] = [_serialize_version(version) for version in versions]
+    latest_brief = payload.get("latest_brief") if isinstance(payload, dict) else None
+    latest_brief_payload = latest_brief.get("brief") if isinstance(latest_brief, dict) else None
+    if _has_humanized_payload(latest_brief_payload, brief_hash=latest.brief_hash if latest else None):
+        profile_labels = _brief_profile_metric_labels(latest_brief_payload)
+        record_inquiry_humanized_view(**profile_labels)
+        if technical_view_expanded:
+            record_inquiry_technical_brief_expanded(**profile_labels)
     return payload
 
 
@@ -1306,6 +1455,13 @@ def refine_inquiry(
     previous_version_number = previous.version_number if previous else 0
     record_inquiry_refine_after_low_quality(previous_quality_metadata, **previous_profile_labels)
     record_inquiry_refine_after_low_coverage(previous_quality_metadata, **previous_profile_labels)
+    if (
+        previous is not None
+        and _humanization_enabled()
+        and _has_humanized_payload(previous.brief_payload, brief_hash=previous.brief_hash)
+        and _was_version_viewed(user_id, inquiry.id, previous.id)
+    ):
+        record_inquiry_refine_after_humanized_view(**previous_profile_labels)
 
     inquiry.question = scope.question
     inquiry.lens = scope.lens
@@ -1379,6 +1535,7 @@ def refine_inquiry(
             "version_id": version.id,
             "brief_hash": brief_hash,
             "as_of_ts": scope.as_of_ts.isoformat(),
+            **_humanization_event_metadata(brief_payload, brief_hash=brief_hash),
             **(
                 {
                     "timeline_profile_id": brief_payload.get("timeline_metadata", {}).get("timeline_profile_id"),

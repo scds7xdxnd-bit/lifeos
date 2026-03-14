@@ -35,6 +35,14 @@ PHASE9_CANARY_MAX_INSUFFICIENCY_RATE="${PHASE9_CANARY_MAX_INSUFFICIENCY_RATE:-0.
 PHASE9_CANARY_MAX_LATENCY_P95="${PHASE9_CANARY_MAX_LATENCY_P95:-1.20}"
 PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE="${PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE:-0.10}"
 PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT="${PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT:-0}"
+PHASE10_HUMANIZATION_ENABLED="${PHASE10_HUMANIZATION_ENABLED:-false}"
+PHASE10_EXPECT_HUMANIZATION_VERSION="${PHASE10_EXPECT_HUMANIZATION_VERSION:-phase10_humanization_v1}"
+PHASE10_CANARY_PROFILE="${PHASE10_CANARY_PROFILE:-}"
+PHASE10_CANARY_MAX_FALLBACK_RATE="${PHASE10_CANARY_MAX_FALLBACK_RATE:-0.20}"
+PHASE10_CANARY_MAX_FAILURE_RATE="${PHASE10_CANARY_MAX_FAILURE_RATE:-0.08}"
+PHASE10_CANARY_MAX_LATENCY_P95="${PHASE10_CANARY_MAX_LATENCY_P95:-0.25}"
+PHASE10_CANARY_MAX_EQUIVALENCE_VIOLATION_COUNT="${PHASE10_CANARY_MAX_EQUIVALENCE_VIOLATION_COUNT:-0}"
+PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE="${PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE:-0.70}"
 
 required_metrics=(
   "lifeos_inquiry_created_total"
@@ -76,6 +84,25 @@ required_metrics=(
   "lifeos_inquiry_answerability_by_domain_total"
   "lifeos_inquiry_limitation_redundancy_removed_total"
   "lifeos_inquiry_limitation_redundancy_removed_by_domain_total"
+  "lifeos_inquiry_humanization_render_total"
+  "lifeos_inquiry_humanization_render_by_domain_total"
+  "lifeos_inquiry_humanization_render_latency_seconds_bucket"
+  "lifeos_inquiry_humanization_render_latency_seconds_by_domain_bucket"
+  "lifeos_inquiry_humanization_failure_total"
+  "lifeos_inquiry_humanization_failure_by_domain_total"
+  "lifeos_inquiry_humanization_fallback_total"
+  "lifeos_inquiry_humanization_fallback_by_domain_total"
+  "lifeos_inquiry_humanization_equivalence_violation_total"
+  "lifeos_inquiry_humanization_equivalence_violation_by_domain_total"
+  "lifeos_inquiry_humanized_output_total"
+  "lifeos_inquiry_humanized_output_by_domain_total"
+  "lifeos_inquiry_humanized_view_total"
+  "lifeos_inquiry_humanized_view_by_domain_total"
+  "lifeos_inquiry_technical_brief_expanded_total"
+  "lifeos_inquiry_technical_brief_expanded_by_domain_total"
+  "lifeos_inquiry_refine_after_humanized_view_total"
+  "lifeos_inquiry_refine_after_humanized_view_by_domain_total"
+  "lifeos_inquiry_humanization_version_total"
   "lifeos_phase6_inquiry_migration_mismatch"
 )
 
@@ -129,7 +156,7 @@ for metric in "${required_metrics[@]}"; do
     exit 1
   fi
 done
-echo "OK: required Phase 6/6.1/7/7.1/8/8.1/9 inquiry metrics are exposed"
+echo "OK: required Phase 6/6.1/7/7.1/8/8.1/9/10 inquiry metrics are exposed"
 
 inquiry_status="$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/v1/inquiries")"
 if [[ "${INQUIRY_FEATURE_ENABLED}" == "true" ]]; then
@@ -203,6 +230,20 @@ if curl -fsS "${PROM_URL}/api/v1/alerts" >/dev/null 2>&1; then
     "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio"
     "lifeos:inquiry_productization_replay_mismatch_count"
     "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile"
+    "lifeos:inquiry_humanization_render_latency_p95:seconds"
+    "lifeos:inquiry_humanization_render_latency_p95_by_domain_profile:seconds"
+    "lifeos:inquiry_humanization_failure_rate:ratio"
+    "lifeos:inquiry_humanization_failure_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_humanization_fallback_rate:ratio"
+    "lifeos:inquiry_humanization_fallback_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_humanization_equivalence_violation_count"
+    "lifeos:inquiry_humanization_equivalence_violation_count_by_domain_profile"
+    "lifeos:inquiry_humanized_output_presence_rate:ratio"
+    "lifeos:inquiry_humanized_output_presence_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_technical_brief_expansion_rate:ratio"
+    "lifeos:inquiry_technical_brief_expansion_rate_by_domain_profile:ratio"
+    "lifeos:inquiry_refine_after_humanized_view_rate:ratio"
+    "lifeos:inquiry_refine_after_humanized_view_rate_by_domain_profile:ratio"
     "lifeos:timeline_profile_usage_rate_by_profile:per_second"
     "lifeos:timeline_generation_latency_p95_by_profile:seconds"
     "lifeos:timeline_error_rate_by_profile:ratio"
@@ -229,7 +270,7 @@ if not isinstance(result, list):
     sys.exit(1)
 PY
   done
-  echo "OK: required Phase 6/6.1/7/7.1/8/8.1/9 recording rules are queryable"
+  echo "OK: required Phase 6/6.1/7/7.1/8/8.1/9/10 recording rules are queryable"
 
   alerts_json="$(curl -fsS "${PROM_URL}/api/v1/alerts")"
   ALERTS_JSON="${alerts_json}" "${PYTHON_BIN}" - <<'PY'
@@ -243,14 +284,14 @@ firing = []
 for alert in alerts:
     labels = alert.get("labels", {})
     phase = str(labels.get("phase") or "")
-    if phase in {"6", "6.1", "7", "7.1", "8", "8.1", "9"} and alert.get("state") == "firing":
+    if phase in {"6", "6.1", "7", "7.1", "8", "8.1", "9", "10"} and alert.get("state") == "firing":
         firing.append(labels.get("alertname") or "unknown")
 
 if firing:
-    print("ERROR: Phase 6/6.1/7/7.1/8/8.1/9 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
+    print("ERROR: Phase 6/6.1/7/7.1/8/8.1/9/10 inquiry alerts firing: " + ", ".join(sorted(set(firing))), file=sys.stderr)
     sys.exit(1)
 
-print("OK: no Phase 6/6.1/7/7.1/8/8.1/9 inquiry alerts firing")
+print("OK: no Phase 6/6.1/7/7.1/8/8.1/9/10 inquiry alerts firing")
 PY
 
   check_rollout_versions() {
@@ -646,8 +687,197 @@ print(f"OK: Phase 9 canary thresholds satisfied for domain={domain}")
 PY
     fi
   fi
+
+  if [[ "${PHASE10_HUMANIZATION_ENABLED}" == "true" ]]; then
+    phase10_query="sum(rate(lifeos_inquiry_humanization_render_by_domain_total[30m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)"
+    phase10_json="$(curl -fsS --get --data-urlencode "query=${phase10_query}" "${PROM_URL}/api/v1/query")"
+    PHASE10_JSON="${phase10_json}" "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["PHASE10_JSON"])
+result = payload.get("data", {}).get("result", [])
+if not result:
+    print("WARN: no Phase 10 humanization render traffic observed yet; profile checks skipped", file=sys.stderr)
+    sys.exit(0)
+print("OK: Phase 10 humanization render traffic is observable")
+PY
+
+    version_query="sum(rate(lifeos_inquiry_humanization_version_total[30m])) by (humanization_version, canonical_version)"
+    version_json="$(curl -fsS --get --data-urlencode "query=${version_query}" "${PROM_URL}/api/v1/query")"
+    VERSION_JSON="${version_json}" EXPECTED_HUMANIZATION_VERSION="${PHASE10_EXPECT_HUMANIZATION_VERSION}" "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["VERSION_JSON"])
+rows = payload.get("data", {}).get("result", [])
+expected = os.environ["EXPECTED_HUMANIZATION_VERSION"]
+
+if not rows:
+    print("WARN: no Phase 10 version labels observed yet; version drift check skipped", file=sys.stderr)
+    sys.exit(0)
+
+unexpected = sorted({
+    str((row.get("metric") or {}).get("humanization_version") or "")
+    for row in rows
+    if str((row.get("metric") or {}).get("humanization_version") or "") and str((row.get("metric") or {}).get("humanization_version") or "") != expected
+})
+if unexpected:
+    print(
+        "ERROR: observed unexpected humanization_version label(s): "
+        + ", ".join(unexpected)
+        + f"; expected={expected}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+print(f"OK: observed Phase 10 humanization_version labels match expected ({expected})")
+PY
+
+    if [[ -n "${INQUIRY_JWT}" ]]; then
+      humanization_json="$(curl -fsS -H "Authorization: Bearer ${INQUIRY_JWT}" "${BASE_URL}/api/v1/inquiries?limit=20&offset=0")"
+      HUMANIZATION_JSON="${humanization_json}" \
+      EXPECTED_HUMANIZATION_VERSION="${PHASE10_EXPECT_HUMANIZATION_VERSION}" \
+      "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+payload = json.loads(os.environ["HUMANIZATION_JSON"])
+items = payload.get("items", [])
+expected = os.environ["EXPECTED_HUMANIZATION_VERSION"]
+observed = []
+for item in items:
+    latest = item.get("latest_brief") or {}
+    brief = latest.get("brief") if isinstance(latest, dict) else None
+    if not isinstance(brief, dict):
+        continue
+    humanized = brief.get("humanized_brief")
+    if not isinstance(humanized, dict):
+        continue
+    metadata = humanized.get("metadata")
+    if not isinstance(metadata, dict):
+        continue
+    version = str(metadata.get("humanization_version") or "").strip()
+    if version:
+        observed.append(version)
+
+if not observed:
+    print("WARN: no humanized_brief metadata found in inquiry list; API shape check skipped", file=sys.stderr)
+    sys.exit(0)
+
+unexpected = sorted({value for value in observed if value != expected})
+if unexpected:
+    print(
+        "ERROR: observed unexpected humanized_brief metadata version(s): "
+        + ", ".join(unexpected)
+        + f"; expected={expected}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+print(f"OK: inquiry list exposes humanized_brief metadata version={expected}")
+PY
+    fi
+
+    if [[ -n "${PHASE10_CANARY_PROFILE}" ]]; then
+      phase10_fallback_query="max(lifeos:inquiry_humanization_fallback_rate_by_domain_profile:ratio{profile=\"${PHASE10_CANARY_PROFILE}\"})"
+      phase10_failure_query="max(lifeos:inquiry_humanization_failure_rate_by_domain_profile:ratio{profile=\"${PHASE10_CANARY_PROFILE}\"})"
+      phase10_latency_query="max(lifeos:inquiry_humanization_render_latency_p95_by_domain_profile:seconds{profile=\"${PHASE10_CANARY_PROFILE}\"})"
+      phase10_equiv_query="max(lifeos:inquiry_humanization_equivalence_violation_count_by_domain_profile{profile=\"${PHASE10_CANARY_PROFILE}\"})"
+      phase10_refine_query="max(lifeos:inquiry_refine_after_humanized_view_rate_by_domain_profile:ratio{profile=\"${PHASE10_CANARY_PROFILE}\"})"
+      phase10_fallback_json="$(curl -fsS --get --data-urlencode "query=${phase10_fallback_query}" "${PROM_URL}/api/v1/query")"
+      phase10_failure_json="$(curl -fsS --get --data-urlencode "query=${phase10_failure_query}" "${PROM_URL}/api/v1/query")"
+      phase10_latency_json="$(curl -fsS --get --data-urlencode "query=${phase10_latency_query}" "${PROM_URL}/api/v1/query")"
+      phase10_equiv_json="$(curl -fsS --get --data-urlencode "query=${phase10_equiv_query}" "${PROM_URL}/api/v1/query")"
+      phase10_refine_json="$(curl -fsS --get --data-urlencode "query=${phase10_refine_query}" "${PROM_URL}/api/v1/query")"
+      PHASE10_FALLBACK_JSON="${phase10_fallback_json}" \
+      PHASE10_FAILURE_JSON="${phase10_failure_json}" \
+      PHASE10_LATENCY_JSON="${phase10_latency_json}" \
+      PHASE10_EQUIV_JSON="${phase10_equiv_json}" \
+      PHASE10_REFINE_JSON="${phase10_refine_json}" \
+      PHASE10_CANARY_PROFILE="${PHASE10_CANARY_PROFILE}" \
+      PHASE10_CANARY_MAX_FALLBACK_RATE="${PHASE10_CANARY_MAX_FALLBACK_RATE}" \
+      PHASE10_CANARY_MAX_FAILURE_RATE="${PHASE10_CANARY_MAX_FAILURE_RATE}" \
+      PHASE10_CANARY_MAX_LATENCY_P95="${PHASE10_CANARY_MAX_LATENCY_P95}" \
+      PHASE10_CANARY_MAX_EQUIVALENCE_VIOLATION_COUNT="${PHASE10_CANARY_MAX_EQUIVALENCE_VIOLATION_COUNT}" \
+      PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE="${PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE}" \
+      "${PYTHON_BIN}" - <<'PY'
+import json
+import os
+import sys
+
+
+def _first_value(raw: str) -> float | None:
+    payload = json.loads(raw)
+    result = payload.get("data", {}).get("result", [])
+    if not result:
+        return None
+    value = result[0].get("value", [None, None])[1]
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+profile = os.environ["PHASE10_CANARY_PROFILE"]
+max_fallback = float(os.environ["PHASE10_CANARY_MAX_FALLBACK_RATE"])
+max_failure = float(os.environ["PHASE10_CANARY_MAX_FAILURE_RATE"])
+max_latency = float(os.environ["PHASE10_CANARY_MAX_LATENCY_P95"])
+max_equiv = float(os.environ["PHASE10_CANARY_MAX_EQUIVALENCE_VIOLATION_COUNT"])
+max_refine = float(os.environ["PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE"])
+
+fallback = _first_value(os.environ["PHASE10_FALLBACK_JSON"])
+failure = _first_value(os.environ["PHASE10_FAILURE_JSON"])
+latency = _first_value(os.environ["PHASE10_LATENCY_JSON"])
+equiv = _first_value(os.environ["PHASE10_EQUIV_JSON"])
+refine = _first_value(os.environ["PHASE10_REFINE_JSON"])
+
+if fallback is None and failure is None and latency is None and equiv is None and refine is None:
+    print(f"WARN: no Phase 10 canary series for profile={profile}; threshold checks skipped", file=sys.stderr)
+    sys.exit(0)
+
+if fallback is not None and fallback > max_fallback:
+    print(
+        f"ERROR: Phase 10 canary profile={profile} fallback_rate={fallback:.3f} above threshold {max_fallback:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if failure is not None and failure > max_failure:
+    print(
+        f"ERROR: Phase 10 canary profile={profile} failure_rate={failure:.3f} above threshold {max_failure:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if latency is not None and latency > max_latency:
+    print(
+        f"ERROR: Phase 10 canary profile={profile} render_latency_p95={latency:.3f} above threshold {max_latency:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if equiv is not None and equiv > max_equiv:
+    print(
+        f"ERROR: Phase 10 canary profile={profile} equivalence_violation_count={equiv:.3f} above threshold {max_equiv:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if refine is not None and refine > max_refine:
+    print(
+        f"ERROR: Phase 10 canary profile={profile} refine_after_humanized_view_rate={refine:.3f} above threshold {max_refine:.3f}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+print(f"OK: Phase 10 canary thresholds satisfied for profile={profile}")
+PY
+    fi
+  fi
 else
   echo "WARN: Prometheus is unreachable at ${PROM_URL}; alert-state check skipped" >&2
 fi
 
-echo "Phase 6/6.1/7/7.1/8/8.1/9 focused inquiry rollout checks passed"
+echo "Phase 6/6.1/7/7.1/8/8.1/9/10 focused inquiry rollout checks passed"

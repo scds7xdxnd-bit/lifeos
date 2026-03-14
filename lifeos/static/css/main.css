@@ -1611,6 +1611,23 @@ select:focus {
   color: var(--text-strong);
 }
 
+.inquiry-humanized-answer-text {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.inquiry-humanized-answer-meta,
+.inquiry-humanized-trace {
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.inquiry-humanized-section {
+  display: grid;
+  gap: 0.45rem;
+}
+
 .inquiry-direct-answer {
   color: var(--text-strong);
   font-weight: 600;

@@ -256,6 +256,7 @@ INQUIRY_TIMELINE_CONTEXT = ApiObject(
 INQUIRY_FINDING_ITEM = ApiObject(
     name="InquiryFindingItem",
     fields=[
+        ApiField("finding_id", "string", "Canonical finding identifier", "system", "stable"),
         ApiField("claim", "string", "Finding claim text", "system", "stable"),
         ApiField("finding_category", "string", "Domain finding category", "system", "stable"),
         ApiField("evidence_refs", "list[InquiryEvidenceRef]", "Evidence references", "system", "stable"),
@@ -265,6 +266,14 @@ INQUIRY_FINDING_ITEM = ApiObject(
         ApiField("uncertainty_note", "string", "Finding uncertainty note", "system", "stable"),
         ApiField("source_domains", "list[string]", "Source domains for finding", "system", "stable"),
         ApiField("timeline_context", "InquiryTimelineContext|null", "Timeline comparison context", "system", "stable"),
+    ],
+)
+
+INQUIRY_LIMITATION_ITEM = ApiObject(
+    name="InquiryLimitationItem",
+    fields=[
+        ApiField("limitation_id", "string", "Canonical limitation identifier", "system", "stable"),
+        ApiField("text", "string", "Limitation text", "system", "stable"),
     ],
 )
 
@@ -392,6 +401,55 @@ INQUIRY_TIMELINE_METADATA = ApiObject(
     ],
 )
 
+INQUIRY_HUMANIZED_METADATA = ApiObject(
+    name="InquiryHumanizedMetadata",
+    fields=[
+        ApiField("canonical_brief_hash", "string", "Canonical brief hash", "system", "stable"),
+        ApiField("humanization_version", "string", "Humanization version", "system", "stable"),
+        ApiField("humanized_brief_hash", "string", "Humanized brief hash", "system", "stable"),
+        ApiField("technical_view_available", "boolean", "Canonical technical view availability", "system", "stable"),
+    ],
+)
+
+INQUIRY_HUMANIZED_ANSWER = ApiObject(
+    name="InquiryHumanizedAnswer",
+    fields=[
+        ApiField("text", "string", "Humanized answer text", "system", "stable"),
+        ApiField("source_finding_ids", "list[string]", "Mapped canonical finding ids", "system", "stable"),
+        ApiField("source_limitation_ids", "list[string]", "Mapped canonical limitation ids", "system", "stable"),
+    ],
+)
+
+INQUIRY_HUMANIZED_BLOCK = ApiObject(
+    name="InquiryHumanizedBlock",
+    fields=[
+        ApiField("block_id", "string", "Humanized block identifier", "system", "stable"),
+        ApiField("text", "string", "Humanized block text", "system", "stable"),
+        ApiField("source_finding_ids", "list[string]", "Mapped canonical finding ids", "system", "stable"),
+        ApiField("source_limitation_ids", "list[string]", "Mapped canonical limitation ids", "system", "stable"),
+        ApiField("evidence_refs", "list[InquiryEvidenceRef]", "Visible evidence references", "system", "stable"),
+        ApiField("confidence_label", "string|null", "Canonical confidence label", "system", "stable"),
+    ],
+)
+
+INQUIRY_HUMANIZED_SECTION = ApiObject(
+    name="InquiryHumanizedSection",
+    fields=[
+        ApiField("section_id", "string", "Humanized section identifier", "system", "stable"),
+        ApiField("title", "string", "Humanized section title", "system", "stable"),
+        ApiField("blocks", "list[InquiryHumanizedBlock]", "Humanized section blocks", "system", "stable"),
+    ],
+)
+
+INQUIRY_HUMANIZED_BRIEF = ApiObject(
+    name="InquiryHumanizedBrief",
+    fields=[
+        ApiField("metadata", "InquiryHumanizedMetadata", "Humanization replay metadata", "system", "stable"),
+        ApiField("answer", "InquiryHumanizedAnswer", "Humanized answer block", "system", "stable"),
+        ApiField("sections", "list[InquiryHumanizedSection]", "Humanized sections", "system", "stable"),
+    ],
+)
+
 INQUIRY_BRIEF_ITEM = ApiObject(
     name="InquiryBriefItem",
     fields=[
@@ -408,6 +466,7 @@ INQUIRY_BRIEF_ITEM = ApiObject(
         ),
         ApiField("uncertainty_note", "string", "Brief uncertainty note", "system", "stable"),
         ApiField("limits", "list[string]", "Brief limits list", "system", "stable"),
+        ApiField("limitation_items", "list[InquiryLimitationItem]", "Canonical limitation items", "system", "stable"),
         ApiField("refine_guidance", "list[string]", "Productized refine guidance", "system", "stable"),
         ApiField("bounded_patterns", "list[InquiryBoundedPattern]", "Bounded pattern synthesis", "system", "stable"),
         ApiField(
@@ -425,6 +484,9 @@ INQUIRY_BRIEF_ITEM = ApiObject(
         ApiField("generated_at", "string", "Generated timestamp", "system", "stable"),
         ApiField("brief_profile", "InquiryBriefProfile", "Domain brief profile metadata", "system", "stable"),
         ApiField("timeline_metadata", "InquiryTimelineMetadata|null", "Timeline replay metadata", "system", "stable"),
+        ApiField(
+            "humanized_brief", "InquiryHumanizedBrief|null", "Humanized default reading layer", "system", "stable"
+        ),
         ApiField(
             "quality_metadata",
             "InquiryQualityMetadata",
@@ -777,7 +839,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_VERSION_ITEM,
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
+                INQUIRY_LIMITATION_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_HUMANIZED_METADATA,
+                INQUIRY_HUMANIZED_ANSWER,
+                INQUIRY_HUMANIZED_BLOCK,
+                INQUIRY_HUMANIZED_SECTION,
+                INQUIRY_HUMANIZED_BRIEF,
                 INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
@@ -790,7 +858,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="646a3b776571487b9ab92c5fc8b152e117963202c126c5bf3358b76b95973d30",
+        schema_hash="328d42e77126a1251a5c1407779cf7e4107260caf662e23a7ea719c5eab3286a",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -812,7 +880,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_VERSION_ITEM,
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
+                INQUIRY_LIMITATION_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_HUMANIZED_METADATA,
+                INQUIRY_HUMANIZED_ANSWER,
+                INQUIRY_HUMANIZED_BLOCK,
+                INQUIRY_HUMANIZED_SECTION,
+                INQUIRY_HUMANIZED_BRIEF,
                 INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
@@ -825,7 +899,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="2a9eecd0f48e6db176caf6691d2636c81510388a52c526749055bb6692108765",
+        schema_hash="8d6aba457c28f697e76dfb678aa8e5bdbcc815cada54adfc6d3d9ef96bdf7d72",
         read_only=True,
         surface_key="insights:inquiry",
     ),
@@ -844,7 +918,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_VERSION_ITEM,
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
+                INQUIRY_LIMITATION_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_HUMANIZED_METADATA,
+                INQUIRY_HUMANIZED_ANSWER,
+                INQUIRY_HUMANIZED_BLOCK,
+                INQUIRY_HUMANIZED_SECTION,
+                INQUIRY_HUMANIZED_BRIEF,
                 INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
@@ -857,7 +937,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="ca4ef63b14d27cf291f2314a7d98c6f5e8e55fcabdbb0025e244ae9bdab17715",
+        schema_hash="9fefe3bbe66e8c133749679b162202b64e09c15b015a4053cc05c6ac287d27ea",
         read_only=False,
         surface_key="insights:inquiry",
     ),
@@ -877,7 +957,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
             objects=[
                 INQUIRY_BRIEF_ITEM,
                 INQUIRY_FINDING_ITEM,
+                INQUIRY_LIMITATION_ITEM,
                 INQUIRY_EVIDENCE_REF,
+                INQUIRY_HUMANIZED_METADATA,
+                INQUIRY_HUMANIZED_ANSWER,
+                INQUIRY_HUMANIZED_BLOCK,
+                INQUIRY_HUMANIZED_SECTION,
+                INQUIRY_HUMANIZED_BRIEF,
                 INQUIRY_TIMELINE_CONTEXT,
                 INQUIRY_CONTEXT_BLOCK,
                 INQUIRY_BRIEF_PROFILE,
@@ -890,7 +976,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
                 INQUIRY_PRODUCTIZATION_METADATA,
             ],
         ),
-        schema_hash="0bf4d16791bce717995ce75bd6805bed26b0d9037335d80c654e28d121c1fbb1",
+        schema_hash="0b7520ad7dbbc4b3f1b229294cdbe0c13d614e3d3f0f95c4feacbc89d66e0062",
         read_only=False,
         surface_key="insights:inquiry",
     ),

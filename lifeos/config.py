@@ -134,6 +134,14 @@ class BaseConfig:
         )
         or None
     )
+    ENABLE_PHASE10_INQUIRY_HUMANIZATION = os.environ.get(
+        "ENABLE_PHASE10_INQUIRY_HUMANIZATION",
+        "false",
+    ).lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
         "PHASE6_INQUIRY_MIGRATION_HEAD",
         "20260312_phase8_cross_domain_inquiry_metadata",

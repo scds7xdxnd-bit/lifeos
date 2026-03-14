@@ -1,0 +1,50 @@
+{
+  "terminology_cases": [
+    {
+      "name": "canonical_terms_are_simplified",
+      "text": "canonical records in selected timeframe with comparable windows",
+      "expect_contains": [
+        "saved records",
+        "selected time range",
+        "matching time windows"
+      ],
+      "expect_not_contains": [
+        "canonical records",
+        "selected timeframe",
+        "comparable windows"
+      ]
+    }
+  ],
+  "domain_adapter_cases": [
+    {
+      "name": "finance_adapter_rewrites_ledger_terms",
+      "domain": "finance",
+      "claim": "Ledger cashflow summary is stable in the selected timeframe.",
+      "expect_contains": [
+        "money record",
+        "money flow"
+      ]
+    },
+    {
+      "name": "habits_adapter_rewrites_adherence_terms",
+      "domain": "habits",
+      "claim": "Adherence and streak improved in the selected timeframe.",
+      "expect_contains": [
+        "follow-through",
+        "run of logged days"
+      ]
+    }
+  ],
+  "pair_adapter_cases": [
+    {
+      "name": "projects_skills_pair_phrase",
+      "domains": ["projects", "skills"],
+      "expected_phrase": "project work and skill practice showing up together"
+    },
+    {
+      "name": "journal_relationships_pair_phrase",
+      "domains": ["journal", "relationships"],
+      "expected_phrase": "journal and relationship activity showing up together"
+    }
+  ]
+}

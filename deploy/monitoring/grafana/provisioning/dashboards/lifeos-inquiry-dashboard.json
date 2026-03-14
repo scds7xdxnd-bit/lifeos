@@ -1,7 +1,7 @@
 {
-  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8/8.1/9)",
-  "description": "Operational dashboard for focused inquiry rollout, domain/cross-domain expert quality signals, productization usefulness, and Phase 9 timeline intelligence",
-  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "phase81", "phase9", "inquiry", "timeline"],
+  "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8/8.1/9/10)",
+  "description": "Operational dashboard for focused inquiry rollout, domain/cross-domain expert quality signals, productization usefulness, Phase 9 timeline intelligence, and Phase 10 humanization reliability",
+  "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "phase81", "phase9", "phase10", "inquiry", "timeline", "humanization"],
   "timezone": "utc",
   "panels": [
     {
@@ -706,6 +706,136 @@
         {
           "expr": "lifeos:timeline_output_presence_rate_by_domain:ratio{domain=~\"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects\"}",
           "legendFormat": "{{ domain }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 54,
+      "title": "Phase 10 Humanization Render Latency p95 (seconds)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_humanization_render_latency_p95:seconds",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_humanization_render_latency_p95_by_domain_profile:seconds",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Duration", "format": "s"}]
+    },
+    {
+      "id": 55,
+      "title": "Phase 10 Humanization Failure / Fallback Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_humanization_failure_rate:ratio",
+          "legendFormat": "failure global"
+        },
+        {
+          "expr": "lifeos:inquiry_humanization_fallback_rate:ratio",
+          "legendFormat": "fallback global"
+        },
+        {
+          "expr": "lifeos:inquiry_humanization_failure_rate_by_domain_profile:ratio",
+          "legendFormat": "failure {{ domain }} {{ profile }}"
+        },
+        {
+          "expr": "lifeos:inquiry_humanization_fallback_rate_by_domain_profile:ratio",
+          "legendFormat": "fallback {{ domain }} {{ profile }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 56,
+      "title": "Phase 10 Equivalence Violation Count (15m)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_humanization_equivalence_violation_count",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_humanization_equivalence_violation_count_by_domain_profile",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "title": "Phase 10 Humanized Output Presence Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_humanized_output_presence_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_humanized_output_presence_rate_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 58,
+      "title": "Phase 10 Technical Brief Expansion Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_technical_brief_expansion_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_technical_brief_expansion_rate_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 59,
+      "title": "Phase 10 Refine-After-Humanized-View Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_refine_after_humanized_view_rate:ratio",
+          "legendFormat": "global"
+        },
+        {
+          "expr": "lifeos:inquiry_refine_after_humanized_view_rate_by_domain_profile:ratio",
+          "legendFormat": "{{ domain }} {{ profile }} p{{ profile_version }}"
+        }
+      ],
+      "yaxes": [{"label": "Ratio", "format": "percentunit"}]
+    },
+    {
+      "id": 60,
+      "title": "Phase 10 Humanization Version Visibility",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(lifeos_inquiry_humanization_version_total[15m])) by (domain, profile, profile_version, strategy, strategy_version, humanization_version, canonical_version)",
+          "legendFormat": "{{ domain }} {{ profile }} h={{ humanization_version }} c={{ canonical_version }}"
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "title": "Phase 10 Canary Comparison (Failure/Fallback)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "lifeos:inquiry_humanization_failure_rate_by_domain_profile:ratio{expert_mode=\"true\"}",
+          "legendFormat": "failure {{ domain }} {{ profile }}"
+        },
+        {
+          "expr": "lifeos:inquiry_humanization_fallback_rate_by_domain_profile:ratio{expert_mode=\"true\"}",
+          "legendFormat": "fallback {{ domain }} {{ profile }}"
         }
       ],
       "yaxes": [{"label": "Ratio", "format": "percentunit"}]

@@ -163,6 +163,23 @@ REQUIRED_TIMELINE_COVERAGE_FIELDS = (
     "recurrence_windows_available",
     "trend_windows_available",
 )
+REQUIRED_LIMITATION_ITEM_FIELDS = ("limitation_id", "text")
+REQUIRED_HUMANIZED_METADATA_FIELDS = (
+    "canonical_brief_hash",
+    "humanization_version",
+    "humanized_brief_hash",
+    "technical_view_available",
+)
+REQUIRED_HUMANIZED_ANSWER_FIELDS = ("text", "source_finding_ids", "source_limitation_ids")
+REQUIRED_HUMANIZED_BLOCK_FIELDS = (
+    "block_id",
+    "text",
+    "source_finding_ids",
+    "source_limitation_ids",
+    "evidence_refs",
+    "confidence_label",
+)
+REQUIRED_HUMANIZED_SECTION_FIELDS = ("section_id", "title", "blocks")
 TIMELINE_CLAIM_TYPES = (
     "recurrence_observation",
     "continuity_or_break",
@@ -764,6 +781,7 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
 
     findings = payload.get("findings")
     findings_categories: list[str] = []
+    finding_ids: set[str] = set()
     if isinstance(findings, list):
         for idx, finding in enumerate(findings):
             if not isinstance(finding, Mapping):
@@ -776,6 +794,12 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
                 errors.append(f"missing_finding_fields:{idx}:{','.join(missing_finding)}")
             if disallowed_finding:
                 errors.append(f"disallowed_finding_fields:{idx}:{','.join(disallowed_finding)}")
+            finding_id = str(finding.get("finding_id") or "")
+            if finding_id.strip():
+                if finding_id in finding_ids:
+                    errors.append(f"duplicate_finding_id:{idx}:{finding_id}")
+                else:
+                    finding_ids.add(finding_id)
             category = finding.get("finding_category")
             if not isinstance(category, str) or not category.strip():
                 errors.append(f"invalid_finding_category:{idx}")
@@ -802,6 +826,31 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
                     claim_type = str(timeline_context.get("claim_type") or "")
                     if claim_type not in TIMELINE_CLAIM_TYPES:
                         errors.append(f"invalid_timeline_claim_type:{idx}:{claim_type or 'missing'}")
+
+    limitation_items = payload.get("limitation_items")
+    limitation_ids: set[str] = set()
+    if limitation_items is not None:
+        if not isinstance(limitation_items, list):
+            errors.append("invalid_limitation_items")
+        else:
+            for idx, item in enumerate(limitation_items):
+                if not isinstance(item, Mapping):
+                    errors.append(f"invalid_limitation_item:{idx}")
+                    continue
+                keys = set(item.keys())
+                missing_limitation = sorted(set(REQUIRED_LIMITATION_ITEM_FIELDS) - keys)
+                if missing_limitation:
+                    errors.append(f"missing_limitation_item_fields:{idx}:{','.join(missing_limitation)}")
+                limitation_id = str(item.get("limitation_id") or "")
+                if not limitation_id.strip():
+                    errors.append(f"invalid_limitation_id:{idx}")
+                elif limitation_id in limitation_ids:
+                    errors.append(f"duplicate_limitation_id:{idx}:{limitation_id}")
+                else:
+                    limitation_ids.add(limitation_id)
+                text = str(item.get("text") or "")
+                if not text.strip():
+                    errors.append(f"invalid_limitation_text:{idx}")
 
     quality_metadata = payload.get("quality_metadata")
     if not isinstance(quality_metadata, Mapping):
@@ -978,6 +1027,66 @@ def validate_contract_payload(payload: Mapping[str, object]) -> list[str]:
                 missing_coverage = sorted(set(REQUIRED_TIMELINE_COVERAGE_FIELDS) - coverage_keys)
                 if missing_coverage:
                     errors.append(f"missing_timeline_coverage_fields:{','.join(missing_coverage)}")
+
+    humanized_brief = payload.get("humanized_brief")
+    if humanized_brief is not None:
+        if not isinstance(humanized_brief, Mapping):
+            errors.append("invalid_humanized_brief")
+        else:
+            metadata = humanized_brief.get("metadata")
+            answer = humanized_brief.get("answer")
+            sections = humanized_brief.get("sections")
+            if not isinstance(metadata, Mapping):
+                errors.append("invalid_humanized_metadata")
+            else:
+                missing_metadata = sorted(set(REQUIRED_HUMANIZED_METADATA_FIELDS) - set(metadata.keys()))
+                if missing_metadata:
+                    errors.append(f"missing_humanized_metadata_fields:{','.join(missing_metadata)}")
+            if not isinstance(answer, Mapping):
+                errors.append("invalid_humanized_answer")
+            else:
+                missing_answer = sorted(set(REQUIRED_HUMANIZED_ANSWER_FIELDS) - set(answer.keys()))
+                if missing_answer:
+                    errors.append(f"missing_humanized_answer_fields:{','.join(missing_answer)}")
+            if not isinstance(sections, list):
+                errors.append("invalid_humanized_sections")
+            else:
+                for idx, section in enumerate(sections):
+                    if not isinstance(section, Mapping):
+                        errors.append(f"invalid_humanized_section:{idx}")
+                        continue
+                    missing_section = sorted(set(REQUIRED_HUMANIZED_SECTION_FIELDS) - set(section.keys()))
+                    if missing_section:
+                        errors.append(f"missing_humanized_section_fields:{idx}:{','.join(missing_section)}")
+                    blocks = section.get("blocks")
+                    if not isinstance(blocks, list):
+                        errors.append(f"invalid_humanized_section_blocks:{idx}")
+                        continue
+                    for block_idx, block in enumerate(blocks):
+                        if not isinstance(block, Mapping):
+                            errors.append(f"invalid_humanized_block:{idx}:{block_idx}")
+                            continue
+                        missing_block = sorted(set(REQUIRED_HUMANIZED_BLOCK_FIELDS) - set(block.keys()))
+                        if missing_block:
+                            errors.append(f"missing_humanized_block_fields:{idx}:{block_idx}:{','.join(missing_block)}")
+                        for ref_key in ("source_finding_ids", "source_limitation_ids"):
+                            refs = block.get(ref_key)
+                            if not isinstance(refs, list) or any(
+                                not isinstance(item, str) or not item.strip() for item in refs
+                            ):
+                                errors.append(f"invalid_humanized_block_traceability:{idx}:{block_idx}:{ref_key}")
+                            elif ref_key == "source_finding_ids":
+                                missing_refs = sorted(item for item in refs if item not in finding_ids)
+                                if missing_refs:
+                                    errors.append(
+                                        f"invalid_humanized_block_finding_refs:{idx}:{block_idx}:{','.join(missing_refs)}"
+                                    )
+                            else:
+                                missing_refs = sorted(item for item in refs if item not in limitation_ids)
+                                if missing_refs:
+                                    errors.append(
+                                        f"invalid_humanized_block_limitation_refs:{idx}:{block_idx}:{','.join(missing_refs)}"
+                                    )
 
     brief_profile = payload.get("brief_profile")
     if not isinstance(brief_profile, Mapping):

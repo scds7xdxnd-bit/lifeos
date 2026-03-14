@@ -123,8 +123,21 @@
       <div class="inquiry-brief-toolbar">
         <div id="inquiry-brief-meta" class="inquiry-brief-meta"></div>
         <div id="inquiry-brief-status" class="inquiry-brief-status"></div>
+        <button type="button" class="btn btn-secondary" id="inquiry-technical-view-btn" style="display:none;" aria-expanded="false">Technical brief</button>
       </div>
       <div id="inquiry-version-list" class="inquiry-version-list"></div>
+
+      <div class="inquiry-block" id="inquiry-humanized-brief-block" style="display:none;">
+        <div class="inquiry-block-label">Readable Brief</div>
+        <div id="inquiry-humanized-answer" class="inquiry-summary"></div>
+        <div id="inquiry-humanized-sections" class="inquiry-findings"></div>
+      </div>
+
+      <div id="inquiry-technical-brief-block" style="display:none;">
+        <div class="inquiry-block">
+          <div class="inquiry-block-label">Technical brief</div>
+          <div class="inquiry-subtle">Canonical structured view with full findings, evidence references, and limits.</div>
+        </div>
 
       <div class="inquiry-block">
         <div class="inquiry-block-label">Summary</div>
@@ -227,6 +240,7 @@
         <div class="inquiry-block-label">Next Questions</div>
         <ul id="inquiry-next-questions" class="inquiry-next-questions"></ul>
       </div>
+      </div>
 
       <div id="inquiry-brief-alert" class="auth-status" style="display:none;"></div>
     </div>
@@ -267,6 +281,7 @@
       brief: null,
       refineInquiryId: null,
       inquiryCache: new Map(),
+      technicalViewOpen: false,
     };
 
     const loginHint = document.getElementById('inquiry-login-hint');
@@ -296,7 +311,12 @@
     const briefContent = document.getElementById('inquiry-brief-content');
     const briefMeta = document.getElementById('inquiry-brief-meta');
     const briefStatus = document.getElementById('inquiry-brief-status');
+    const technicalViewBtn = document.getElementById('inquiry-technical-view-btn');
+    const technicalBriefBlock = document.getElementById('inquiry-technical-brief-block');
     const versionList = document.getElementById('inquiry-version-list');
+    const humanizedBriefBlock = document.getElementById('inquiry-humanized-brief-block');
+    const humanizedAnswerEl = document.getElementById('inquiry-humanized-answer');
+    const humanizedSectionsEl = document.getElementById('inquiry-humanized-sections');
     const briefSummary = document.getElementById('inquiry-summary');
     const directAnswerEl = document.getElementById('inquiry-direct-answer');
     const directAnswerNoteEl = document.getElementById('inquiry-direct-answer-note');
@@ -1252,6 +1272,87 @@
       });
     };
 
+    const setTechnicalView = (open) => {
+      state.technicalViewOpen = Boolean(open);
+      if (technicalBriefBlock) {
+        technicalBriefBlock.style.display = state.technicalViewOpen ? 'block' : 'none';
+      }
+      if (technicalViewBtn) {
+        technicalViewBtn.textContent = state.technicalViewOpen ? 'Hide technical brief' : 'Technical brief';
+        technicalViewBtn.setAttribute('aria-expanded', state.technicalViewOpen ? 'true' : 'false');
+      }
+    };
+
+    const renderHumanizedBrief = (brief) => {
+      const humanizedBrief = brief?.humanized_brief || null;
+      const technicalViewAvailable = Boolean(humanizedBrief?.metadata?.technical_view_available);
+      technicalViewBtn.style.display = technicalViewAvailable ? 'inline-flex' : 'none';
+      if (!humanizedBrief) {
+        humanizedBriefBlock.style.display = 'none';
+        humanizedAnswerEl.textContent = '';
+        humanizedSectionsEl.innerHTML = '';
+        setTechnicalView(true);
+        return;
+      }
+      humanizedBriefBlock.style.display = 'block';
+      const answer = humanizedBrief.answer || {};
+      const answerText = String(answer.text || '').trim() || 'No humanized summary generated.';
+      const answerFindingIds = Array.isArray(answer.source_finding_ids) ? answer.source_finding_ids.map(String).filter(Boolean) : [];
+      const answerLimitationIds = Array.isArray(answer.source_limitation_ids) ? answer.source_limitation_ids.map(String).filter(Boolean) : [];
+      humanizedAnswerEl.innerHTML = `
+        <div class="inquiry-humanized-answer-text">${answerText}</div>
+        <div class="inquiry-humanized-answer-meta">Answerability and confidence remain canonical in the blocks below.</div>
+        <div class="inquiry-humanized-trace">Source finding IDs: ${answerFindingIds.length ? answerFindingIds.join(', ') : 'none'} · Source limitation IDs: ${answerLimitationIds.length ? answerLimitationIds.join(', ') : 'none'}</div>
+      `;
+      humanizedSectionsEl.innerHTML = '';
+      const sections = Array.isArray(humanizedBrief.sections) ? humanizedBrief.sections : [];
+      sections.forEach((section) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'inquiry-humanized-section';
+        const title = document.createElement('div');
+        title.className = 'inquiry-block-label';
+        title.textContent = section.title || section.section_id || 'Section';
+        wrap.appendChild(title);
+        const blocks = Array.isArray(section.blocks) ? section.blocks : [];
+        if (!blocks.length) {
+          const empty = document.createElement('div');
+          empty.className = 'inquiry-empty-inline';
+          empty.textContent = 'No readable blocks available.';
+          wrap.appendChild(empty);
+        } else {
+          blocks.forEach((block) => {
+            const row = document.createElement('div');
+            row.className = 'inquiry-finding';
+            const blockText = String(block.text || '').trim() || 'No humanized block text available.';
+            const confidence = String(block.confidence_label || '').trim();
+            const findingIds = Array.isArray(block.source_finding_ids) ? block.source_finding_ids.map(String).filter(Boolean) : [];
+            const limitationIds = Array.isArray(block.source_limitation_ids) ? block.source_limitation_ids.map(String).filter(Boolean) : [];
+            const groupedEvidence = groupEvidenceByDomain(Array.isArray(block.evidence_refs) ? block.evidence_refs : []);
+            const evidenceHtml = groupedEvidence.map(([evidenceDomain, refs]) => {
+              const refsList = refs.map((ref) => `<li>${evidenceText(ref)}</li>`).join('');
+              return `
+                <div class="inquiry-evidence-domain">
+                  <div class="inquiry-evidence-domain-name">${labelForDomain(evidenceDomain)}</div>
+                  <ul class="inquiry-evidence-list">${refsList || '<li>No evidence refs.</li>'}</ul>
+                </div>
+              `;
+            }).join('');
+            row.innerHTML = `
+              <div class="inquiry-finding-head">
+                <div class="inquiry-finding-claim">${blockText}</div>
+                ${confidence ? `<span class="${confidenceClass(confidence)}">${confidenceText(confidence)}</span>` : '<span class="inquiry-label inquiry-label--neutral">Context block</span>'}
+              </div>
+              <div class="inquiry-humanized-trace">Source finding IDs: ${findingIds.length ? findingIds.join(', ') : 'none'} · Source limitation IDs: ${limitationIds.length ? limitationIds.join(', ') : 'none'}</div>
+              <div class="inquiry-finding-evidence">${evidenceHtml || '<div class="inquiry-empty-inline">No evidence refs.</div>'}</div>
+            `;
+            wrap.appendChild(row);
+          });
+        }
+        humanizedSectionsEl.appendChild(wrap);
+      });
+      setTechnicalView(!technicalViewAvailable);
+    };
+
     const renderBrief = (brief, meta = {}) => {
       state.brief = brief;
       briefEmpty.style.display = 'none';
@@ -1261,6 +1362,7 @@
       const temporalFindings = findings.filter((finding) => isTimelineFinding(finding));
       const nonTemporalFindings = findings.filter((finding) => !isTimelineFinding(finding));
       renderBriefStatus(findings);
+      renderHumanizedBrief(brief);
       renderDirectAnswer(brief);
       renderAnswerability(brief);
       renderTimelineMetadata(brief, temporalFindings);
@@ -1665,6 +1767,10 @@
         }
         hydrateFormFromInquiry(state.selectedInquiry);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      technicalViewBtn.addEventListener('click', () => {
+        setTechnicalView(!state.technicalViewOpen);
       });
 
       window.addEventListener('lifeos:auth-changed', (e) => {

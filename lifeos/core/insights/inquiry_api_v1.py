@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryRefineRequest
 from lifeos.core.insights.inquiry_service import (
     INQUIRY_READ_CACHE_SCOPE,
+    _serialize_brief_payload,
     create_inquiry,
     get_inquiry,
     list_inquiries,
@@ -62,6 +63,10 @@ def _labels_from_create_payload(payload: dict[str, object]) -> dict[str, object]
     )
 
 
+def _is_truthy(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 @api_v1_inquiry_bp.post("")
 @api_v1_inquiry_bp.post("/")
 @jwt_required()
@@ -111,7 +116,7 @@ def create_inquiry_v1():
                 "text": inquiry.user_input_context or "",
             },
         },
-        "latest_brief": version.brief_payload,
+        "latest_brief": _serialize_brief_payload(version.brief_payload, brief_hash=version.brief_hash),
     }
     return jsonify(response), 201 if not deduped else 200
 
@@ -152,7 +157,11 @@ def get_inquiry_v1(inquiry_id: int):
         return _feature_disabled_response()
 
     user_id = int(get_jwt_identity())
-    payload = get_inquiry(user_id, inquiry_id)
+    payload = get_inquiry(
+        user_id,
+        inquiry_id,
+        technical_view_expanded=_is_truthy(request.args.get("technical_view")),
+    )
     if payload is None:
         record_inquiry_error("detail", "not_found", **_error_metric_labels())
         return jsonify({"ok": False, "error": "not_found"}), 404
@@ -199,6 +208,6 @@ def refine_inquiry_v1(inquiry_id: int):
             "inquiry_id": inquiry.id,
             "version_id": version.id,
             "version_number": version.version_number,
-            "brief": version.brief_payload,
+            "brief": _serialize_brief_payload(version.brief_payload, brief_hash=version.brief_hash),
         }
     )

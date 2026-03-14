@@ -63,6 +63,25 @@ REQUIRED_METRICS = [
     "lifeos_inquiry_answerability_by_domain_total",
     "lifeos_inquiry_limitation_redundancy_removed_total",
     "lifeos_inquiry_limitation_redundancy_removed_by_domain_total",
+    "lifeos_inquiry_humanization_render_total",
+    "lifeos_inquiry_humanization_render_by_domain_total",
+    "lifeos_inquiry_humanization_render_latency_seconds_bucket",
+    "lifeos_inquiry_humanization_render_latency_seconds_by_domain_bucket",
+    "lifeos_inquiry_humanization_failure_total",
+    "lifeos_inquiry_humanization_failure_by_domain_total",
+    "lifeos_inquiry_humanization_fallback_total",
+    "lifeos_inquiry_humanization_fallback_by_domain_total",
+    "lifeos_inquiry_humanization_equivalence_violation_total",
+    "lifeos_inquiry_humanization_equivalence_violation_by_domain_total",
+    "lifeos_inquiry_humanized_output_total",
+    "lifeos_inquiry_humanized_output_by_domain_total",
+    "lifeos_inquiry_humanized_view_total",
+    "lifeos_inquiry_humanized_view_by_domain_total",
+    "lifeos_inquiry_technical_brief_expanded_total",
+    "lifeos_inquiry_technical_brief_expanded_by_domain_total",
+    "lifeos_inquiry_refine_after_humanized_view_total",
+    "lifeos_inquiry_refine_after_humanized_view_by_domain_total",
+    "lifeos_inquiry_humanization_version_total",
     "lifeos_phase6_inquiry_migration_mismatch",
 ]
 
@@ -115,6 +134,7 @@ def test_phase6_metrics_exposed_on_metrics_endpoint(client):
 
 
 def test_phase6_metrics_increment_on_inquiry_flow(app, client):
+    app.config["ENABLE_PHASE10_INQUIRY_HUMANIZATION"] = True
     with app.app_context():
         user, tokens = _user_tokens("phase6-ops@example.com")
         db.session.add(
@@ -143,7 +163,7 @@ def test_phase6_metrics_increment_on_inquiry_flow(app, client):
     assert create_resp.status_code == 201
     inquiry_id = create_resp.get_json()["inquiry_id"]
 
-    detail_resp = client.get(f"/api/v1/inquiries/{inquiry_id}", headers=headers)
+    detail_resp = client.get(f"/api/v1/inquiries/{inquiry_id}?technical_view=1", headers=headers)
     assert detail_resp.status_code == 200
 
     refine_resp = client.post(
@@ -190,6 +210,19 @@ def test_phase6_metrics_increment_on_inquiry_flow(app, client):
         _metric_value_for_label(payload, "lifeos_inquiry_answerability_by_domain_total", "domain", "finance") or 0.0
     ) >= 1.0
     assert (_metric_value(payload, "lifeos_inquiry_limitation_redundancy_removed_total") or 0.0) >= 0.0
+    assert (_metric_value(payload, "lifeos_inquiry_humanization_render_total") or 0.0) >= 1.0
+    assert (
+        _metric_value_for_label(payload, "lifeos_inquiry_humanization_render_by_domain_total", "domain", "finance")
+        or 0.0
+    ) >= 1.0
+    humanization_latency_count = _metric_value(payload, "lifeos_inquiry_humanization_render_latency_seconds_count")
+    assert humanization_latency_count is not None
+    assert humanization_latency_count >= 1.0
+    assert (_metric_value(payload, "lifeos_inquiry_humanized_output_total") or 0.0) >= 1.0
+    assert (_metric_value(payload, "lifeos_inquiry_humanized_view_total") or 0.0) >= 1.0
+    assert (_metric_value(payload, "lifeos_inquiry_technical_brief_expanded_total") or 0.0) >= 1.0
+    assert (_metric_value(payload, "lifeos_inquiry_refine_after_humanized_view_total") or 0.0) >= 1.0
+    assert (_metric_sum(payload, "lifeos_inquiry_humanization_version_total") or 0.0) >= 1.0
 
     generation_hist_count = _metric_value(payload, "lifeos_inquiry_generation_latency_seconds_count")
     assert generation_hist_count is not None
@@ -388,6 +421,20 @@ def test_phase7_alert_rule_coverage_exists():
         "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio",
         "lifeos:inquiry_productization_replay_mismatch_count",
         "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile",
+        "lifeos:inquiry_humanization_render_latency_p95:seconds",
+        "lifeos:inquiry_humanization_render_latency_p95_by_domain_profile:seconds",
+        "lifeos:inquiry_humanization_failure_rate:ratio",
+        "lifeos:inquiry_humanization_failure_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_humanization_fallback_rate:ratio",
+        "lifeos:inquiry_humanization_fallback_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_humanization_equivalence_violation_count",
+        "lifeos:inquiry_humanization_equivalence_violation_count_by_domain_profile",
+        "lifeos:inquiry_humanized_output_presence_rate:ratio",
+        "lifeos:inquiry_humanized_output_presence_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_technical_brief_expansion_rate:ratio",
+        "lifeos:inquiry_technical_brief_expansion_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_refine_after_humanized_view_rate:ratio",
+        "lifeos:inquiry_refine_after_humanized_view_rate_by_domain_profile:ratio",
         "lifeos:timeline_profile_usage_rate_by_profile:per_second",
         "lifeos:timeline_generation_latency_p95_by_profile:seconds",
         "lifeos:timeline_error_rate_by_profile:ratio",
@@ -424,6 +471,12 @@ def test_phase7_alert_rule_coverage_exists():
         "Phase81WeakAnswerRateHigh",
         "Phase81DirectAnswerPresenceLow",
         "Phase81ProductizationReplayMismatchDetected",
+        "Phase10HumanizationRenderLatencyHigh",
+        "Phase10HumanizationFailureRateHigh",
+        "Phase10HumanizationFallbackRateHigh",
+        "Phase10HumanizationEquivalenceViolationDetected",
+        "Phase10HumanizedOutputPresenceLow",
+        "Phase10HumanizationVersionUnexpected",
         "Phase9TimelineGenerationLatencyHigh",
         "Phase9TimelineErrorRateHigh",
         "Phase9TimelineInsufficiencyRateHigh",
@@ -436,6 +489,7 @@ def test_phase7_alert_rule_coverage_exists():
         'domain=~"finance|habits|projects|skills|calendar|finance\\\\+habits|projects\\\\+skills|calendar\\\\+projects"',
         'phase: "8.1"',
         'phase: "9"',
+        'phase: "10"',
     )
     for token in required_tokens:
         assert token in payload
@@ -504,6 +558,14 @@ def test_phase8_rollout_scripts_include_pair_controls():
         "PHASE9_CANARY_MAX_LATENCY_P95",
         "PHASE9_CANARY_MAX_BLOCKED_CLAIMS_RATE",
         "PHASE9_CANARY_MAX_REPLAY_MISMATCH_COUNT",
+        "PHASE10_HUMANIZATION_ENABLED",
+        "PHASE10_EXPECT_HUMANIZATION_VERSION",
+        "PHASE10_CANARY_PROFILE",
+        "PHASE10_CANARY_MAX_FALLBACK_RATE",
+        "PHASE10_CANARY_MAX_FAILURE_RATE",
+        "PHASE10_CANARY_MAX_LATENCY_P95",
+        "PHASE10_CANARY_MAX_EQUIVALENCE_VIOLATION_COUNT",
+        "PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE",
         "lifeos_inquiry_blocked_claims_total",
         "lifeos_inquiry_replay_mismatch_total",
         "lifeos_inquiry_productization_total",
@@ -515,6 +577,20 @@ def test_phase8_rollout_scripts_include_pair_controls():
         "lifeos:inquiry_weak_answer_rate_by_domain_profile:ratio",
         "lifeos:inquiry_productization_error_rate_by_domain_profile:ratio",
         "lifeos:inquiry_productization_replay_mismatch_count_by_domain_profile",
+        "lifeos_inquiry_humanization_render_total",
+        "lifeos_inquiry_humanization_fallback_total",
+        "lifeos_inquiry_humanization_equivalence_violation_total",
+        "lifeos_inquiry_humanized_output_total",
+        "lifeos_inquiry_technical_brief_expanded_total",
+        "lifeos_inquiry_refine_after_humanized_view_total",
+        "lifeos_inquiry_humanization_version_total",
+        "lifeos:inquiry_humanization_render_latency_p95_by_domain_profile:seconds",
+        "lifeos:inquiry_humanization_failure_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_humanization_fallback_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_humanization_equivalence_violation_count_by_domain_profile",
+        "lifeos:inquiry_humanized_output_presence_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_technical_brief_expansion_rate_by_domain_profile:ratio",
+        "lifeos:inquiry_refine_after_humanized_view_rate_by_domain_profile:ratio",
         "lifeos_timeline_profile_usage_total",
         "lifeos_timeline_generation_latency_seconds_bucket",
         "lifeos_timeline_insufficiency_total",
@@ -557,6 +633,14 @@ def test_phase8_rollout_scripts_include_pair_controls():
     assert "PHASE9_EXPECTED_PROFILES" in phase9_payload
     assert "phase6_inquiry_rollout_check.sh" in phase9_payload
 
+    phase10_script = (
+        Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "phase10_humanization_rollout_check.sh"
+    ).resolve()
+    phase10_payload = phase10_script.read_text(encoding="utf-8")
+    assert "PHASE10_HUMANIZATION_ENABLED" in phase10_payload
+    assert "PHASE10_EXPECT_HUMANIZATION_VERSION" in phase10_payload
+    assert "phase6_inquiry_rollout_check.sh" in phase10_payload
+
     snapshot_script = (
         Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "phase8_1_inquiry_productization_snapshot.sh"
     ).resolve()
@@ -572,6 +656,14 @@ def test_phase8_rollout_scripts_include_pair_controls():
     assert "lifeos:timeline_output_presence_rate:ratio" in phase9_snapshot_payload
     assert "lifeos:timeline_generation_latency_p95_by_profile:seconds" in phase9_snapshot_payload
     assert "lifeos:timeline_replay_mismatch_count_by_profile" in phase9_snapshot_payload
+
+    phase10_snapshot_script = (
+        Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "phase10_humanization_snapshot.sh"
+    ).resolve()
+    phase10_snapshot_payload = phase10_snapshot_script.read_text(encoding="utf-8")
+    assert "lifeos:inquiry_humanization_render_latency_p95:seconds" in phase10_snapshot_payload
+    assert "lifeos:inquiry_humanization_failure_rate:ratio" in phase10_snapshot_payload
+    assert "lifeos:inquiry_humanization_fallback_rate:ratio" in phase10_snapshot_payload
 
 
 def test_phase81_ops_runbook_exists_with_rollout_controls():
@@ -620,6 +712,39 @@ def test_phase9_ops_runbook_exists_with_rollout_controls():
         "Phase9TimelineProfileVersionUnexpected",
         "phase9_timeline_rollout_check.sh",
         "phase9_timeline_snapshot.sh",
+    )
+    for token in required_tokens:
+        assert token in payload
+
+
+def test_phase10_ops_runbook_exists_with_rollout_controls():
+    runbook_path = Path(__file__).resolve().parents[1] / "docs" / "ops" / "phase_10_insight_humanization_ops.md"
+    payload = runbook_path.read_text(encoding="utf-8")
+    required_tokens = (
+        "ENABLE_PHASE10_INQUIRY_HUMANIZATION",
+        "PHASE10_HUMANIZATION_ENABLED",
+        "PHASE10_EXPECT_HUMANIZATION_VERSION",
+        "PHASE10_CANARY_PROFILE",
+        "PHASE10_CANARY_MAX_FALLBACK_RATE",
+        "PHASE10_CANARY_MAX_FAILURE_RATE",
+        "PHASE10_CANARY_MAX_LATENCY_P95",
+        "PHASE10_CANARY_MAX_EQUIVALENCE_VIOLATION_COUNT",
+        "PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE",
+        "lifeos:inquiry_humanization_render_latency_p95:seconds",
+        "lifeos:inquiry_humanization_failure_rate:ratio",
+        "lifeos:inquiry_humanization_fallback_rate:ratio",
+        "lifeos:inquiry_humanization_equivalence_violation_count",
+        "lifeos:inquiry_humanized_output_presence_rate:ratio",
+        "lifeos:inquiry_technical_brief_expansion_rate:ratio",
+        "lifeos:inquiry_refine_after_humanized_view_rate:ratio",
+        "Phase10HumanizationRenderLatencyHigh",
+        "Phase10HumanizationFailureRateHigh",
+        "Phase10HumanizationFallbackRateHigh",
+        "Phase10HumanizationEquivalenceViolationDetected",
+        "Phase10HumanizedOutputPresenceLow",
+        "Phase10HumanizationVersionUnexpected",
+        "phase10_humanization_rollout_check.sh",
+        "phase10_humanization_snapshot.sh",
     )
     for token in required_tokens:
         assert token in payload
