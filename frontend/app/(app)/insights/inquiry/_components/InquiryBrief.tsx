@@ -54,7 +54,7 @@ function FindingCard({ finding, domain }: { finding: BriefFinding; domain: strin
   const variant = confidenceVariant(finding.confidence_label ?? '')
   const grouped = groupByDomain(finding.evidence_refs ?? [])
   return (
-    <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+    <div className="rounded-xl bg-white/40 p-3.5 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 flex-1">
           {finding.finding_category && (
@@ -90,7 +90,7 @@ function TimelineFindingCard({ finding }: { finding: BriefFinding }) {
     || !grouped.length
 
   return (
-    <div className={`rounded-lg border p-3 space-y-2 ${isInsufficient ? 'border-amber-200 bg-amber-50/40' : 'border-border bg-card'}`}>
+    <div className={`rounded-xl p-3.5 space-y-2 ${isInsufficient ? 'bg-amber-50/50' : 'bg-white/40'}`}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm flex-1">{finding.claim || 'No temporal claim provided.'}</p>
         <Badge label={confidenceText(finding.confidence_label ?? '')} variant={variant} />
@@ -125,7 +125,7 @@ function HumanizedSection({ section }: { section: HumanizedBriefSection }) {
           const findingIds = block.source_finding_ids ?? []
           const limitIds = block.source_limitation_ids ?? []
           return (
-            <div key={i} className="rounded-lg border border-border bg-card p-3 space-y-2">
+            <div key={i} className="rounded-xl bg-white/40 p-3.5 space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm flex-1">{block.text || 'No humanized block text.'}</p>
                 <Badge
@@ -181,7 +181,7 @@ export function InquiryBrief({
 
   if (!brief) {
     return (
-      <div className="bg-card rounded-xl border border-border p-5">
+      <div className="glass rounded-2xl p-6">
         <div>
           <h3 className="font-semibold">Generated Brief</h3>
           <p className="text-sm text-muted-foreground mt-0.5">Summary first, then evidence, then limits.</p>
@@ -223,7 +223,7 @@ export function InquiryBrief({
   const timelineAllowed = timelineScopeAllowed(brief)
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+    <div className="glass rounded-2xl p-6 space-y-5">
       {/* Header */}
       <div>
         <h3 className="font-semibold">Generated Brief</h3>
@@ -281,7 +281,7 @@ export function InquiryBrief({
       {humanizedBrief && (
         <section className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Readable Brief</p>
-          <div className="bg-primary/5 rounded-lg p-4 space-y-2">
+          <div className="bg-white/50 rounded-xl p-5 space-y-2">
             <p className="text-sm font-medium">{humanizedBrief.answer?.text || 'No humanized summary generated.'}</p>
             <p className="text-xs text-muted-foreground">Answerability and confidence remain canonical in the blocks below.</p>
             <p className="text-xs text-muted-foreground">
@@ -322,7 +322,7 @@ export function InquiryBrief({
               placeholder="Optional feedback note"
               value={feedbackNote}
               onChange={(e) => setFeedbackNote(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
           </div>
           {feedbackStatus?.text && (

@@ -203,32 +203,31 @@ export default function InquiryPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <div className="space-y-8">
 
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Inquiry</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Scope a question to a domain and timeframe. Evidence-backed briefs only.
-          </p>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Inquiry</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Scope a question to a domain and timeframe. Evidence-backed briefs only.
+        </p>
+      </div>
+
+      {/* Alpha readiness banner */}
+      {alphaEnabled && !readinessReady && (
+        <div className="rounded-xl bg-amber-50/80 backdrop-blur-sm px-5 py-3.5 text-sm text-amber-800 border border-amber-200/50">
+          Data readiness not met.{' '}
+          <a href="/insights/data" className="underline hover:no-underline font-medium">
+            Check Data Readiness
+          </a>{' '}
+          for next steps before generating a brief.
         </div>
+      )}
 
-        {/* Alpha readiness banner */}
-        {alphaEnabled && !readinessReady && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Data readiness not met.{' '}
-            <a href="/insights/data" className="underline hover:no-underline font-medium">
-              Check Data Readiness
-            </a>{' '}
-            for next steps before generating a brief.
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-start">
-          {/* Left column: form + history */}
-          <div className="space-y-5">
-            <InquiryForm
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-start">
+        {/* Left column: form + history */}
+        <div className="space-y-6">
+          <InquiryForm
               domains={domains}
               crossDomainPairs={crossDomainPairs}
               readinessReady={readinessReady}
@@ -252,7 +251,7 @@ export default function InquiryPage() {
           {/* Right column: brief */}
           <div>
             {mutation.isPending ? (
-              <div className="bg-card rounded-xl border border-border p-8 text-center">
+              <div className="glass rounded-2xl p-10 text-center">
                 <div className="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
                 <p className="text-sm text-muted-foreground">
                   {refineTarget ? 'Refining brief…' : 'Generating brief…'}
@@ -274,6 +273,5 @@ export default function InquiryPage() {
           </div>
         </div>
       </div>
-    </div>
   )
 }

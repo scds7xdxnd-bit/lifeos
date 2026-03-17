@@ -3,10 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 type View = 'login' | 'register'
 
@@ -40,98 +38,102 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-sm shadow-lg">
-      <CardHeader className="space-y-1">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xl font-semibold text-primary">LifeOS</span>
-        </div>
-        <CardTitle className="text-xl">
-          {view === 'login' ? 'Sign in' : 'Create account'}
-        </CardTitle>
-        <CardDescription>
+    <div className="w-full max-w-sm space-y-10">
+      {/* Brand */}
+      <div className="text-center space-y-2">
+        <h1
+          className="text-4xl font-bold tracking-tight"
+          style={{ fontFamily: 'var(--font-serif)', letterSpacing: '-0.03em' }}
+        >
+          LifeOS
+        </h1>
+        <p className="text-muted-foreground text-sm">
           {view === 'login'
-            ? 'Enter your email and password to continue.'
+            ? 'Your life, clearly.'
             : 'Private alpha — invite token required.'}
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
 
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete={view === 'login' ? 'current-password' : 'new-password'}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          {view === 'register' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="invite_token">Invite token</Label>
-              <Input
-                id="invite_token"
-                type="text"
-                value={inviteToken}
-                onChange={(e) => setInviteToken(e.target.value)}
-              />
-            </div>
-          )}
-
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting
-              ? 'Please wait…'
-              : view === 'login'
-              ? 'Sign in'
-              : 'Create account'}
-          </Button>
-        </form>
-
-        <div className="mt-4 text-center text-sm text-muted-foreground">
-          {view === 'login' ? (
-            <>
-              No account?{' '}
-              <button
-                type="button"
-                onClick={() => { setView('register'); setError(null) }}
-                className="text-primary hover:underline"
-              >
-                Register
-              </button>
-            </>
-          ) : (
-            <>
-              Have an account?{' '}
-              <button
-                type="button"
-                onClick={() => { setView('login'); setError(null) }}
-                className="text-primary hover:underline"
-              >
-                Sign in
-              </button>
-            </>
-          )}
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-xs text-muted-foreground">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete={view === 'login' ? 'current-password' : 'new-password'}
+            required
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        {view === 'register' && (
+          <div className="space-y-2">
+            <Label htmlFor="invite_token" className="text-xs text-muted-foreground">Invite token</Label>
+            <Input
+              id="invite_token"
+              type="text"
+              placeholder="Paste your invite token"
+              value={inviteToken}
+              onChange={(e) => setInviteToken(e.target.value)}
+            />
+          </div>
+        )}
+
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
+
+        <button type="submit" className="glass-btn" disabled={isSubmitting}>
+          {isSubmitting
+            ? 'Please wait…'
+            : view === 'login'
+            ? 'Continue with Email'
+            : 'Create Account'}
+        </button>
+      </form>
+
+      {/* Toggle */}
+      <p className="text-center text-sm text-muted-foreground">
+        {view === 'login' ? (
+          <>
+            No account?{' '}
+            <button
+              type="button"
+              onClick={() => { setView('register'); setError(null) }}
+              className="font-medium text-foreground hover:underline underline-offset-2"
+            >
+              Register
+            </button>
+          </>
+        ) : (
+          <>
+            Have an account?{' '}
+            <button
+              type="button"
+              onClick={() => { setView('login'); setError(null) }}
+              className="font-medium text-foreground hover:underline underline-offset-2"
+            >
+              Sign in
+            </button>
+          </>
+        )}
+      </p>
+    </div>
   )
 }

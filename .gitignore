@@ -28,6 +28,9 @@ node_modules/
 dist/
 build/
 
+# Reference / design assets
+landing-page/reference/
+
 # Logs
 *.log
 

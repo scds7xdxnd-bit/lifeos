@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { CreateInquiryInput, Inquiry } from '@/lib/api/inquiries'
 import {
-  DOMAIN_CATALOG, CROSS_DOMAIN_PAIR_CATALOG,
+  CROSS_DOMAIN_PAIR_CATALOG,
   todayIso, shiftDateIso, datetimeLocalNow, pairLabel,
 } from './helpers'
 
@@ -182,20 +182,20 @@ export function InquiryForm({
     isSubmitting || (alphaEnabled && !readinessReady)
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+    <div className="glass rounded-2xl p-6 space-y-5">
       <div>
         <h3 className="font-semibold text-foreground">Inquiry Setup</h3>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <p className="text-sm text-muted-foreground mt-1">
           Define scope first. Generate only when the question and domain lens are explicit.
         </p>
       </div>
 
       {statusMessage?.text && (
-        <div className={`text-sm px-3 py-2 rounded-md ${
+        <div className={`text-sm px-4 py-2.5 rounded-xl ${
           statusMessage.tone === 'error' ? 'bg-destructive/10 text-destructive'
             : statusMessage.tone === 'success' ? 'bg-green-50 text-green-800'
             : statusMessage.tone === 'warning' ? 'bg-amber-50 text-amber-800'
-            : 'bg-secondary text-foreground'
+            : 'bg-white/40 text-foreground'
         }`}>
           {statusMessage.text}
         </div>
@@ -203,7 +203,7 @@ export function InquiryForm({
 
       <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
         {/* Question */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="inq-question">Question</Label>
           <textarea
             id="inq-question"
@@ -213,14 +213,14 @@ export function InquiryForm({
             placeholder="What exactly am I trying to understand right now?"
             value={form.question}
             onChange={(e) => dispatch({ type: 'SET', field: 'question', value: e.target.value })}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
           />
           <p className="text-xs text-muted-foreground text-right">{form.question.length}/500</p>
         </div>
 
         {/* Domain + Timeframe preset */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="inq-domain">Primary domain</Label>
             <select
               id="inq-domain"
@@ -228,7 +228,7 @@ export function InquiryForm({
               disabled={form.crossDomain}
               value={form.primaryDomain}
               onChange={(e) => dispatch({ type: 'SET', field: 'primaryDomain', value: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50"
             >
               <option value="">Select domain…</option>
               {domains.map((d) => (
@@ -236,13 +236,13 @@ export function InquiryForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="inq-preset">Timeframe</Label>
             <select
               id="inq-preset"
               value={form.timeframePreset}
               onChange={(e) => dispatch({ type: 'SET_PRESET', preset: e.target.value as FormState['timeframePreset'] })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
             >
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
@@ -254,7 +254,7 @@ export function InquiryForm({
 
         {/* Date range */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="inq-start">Start date</Label>
             <Input
               id="inq-start"
@@ -267,7 +267,7 @@ export function InquiryForm({
               }}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="inq-end">End date</Label>
             <Input
               id="inq-end"
@@ -283,7 +283,7 @@ export function InquiryForm({
         </div>
 
         {/* As-of */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="inq-asof">As of <span className="text-muted-foreground font-normal">(optional)</span></Label>
           <Input
             id="inq-asof"
@@ -296,7 +296,7 @@ export function InquiryForm({
 
         {/* Cross-domain */}
         <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2.5 cursor-pointer">
             <input
               type="checkbox"
               checked={form.crossDomain}
@@ -306,7 +306,7 @@ export function InquiryForm({
                   dispatch({ type: 'SET_PAIR', pairKey: crossDomainPairs[0].key, pairs: crossDomainPairs })
                 }
               }}
-              className="rounded border-input"
+              className="rounded-md border-white/40"
             />
             <span className="text-sm">Enable explicit cross-domain mode</span>
           </label>
@@ -317,14 +317,14 @@ export function InquiryForm({
 
         {/* Pair selector */}
         {form.crossDomain && crossDomainPairs.length > 0 && (
-          <div className="space-y-1.5 pl-4 border-l-2 border-primary/20">
+          <div className="space-y-2 pl-4 border-l-2 border-ring/20">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approved domain pair profile</p>
             <Label htmlFor="inq-pair">Domain pair</Label>
             <select
               id="inq-pair"
               value={form.pairKey}
               onChange={(e) => dispatch({ type: 'SET_PAIR', pairKey: e.target.value, pairs: crossDomainPairs })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
             >
               <option value="">Select approved pair…</option>
               {crossDomainPairs.map((p) => (
@@ -344,14 +344,14 @@ export function InquiryForm({
           <button
             type="button"
             onClick={() => dispatch({ type: 'SET', field: 'showContext', value: !form.showContext })}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
           >
             {form.showContext ? 'Hide optional context' : 'Add optional context'}
           </button>
         </div>
 
         {form.showContext && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="inq-context">Context <span className="text-muted-foreground font-normal">(not evidence)</span></Label>
             <textarea
               id="inq-context"
@@ -360,7 +360,7 @@ export function InquiryForm({
               placeholder="Optional framing context. This is not treated as factual evidence."
               value={form.contextText}
               onChange={(e) => dispatch({ type: 'SET', field: 'contextText', value: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
             <p className="text-xs text-muted-foreground">
               User context is displayed separately and not promoted to system evidence.
@@ -369,8 +369,8 @@ export function InquiryForm({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-1">
-          <Button type="submit" disabled={generateDisabled}>
+        <div className="flex items-center gap-3 pt-2">
+          <Button type="submit" size="lg" disabled={generateDisabled}>
             {isSubmitting
               ? refineTarget ? 'Refining…' : 'Generating…'
               : refineTarget ? 'Refine Brief' : 'Generate Brief'}
@@ -378,12 +378,12 @@ export function InquiryForm({
           <button
             type="button"
             onClick={handleReset}
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Reset setup
+            Reset
           </button>
           {refineTarget && (
-            <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded">
+            <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
               Refining selected inquiry
             </span>
           )}

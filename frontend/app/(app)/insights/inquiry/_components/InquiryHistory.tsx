@@ -20,11 +20,11 @@ export function InquiryHistory({
 }: InquiryHistoryProps) {
   if (isLoading) {
     return (
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="font-semibold text-foreground mb-3">Recent Inquiries</h3>
-        <div className="space-y-2">
+      <div className="glass rounded-2xl p-6">
+        <h3 className="font-semibold text-foreground mb-4">Recent Inquiries</h3>
+        <div className="space-y-2.5">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-muted/40 rounded-lg animate-pulse" />
+            <div key={i} className="h-16 bg-white/30 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -33,17 +33,17 @@ export function InquiryHistory({
 
   if (!items.length) {
     return (
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="font-semibold text-foreground mb-1">Recent Inquiries</h3>
+      <div className="glass rounded-2xl p-6">
+        <h3 className="font-semibold text-foreground mb-1.5">Recent Inquiries</h3>
         <p className="text-sm text-muted-foreground">No inquiries yet. Generate your first brief above.</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+    <div className="glass rounded-2xl p-6 space-y-4">
       <h3 className="font-semibold text-foreground">Recent Inquiries</h3>
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {items.map((inq) => {
           const isSelected = inq.id === selectedId
           const domainDisplay =
@@ -54,16 +54,16 @@ export function InquiryHistory({
           return (
             <li
               key={inq.id}
-              className={`rounded-lg border px-4 py-3 transition-colors ${
+              className={`rounded-xl px-4 py-3.5 transition-all ${
                 isSelected
-                  ? 'border-primary/40 bg-primary/5'
-                  : 'border-border bg-background hover:bg-muted/30'
+                  ? 'bg-white/70 shadow-sm'
+                  : 'bg-white/30 hover:bg-white/50'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">{inq.question}</p>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                     <span>{domainDisplay}</span>
                     <span>·</span>
                     <span>{inq.timeframe?.start} → {inq.timeframe?.end}</span>
@@ -81,10 +81,10 @@ export function InquiryHistory({
                   <button
                     type="button"
                     onClick={() => onView(inq)}
-                    className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                    className={`text-xs px-3 py-1.5 rounded-full transition-all ${
                       isSelected
-                        ? 'border-primary text-primary bg-primary/10'
-                        : 'border-border text-foreground hover:bg-muted/50'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-white/50 text-foreground hover:bg-white/70 border border-white/40'
                     }`}
                   >
                     View
@@ -92,7 +92,7 @@ export function InquiryHistory({
                   <button
                     type="button"
                     onClick={() => onRefine(inq)}
-                    className="text-xs px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-full bg-white/50 text-muted-foreground hover:text-foreground hover:bg-white/70 border border-white/40 transition-all"
                   >
                     Refine
                   </button>
