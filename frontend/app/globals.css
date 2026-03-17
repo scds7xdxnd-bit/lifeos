@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* LifeOS "Warm Clarity" design tokens — inspired by landing page */
+/* LifeOS "Warm Glass" design tokens — inspired by Fauna + landing page */
 @theme inline {
   --color-background:           var(--background);
   --color-foreground:           var(--foreground);
@@ -26,67 +26,68 @@
   --font-serif:                 var(--font-serif);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) * 1.6);
+  --radius-lg: calc(var(--radius) * 1.5);
+  --radius-xl: calc(var(--radius) * 2);
 }
 
 :root {
-  /* Backgrounds — warm off-white, matching landing page */
-  --background:        #F8F7F5;
+  /* Backgrounds — warm off-white */
+  --background:        #F4F2EE;
   --foreground:        #1A1A1A;
 
-  /* Cards / surfaces */
-  --card:              #FAFAF8;
+  /* Cards — translucent white for glass effect */
+  --card:              rgba(255, 255, 255, 0.72);
   --card-foreground:   #1A1A1A;
-  --popover:           #ffffff;
+  --popover:           rgba(255, 255, 255, 0.92);
   --popover-foreground: #1A1A1A;
 
-  /* Primary = near-black (same as landing page CTA buttons) */
+  /* Primary = near-black */
   --primary:           #1A1A1A;
   --primary-foreground: #ffffff;
 
   /* Secondary / muted — warm gray */
-  --secondary:         #EDEAE4;
+  --secondary:         rgba(0, 0, 0, 0.04);
   --secondary-foreground: #1A1A1A;
-  --muted:             #EDEAE4;
-  --muted-foreground:  #7A7469;
+  --muted:             rgba(0, 0, 0, 0.04);
+  --muted-foreground:  #8A847A;
 
   /* Accent = warm hover surface */
-  --accent:            #EDEAE4;
+  --accent:            rgba(0, 0, 0, 0.04);
   --accent-foreground: #1A1A1A;
 
   /* Destructive */
   --destructive:       #b54a36;
 
-  /* Borders & inputs */
-  --border:            rgba(0, 0, 0, 0.08);
-  --input:             rgba(0, 0, 0, 0.09);
+  /* Borders — nearly invisible, like Fauna */
+  --border:            rgba(0, 0, 0, 0.06);
+  --input:             rgba(0, 0, 0, 0.07);
   --ring:              #5C8A52;
 
-  /* Radius — 14px base, pill buttons use rounded-full */
-  --radius: 0.875rem;
+  /* Radius — 16px base for rounder cards */
+  --radius: 1rem;
 
   /* Serif font stack */
-  --font-serif: Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
 }
 
 .dark {
-  --background:        #141210;
+  --background:        #131210;
   --foreground:        #EAE8E4;
-  --card:              #1E1C1A;
+  --card:              rgba(255, 255, 255, 0.06);
   --card-foreground:   #EAE8E4;
-  --popover:           #1E1C1A;
+  --popover:           rgba(30, 28, 26, 0.92);
   --popover-foreground: #EAE8E4;
   --primary:           #EAE8E4;
   --primary-foreground: #1A1A1A;
-  --secondary:         #2A2724;
+  --secondary:         rgba(255, 255, 255, 0.06);
   --secondary-foreground: #EAE8E4;
-  --muted:             #2A2724;
+  --muted:             rgba(255, 255, 255, 0.06);
   --muted-foreground:  #8A8278;
-  --accent:            #2A2724;
+  --accent:            rgba(255, 255, 255, 0.06);
   --accent-foreground: #EAE8E4;
   --destructive:       #d4614b;
-  --border:            rgba(255, 255, 255, 0.08);
-  --input:             rgba(255, 255, 255, 0.10);
+  --border:            rgba(255, 255, 255, 0.07);
+  --input:             rgba(255, 255, 255, 0.08);
   --ring:              #7AB87A;
 }
 
@@ -106,16 +107,60 @@
   }
 }
 
-/* ── Smooth card hover — matches landing page card-hover ── */
+/* ── Glass surface — translucent frosted card ── */
+.glass {
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.50);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* ── Glass button — the distinctive Fauna style ── */
+.glass-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.50);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1A1A1A;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.18s ease, box-shadow 0.2s ease;
+}
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.75);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+.glass-btn:active {
+  transform: translateY(0px);
+}
+
+/* ── Card lift hover ── */
 .card-lift {
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 .card-lift:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.09);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
 }
 
-/* ── Pill button hover ── */
+/* ── Pill button hover (solid dark) ── */
 .btn-pill {
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }

@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { inquiriesApi, type ReadinessResult } from '@/lib/api/inquiries'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 const DOMAIN_LABELS: Record<string, string> = {
   calendar: 'Calendar',
@@ -40,131 +39,127 @@ export default function DataReadinessPage() {
   const alpha = data?.alpha
 
   return (
-    <div className="space-y-4">
-      {/* Header card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle>Data Readiness</CardTitle>
-              <CardDescription className="mt-1">
-                Check whether your visible alpha domains have enough recent records for inquiry.
-              </CardDescription>
-            </div>
-            <Link
-              href="/insights/inquiry"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Go to Inquiry
-            </Link>
-          </div>
-        </CardHeader>
-      </Card>
+    <div className="space-y-8">
+
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Data Readiness</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            Check whether your visible alpha domains have enough recent records for inquiry.
+          </p>
+        </div>
+        <Link
+          href="/insights/inquiry"
+          className="shrink-0 inline-flex items-center px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/85 transition-all shadow-sm"
+        >
+          Go to Inquiry
+        </Link>
+      </div>
 
       {/* Readiness status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Readiness Status</CardTitle>
-          <CardDescription>
+      <div className="glass rounded-2xl p-6 space-y-5">
+        <div>
+          <h2 className="font-semibold text-foreground">Readiness Status</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             This view is setup-focused only. It does not expose broad domain management.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoading && (
-            <p className="text-sm text-muted-foreground">Checking readiness…</p>
-          )}
-
-          {isError && (
-            <p className="text-sm text-destructive">Unable to load readiness.</p>
-          )}
-
-          {readiness && (
-            <>
-              <div className="space-y-1">
-                <p className={`text-sm font-medium ${readiness.ready ? 'text-green-700' : 'text-muted-foreground'}`}>
-                  {readiness.ready
-                    ? `Ready — data found in: ${readiness.ready_domains.map(domainLabel).join(', ') || 'configured domains'}.`
-                    : 'Not ready yet for full inquiry generation.'}
-                </p>
-                {readiness.next_step && (
-                  <p className="text-sm text-muted-foreground">{readiness.next_step}</p>
-                )}
-              </div>
-
-              {Object.keys(readiness.domain_event_counts).length > 0 && (
-                <ul className="space-y-1">
-                  {Object.entries(readiness.domain_event_counts)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([domain, count]) => (
-                      <li key={domain} className="text-sm text-muted-foreground">
-                        {domainLabel(domain)}: {count} recent records
-                      </li>
-                    ))}
-                </ul>
-              )}
-            </>
-          )}
-
-          <p className="text-xs text-muted-foreground">
-            Need help with readiness or setup?{' '}
-            <Link href="/insights/account-help" className="text-primary hover:underline">
-              View Account / Help
-            </Link>
-            .
           </p>
+        </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
-            {isFetching ? 'Refreshing…' : 'Refresh readiness'}
-          </Button>
-        </CardContent>
-      </Card>
+        {isLoading && (
+          <p className="text-sm text-muted-foreground">Checking readiness…</p>
+        )}
+
+        {isError && (
+          <p className="text-sm text-destructive">Unable to load readiness.</p>
+        )}
+
+        {readiness && (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <p className={`text-sm font-medium ${readiness.ready ? 'text-green-700' : 'text-muted-foreground'}`}>
+                {readiness.ready
+                  ? `Ready — data found in: ${readiness.ready_domains.map(domainLabel).join(', ') || 'configured domains'}.`
+                  : 'Not ready yet for full inquiry generation.'}
+              </p>
+              {readiness.next_step && (
+                <p className="text-sm text-muted-foreground">{readiness.next_step}</p>
+              )}
+            </div>
+
+            {Object.keys(readiness.domain_event_counts).length > 0 && (
+              <ul className="space-y-1.5">
+                {Object.entries(readiness.domain_event_counts)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([domain, count]) => (
+                    <li key={domain} className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-ring/40 shrink-0" />
+                      {domainLabel(domain)}: {count} recent records
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          Need help with readiness or setup?{' '}
+          <Link href="/insights/account-help" className="font-medium text-foreground hover:underline underline-offset-2">
+            View Account / Help
+          </Link>
+          .
+        </p>
+
+        <Button
+          variant="glass"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          {isFetching ? 'Refreshing…' : 'Refresh readiness'}
+        </Button>
+      </div>
 
       {/* Alpha scope */}
       {alpha && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Alpha Scope</CardTitle>
-            <CardDescription>
+        <div className="glass rounded-2xl p-6 space-y-5">
+          <div>
+            <h2 className="font-semibold text-foreground">Alpha Scope</h2>
+            <p className="text-sm text-muted-foreground mt-1">
               Only approved alpha domains and pair profiles are shown in this phase.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Visible domains
-              </p>
-              {alpha.visible_domains.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No visible alpha domains configured.</p>
-              ) : (
-                <ul className="space-y-0.5">
-                  {alpha.visible_domains.map((d) => (
-                    <li key={d} className="text-sm">{domainLabel(d)}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            </p>
+          </div>
 
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Visible cross-domain pairs
-              </p>
-              {alpha.enabled_pair_profiles.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No visible cross-domain pair profiles configured.</p>
-              ) : (
-                <ul className="space-y-0.5">
-                  {alpha.enabled_pair_profiles.map((p) => (
-                    <li key={p} className="text-sm">{pairLabel(p)}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Visible domains
+            </p>
+            {alpha.visible_domains.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No visible alpha domains configured.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {alpha.visible_domains.map((d) => (
+                  <span key={d} className="text-sm bg-white/40 px-3 py-1 rounded-full">{domainLabel(d)}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Visible cross-domain pairs
+            </p>
+            {alpha.enabled_pair_profiles.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No visible cross-domain pair profiles configured.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {alpha.enabled_pair_profiles.map((p) => (
+                  <span key={p} className="text-sm bg-white/40 px-3 py-1 rounded-full">{pairLabel(p)}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
