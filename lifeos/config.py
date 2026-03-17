@@ -265,8 +265,6 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Lax"
     JWT_COOKIE_SECURE = True
-    ENABLE_PHASE6_FOCUSED_INQUIRY = False
-    ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = False
     CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
 
 
