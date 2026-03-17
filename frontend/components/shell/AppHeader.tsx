@@ -6,7 +6,10 @@ import { useAuth } from '@/lib/auth/context'
 
 const NAV_LINKS = [
   { href: '/insights/inquiry', label: 'Inquiry' },
-  { href: '/insights/history', label: 'History' },
+  { href: '/calendar', label: 'Calendar' },
+  { href: '/habits', label: 'Habits' },
+  { href: '/skills', label: 'Skills' },
+  { href: '/projects', label: 'Projects' },
   { href: '/insights/data', label: 'Data' },
   { href: '/insights/account-help', label: 'Account' },
 ]
