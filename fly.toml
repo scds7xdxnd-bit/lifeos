@@ -1,0 +1,101 @@
+# fly.toml app configuration file generated for lifeos-black-pond-2352 on 2026-03-17T18:04:33+09:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'lifeos-black-pond-2352'
+primary_region = 'sin'
+
+[build]
+  dockerfile = 'deploy/Dockerfile'
+
+[deploy]
+  release_command = 'python -m flask --app lifeos.wsgi:app db upgrade head'
+  wait_timeout = '5m'
+
+[env]
+  ALPHA_ENABLED_CROSS_DOMAIN_PAIR_PROFILES = 'projects_calendar_v1,projects_skills_v1'
+  ALPHA_ENABLE_CALENDAR_SYNC = 'true'
+  ALPHA_ENABLE_HISTORY = 'true'
+  ALPHA_ENABLE_INQUIRY_FEEDBACK = 'true'
+  ALPHA_ENABLE_TECHNICAL_BRIEF = 'true'
+  ALPHA_HIDE_DOMAIN_CRUD = 'true'
+  ALPHA_INVITE_ONLY = 'true'
+  ALPHA_MAX_USERS = '30'
+  ALPHA_REQUIRE_DATA_READINESS = 'true'
+  ALPHA_VISIBLE_DOMAINS = 'calendar,habits,projects,skills'
+  APP_ENV = 'production'
+  BUILD_ID = 'fly-deploy'
+  CALENDAR_TIME_CANVAS_UI = 'false'
+  CALENDAR_VIEW_API_V2 = 'true'
+  ENABLE_INSIGHTS = 'true'
+  ENABLE_INTERPRETATION_OBLIGATION = 'false'
+  ENABLE_INTERPRETATION_RELATIONSHIP = 'true'
+  ENABLE_METRICS = 'true'
+  ENABLE_ML = 'true'
+  ENABLE_PHASE10_INQUIRY_HUMANIZATION = 'false'
+  ENABLE_PHASE5B_INSIGHTS = 'true'
+  ENABLE_PHASE6_FOCUSED_INQUIRY = 'false'
+  ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = 'false'
+  ENABLE_PHASE9_TIMELINE_INTELLIGENCE = 'false'
+  ENABLE_PRIVATE_ALPHA = 'false'
+  ENABLE_TIMELINE_INGESTION = 'true'
+  FLASK_APP = 'lifeos.wsgi'
+  GUNICORN_BIND = '0.0.0.0:8080'
+  GUNICORN_GRACEFUL_TIMEOUT = '30'
+  GUNICORN_LOGCONFIG = '/app/deploy/logging.conf'
+  GUNICORN_LOGLEVEL = 'info'
+  GUNICORN_MAX_REQUESTS = '1000'
+  GUNICORN_MAX_REQUESTS_JITTER = '100'
+  GUNICORN_PRELOAD = 'false'
+  GUNICORN_THREADS = '4'
+  GUNICORN_TIMEOUT = '60'
+  GUNICORN_WORKERS = '2'
+  MLSUGGESTER_MODEL_DIR = '/app/lifeos/ml_assets'
+  OUTBOX_BACKOFF_MULTIPLIER = '2'
+  OUTBOX_BACKOFF_SECONDS = '5'
+  OUTBOX_BATCH_SIZE = '50'
+  OUTBOX_MAX_ATTEMPTS = '5'
+  OUTBOX_POLL_INTERVAL = '5'
+  PHASE5B_INSIGHT_TYPES = ''
+  PHASE5B_RUN_INTERVAL = '300'
+  PHASE5B_RUN_LIMIT = '1000'
+  PHASE5B_RUN_SINCE_MINUTES = '1440'
+  PHASE6_INQUIRY_MIGRATION_HEAD = '20260314_private_alpha_feedback_linkage'
+  PHASE8_ENABLED_PAIR_PROFILES = ''
+  PHASE9_ENABLED_TIMELINE_PROFILES = ''
+  PYTHONPATH = '/app'
+  RATELIMIT_DEFAULT = '200/hour'
+  RATELIMIT_ENABLED = 'true'
+  RUN_MIGRATIONS = 'false'
+  STATIC_CACHE_MAX_AGE = '3600'
+  WORKER_LOGLEVEL = 'INFO'
+
+[processes]
+  web = 'gunicorn -c /app/deploy/gunicorn.conf.py lifeos.wsgi:app'
+  worker = 'python -m lifeos.lifeos_platform.worker.run'
+
+[http_service]
+  processes = ['web']
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = 'requests'
+    hard_limit = 200
+    soft_limit = 150
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
+  processes = ['web']
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 512
+  processes = ['worker']

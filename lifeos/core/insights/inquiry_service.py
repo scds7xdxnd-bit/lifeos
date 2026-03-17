@@ -23,7 +23,7 @@ from lifeos.core.insights.inquiry_humanization import (
 )
 from lifeos.core.insights.inquiry_productization import productize_inquiry_brief
 from lifeos.core.insights.inquiry_quality import evaluate_inquiry_brief_quality
-from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryRefineRequest
+from lifeos.core.insights.inquiry_schemas import InquiryCreateRequest, InquiryFeedbackRequest, InquiryRefineRequest
 from lifeos.core.insights.inquiry_strategies import (
     GENERIC_BRIEF_PROFILE,
     enforce_claim_guardrail,
@@ -32,9 +32,11 @@ from lifeos.core.insights.inquiry_strategies import (
 )
 from lifeos.core.insights.inquiry_strategies.base import DomainStrategyProfile
 from lifeos.core.insights.models import InquiryBriefVersion, InquiryRequest, InsightRecord
+from lifeos.core.insights.substrate_models import UserFeedbackEvent
 from lifeos.core.observability import (
     record_inquiry_blocked_claims,
     record_inquiry_created,
+    record_inquiry_feedback_submission,
     record_inquiry_generated,
     record_inquiry_humanization_equivalence_violation,
     record_inquiry_humanization_failure,
@@ -53,6 +55,18 @@ from lifeos.core.observability import (
     record_timeline_blocked_claims,
     record_timeline_generated,
     record_timeline_replay_mismatch,
+)
+from lifeos.core.private_alpha import (
+    AlphaGateError,
+    alpha_enabled,
+    alpha_history_enabled,
+    alpha_inquiry_feedback_enabled,
+    alpha_technical_brief_enabled,
+    enforce_alpha_inquiry_scope,
+    enforce_alpha_readiness,
+    inquiry_visible_in_alpha,
+    validate_alpha_feedback_surface,
+    validate_alpha_feedback_type,
 )
 from lifeos.core.read_cache import read_cache
 from lifeos.core.timeline.contracts import TimelineRequest as Phase9TimelineRequest
@@ -197,7 +211,9 @@ def _payload_hash(payload: dict) -> str:
 
 
 def _humanization_enabled() -> bool:
-    return bool(current_app.config.get("ENABLE_PHASE10_INQUIRY_HUMANIZATION", False)) if has_app_context() else False
+    if not has_app_context():
+        return False
+    return bool(current_app.config.get("ENABLE_PHASE10_INQUIRY_HUMANIZATION", False) or alpha_enabled())
 
 
 def _canonicalize_brief_payload(payload: dict) -> dict:
@@ -247,6 +263,8 @@ def _render_humanized_brief(
                 )
             )
         )
+        if isinstance(rendered.get("metadata"), dict):
+            rendered["metadata"]["technical_view_available"] = alpha_technical_brief_enabled()
     except Exception:
         if emit_metrics:
             record_inquiry_humanization_failure(**profile_labels)
@@ -833,26 +851,30 @@ def _assemble_brief(
             domains=scope.domains,
             as_of_ts=scope.as_of_ts,
         )
-        timeline_summary = assemble_timeline_summary(
-            Phase9TimelineRequest(
-                lens=scope.lens,
-                domains=tuple(scope.domains),
-                primary_domain=scope.primary_domain,
-                timeframe_start=scope.timeframe_start,
-                timeframe_end=scope.timeframe_end,
-                as_of_ts=scope.as_of_ts,
-                timezone_token=timezone_token,
-                profile=timeline_profile,
-                events_by_domain={domain: tuple(items) for domain, items in timeline_events.items()},
+        try:
+            timeline_summary = assemble_timeline_summary(
+                Phase9TimelineRequest(
+                    lens=scope.lens,
+                    domains=tuple(scope.domains),
+                    primary_domain=scope.primary_domain,
+                    timeframe_start=scope.timeframe_start,
+                    timeframe_end=scope.timeframe_end,
+                    as_of_ts=scope.as_of_ts,
+                    timezone_token=timezone_token,
+                    profile=timeline_profile,
+                    events_by_domain={domain: tuple(items) for domain, items in timeline_events.items()},
+                )
             )
-        )
-        timeline_findings = _timeline_findings(timeline_summary)
-        findings.extend(timeline_findings)
-        limits.extend(list(timeline_summary.limits))
-        domain_refine_guidance.extend(_timeline_refine_guidance(timeline_summary))
-        blocked_claim_count += int(timeline_summary.blocked_claim_count or 0)
-        for finding in timeline_findings:
-            provenance_refs.extend(list(finding.get("evidence_refs") or []))
+        except Exception:
+            timeline_summary = None
+        if timeline_summary is not None:
+            timeline_findings = _timeline_findings(timeline_summary)
+            findings.extend(timeline_findings)
+            limits.extend(list(timeline_summary.limits))
+            domain_refine_guidance.extend(_timeline_refine_guidance(timeline_summary))
+            blocked_claim_count += int(timeline_summary.blocked_claim_count or 0)
+            for finding in timeline_findings:
+                provenance_refs.extend(list(finding.get("evidence_refs") or []))
 
     findings = sorted(
         findings,
@@ -1000,6 +1022,12 @@ def _serialize_inquiry(inquiry: InquiryRequest, latest_version: InquiryBriefVers
         "last_version_number": inquiry.last_version_number,
         "latest_brief": _serialize_version(latest_version) if latest_version else None,
     }
+
+
+def _inquiry_visible_for_alpha(inquiry: InquiryRequest | None) -> bool:
+    if inquiry is None:
+        return False
+    return inquiry_visible_in_alpha(str(inquiry.lens or ""), list(inquiry.domains or []))
 
 
 def _brief_evidence_stats(brief_payload: dict) -> tuple[int, int]:
@@ -1198,6 +1226,8 @@ def _has_replay_mismatch(
 
 def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryRequest, InquiryBriefVersion, bool]:
     scope = _normalize_scope_from_create(data)
+    enforce_alpha_inquiry_scope(scope.lens, scope.domains)
+    enforce_alpha_readiness(user_id, as_of_ts=scope.as_of_ts)
     user = get_user(user_id)
     timezone_token = resolve_timezone_token(user.timezone if user else None)
     timeline_profile = _resolve_timeline_profile(scope)
@@ -1378,24 +1408,30 @@ def create_inquiry(user_id: int, data: InquiryCreateRequest) -> tuple[InquiryReq
 
 
 def list_inquiries(user_id: int, *, limit: int = 20, offset: int = 0) -> tuple[list[dict], int]:
-    total = InquiryRequest.query.filter_by(user_id=user_id).count()
+    if not alpha_history_enabled():
+        raise AlphaGateError("alpha_history_disabled")
     rows = (
         InquiryRequest.query.filter_by(user_id=user_id)
         .order_by(InquiryRequest.updated_at.desc(), InquiryRequest.id.desc())
-        .offset(offset)
-        .limit(limit)
         .all()
     )
     items: list[dict] = []
     for row in rows:
+        if alpha_enabled() and not _inquiry_visible_for_alpha(row):
+            continue
         latest = InquiryBriefVersion.query.filter_by(id=row.last_version_id, user_id=user_id).first()
         items.append(_serialize_inquiry(row, latest))
-    return items, total
+    total = len(items)
+    return items[offset : offset + limit], total
 
 
 def get_inquiry(user_id: int, inquiry_id: int, *, technical_view_expanded: bool = False) -> dict | None:
+    if not alpha_history_enabled():
+        return None
     inquiry = InquiryRequest.query.filter_by(id=inquiry_id, user_id=user_id).first()
     if not inquiry:
+        return None
+    if alpha_enabled() and not _inquiry_visible_for_alpha(inquiry):
         return None
     versions = (
         InquiryBriefVersion.query.filter_by(inquiry_id=inquiry.id, user_id=user_id)
@@ -1418,7 +1454,7 @@ def get_inquiry(user_id: int, inquiry_id: int, *, technical_view_expanded: bool 
     if _has_humanized_payload(latest_brief_payload, brief_hash=latest.brief_hash if latest else None):
         profile_labels = _brief_profile_metric_labels(latest_brief_payload)
         record_inquiry_humanized_view(**profile_labels)
-        if technical_view_expanded:
+        if technical_view_expanded and alpha_technical_brief_enabled():
             record_inquiry_technical_brief_expanded(**profile_labels)
     return payload
 
@@ -1429,8 +1465,12 @@ def refine_inquiry(
     inquiry = InquiryRequest.query.filter_by(id=inquiry_id, user_id=user_id).first()
     if not inquiry:
         raise ValueError("not_found")
+    if alpha_enabled() and not _inquiry_visible_for_alpha(inquiry):
+        raise ValueError("not_found")
 
     scope = _normalize_scope_from_refine(inquiry, data)
+    enforce_alpha_inquiry_scope(scope.lens, scope.domains)
+    enforce_alpha_readiness(user_id, as_of_ts=scope.as_of_ts)
     user = get_user(user_id)
     timezone_token = resolve_timezone_token(user.timezone if user else None)
     timeline_profile = _resolve_timeline_profile(scope)
@@ -1609,3 +1649,89 @@ def refine_inquiry(
         if timeline_labels is not None:
             record_timeline_replay_mismatch(**timeline_labels)
     return inquiry, version
+
+
+def record_inquiry_feedback(
+    user_id: int,
+    inquiry_id: int,
+    data: InquiryFeedbackRequest,
+) -> tuple[UserFeedbackEvent, bool]:
+    if not alpha_inquiry_feedback_enabled():
+        raise AlphaGateError("alpha_feedback_disabled")
+
+    inquiry = InquiryRequest.query.filter_by(id=inquiry_id, user_id=user_id).first()
+    if not inquiry:
+        raise ValueError("not_found")
+    if alpha_enabled() and not _inquiry_visible_for_alpha(inquiry):
+        raise ValueError("not_found")
+
+    version_query = InquiryBriefVersion.query.filter_by(inquiry_id=inquiry_id, user_id=user_id)
+    if data.version_id is not None:
+        version = version_query.filter_by(id=data.version_id).first()
+    else:
+        version = version_query.order_by(InquiryBriefVersion.version_number.desc()).first()
+    if version is None:
+        raise ValueError("not_found")
+
+    feedback_type = validate_alpha_feedback_type(data.feedback_type)
+    surface = validate_alpha_feedback_surface(data.surface)
+    humanized = _render_humanized_brief(version.brief_payload, brief_hash=version.brief_hash, emit_metrics=False) or {}
+    humanized_metadata = humanized.get("metadata") if isinstance(humanized, dict) else {}
+    humanization_version = (
+        str(humanized_metadata.get("humanization_version") or "") if isinstance(humanized_metadata, dict) else ""
+    ) or None
+    fingerprint = hashlib.sha256(
+        (f"inquiry-feedback:{user_id}:{inquiry_id}:{version.id}:{feedback_type}:{surface}:{version.brief_hash}").encode(
+            "utf-8"
+        )
+    ).hexdigest()
+    existing = UserFeedbackEvent.query.filter_by(user_id=user_id, fingerprint=fingerprint).first()
+    if existing is not None:
+        profile_labels = _brief_profile_metric_labels(version.brief_payload)
+        record_inquiry_feedback_submission(
+            feedback_type=feedback_type,
+            surface=surface,
+            deduped=True,
+            **profile_labels,
+        )
+        return existing, True
+
+    payload = {
+        "inquiry_id": inquiry.id,
+        "version_id": version.id,
+        "canonical_brief_hash": version.brief_hash,
+        "humanization_version": humanization_version,
+        "surface": surface,
+        "domains": list(inquiry.domains or []),
+        "note": data.note or "",
+    }
+    feedback = UserFeedbackEvent(
+        user_id=user_id,
+        interpretation_id=None,
+        inquiry_id=inquiry.id,
+        inquiry_version_id=version.id,
+        feedback_type=feedback_type,
+        fingerprint=fingerprint,
+        payload=payload,
+    )
+    db.session.add(feedback)
+    _new_event(
+        user_id=user_id,
+        event_type="inquiry.feedback.submitted",
+        payload={
+            "inquiry_id": inquiry.id,
+            "version_id": version.id,
+            "canonical_brief_hash": version.brief_hash,
+            "humanization_version": humanization_version,
+            "surface": surface,
+            "feedback_type": feedback_type,
+        },
+    )
+    profile_labels = _brief_profile_metric_labels(version.brief_payload)
+    record_inquiry_feedback_submission(
+        feedback_type=feedback_type,
+        surface=surface,
+        deduped=False,
+        **profile_labels,
+    )
+    return feedback, False

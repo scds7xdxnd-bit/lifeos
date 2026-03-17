@@ -9,6 +9,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE_PATH = ROOT / "lifeos" / "templates" / "insights" / "inquiry.html"
 INSIGHTS_PATH = ROOT / "lifeos" / "templates" / "insights" / "index.html"
+BASE_PATH = ROOT / "lifeos" / "templates" / "layouts" / "base.html"
+LOGIN_PATH = ROOT / "lifeos" / "templates" / "auth" / "login.html"
 
 
 @pytest.mark.unit
@@ -231,6 +233,34 @@ def test_inquiry_template_wires_productization_sections_without_confidence_drift
     assert "Derived from evidence-bounded findings only." in html
 
 
+@pytest.mark.unit
+def test_private_alpha_inquiry_surface_exposes_readiness_and_feedback_controls():
+    html = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert 'id="inquiry-readiness-status"' in html
+    assert "fetch('/api/v1/inquiries/readiness'" in html
+    assert 'id="inquiry-feedback-block"' in html
+    assert 'data-feedback-type="helpful"' in html
+    assert 'id="inquiry-feedback-note"' in html
+    assert "submitFeedback" in html
+    assert "/api/v1/inquiries/${state.selectedInquiry.id}/feedback" in html
+
+
+@pytest.mark.unit
+def test_private_alpha_shell_navigation_and_invite_token_flow_tokens_exist():
+    base_html = BASE_PATH.read_text(encoding="utf-8")
+    login_html = LOGIN_PATH.read_text(encoding="utf-8")
+
+    assert "/insights/inquiry" in base_html
+    assert "/insights/history" in base_html
+    assert "/insights/data" in base_html
+    assert "/insights/account-help" in base_html
+    assert "Invite token" in login_html
+    assert "invite_token" in login_html
+    assert "Need help with invite or access?" in login_html
+    assert "LOGIN_REDIRECT_PATH" in login_html
+
+
 @pytest.mark.integration
 def test_inquiry_page_route_renders(client):
     resp = client.get("/insights/inquiry")
@@ -239,3 +269,44 @@ def test_inquiry_page_route_renders(client):
     body = resp.get_data(as_text=True)
     assert "Focused Inquiry" in body
     assert "Generate Brief" in body
+
+
+@pytest.mark.integration
+def test_private_alpha_support_pages_render(client):
+    history = client.get("/insights/history")
+    data = client.get("/insights/data")
+    account_help = client.get("/insights/account-help")
+
+    assert history.status_code == 200
+    assert data.status_code == 200
+    assert account_help.status_code == 200
+    assert "Inquiry History" in history.get_data(as_text=True)
+    assert "Data Readiness" in data.get_data(as_text=True)
+    assert "Need help with readiness or setup?" in data.get_data(as_text=True)
+    assert "Account / Help" in account_help.get_data(as_text=True)
+    assert "Support Path" in account_help.get_data(as_text=True)
+
+
+@pytest.mark.integration
+def test_private_alpha_shell_hides_broad_domain_nav(client):
+    app = client.application
+    old_private_alpha = app.config.get("ENABLE_PRIVATE_ALPHA", False)
+    old_hide_domain_crud = app.config.get("ALPHA_HIDE_DOMAIN_CRUD", False)
+    app.config["ENABLE_PRIVATE_ALPHA"] = True
+    app.config["ALPHA_HIDE_DOMAIN_CRUD"] = True
+    try:
+        response = client.get("/insights/inquiry")
+    finally:
+        app.config["ENABLE_PRIVATE_ALPHA"] = old_private_alpha
+        app.config["ALPHA_HIDE_DOMAIN_CRUD"] = old_hide_domain_crud
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "/insights/inquiry" in html
+    assert "/insights/history" in html
+    assert "/insights/data" in html
+    assert "/insights/account-help" in html
+    assert "/finance/" not in html
+    assert "/journal/" not in html
+    assert "/health/" not in html
+    assert "/relationships/" not in html

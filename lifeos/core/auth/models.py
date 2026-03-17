@@ -97,3 +97,21 @@ class PasswordResetToken(db.Model, TimestampMixin):
     expires_at: Mapped[datetime] = mapped_column(nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(nullable=True)
     attempts: Mapped[int] = mapped_column(default=0)
+
+
+class PrivateAlphaInvite(db.Model, TimestampMixin):
+    __tablename__ = "private_alpha_invite"
+    __table_args__ = (
+        db.Index("ix_private_alpha_invite_email", "invited_email"),
+        db.Index("ix_private_alpha_invite_expires", "expires_at"),
+        db.Index("ix_private_alpha_invite_accepted", "accepted_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    invited_email: Mapped[str] = mapped_column(db.String(255), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(db.String(64), nullable=False, unique=True)
+    issued_by_user_id: Mapped[int | None] = mapped_column(db.ForeignKey("user.id"), nullable=True)
+    accepted_by_user_id: Mapped[int | None] = mapped_column(db.ForeignKey("user.id"), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    accepted_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(nullable=True)

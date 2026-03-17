@@ -37,7 +37,9 @@ class BaseConfig:
         or os.environ.get("COMMIT_SHA")
         or "unknown"
     )
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///instance/lifeos.db")
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///instance/lifeos.db").replace(
+        "postgres://", "postgresql://", 1
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = _engine_options_from_uri(SQLALCHEMY_DATABASE_URI)
     SESSION_COOKIE_HTTPONLY = True
@@ -144,8 +146,58 @@ class BaseConfig:
     )
     PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
         "PHASE6_INQUIRY_MIGRATION_HEAD",
-        "20260312_phase8_cross_domain_inquiry_metadata",
+        "20260314_private_alpha_feedback_linkage",
     )
+    ENABLE_PRIVATE_ALPHA = os.environ.get("ENABLE_PRIVATE_ALPHA", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_INVITE_ONLY = os.environ.get("ALPHA_INVITE_ONLY", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_MAX_USERS = int(os.environ.get("ALPHA_MAX_USERS", "30"))
+    ALPHA_VISIBLE_DOMAINS = tuple(
+        item.strip().lower() for item in os.environ.get("ALPHA_VISIBLE_DOMAINS", "").split(",") if item.strip()
+    )
+    ALPHA_ENABLED_CROSS_DOMAIN_PAIR_PROFILES = tuple(
+        item.strip()
+        for item in os.environ.get("ALPHA_ENABLED_CROSS_DOMAIN_PAIR_PROFILES", "").split(",")
+        if item.strip()
+    )
+    ALPHA_ENABLE_TECHNICAL_BRIEF = os.environ.get("ALPHA_ENABLE_TECHNICAL_BRIEF", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_ENABLE_HISTORY = os.environ.get("ALPHA_ENABLE_HISTORY", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_ENABLE_INQUIRY_FEEDBACK = os.environ.get("ALPHA_ENABLE_INQUIRY_FEEDBACK", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_HIDE_DOMAIN_CRUD = os.environ.get("ALPHA_HIDE_DOMAIN_CRUD", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_REQUIRE_DATA_READINESS = os.environ.get("ALPHA_REQUIRE_DATA_READINESS", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_ENABLE_CALENDAR_SYNC = os.environ.get("ALPHA_ENABLE_CALENDAR_SYNC", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ALPHA_SUPPORT_CONTACT = os.environ.get("ALPHA_SUPPORT_CONTACT", "").strip()
 
     ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
         "1",
@@ -189,6 +241,7 @@ class DevelopmentConfig(BaseConfig):
     JWT_COOKIE_SECURE = False
     ENABLE_PHASE6_FOCUSED_INQUIRY = True
     ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = True
+    CORS_ORIGINS = ["http://localhost:3000", "http://localhost:3001"]
 
 
 class TestingConfig(BaseConfig):
@@ -214,6 +267,7 @@ class ProductionConfig(BaseConfig):
     JWT_COOKIE_SECURE = True
     ENABLE_PHASE6_FOCUSED_INQUIRY = False
     ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = False
+    CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
 
 
 class StagingConfig(ProductionConfig):

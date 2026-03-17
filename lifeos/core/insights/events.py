@@ -7,6 +7,7 @@ INQUIRY_CONTEXT_SUBMITTED = "inquiry.context.submitted"
 INQUIRY_BRIEF_GENERATED = "inquiry.brief.generated"
 INQUIRY_BRIEF_VIEWED = "inquiry.brief.viewed"
 INQUIRY_REFINED = "inquiry.refined"
+INQUIRY_FEEDBACK_SUBMITTED = "inquiry.feedback.submitted"
 
 EVENT_CATALOG = {
     INQUIRY_REQUESTED: {
@@ -69,6 +70,17 @@ EVENT_CATALOG = {
             "normalized_hash": "str",
         },
     },
+    INQUIRY_FEEDBACK_SUBMITTED: {
+        "version": "v1",
+        "payload": {
+            "inquiry_id": "int",
+            "version_id": "int",
+            "canonical_brief_hash": "str",
+            "humanization_version": "str?",
+            "surface": "str",
+            "feedback_type": "str",
+        },
+    },
 }
 
 __all__ = [
@@ -77,5 +89,6 @@ __all__ = [
     "INQUIRY_BRIEF_GENERATED",
     "INQUIRY_BRIEF_VIEWED",
     "INQUIRY_REFINED",
+    "INQUIRY_FEEDBACK_SUBMITTED",
     "EVENT_CATALOG",
 ]

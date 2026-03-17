@@ -475,6 +475,66 @@ PHASE6_INQUIRY_MIGRATION_MISMATCH = Gauge(
     ["expected_head"],
 )
 
+PRIVATE_ALPHA_ACTIVE_USERS = Gauge(
+    "lifeos_private_alpha_active_users",
+    "Active private-alpha user count",
+)
+
+PRIVATE_ALPHA_USER_CAP = Gauge(
+    "lifeos_private_alpha_user_cap",
+    "Configured private-alpha max user cap",
+)
+
+PRIVATE_ALPHA_USER_CAP_UTILIZATION_RATIO = Gauge(
+    "lifeos_private_alpha_user_cap_utilization_ratio",
+    "Private-alpha active users divided by configured cap",
+)
+
+PRIVATE_ALPHA_ENABLED = Gauge(
+    "lifeos_private_alpha_enabled",
+    "Private-alpha mode enabled state (1=enabled, 0=disabled)",
+)
+
+PRIVATE_ALPHA_INVITES_ISSUED_TOTAL = Counter(
+    "lifeos_private_alpha_invites_issued_total",
+    "Total private-alpha invites issued",
+)
+
+PRIVATE_ALPHA_INVITES_ACCEPTED_TOTAL = Counter(
+    "lifeos_private_alpha_invites_accepted_total",
+    "Total private-alpha invites accepted",
+)
+
+PRIVATE_ALPHA_INVITES_REJECTED_TOTAL = Counter(
+    "lifeos_private_alpha_invites_rejected_total",
+    "Total private-alpha invite rejections by reason",
+    ["reason"],
+)
+
+PRIVATE_ALPHA_READINESS_EVALUATED_TOTAL = Counter(
+    "lifeos_private_alpha_readiness_evaluated_total",
+    "Total private-alpha readiness evaluations by status",
+    ["status"],
+)
+
+PRIVATE_ALPHA_READINESS_BLOCKED_TOTAL = Counter(
+    "lifeos_private_alpha_readiness_blocked_total",
+    "Total private-alpha readiness blocked states by reason",
+    ["reason"],
+)
+
+INQUIRY_FEEDBACK_SUBMITTED_TOTAL = Counter(
+    "lifeos_inquiry_feedback_submitted_total",
+    "Total inquiry feedback submissions",
+    ["feedback_type", "surface", "deduped"],
+)
+
+INQUIRY_FEEDBACK_SUBMITTED_BY_DOMAIN_TOTAL = Counter(
+    "lifeos_inquiry_feedback_submitted_by_domain_total",
+    "Total inquiry feedback submissions by domain strategy profile",
+    (*_INQUIRY_DOMAIN_LABELS, "feedback_type", "surface", "deduped"),
+)
+
 _LOW_COVERAGE_THRESHOLD = 0.8
 _QUALITY_STATES = ("sufficient", "low_coverage", "empty", "needs_refine", "unknown")
 _ANSWERABILITY_CLASSES = ("strong_answerable", "partial_answerable", "weak_answerable", "unknown")
@@ -561,6 +621,12 @@ INQUIRY_HUMANIZATION_VERSION_TOTAL.labels(
     canonical_version="unknown",
     **_UNKNOWN_DOMAIN_LABELS,
 ).inc(0)
+TIMELINE_PROFILE_USAGE_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+TIMELINE_GENERATION_LATENCY_SECONDS.labels(**_UNKNOWN_DOMAIN_LABELS).observe(0)
+TIMELINE_INSUFFICIENCY_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+TIMELINE_BASELINE_COVERAGE_WINDOWS.labels(**_UNKNOWN_DOMAIN_LABELS).observe(0)
+TIMELINE_BLOCKED_CLAIMS_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
+TIMELINE_REPLAY_MISMATCH_TOTAL.labels(**_UNKNOWN_DOMAIN_LABELS).inc(0)
 for _reason in _HUMANIZATION_FALLBACK_REASONS:
     INQUIRY_HUMANIZATION_FALLBACK_TOTAL.labels(reason=_reason).inc(0)
 INQUIRY_HUMANIZATION_RENDER_LATENCY_SECONDS.observe(0)
@@ -579,6 +645,27 @@ INQUIRY_EVIDENCE_COVERAGE_RATIO.set(1.0)
 INQUIRY_LOW_COVERAGE_RATE.set(0.0)
 INQUIRY_REFINE_AFTER_LOW_QUALITY_RATE.set(0.0)
 INQUIRY_REFINE_AFTER_LOW_COVERAGE_RATE.set(0.0)
+PRIVATE_ALPHA_ACTIVE_USERS.set(0.0)
+PRIVATE_ALPHA_USER_CAP.set(0.0)
+PRIVATE_ALPHA_USER_CAP_UTILIZATION_RATIO.set(0.0)
+PRIVATE_ALPHA_ENABLED.set(0.0)
+PRIVATE_ALPHA_INVITES_ISSUED_TOTAL.inc(0)
+PRIVATE_ALPHA_INVITES_ACCEPTED_TOTAL.inc(0)
+PRIVATE_ALPHA_INVITES_REJECTED_TOTAL.labels(reason="unknown").inc(0)
+PRIVATE_ALPHA_READINESS_EVALUATED_TOTAL.labels(status="ready").inc(0)
+PRIVATE_ALPHA_READINESS_EVALUATED_TOTAL.labels(status="blocked").inc(0)
+PRIVATE_ALPHA_READINESS_BLOCKED_TOTAL.labels(reason="alpha_readiness_not_met").inc(0)
+INQUIRY_FEEDBACK_SUBMITTED_TOTAL.labels(
+    feedback_type="unknown",
+    surface="humanized",
+    deduped="false",
+).inc(0)
+INQUIRY_FEEDBACK_SUBMITTED_BY_DOMAIN_TOTAL.labels(
+    feedback_type="unknown",
+    surface="humanized",
+    deduped="false",
+    **_UNKNOWN_DOMAIN_LABELS,
+).inc(0)
 
 _inquiry_generated_count = 0
 _inquiry_error_count = 0
@@ -1273,3 +1360,87 @@ def record_inquiry_error(
 def set_phase6_inquiry_migration_mismatch(expected_head: str, mismatch: bool) -> None:
     """Expose Focused Inquiry migration head state for deployment health."""
     PHASE6_INQUIRY_MIGRATION_MISMATCH.labels(expected_head=expected_head or "unknown").set(1 if mismatch else 0)
+
+
+def set_private_alpha_user_state(
+    *,
+    active_users: int,
+    max_users: int,
+    enabled: bool,
+) -> None:
+    """Expose private-alpha user-cap state for rollout control."""
+    active = max(0, int(active_users or 0))
+    cap = max(0, int(max_users or 0))
+    PRIVATE_ALPHA_ACTIVE_USERS.set(float(active))
+    PRIVATE_ALPHA_USER_CAP.set(float(cap))
+    PRIVATE_ALPHA_ENABLED.set(1.0 if enabled else 0.0)
+    if cap <= 0:
+        PRIVATE_ALPHA_USER_CAP_UTILIZATION_RATIO.set(0.0)
+    else:
+        PRIVATE_ALPHA_USER_CAP_UTILIZATION_RATIO.set(max(0.0, min(1.0, float(active) / float(cap))))
+
+
+def record_private_alpha_invite_issued() -> None:
+    """Record private-alpha invite issuance."""
+    PRIVATE_ALPHA_INVITES_ISSUED_TOTAL.inc()
+
+
+def record_private_alpha_invite_accepted() -> None:
+    """Record private-alpha invite acceptance."""
+    PRIVATE_ALPHA_INVITES_ACCEPTED_TOTAL.inc()
+
+
+def record_private_alpha_invite_rejected(reason: str) -> None:
+    """Record private-alpha invite rejection reason."""
+    normalized_reason = str(reason or "").strip() or "unknown"
+    PRIVATE_ALPHA_INVITES_REJECTED_TOTAL.labels(reason=normalized_reason).inc()
+
+
+def record_private_alpha_readiness(
+    *,
+    ready: bool,
+    blocking_reason: str | None = None,
+) -> None:
+    """Record private-alpha readiness evaluation status."""
+    if ready:
+        PRIVATE_ALPHA_READINESS_EVALUATED_TOTAL.labels(status="ready").inc()
+        return
+    PRIVATE_ALPHA_READINESS_EVALUATED_TOTAL.labels(status="blocked").inc()
+    PRIVATE_ALPHA_READINESS_BLOCKED_TOTAL.labels(reason=str(blocking_reason or "unknown")).inc()
+
+
+def record_inquiry_feedback_submission(
+    *,
+    feedback_type: str,
+    surface: str,
+    deduped: bool,
+    domain: str | None = None,
+    profile: str | None = None,
+    profile_version: str | None = None,
+    strategy: str | None = None,
+    strategy_version: str | None = None,
+    expert_mode: bool | str | None = None,
+) -> None:
+    """Record inquiry feedback submission flow."""
+    feedback_label = str(feedback_type or "").strip() or "unknown"
+    surface_label = str(surface or "").strip() or "unknown"
+    deduped_label = "true" if deduped else "false"
+    domain_labels = _domain_metric_labels(
+        domain=domain,
+        profile=profile,
+        profile_version=profile_version,
+        strategy=strategy,
+        strategy_version=strategy_version,
+        expert_mode=expert_mode,
+    )
+    INQUIRY_FEEDBACK_SUBMITTED_TOTAL.labels(
+        feedback_type=feedback_label,
+        surface=surface_label,
+        deduped=deduped_label,
+    ).inc()
+    INQUIRY_FEEDBACK_SUBMITTED_BY_DOMAIN_TOTAL.labels(
+        feedback_type=feedback_label,
+        surface=surface_label,
+        deduped=deduped_label,
+        **domain_labels,
+    ).inc()

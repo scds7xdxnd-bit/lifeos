@@ -58,11 +58,24 @@ class UserFeedbackEvent(db.Model):
         db.Index("ix_user_feedback_user_created", "user_id", "created_at"),
         db.Index("ix_user_feedback_user_type", "user_id", "feedback_type"),
         db.Index("ix_user_feedback_user_fingerprint", "user_id", "fingerprint"),
+        db.Index("ix_user_feedback_user_inquiry_created", "user_id", "inquiry_id", "created_at"),
+        db.Index(
+            "ix_user_feedback_user_inquiry_version_created",
+            "user_id",
+            "inquiry_version_id",
+            "created_at",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int | None] = mapped_column(db.ForeignKey("user.id"), index=True)
     interpretation_id: Mapped[int | None] = mapped_column(db.ForeignKey("interpretation.id"), index=True)
+    inquiry_id: Mapped[int | None] = mapped_column(db.ForeignKey("inquiry_request.id"), index=True, nullable=True)
+    inquiry_version_id: Mapped[int | None] = mapped_column(
+        db.ForeignKey("inquiry_brief_version.id"),
+        index=True,
+        nullable=True,
+    )
     feedback_type: Mapped[str] = mapped_column(db.String(32), nullable=False)
     fingerprint: Mapped[str | None] = mapped_column(db.String(128), nullable=True)
     payload: Mapped[dict] = mapped_column(db.JSON, default=dict)

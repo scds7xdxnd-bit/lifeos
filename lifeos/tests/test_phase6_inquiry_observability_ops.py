@@ -83,6 +83,17 @@ REQUIRED_METRICS = [
     "lifeos_inquiry_refine_after_humanized_view_by_domain_total",
     "lifeos_inquiry_humanization_version_total",
     "lifeos_phase6_inquiry_migration_mismatch",
+    "lifeos_private_alpha_active_users",
+    "lifeos_private_alpha_user_cap",
+    "lifeos_private_alpha_user_cap_utilization_ratio",
+    "lifeos_private_alpha_enabled",
+    "lifeos_private_alpha_invites_issued_total",
+    "lifeos_private_alpha_invites_accepted_total",
+    "lifeos_private_alpha_invites_rejected_total",
+    "lifeos_private_alpha_readiness_evaluated_total",
+    "lifeos_private_alpha_readiness_blocked_total",
+    "lifeos_inquiry_feedback_submitted_total",
+    "lifeos_inquiry_feedback_submitted_by_domain_total",
 ]
 
 
@@ -490,6 +501,23 @@ def test_phase7_alert_rule_coverage_exists():
         'phase: "8.1"',
         'phase: "9"',
         'phase: "10"',
+        "lifeos:private_alpha_active_user_cap_utilization:ratio",
+        "lifeos:private_alpha_invite_acceptance_rate:ratio",
+        "lifeos:private_alpha_invite_rejection_rate:ratio",
+        "lifeos:private_alpha_readiness_completion_rate:ratio",
+        "lifeos:private_alpha_readiness_blocked_rate:ratio",
+        "lifeos:private_alpha_feedback_submission_rate:per_second",
+        "lifeos:private_alpha_inquiry_failure_rate:ratio",
+        "lifeos:private_alpha_inquiry_latency_p95:seconds",
+        "lifeos:private_alpha_humanization_fallback_rate:ratio",
+        "lifeos:private_alpha_technical_brief_expansion_rate:ratio",
+        "PrivateAlphaUserCapNearLimit",
+        "PrivateAlphaUserCapReached",
+        "PrivateAlphaInviteRejectionRateHigh",
+        "PrivateAlphaReadinessBlockedHigh",
+        "PrivateAlphaInquiryFailureRateHigh",
+        "PrivateAlphaHumanizationFallbackRateHigh",
+        'phase: "alpha"',
     )
     for token in required_tokens:
         assert token in payload
@@ -665,6 +693,26 @@ def test_phase8_rollout_scripts_include_pair_controls():
     assert "lifeos:inquiry_humanization_failure_rate:ratio" in phase10_snapshot_payload
     assert "lifeos:inquiry_humanization_fallback_rate:ratio" in phase10_snapshot_payload
 
+    private_alpha_script = (
+        Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "private_alpha_rollout_check.sh"
+    ).resolve()
+    private_alpha_payload = private_alpha_script.read_text(encoding="utf-8")
+    assert "PRIVATE_ALPHA_ENABLED" in private_alpha_payload
+    assert "ALPHA_EXPECT_VISIBLE_DOMAINS" in private_alpha_payload
+    assert "ALPHA_EXPECT_PAIR_PROFILES" in private_alpha_payload
+    assert "phase10_humanization_rollout_check.sh" in private_alpha_payload
+    assert "lifeos_private_alpha_active_users" in private_alpha_payload
+    assert "lifeos:private_alpha_invite_rejection_rate:ratio" in private_alpha_payload
+    assert "lifeos:private_alpha_feedback_submission_rate:per_second" in private_alpha_payload
+
+    private_alpha_snapshot_script = (
+        Path(__file__).resolve().parents[1] / ".." / "scripts" / "ops" / "private_alpha_snapshot.sh"
+    ).resolve()
+    private_alpha_snapshot_payload = private_alpha_snapshot_script.read_text(encoding="utf-8")
+    assert "lifeos:private_alpha_active_user_cap_utilization:ratio" in private_alpha_snapshot_payload
+    assert "lifeos:private_alpha_readiness_blocked_rate:ratio" in private_alpha_snapshot_payload
+    assert "lifeos:private_alpha_feedback_submission_rate:per_second" in private_alpha_snapshot_payload
+
 
 def test_phase81_ops_runbook_exists_with_rollout_controls():
     runbook_path = Path(__file__).resolve().parents[1] / "docs" / "ops" / "phase_8_1_inquiry_productization_ops.md"
@@ -745,6 +793,31 @@ def test_phase10_ops_runbook_exists_with_rollout_controls():
         "Phase10HumanizationVersionUnexpected",
         "phase10_humanization_rollout_check.sh",
         "phase10_humanization_snapshot.sh",
+    )
+    for token in required_tokens:
+        assert token in payload
+
+
+def test_private_alpha_ops_runbook_exists_with_rollout_controls():
+    runbook_path = Path(__file__).resolve().parents[1] / "docs" / "ops" / "private_alpha_launch_ops.md"
+    payload = runbook_path.read_text(encoding="utf-8")
+    required_tokens = (
+        "ENABLE_PRIVATE_ALPHA=true",
+        "ALPHA_INVITE_ONLY=true",
+        "ALPHA_MAX_USERS=30",
+        "ALPHA_VISIBLE_DOMAINS=calendar,habits,projects,skills",
+        "ALPHA_ENABLED_CROSS_DOMAIN_PAIR_PROFILES=projects_calendar_v1,projects_skills_v1",
+        "ENABLE_PHASE10_INQUIRY_HUMANIZATION=true",
+        "lifeos_private_alpha_active_users",
+        "lifeos_private_alpha_invites_rejected_total",
+        "lifeos_private_alpha_readiness_evaluated_total",
+        "lifeos_inquiry_feedback_submitted_total",
+        "lifeos:private_alpha_active_user_cap_utilization:ratio",
+        "lifeos:private_alpha_feedback_submission_rate:per_second",
+        "PrivateAlphaUserCapNearLimit",
+        "PrivateAlphaInviteRejectionRateHigh",
+        "private_alpha_rollout_check.sh",
+        "private_alpha_snapshot.sh",
     )
     for token in required_tokens:
         assert token in payload

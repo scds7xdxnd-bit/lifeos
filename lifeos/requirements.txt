@@ -18,3 +18,4 @@ redis>=4.3
 psycopg2-binary>=2.9
 prometheus-client>=0.20
 requests>=2.31
+Flask-Cors>=4.0

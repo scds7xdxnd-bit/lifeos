@@ -126,6 +126,7 @@ def test_inquiry_events_match_canonical_v1_set():
         "inquiry.brief.generated",
         "inquiry.brief.viewed",
         "inquiry.refined",
+        "inquiry.feedback.submitted",
     }
     inquiry_events = {event_type for event_type in EVENT_SEMANTIC_CONTRACTS if event_type.startswith("inquiry.")}
     assert inquiry_events == canonical

@@ -223,3 +223,33 @@ Include: “Aligned with UI/UX Constitution §X” and cite the domain contract 
 - No removal of material uncertainty, limitations, or evidence existence.
 - No advice posture, recommendations, emotional interpretation, or causal storytelling.
 - No hiding of the canonical technical brief behind a separate workflow or secondary page.
+
+## 17. Private Alpha Product Cut (Binding)
+- Private alpha is inquiry-first. The product should feel like a focused question-and-answer tool over personal records, not a general life-management suite.
+- The primary alpha loop is:
+  - get oriented,
+  - ask one structured question,
+  - read one humanized answer,
+  - inspect technical support if desired,
+  - refine or return later.
+- Alpha must simplify aggressively. If a surface does not directly support this loop, it should be hidden from ordinary alpha users.
+
+### 17.1 Primary alpha navigation
+- Primary navigation should be minimal:
+  - Inquiry
+  - History
+  - Data
+  - Account / Help
+- Domain-by-domain navigation should not be primary in alpha.
+
+### 17.2 Alpha screen priorities
+- Inquiry creation and inquiry results are the primary surfaces.
+- History is secondary but visible.
+- Data/setup is supportive, not product-center.
+- Technical detail is available, but never primary.
+
+### 17.3 What stays hidden in alpha
+- Broad domain management surfaces
+- Admin-style dashboards
+- Multi-panel analytics views
+- Feature surfaces that imply assistant behavior or broad life-OS control

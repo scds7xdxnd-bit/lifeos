@@ -539,7 +539,8 @@ PY
     if [[ -n "${PHASE9_APPROVED_PAIR_DOMAINS}" ]]; then
       phase9_domains_regex="${phase9_domains_regex}|${PHASE9_APPROVED_PAIR_DOMAINS//,/|}"
     fi
-    phase9_domains_regex="${phase9_domains_regex//+/\\+}"
+    # PromQL string escaping rejects "\+"; use character class form for literal plus in pair domains.
+    phase9_domains_regex="${phase9_domains_regex//+/[+]}"
 
     phase9_usage_query="sum(rate(lifeos_timeline_profile_usage_total{domain=~\"${phase9_domains_regex}\"}[30m])) by (domain, profile, profile_version, strategy, strategy_version, expert_mode)"
     phase9_usage_json="$(curl -fsS --get --data-urlencode "query=${phase9_usage_query}" "${PROM_URL}/api/v1/query")"
@@ -719,11 +720,18 @@ if not rows:
     print("WARN: no Phase 10 version labels observed yet; version drift check skipped", file=sys.stderr)
     sys.exit(0)
 
-unexpected = sorted({
-    str((row.get("metric") or {}).get("humanization_version") or "")
+observed = sorted({
+    str((row.get("metric") or {}).get("humanization_version") or "").strip()
     for row in rows
-    if str((row.get("metric") or {}).get("humanization_version") or "") and str((row.get("metric") or {}).get("humanization_version") or "") != expected
+    if str((row.get("metric") or {}).get("humanization_version") or "").strip()
 })
+concrete = [value for value in observed if value.lower() not in {"unknown", "unlabeled"}]
+
+if not concrete:
+    print("WARN: only placeholder Phase 10 version labels observed; version drift check skipped", file=sys.stderr)
+    sys.exit(0)
+
+unexpected = sorted({value for value in concrete if value != expected})
 if unexpected:
     print(
         "ERROR: observed unexpected humanization_version label(s): "

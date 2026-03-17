@@ -12,6 +12,9 @@ AUTH_USER_REGISTERED = "auth.user.registered"
 AUTH_USER_USERNAME_REMINDER_REQUESTED = "auth.user.username_reminder_requested"
 AUTH_USER_PASSWORD_RESET_REQUESTED = "auth.user.password_reset_requested"
 AUTH_USER_PASSWORD_RESET_COMPLETED = "auth.user.password_reset_completed"
+AUTH_PRIVATE_ALPHA_INVITE_ISSUED = "auth.private_alpha_invite.issued"
+AUTH_PRIVATE_ALPHA_INVITE_ACCEPTED = "auth.private_alpha_invite.accepted"
+AUTH_PRIVATE_ALPHA_INVITE_REJECTED = "auth.private_alpha_invite.rejected"
 
 EVENT_CATALOG = {
     AUTH_USER_REGISTERED: {
@@ -43,6 +46,31 @@ EVENT_CATALOG = {
         "payload": {
             "user_id": "int",
             "reset_id": "int",
+        },
+    },
+    AUTH_PRIVATE_ALPHA_INVITE_ISSUED: {
+        "version": "v1",
+        "payload": {
+            "invite_id": "int",
+            "invited_email": "str",
+            "issued_by_user_id": "int?",
+            "expires_at": "datetime?",
+        },
+    },
+    AUTH_PRIVATE_ALPHA_INVITE_ACCEPTED: {
+        "version": "v1",
+        "payload": {
+            "invite_id": "int",
+            "invited_email": "str",
+            "accepted_by_user_id": "int",
+            "accepted_at": "datetime",
+        },
+    },
+    AUTH_PRIVATE_ALPHA_INVITE_REJECTED: {
+        "version": "v1",
+        "payload": {
+            "invited_email": "str?",
+            "reason": "str",
         },
     },
     AUTH_SESSION_CREATED: {
@@ -77,6 +105,9 @@ __all__ = [
     "AUTH_USER_USERNAME_REMINDER_REQUESTED",
     "AUTH_USER_PASSWORD_RESET_REQUESTED",
     "AUTH_USER_PASSWORD_RESET_COMPLETED",
+    "AUTH_PRIVATE_ALPHA_INVITE_ISSUED",
+    "AUTH_PRIVATE_ALPHA_INVITE_ACCEPTED",
+    "AUTH_PRIVATE_ALPHA_INVITE_REJECTED",
     "AUTH_SESSION_CREATED",
     "AUTH_SESSION_INVALIDATED",
     "AUTH_SESSION_ADMIN_RESET",

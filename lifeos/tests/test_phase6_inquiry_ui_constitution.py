@@ -30,7 +30,13 @@ def test_inquiry_surface_contract_matches_read_first_structure():
 
 def test_inquiry_contracts_expose_evidence_and_confidence_fields():
     names = set()
-    for key in ("inquiries.create.v1", "inquiries.detail.v1", "inquiries.refine.v1"):
+    for key in (
+        "inquiries.create.v1",
+        "inquiries.detail.v1",
+        "inquiries.refine.v1",
+        "inquiries.readiness.v1",
+        "inquiries.feedback.v1",
+    ):
         names.update(_contract_field_names(key))
     assert {
         "claim",
@@ -58,12 +64,25 @@ def test_inquiry_contracts_expose_evidence_and_confidence_fields():
         "structure_gaps",
         "sparse_domains",
         "refine_guidance",
+        "ready",
+        "blocking_reason",
+        "next_step",
+        "visible_domains",
+        "enabled_pair_profiles",
+        "feedback_id",
     }.issubset(names)
 
 
 def test_inquiry_contracts_do_not_expose_chat_transcript_fields():
     banned = {"chat_messages", "assistant_reply", "conversation_id", "transcript", "prompt"}
     names = set()
-    for key in ("inquiries.create.v1", "inquiries.list.v1", "inquiries.detail.v1", "inquiries.refine.v1"):
+    for key in (
+        "inquiries.create.v1",
+        "inquiries.list.v1",
+        "inquiries.detail.v1",
+        "inquiries.refine.v1",
+        "inquiries.readiness.v1",
+        "inquiries.feedback.v1",
+    ):
         names.update(_contract_field_names(key))
     assert names.isdisjoint(banned)

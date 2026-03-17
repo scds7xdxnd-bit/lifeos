@@ -3,8 +3,8 @@
 <section class="auth-hero auth-hero--atmos">
   <div class="auth-hero__copy">
     <p class="meta">LifeOS</p>
-    <h2>Your life, made legible.</h2>
-    <p>Private entry, steady cadence, nothing noisy.</p>
+    <h2>{% if private_alpha_enabled %}Private alpha access{% else %}Your life, made legible.{% endif %}</h2>
+    <p>{% if private_alpha_enabled %}Inquiry-first, invite-only, humanized by default.{% else %}Private entry, steady cadence, nothing noisy.{% endif %}</p>
     <ul class="auth-hero__list">
       <li>Private by default.</li>
       <li>Nothing changes without your intent.</li>
@@ -15,6 +15,23 @@
   <div class="auth-hero__card">
     <h3>Welcome back</h3>
     <p class="meta">Continue into LifeOS.</p>
+
+    {% if private_alpha_enabled and private_alpha_invite_only %}
+    <div class="auth-status" data-tone="warning" style="margin-bottom:0.75rem;">
+      Registration requires a valid private alpha invite token.
+    </div>
+    {% endif %}
+    {% if private_alpha_enabled %}
+    {% set support_contact = config.get("ALPHA_SUPPORT_CONTACT", "") %}
+    <div class="auth-status" style="margin-bottom:0.75rem;">
+      Need help with invite or access?
+      {% if support_contact %}
+      Contact {{ support_contact }}.
+      {% else %}
+      Contact your invite administrator.
+      {% endif %}
+    </div>
+    {% endif %}
 
     <form id="lp-login-form" class="auth-view field-stack" data-view="login" autocomplete="on">
       <div class="field">
@@ -51,6 +68,12 @@
         <label for="lp-register-timezone">Timezone (optional)</label>
         <input id="lp-register-timezone" name="timezone" type="text" placeholder="e.g., America/New_York">
       </div>
+      {% if private_alpha_enabled and private_alpha_invite_only %}
+      <div class="field">
+        <label for="lp-register-invite-token">Invite token</label>
+        <input id="lp-register-invite-token" name="invite_token" type="text" placeholder="Paste invite token" value="{{ invite_token|default('', true) }}" required>
+      </div>
+      {% endif %}
       <button type="submit" class="btn">Continue</button>
       <div class="auth-link-row">
         <button type="button" class="auth-link" id="lp-back-login-from-register">Back to login</button>
@@ -74,6 +97,10 @@
 
 <script>
 (() => {
+  const PRIVATE_ALPHA_ENABLED = {{ "true" if private_alpha_enabled else "false" }};
+  const PRIVATE_ALPHA_INVITE_ONLY = {{ "true" if private_alpha_invite_only else "false" }};
+  const INVITE_TOKEN_PREFILL = {{ (invite_token|default('', true))|tojson }};
+  const LOGIN_REDIRECT_PATH = PRIVATE_ALPHA_ENABLED ? '/insights/data' : '/calendar/';
   const views = Array.from(document.querySelectorAll('.auth-view'));
   const statusEl = document.getElementById('lp-status');
   const loginForm = document.getElementById('lp-login-form');
@@ -122,7 +149,7 @@
           });
         }
         setStatus('Welcome back.', 'success');
-        setTimeout(() => { window.location.href = '/calendar/'; }, 300);
+        setTimeout(() => { window.location.href = LOGIN_REDIRECT_PATH; }, 300);
       } else {
         const reason = payload?.error || res.status;
         const copy = reason === 'invalid_credentials' ? 'Check your email or password.' : 'Unable to sign in right now.';
@@ -137,11 +164,16 @@
     e.preventDefault();
     setStatus('Creating account...');
     const data = Object.fromEntries(new FormData(registerForm).entries());
+    if (PRIVATE_ALPHA_INVITE_ONLY && !(data.invite_token || '').trim()) {
+      setStatus('Invite token is required for private alpha registration.', 'error');
+      return;
+    }
     const payload = {
       email: data.email,
       password: data.password,
       full_name: data.full_name || null,
       timezone: data.timezone || null,
+      invite_token: (data.invite_token || '').trim() || null,
     };
     try {
       const res = await postJson('/auth/register', payload);
@@ -153,7 +185,7 @@
             user: body.user,
           });
           setStatus('Account created and logged in.', 'success');
-          setTimeout(() => { window.location.href = '/calendar/'; }, 300);
+          setTimeout(() => { window.location.href = LOGIN_REDIRECT_PATH; }, 300);
         } else {
           setStatus('Account created. You can log in now.', 'success');
           selectView('login');
@@ -163,6 +195,12 @@
         const copy = {
           email_already_exists: 'Email already registered.',
           bad_request: 'Check your inputs (password must include letters and numbers).',
+          invite_required: 'A valid invite token is required.',
+          invite_invalid: 'Invite token is invalid.',
+          invite_email_mismatch: 'Invite token does not match this email.',
+          invite_revoked: 'Invite token has been revoked.',
+          invite_already_used: 'Invite token has already been used.',
+          alpha_user_cap_reached: 'Private alpha is currently at capacity.',
         }[reason] || 'Registration failed.';
         setStatus(copy, 'error');
       }
@@ -188,7 +226,13 @@
   });
 
   // Default view
-  selectView('login');
+  selectView((PRIVATE_ALPHA_INVITE_ONLY && INVITE_TOKEN_PREFILL) ? 'register' : 'login');
+  if (PRIVATE_ALPHA_INVITE_ONLY && INVITE_TOKEN_PREFILL) {
+    const inviteField = document.getElementById('lp-register-invite-token');
+    if (inviteField) inviteField.value = INVITE_TOKEN_PREFILL;
+    const emailField = document.getElementById('lp-register-email');
+    emailField?.focus();
+  }
   forgotToggle?.addEventListener('click', () => selectView('forgot'));
   registerToggle?.addEventListener('click', () => selectView('register'));
   backFromRegister?.addEventListener('click', () => selectView('login'));

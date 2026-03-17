@@ -1,5 +1,6 @@
 {
   "title": "LifeOS Focused Inquiry Ops (Phase 6/6.1/7/7.1/8/8.1/9/10)",
+  "uid": "lifeos-inquiry-ops",
   "description": "Operational dashboard for focused inquiry rollout, domain/cross-domain expert quality signals, productization usefulness, Phase 9 timeline intelligence, and Phase 10 humanization reliability",
   "tags": ["lifeos", "phase6", "phase61", "phase7", "phase71", "phase8", "phase81", "phase9", "phase10", "inquiry", "timeline", "humanization"],
   "timezone": "utc",

@@ -61,6 +61,17 @@ groups:
           or absent(lifeos_inquiry_refine_after_humanized_view_total)
           or absent(lifeos_inquiry_refine_after_humanized_view_by_domain_total)
           or absent(lifeos_inquiry_humanization_version_total)
+          or absent(lifeos_private_alpha_active_users)
+          or absent(lifeos_private_alpha_user_cap)
+          or absent(lifeos_private_alpha_user_cap_utilization_ratio)
+          or absent(lifeos_private_alpha_enabled)
+          or absent(lifeos_private_alpha_invites_issued_total)
+          or absent(lifeos_private_alpha_invites_accepted_total)
+          or absent(lifeos_private_alpha_invites_rejected_total)
+          or absent(lifeos_private_alpha_readiness_evaluated_total)
+          or absent(lifeos_private_alpha_readiness_blocked_total)
+          or absent(lifeos_inquiry_feedback_submitted_total)
+          or absent(lifeos_inquiry_feedback_submitted_by_domain_total)
           or absent(lifeos_timeline_profile_usage_total)
           or absent(lifeos_timeline_generation_latency_seconds_bucket)
           or absent(lifeos_timeline_insufficiency_total)
@@ -1225,3 +1236,153 @@ groups:
         annotations:
           summary: "Phase 10 humanization version drift detected"
           description: "Observed humanization_version label differs from phase10_humanization_v1 under active traffic."
+
+  - name: lifeos_private_alpha
+    rules:
+      - record: lifeos:private_alpha_active_user_cap_utilization:ratio
+        expr: |
+          clamp_min(lifeos_private_alpha_user_cap_utilization_ratio, 0)
+
+      - record: lifeos:private_alpha_invite_acceptance_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_private_alpha_invites_accepted_total[30m])), 0)
+          /
+          clamp_min(
+            sum(rate(lifeos_private_alpha_invites_accepted_total[30m]))
+            + sum(rate(lifeos_private_alpha_invites_rejected_total[30m])),
+            0.001
+          )
+
+      - record: lifeos:private_alpha_invite_rejection_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_private_alpha_invites_rejected_total[30m])), 0)
+          /
+          clamp_min(
+            sum(rate(lifeos_private_alpha_invites_accepted_total[30m]))
+            + sum(rate(lifeos_private_alpha_invites_rejected_total[30m])),
+            0.001
+          )
+
+      - record: lifeos:private_alpha_readiness_completion_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_private_alpha_readiness_evaluated_total{status="ready"}[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_private_alpha_readiness_evaluated_total[15m])), 0.001)
+
+      - record: lifeos:private_alpha_readiness_blocked_rate:ratio
+        expr: |
+          clamp_min(sum(rate(lifeos_private_alpha_readiness_evaluated_total{status="blocked"}[15m])), 0)
+          /
+          clamp_min(sum(rate(lifeos_private_alpha_readiness_evaluated_total[15m])), 0.001)
+
+      - record: lifeos:private_alpha_feedback_submission_rate:per_second
+        expr: |
+          clamp_min(sum(rate(lifeos_inquiry_feedback_submitted_total[15m])), 0)
+
+      - record: lifeos:private_alpha_inquiry_failure_rate:ratio
+        expr: |
+          lifeos:inquiry_error_rate:ratio
+
+      - record: lifeos:private_alpha_inquiry_latency_p95:seconds
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(lifeos_inquiry_generation_latency_seconds_bucket[5m])) by (le)
+          )
+
+      - record: lifeos:private_alpha_humanization_fallback_rate:ratio
+        expr: |
+          lifeos:inquiry_humanization_fallback_rate:ratio
+
+      - record: lifeos:private_alpha_technical_brief_expansion_rate:ratio
+        expr: |
+          lifeos:inquiry_technical_brief_expansion_rate:ratio
+
+      - alert: PrivateAlphaUserCapNearLimit
+        expr: |
+          lifeos_private_alpha_enabled > 0.5
+          and
+          lifeos:private_alpha_active_user_cap_utilization:ratio >= 0.85
+        for: 5m
+        labels:
+          severity: warning
+          phase: "alpha"
+        annotations:
+          summary: "Private alpha user cap nearing limit"
+          description: "Active private-alpha users reached at least 85% of configured cap."
+
+      - alert: PrivateAlphaUserCapReached
+        expr: |
+          lifeos_private_alpha_enabled > 0.5
+          and
+          lifeos:private_alpha_active_user_cap_utilization:ratio >= 1
+        for: 2m
+        labels:
+          severity: critical
+          phase: "alpha"
+        annotations:
+          summary: "Private alpha user cap reached"
+          description: "Active private-alpha users reached configured cap; stop issuing invites."
+
+      - alert: PrivateAlphaInviteRejectionRateHigh
+        expr: |
+          lifeos_private_alpha_enabled > 0.5
+          and
+          lifeos:private_alpha_invite_rejection_rate:ratio > 0.40
+          and
+          (
+            sum(rate(lifeos_private_alpha_invites_accepted_total[30m]))
+            + sum(rate(lifeos_private_alpha_invites_rejected_total[30m]))
+          ) > 0.002
+        for: 15m
+        labels:
+          severity: warning
+          phase: "alpha"
+        annotations:
+          summary: "Private alpha invite rejection rate high"
+          description: "Invite rejection ratio exceeded 40% over 30m under active invite traffic."
+
+      - alert: PrivateAlphaReadinessBlockedHigh
+        expr: |
+          lifeos_private_alpha_enabled > 0.5
+          and
+          lifeos:private_alpha_readiness_blocked_rate:ratio > 0.60
+          and
+          sum(rate(lifeos_private_alpha_readiness_evaluated_total[15m])) > 0.01
+        for: 20m
+        labels:
+          severity: warning
+          phase: "alpha"
+        annotations:
+          summary: "Private alpha readiness blocked rate high"
+          description: "More than 60% of readiness checks are blocked; onboarding/readiness flow needs attention."
+
+      - alert: PrivateAlphaInquiryFailureRateHigh
+        expr: |
+          lifeos_private_alpha_enabled > 0.5
+          and
+          lifeos:private_alpha_inquiry_failure_rate:ratio > 0.12
+          and
+          sum(rate(lifeos_inquiry_generated_total[15m])) > 0.005
+        for: 10m
+        labels:
+          severity: warning
+          phase: "alpha"
+        annotations:
+          summary: "Private alpha inquiry failure rate high"
+          description: "Inquiry failure rate exceeded 12% during active alpha inquiry traffic."
+
+      - alert: PrivateAlphaHumanizationFallbackRateHigh
+        expr: |
+          lifeos_private_alpha_enabled > 0.5
+          and
+          lifeos:private_alpha_humanization_fallback_rate:ratio > 0.25
+          and
+          sum(rate(lifeos_inquiry_humanization_render_total[15m])) > 0.005
+        for: 15m
+        labels:
+          severity: warning
+          phase: "alpha"
+        annotations:
+          summary: "Private alpha humanization fallback rate high"
+          description: "Canonical fallback exceeded 25% during active humanized inquiry traffic."

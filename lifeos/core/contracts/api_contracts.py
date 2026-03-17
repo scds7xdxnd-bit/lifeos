@@ -535,6 +535,43 @@ INQUIRY_ITEM = ApiObject(
     ],
 )
 
+INQUIRY_READINESS_ITEM = ApiObject(
+    name="InquiryReadinessItem",
+    fields=[
+        ApiField("ready", "boolean", "Whether minimum alpha readiness is met", "system", "stable"),
+        ApiField("blocking_reason", "string|null", "Readiness blocking reason", "system", "stable"),
+        ApiField("next_step", "string|null", "Deterministic readiness next step", "system", "stable"),
+        ApiField("recent_window_days", "integer", "Readiness lookback window in days", "system", "stable"),
+        ApiField("as_of_ts", "string", "Readiness evaluation as_of timestamp", "system", "stable"),
+        ApiField("ready_domains", "list[string]", "Alpha-visible domains with recent activity", "system", "stable"),
+        ApiField(
+            "ready_pairs", "list[string]", "Alpha-enabled pair profiles with sufficient activity", "system", "stable"
+        ),
+        ApiField(
+            "domain_event_counts", "object[string,integer]", "Recent event counts by visible domain", "system", "stable"
+        ),
+    ],
+)
+
+INQUIRY_ALPHA_FLAGS_ITEM = ApiObject(
+    name="InquiryAlphaFlagsItem",
+    fields=[
+        ApiField("enabled", "boolean", "Private alpha enablement flag", "system", "stable"),
+        ApiField("invite_only", "boolean", "Invite-only registration flag", "system", "stable"),
+        ApiField("max_users", "integer", "Configured alpha user cap", "system", "stable"),
+        ApiField("visible_domains", "list[string]", "Alpha-visible inquiry domains", "system", "stable"),
+        ApiField(
+            "enabled_pair_profiles", "list[string]", "Alpha-enabled cross-domain pair profiles", "system", "stable"
+        ),
+        ApiField("technical_brief_enabled", "boolean", "Technical brief visibility flag", "system", "stable"),
+        ApiField("history_enabled", "boolean", "Inquiry history visibility flag", "system", "stable"),
+        ApiField("inquiry_feedback_enabled", "boolean", "Results-page feedback flag", "system", "stable"),
+        ApiField("hide_domain_crud", "boolean", "Hidden-domain CRUD suppression flag", "system", "stable"),
+        ApiField("require_data_readiness", "boolean", "Readiness gating flag", "system", "stable"),
+        ApiField("calendar_sync_enabled", "boolean", "Calendar sync availability flag", "system", "stable"),
+    ],
+)
+
 
 API_CONTRACTS: dict[str, ApiContract] = {
     "insights.feed.v1": ApiContract(
@@ -977,6 +1014,40 @@ API_CONTRACTS: dict[str, ApiContract] = {
             ],
         ),
         schema_hash="0b7520ad7dbbc4b3f1b229294cdbe0c13d614e3d3f0f95c4feacbc89d66e0062",
+        read_only=False,
+        surface_key="insights:inquiry",
+    ),
+    "inquiries.readiness.v1": ApiContract(
+        name="inquiries.readiness.v1",
+        method="GET",
+        path="/api/v1/inquiries/readiness",
+        version="1.0.0",
+        schema=ApiSchema(
+            fields=[
+                ApiField("ok", "boolean", "Success flag", "system", "stable"),
+                ApiField("readiness", "InquiryReadinessItem", "Alpha readiness payload", "system", "stable"),
+                ApiField("alpha", "InquiryAlphaFlagsItem", "Active alpha flag payload", "system", "stable"),
+            ],
+            objects=[INQUIRY_READINESS_ITEM, INQUIRY_ALPHA_FLAGS_ITEM],
+        ),
+        schema_hash="d42092f9367b6ec9699bbc5134ce8eb46faef8bb8f9ee9063fdae7009d0a66a1",
+        read_only=True,
+        surface_key="insights:inquiry",
+    ),
+    "inquiries.feedback.v1": ApiContract(
+        name="inquiries.feedback.v1",
+        method="POST",
+        path="/api/v1/inquiries/<id>/feedback",
+        version="1.0.0",
+        schema=ApiSchema(
+            fields=[
+                ApiField("ok", "boolean", "Success flag", "system", "stable"),
+                ApiField("feedback_id", "integer", "Persisted feedback id", "system", "stable"),
+                ApiField("deduped", "boolean", "Feedback dedupe indicator", "system", "stable"),
+            ],
+            objects=[],
+        ),
+        schema_hash="fc3e0be843f0ef573131880f621b5fa4ef5842648ef906f55d67f3a62b90c32b",
         read_only=False,
         surface_key="insights:inquiry",
     ),

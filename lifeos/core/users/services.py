@@ -6,6 +6,7 @@ from typing import Optional
 
 from lifeos.core.auth.models import Role
 from lifeos.core.auth.password import hash_password
+from lifeos.core.private_alpha import alpha_enabled, alpha_flags
 from lifeos.core.users.models import User
 from lifeos.core.users.preferences import set_preference
 from lifeos.core.users.schemas import UserCreateRequest, UserUpdateRequest
@@ -58,18 +59,23 @@ def _ensure_default_roles(user: User) -> None:
     All users get standard write access to all domains by default.
     This ensures a consistent experience across the platform.
     """
-    default_codes = (
-        "user",
-        # Domain write roles - standardized for all users
-        "finance:write",
-        "calendar:write",
-        "health:write",
-        "habits:write",
-        "skills:write",
-        "projects:write",
-        "relationships:write",
-        "journal:write",
-    )
+    if alpha_enabled():
+        flags = alpha_flags()
+        default_codes = tuple(
+            dict.fromkeys(["user", "alpha_user", *[f"{domain}:write" for domain in flags.visible_domains]])
+        )
+    else:
+        default_codes = (
+            "user",
+            "finance:write",
+            "calendar:write",
+            "health:write",
+            "habits:write",
+            "skills:write",
+            "projects:write",
+            "relationships:write",
+            "journal:write",
+        )
     for code in default_codes:
         role = Role.query.filter_by(name=code).first()
         if not role:
