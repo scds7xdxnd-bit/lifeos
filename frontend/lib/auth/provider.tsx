@@ -89,18 +89,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     const tokens = getStored()
-    if (tokens) {
+    clearStored()
+    setUser(null)
+    if (tokens?.refresh_token) {
       await fetch(`${API_URL}/auth/logout`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${tokens.access_token}`,
+          Authorization: `Bearer ${tokens.refresh_token}`,
           'X-CSRF-Token': tokens.csrf_token,
           'Content-Type': 'application/json',
         },
       }).catch(() => {})
     }
-    clearStored()
-    setUser(null)
   }, [])
 
   return (

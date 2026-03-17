@@ -18,10 +18,10 @@ export default function AccountHelpPage() {
           </p>
         </div>
         <Link
-          href="/users/profile"
-          className="shrink-0 inline-flex items-center px-4 py-2 rounded-full bg-white/50 backdrop-blur-sm border border-white/40 text-sm text-foreground hover:bg-white/70 transition-all"
+          href="/insights/inquiry"
+          className="shrink-0 inline-flex items-center px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/85 transition-all shadow-sm"
         >
-          Profile
+          Go to Inquiry
         </Link>
       </div>
 
