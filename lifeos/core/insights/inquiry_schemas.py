@@ -17,6 +17,16 @@ ALLOWED_INQUIRY_DOMAINS = {
     "relationships",
     "journal",
 }
+ALLOWED_INQUIRY_FEEDBACK_TYPES = {
+    "helpful",
+    "unclear",
+    "too_technical",
+    "too_long",
+    "incorrect",
+    "not_useful_yet",
+    "other",
+}
+ALLOWED_INQUIRY_FEEDBACK_SURFACES = {"humanized", "technical"}
 
 
 def _normalize_question(value: str) -> str:
@@ -175,3 +185,34 @@ class InquiryRefineRequest(BaseModel):
             if invalid:
                 raise ValueError("invalid_domain")
         return self
+
+
+class InquiryFeedbackRequest(BaseModel):
+    version_id: Optional[int] = None
+    feedback_type: str = Field(min_length=2, max_length=32)
+    surface: str = Field(default="humanized", min_length=3, max_length=16)
+    note: Optional[str] = Field(default=None, max_length=280)
+
+    @field_validator("feedback_type", mode="before")
+    @classmethod
+    def _feedback_type(cls, value):
+        normalized = str(value or "").strip().lower()
+        if normalized not in ALLOWED_INQUIRY_FEEDBACK_TYPES:
+            raise ValueError("invalid_feedback_type")
+        return normalized
+
+    @field_validator("surface", mode="before")
+    @classmethod
+    def _surface(cls, value):
+        normalized = str(value or "humanized").strip().lower()
+        if normalized not in ALLOWED_INQUIRY_FEEDBACK_SURFACES:
+            raise ValueError("invalid_feedback_surface")
+        return normalized
+
+    @field_validator("note", mode="before")
+    @classmethod
+    def _note(cls, value):
+        if value is None:
+            return None
+        normalized = " ".join(str(value).strip().split())
+        return normalized or None

@@ -18,8 +18,9 @@ from lifeos.config import config_by_name
 from lifeos.core.auth.csrf import generate_csrf_token, get_session_id
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.insights.engine import insights_engine
-from lifeos.core.observability import set_phase6_inquiry_migration_mismatch
-from lifeos.extensions import init_extensions, login_manager
+from lifeos.core.observability import set_phase6_inquiry_migration_mismatch, set_private_alpha_user_state
+from lifeos.core.private_alpha import alpha_flags
+from lifeos.extensions import db, init_extensions, login_manager
 
 
 def _patch_str_to_datetime_processor() -> None:
@@ -120,6 +121,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
             engine_opts["connect_args"] = connect_args
 
     init_extensions(app)
+    _init_cors(app)
     _record_phase6_inquiry_migration_state(app)
     _register_blueprints(app)
     _register_error_handlers(app)
@@ -158,10 +160,32 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     @app.get("/api/bootstrap")
     def bootstrap():
         """Return canonical session-bound CSRF token and build identity."""
+        flags = alpha_flags()
+        active_alpha_users = 0
+        if flags.enabled:
+            try:
+                from lifeos.core.auth.models import Role
+                from lifeos.core.users.models import User
+
+                active_alpha_users = (
+                    db.session.query(User.id)
+                    .join(User.roles)
+                    .filter(Role.name == "alpha_user", User.is_active.is_(True))
+                    .distinct()
+                    .count()
+                )
+            except Exception:
+                active_alpha_users = 0
+        set_private_alpha_user_state(
+            active_users=active_alpha_users,
+            max_users=flags.max_users,
+            enabled=flags.enabled,
+        )
         return {
             "ok": True,
             "csrf_token": generate_csrf_token(),
             "build_id": app.config.get("BUILD_ID"),
+            "private_alpha": flags.to_bootstrap_payload(),
         }, 200
 
     # Register CLI commands
@@ -170,6 +194,26 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     register_commands(app)
 
     return app
+
+
+def _init_cors(app: Flask) -> None:
+    """Allow the Next.js frontend to call the API cross-origin."""
+    try:
+        from flask_cors import CORS
+
+        origins = app.config.get(
+            "CORS_ORIGINS",
+            ["http://localhost:3000", "http://localhost:3001"],
+        )
+        CORS(
+            app,
+            origins=origins,
+            supports_credentials=True,
+            allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        )
+    except ImportError:
+        app.logger.warning("Flask-Cors not installed; CORS headers will not be set.")
 
 
 def _register_blueprints(app: Flask) -> None:
@@ -364,6 +408,34 @@ def _register_auth_handlers(app: Flask) -> None:
         claims = {"roles": getattr(current_user, "role_codes", [])}
         access = create_access_token(identity=str(current_user.get_id()), additional_claims=claims)
         request.environ["HTTP_AUTHORIZATION"] = f"Bearer {access}"
+        return None
+
+    @app.before_request
+    def _private_alpha_surface_gate():
+        if not app.config.get("ENABLE_PRIVATE_ALPHA", False):
+            return None
+        if not app.config.get("ALPHA_HIDE_DOMAIN_CRUD", False):
+            return None
+        if (
+            request.path.startswith("/admin/")
+            or request.path.startswith("/auth")
+            or request.path.startswith("/api/v1/auth")
+        ):
+            return None
+        if current_user.is_authenticated and "admin" in getattr(current_user, "role_codes", []):
+            return None
+        blocked_prefixes = (
+            "/finance",
+            "/api/finance",
+            "/journal",
+            "/api/journal",
+            "/health/",
+            "/api/health",
+            "/relationships",
+            "/api/relationships",
+        )
+        if request.path.startswith(blocked_prefixes):
+            return {"ok": False, "error": "not_found"}, 404
         return None
 
 

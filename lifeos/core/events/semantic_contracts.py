@@ -123,6 +123,24 @@ EVENT_SEMANTIC_CONTRACTS: dict[str, EventSemanticContract] = {
         asserted_by="system",
         certainty="confirmed",
     ),
+    "auth.private_alpha_invite.issued": EventSemanticContract(
+        event_type="auth.private_alpha_invite.issued",
+        meaning="A private alpha invite was issued.",
+        asserted_by="admin",
+        certainty="confirmed",
+    ),
+    "auth.private_alpha_invite.accepted": EventSemanticContract(
+        event_type="auth.private_alpha_invite.accepted",
+        meaning="A private alpha invite was accepted during registration.",
+        asserted_by="system",
+        certainty="confirmed",
+    ),
+    "auth.private_alpha_invite.rejected": EventSemanticContract(
+        event_type="auth.private_alpha_invite.rejected",
+        meaning="A private alpha invite was rejected because it was invalid or unusable.",
+        asserted_by="system",
+        certainty="confirmed",
+    ),
     "auth.session.created": EventSemanticContract(
         event_type="auth.session.created",
         meaning="A session was created (contract only).",
@@ -507,6 +525,12 @@ EVENT_SEMANTIC_CONTRACTS: dict[str, EventSemanticContract] = {
     "inquiry.refined": EventSemanticContract(
         event_type="inquiry.refined",
         meaning="A user refined inquiry scope/timeframe/context and requested regeneration.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    "inquiry.feedback.submitted": EventSemanticContract(
+        event_type="inquiry.feedback.submitted",
+        meaning="Explicit feedback on an inquiry result version was submitted.",
         asserted_by="user",
         certainty="confirmed",
     ),

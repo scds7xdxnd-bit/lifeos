@@ -1,0 +1,153 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container inquiry-container">
+  <div class="card inquiry-header-card">
+    <div class="inquiry-header">
+      <div>
+        <h2 class="inquiry-title">Data Readiness</h2>
+        <p class="inquiry-lede">Check whether your visible alpha domains have enough recent records for inquiry.</p>
+      </div>
+      <div class="inquiry-header-actions">
+        <a class="btn" href="/insights/inquiry">Go to Inquiry</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card inquiry-setup-card">
+    <div class="inquiry-section-heading">
+      <h3>Readiness Status</h3>
+      <p>This view is setup-focused only. It does not expose broad domain management.</p>
+    </div>
+    <div id="alpha-data-status" class="auth-status"></div>
+    <div id="alpha-data-readiness" class="inquiry-block">
+      <div class="inquiry-block-label">Current status</div>
+      <div id="alpha-data-summary" class="inquiry-summary">Checking readiness...</div>
+      <div id="alpha-data-next-step" class="inquiry-context-note"></div>
+      <div id="alpha-data-counts" class="inquiry-quality-list"></div>
+    </div>
+    {% set support_contact = config.get("ALPHA_SUPPORT_CONTACT", "") %}
+    <div class="inquiry-context-note">
+      Need help with readiness or setup?
+      {% if support_contact %}
+      Contact {{ support_contact }}.
+      {% else %}
+      Contact your invite administrator.
+      {% endif %}
+      <a href="/insights/account-help">View Account / Help</a>.
+    </div>
+    <div class="inquiry-setup-actions">
+      <button type="button" class="btn btn-secondary" id="alpha-data-refresh">Refresh readiness</button>
+    </div>
+  </div>
+
+  <div class="card inquiry-setup-card">
+    <div class="inquiry-section-heading">
+      <h3>Alpha Scope</h3>
+      <p>Only approved alpha domains and pair profiles are shown in this phase.</p>
+    </div>
+    <div class="inquiry-block">
+      <div class="inquiry-block-label">Visible domains</div>
+      <ul id="alpha-data-domains" class="inquiry-next-questions"></ul>
+    </div>
+    <div class="inquiry-block">
+      <div class="inquiry-block-label">Visible cross-domain pairs</div>
+      <ul id="alpha-data-pairs" class="inquiry-next-questions"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const statusEl = document.getElementById('alpha-data-status');
+    const summaryEl = document.getElementById('alpha-data-summary');
+    const nextStepEl = document.getElementById('alpha-data-next-step');
+    const countsEl = document.getElementById('alpha-data-counts');
+    const domainsEl = document.getElementById('alpha-data-domains');
+    const pairsEl = document.getElementById('alpha-data-pairs');
+    const refreshBtn = document.getElementById('alpha-data-refresh');
+
+    const setStatus = (msg, tone = '') => {
+      statusEl.textContent = msg || '';
+      if (tone) statusEl.dataset.tone = tone;
+      else statusEl.removeAttribute('data-tone');
+    };
+
+    const labelFromDomain = (domain) => {
+      const map = { calendar: 'Calendar', habits: 'Habits', projects: 'Projects', skills: 'Skills' };
+      return map[String(domain || '').toLowerCase()] || String(domain || 'Unknown');
+    };
+
+    const labelFromPairProfile = (profile) => {
+      const map = {
+        projects_calendar_v1: 'Projects + Calendar',
+        projects_skills_v1: 'Projects + Skills',
+      };
+      return map[String(profile || '').toLowerCase()] || String(profile || '');
+    };
+
+    const renderAlphaScope = (alpha = {}) => {
+      domainsEl.innerHTML = '';
+      pairsEl.innerHTML = '';
+      const domains = Array.isArray(alpha.visible_domains) ? alpha.visible_domains : [];
+      const pairs = Array.isArray(alpha.enabled_pair_profiles) ? alpha.enabled_pair_profiles : [];
+      if (!domains.length) domainsEl.innerHTML = '<li>No visible alpha domains configured.</li>';
+      else domains.forEach((domain) => {
+        const li = document.createElement('li');
+        li.textContent = labelFromDomain(domain);
+        domainsEl.appendChild(li);
+      });
+      if (!pairs.length) pairsEl.innerHTML = '<li>No visible cross-domain pair profiles configured.</li>';
+      else pairs.forEach((pair) => {
+        const li = document.createElement('li');
+        li.textContent = labelFromPairProfile(pair);
+        pairsEl.appendChild(li);
+      });
+    };
+
+    const renderReadiness = (readiness = {}) => {
+      const ready = Boolean(readiness.ready);
+      summaryEl.textContent = ready
+        ? `Ready. Supported data found in: ${(readiness.ready_domains || []).map(labelFromDomain).join(', ') || 'configured domains'}.`
+        : 'Not ready yet for full inquiry generation.';
+      nextStepEl.textContent = readiness.next_step || (ready ? 'You can continue to Inquiry now.' : '');
+      countsEl.innerHTML = '';
+      const counts = readiness.domain_event_counts || {};
+      Object.keys(counts).sort().forEach((domain) => {
+        const li = document.createElement('li');
+        li.textContent = `${labelFromDomain(domain)}: ${counts[domain]} recent records`;
+        countsEl.appendChild(li);
+      });
+    };
+
+    const loadReadiness = async () => {
+      if (!window.lifeosAuth?.isAuthenticated()) {
+        setStatus('Please sign in to view readiness.', 'error');
+        summaryEl.textContent = 'Sign in required.';
+        return;
+      }
+      setStatus('Checking readiness...');
+      try {
+        const res = await fetch('/api/v1/inquiries/readiness', { headers: window.lifeosAuth.authHeaders() });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus(String(body.error || 'Unable to load readiness.'), 'error');
+          return;
+        }
+        renderReadiness(body.readiness || {});
+        renderAlphaScope(body.alpha || {});
+        setStatus('');
+      } catch (_) {
+        setStatus('Unable to load readiness.', 'error');
+      }
+    };
+
+    refreshBtn.addEventListener('click', loadReadiness);
+    window.addEventListener('lifeos:auth-changed', loadReadiness);
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(loadReadiness);
+    } else {
+      loadReadiness();
+    }
+  })();
+</script>
+{% endblock %}

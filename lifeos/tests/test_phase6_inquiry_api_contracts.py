@@ -15,6 +15,8 @@ INQUIRY_CONTRACT_KEYS = {
     "inquiries.list.v1",
     "inquiries.detail.v1",
     "inquiries.refine.v1",
+    "inquiries.readiness.v1",
+    "inquiries.feedback.v1",
 }
 
 
@@ -33,6 +35,8 @@ def test_inquiry_contracts_exist_with_expected_paths_and_methods():
         "inquiries.list.v1": ("GET", "/api/v1/inquiries"),
         "inquiries.detail.v1": ("GET", "/api/v1/inquiries/<id>"),
         "inquiries.refine.v1": ("POST", "/api/v1/inquiries/<id>/refine"),
+        "inquiries.readiness.v1": ("GET", "/api/v1/inquiries/readiness"),
+        "inquiries.feedback.v1": ("POST", "/api/v1/inquiries/<id>/feedback"),
     }
     assert INQUIRY_CONTRACT_KEYS.issubset(API_CONTRACTS.keys())
     for name, (method, path) in expected.items():
@@ -53,8 +57,10 @@ def test_inquiry_routes_are_registered(app):
     base_methods = rule_map.get(base) or rule_map.get(base_slash) or set()
     assert "GET" in base_methods
     assert "POST" in base_methods
+    assert "GET" in (rule_map.get("/api/v1/inquiries/readiness") or set())
     assert "GET" in (rule_map.get("/api/v1/inquiries/<int:inquiry_id>") or set())
     assert "POST" in (rule_map.get("/api/v1/inquiries/<int:inquiry_id>/refine") or set())
+    assert "POST" in (rule_map.get("/api/v1/inquiries/<int:inquiry_id>/feedback") or set())
 
 
 def test_inquiry_contract_schema_hashes_match():
@@ -136,6 +142,24 @@ def test_inquiry_contracts_include_canonical_brief_fields():
         "classification",
         "supporting_claims",
         "limitation_redundancy_removed",
+        "ready",
+        "blocking_reason",
+        "next_step",
+        "recent_window_days",
+        "ready_domains",
+        "ready_pairs",
+        "domain_event_counts",
+        "enabled",
+        "invite_only",
+        "max_users",
+        "visible_domains",
+        "enabled_pair_profiles",
+        "technical_brief_enabled",
+        "history_enabled",
+        "inquiry_feedback_enabled",
+        "hide_domain_crud",
+        "require_data_readiness",
+        "calendar_sync_enabled",
     }
     assert required.issubset(fields)
 
@@ -208,6 +232,28 @@ def test_inquiry_dsd_mappings_exist():
         "InquiryHumanizedBrief.metadata",
         "InquiryHumanizedBrief.answer",
         "InquiryHumanizedBrief.sections",
+        "InquiryReadinessItem.ready",
+        "InquiryReadinessItem.blocking_reason",
+        "InquiryReadinessItem.next_step",
+        "InquiryReadinessItem.recent_window_days",
+        "InquiryReadinessItem.as_of_ts",
+        "InquiryReadinessItem.ready_domains",
+        "InquiryReadinessItem.ready_pairs",
+        "InquiryReadinessItem.domain_event_counts",
+        "InquiryAlphaFlagsItem.enabled",
+        "InquiryAlphaFlagsItem.invite_only",
+        "InquiryAlphaFlagsItem.max_users",
+        "InquiryAlphaFlagsItem.visible_domains",
+        "InquiryAlphaFlagsItem.enabled_pair_profiles",
+        "InquiryAlphaFlagsItem.technical_brief_enabled",
+        "InquiryAlphaFlagsItem.history_enabled",
+        "InquiryAlphaFlagsItem.inquiry_feedback_enabled",
+        "InquiryAlphaFlagsItem.hide_domain_crud",
+        "InquiryAlphaFlagsItem.require_data_readiness",
+        "InquiryAlphaFlagsItem.calendar_sync_enabled",
+        "Response.feedback_id",
+        "Response.readiness",
+        "Response.alpha",
         "InquiryTimelineCoverage.prior_window_available",
         "InquiryTimelineCoverage.baseline_windows_available",
         "InquiryTimelineCoverage.baseline_windows_required",

@@ -123,6 +123,7 @@
 - Better "why it matters" readability
 - Lower metadata burden on the default surface
 - Stronger ordinary-user comprehension
+- Humanized-by-default inquiry becomes a launch requirement for the private alpha cut
 
 ### What does not change
 - Canonical inquiry reasoning

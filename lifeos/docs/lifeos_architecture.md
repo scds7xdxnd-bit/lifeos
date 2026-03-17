@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-13 (v2.20 — Phase 9 complete; Phase 10 approved)_
+_Last updated: 2026-03-14 (v2.21 — Phase 10 approved; private alpha cut ratified)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -146,9 +146,9 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - All Teams: PR-first workflow only; use `/health` and `/api/v1/ping` for smoke checks; keep architecture doc updated before implementing structural changes.
 
 ## 🎯 Current Phase Focus
-- Active: Phase 10 Insight Humanization Layer is approved to open.
-- Deferred: Phase 3c-2 transport scaling (trigger-based), recommendation layer, causal explanation layer, and predictive / forecasting foundations.
-- Forbidden in current window: omniscient assistant behavior, assistant-chat UX, runtime ML decisioning, autonomous action, hidden personalization, semantic drift, causal overreach, and predictive modeling.
+- Active: Private alpha cut implementation with Phase 10 humanization as a launch gate.
+- Deferred: public signup, broad domain exposure, recommendation layer, causal explanation layer, predictive / forecasting foundations, and Phase 3c-2 transport scaling (trigger-based).
+- Forbidden in current window: omniscient assistant behavior, assistant-chat UX, runtime ML decisioning, autonomous action, hidden personalization, semantic drift, public-scale complexity, causal overreach, and predictive modeling.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.
@@ -247,6 +247,7 @@ lifeos/
 │   │   ├── phase_8_1_inquiry_productization.md
 │   │   ├── phase_9_timeline_intelligence_foundations.md
 │   │   ├── phase_10_insight_humanization_layer.md
+│   │   ├── private_alpha_architecture_cut.md
 │   │   └── archive/
 │   │       ├── calendar_subsystem_refactor.md
 │   │       ├── calendar_subsystem_refactor_ops.md
@@ -1132,7 +1133,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.20 (Phase 9 complete; Phase 10 insight humanization layer approved): 2026-03-13. Author: LifeOS Architect._
+_Constitution v2.21 (Phase 10 approved; private alpha cut ratified): 2026-03-14. Author: LifeOS Architect._
 
 **Sprint Summary:**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`
@@ -1165,6 +1166,7 @@ _Constitution v2.20 (Phase 9 complete; Phase 10 insight humanization layer appro
 - ✅ Phase 8 complete: deterministic cross-domain inquiry synthesis for approved domain pairs
 - ✅ Phase 8.1 complete: inquiry productization delivered with decision-useful direct answers and answerability metadata
 - ✅ Phase 9 complete: deterministic timeline intelligence delivered with replay-safe temporal interpretation and metadata
+- 🟡 Private alpha cut ratified: launch scope narrowed to inquiry-first, invite-only operation with humanized default output and wave-gated domains
 
 ---
 
@@ -1437,6 +1439,69 @@ Phase 10 introduces a deterministic humanization layer that transforms canonical
   - `lifeos/docs/semantics/EVENT_SEMANTICS_FREEZE.md`
 - `lifeos/docs/semantics/CONFIDENCE_VOCABULARY.md` remains unchanged.
 - Execution reference: `lifeos/docs/tasks/phase_10_insight_humanization_layer.md`
+
+---
+
+# 27. Private Alpha Product Cut (Constitutional Decision, Binding)
+
+Private alpha is a tightly scoped, invite-only, inquiry-first release for 10–30 users. It is not a broad feature release and it is not a general assistant launch.
+
+## 27.1 Product thesis
+- LifeOS private alpha exists to test whether users repeatedly trust and return to structured, evidence-based inquiry about their own records when the product is:
+  - calm,
+  - readable,
+  - traceable,
+  - non-chat.
+- The product is not positioned as an AI companion, coach, or general assistant.
+
+## 27.2 User-visible alpha surface
+- Alpha is inquiry-first and humanized-by-default.
+- Primary user-visible surfaces:
+  - invite and account access
+  - onboarding and data readiness
+  - inquiry creation
+  - inquiry result view
+  - technical brief expansion
+  - refine flow
+  - inquiry history
+  - explicit feedback submission
+- General-purpose domain CRUD surfaces are not part of the primary alpha experience.
+
+## 27.3 Domain scope
+- Wave 1 (live in alpha): calendar, habits, projects, skills
+- Wave 2 (hidden / disabled by default): finance, journal
+- Later (not part of alpha): health, relationships
+- Alpha cross-domain scope is limited to approved Wave 1 pairs:
+  - projects + calendar
+  - projects + skills
+
+## 27.4 Required alpha features
+- Must-have for launch:
+  - invite-only access
+  - structured inquiry submission
+  - humanized brief view
+  - canonical technical brief access
+  - refine flow
+  - inquiry history
+  - explicit inquiry feedback capture
+  - first-wave single-domain timeline interpretation
+  - approved-pair cross-domain inquiry for wave-1 pairs only
+- Deferred from alpha:
+  - open-ended chat
+  - public signup
+  - broad domain exposure
+  - recommendation or coaching behavior
+  - predictive or causal surfaces
+
+## 27.5 Operational boundaries
+- Deployment target is low-cost, high-reliability private alpha infrastructure, not public-scale architecture.
+- Invite-only is mandatory.
+- User cap is operationally small and intentionally enforced.
+- Feature failures must degrade to narrower inquiry behavior, not to free-form assistant behavior.
+
+## 27.6 Docs and execution reference
+- Execution brief: `lifeos/docs/tasks/private_alpha_architecture_cut.md`
+- UI binding remains governed by `lifeos/docs/ui_ux_constitution.md`.
 
 ---
 

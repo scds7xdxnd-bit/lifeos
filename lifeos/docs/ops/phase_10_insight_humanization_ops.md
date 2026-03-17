@@ -136,6 +136,18 @@ PHASE10_CANARY_MAX_REFINE_AFTER_VIEW_RATE=0.70 \
 bash scripts/ops/phase10_humanization_rollout_check.sh
 ```
 
+Private-alpha strict rollout wrapper:
+
+```bash
+BASE_URL=http://localhost:8000 \
+PROM_URL=http://localhost:9090 \
+EXPECT_MIGRATION_MATCH=true \
+PRIVATE_ALPHA_ENABLED=true \
+ALPHA_EXPECT_VISIBLE_DOMAINS=calendar,habits,projects,skills \
+ALPHA_EXPECT_PAIR_PROFILES=projects_calendar_v1,projects_skills_v1 \
+bash scripts/ops/private_alpha_rollout_check.sh
+```
+
 Snapshot capture:
 
 ```bash

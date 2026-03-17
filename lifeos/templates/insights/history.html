@@ -1,0 +1,114 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container inquiry-container">
+  <div class="card inquiry-header-card">
+    <div class="inquiry-header">
+      <div>
+        <h2 class="inquiry-title">Inquiry History</h2>
+        <p class="inquiry-lede">Revisit prior questions and reopen grounded results.</p>
+      </div>
+      <div class="inquiry-header-actions">
+        <a class="btn btn-secondary" href="/insights/inquiry">New Inquiry</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card inquiry-history-card">
+    <div class="inquiry-history-header">
+      <div class="inquiry-section-heading" style="margin:0;">
+        <h3>History</h3>
+        <p>Read-first list of prior inquiries. Open any item to inspect full results.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" id="alpha-history-refresh">Refresh history</button>
+    </div>
+
+    <div id="alpha-history-status" class="auth-status"></div>
+    <div id="alpha-history-empty" class="inquiry-empty-state" style="display:none;">No inquiry history yet.</div>
+    <div id="alpha-history-list" class="inquiry-history-list"></div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const statusEl = document.getElementById('alpha-history-status');
+    const refreshBtn = document.getElementById('alpha-history-refresh');
+    const emptyEl = document.getElementById('alpha-history-empty');
+    const listEl = document.getElementById('alpha-history-list');
+
+    const setStatus = (msg, tone = '') => {
+      statusEl.textContent = msg || '';
+      if (tone) statusEl.dataset.tone = tone;
+      else statusEl.removeAttribute('data-tone');
+    };
+
+    const labelFromDomain = (domain) => {
+      const map = {
+        calendar: 'Calendar',
+        habits: 'Habits',
+        projects: 'Projects',
+        skills: 'Skills',
+      };
+      return map[String(domain || '').toLowerCase()] || String(domain || 'Unknown');
+    };
+
+    const renderHistory = (items = []) => {
+      listEl.innerHTML = '';
+      if (!items.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      items.forEach((item) => {
+        const domains = Array.isArray(item.domains) ? item.domains.map(labelFromDomain).join(' + ') : labelFromDomain(item.domain);
+        const row = document.createElement('div');
+        row.className = 'inquiry-history-item';
+        row.innerHTML = `
+          <div class="inquiry-history-main">
+            <div class="inquiry-history-question">${item.question || 'Untitled inquiry'}</div>
+            <div class="inquiry-history-meta">
+              ${domains} · ${item.timeframe?.start || '—'} to ${item.timeframe?.end || '—'} · v${item.last_version_number || 1}
+            </div>
+          </div>
+          <div class="inquiry-history-actions">
+            <a class="btn btn-secondary" href="/insights/inquiry?inquiry_id=${item.id}">Open</a>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+    };
+
+    const loadHistory = async () => {
+      if (!window.lifeosAuth?.isAuthenticated()) {
+        setStatus('Please sign in to view inquiry history.', 'error');
+        renderHistory([]);
+        return;
+      }
+      setStatus('Loading history...');
+      try {
+        const res = await fetch('/api/v1/inquiries?limit=50&offset=0', {
+          headers: window.lifeosAuth.authHeaders(),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus(String(body.error || 'Unable to load inquiry history.'), 'error');
+          renderHistory([]);
+          return;
+        }
+        renderHistory(body.items || []);
+        setStatus('');
+      } catch (_) {
+        setStatus('Unable to load inquiry history.', 'error');
+        renderHistory([]);
+      }
+    };
+
+    refreshBtn.addEventListener('click', loadHistory);
+    window.addEventListener('lifeos:auth-changed', loadHistory);
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(loadHistory);
+    } else {
+      loadHistory();
+    }
+  })();
+</script>
+{% endblock %}

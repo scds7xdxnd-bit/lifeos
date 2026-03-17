@@ -58,10 +58,14 @@
     </script>
   </head>
   <body>
+    {% set alpha_enabled = config.get("ENABLE_PRIVATE_ALPHA", False) %}
+    {% set alpha_hide_domain_crud = config.get("ALPHA_HIDE_DOMAIN_CRUD", False) %}
+    {% set user_is_admin = current_user.is_authenticated and ('admin' in (current_user.role_codes or [])) %}
+    {% set alpha_shell_mode = alpha_enabled and alpha_hide_domain_crud and not user_is_admin %}
     <header class="app-header">
       <div class="nav-shell">
         <div class="nav-brand">
-          <a href="/calendar/" class="brand-mark" aria-label="LifeOS home">LifeOS</a>
+          <a href="{{ '/insights/inquiry' if alpha_shell_mode else '/calendar/' }}" class="brand-mark" aria-label="LifeOS home">LifeOS</a>
           <div class="brand-sub">Calm accountability OS</div>
         </div>
         <div class="nav-actions">
@@ -72,6 +76,12 @@
           <button type="button" class="btn btn-ghost" id="auth-login-link" onclick="window.location.href='/login'">Sign in</button>
         </div>
         <nav class="top-nav" aria-label="Primary">
+          {% if alpha_shell_mode %}
+          <a href="/insights/inquiry" class="nav-link nav-link-strong" data-nav="/insights/inquiry">Inquiry</a>
+          <a href="/insights/history" class="nav-link" data-nav="/insights/history">History</a>
+          <a href="/insights/data" class="nav-link" data-nav="/insights/data">Data</a>
+          <a href="/insights/account-help" class="nav-link" data-nav="/insights/account-help">Account / Help</a>
+          {% else %}
           <a href="/calendar/" class="nav-link nav-link-strong" data-nav="/calendar">Calendar</a>
           <div class="nav-group" id="nav-finance" data-nav-prefix="/finance">
             <a href="/finance/" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" data-nav="/finance">Finance</a>
@@ -93,6 +103,7 @@
           <a href="/relationships/" class="nav-link" data-nav="/relationships">Relationships</a>
           <a href="/projects/" class="nav-link" data-nav="/projects">Projects</a>
           <a href="/users/profile" class="nav-link" data-nav="/users/profile">Profile</a>
+          {% endif %}
         </nav>
       </div>
     </header>

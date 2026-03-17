@@ -139,6 +139,12 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
                 label="Response deduped", meaning="Create dedupe indicator", source="system_derived", stability="stable"
             ),
             SurfaceField(
+                label="Response feedback id",
+                meaning="Persisted inquiry feedback identifier",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
                 label="Response inquiry id", meaning="Inquiry identifier", source="system_derived", stability="stable"
             ),
             SurfaceField(
@@ -156,6 +162,18 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
             SurfaceField(
                 label="Response inquiry",
                 meaning="Inquiry payload container",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Response readiness",
+                meaning="Inquiry readiness payload container",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Response alpha flags",
+                meaning="Active alpha flag payload container",
                 source="system_derived",
                 stability="stable",
             ),
@@ -222,6 +240,120 @@ DOMAIN_SURFACE_CONTRACTS: dict[str, DomainSurfaceDefinition] = {
             ),
             SurfaceField(
                 label="Context note", meaning="Context block note", source="system_derived", stability="stable"
+            ),
+            SurfaceField(
+                label="Readiness ready",
+                meaning="Whether minimum alpha readiness is met",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Readiness blocking reason",
+                meaning="Readiness blocking reason token",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Readiness next step",
+                meaning="Deterministic readiness next step",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Readiness recent window days",
+                meaning="Readiness evaluation lookback window",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Readiness as of timestamp",
+                meaning="Readiness evaluation timestamp",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Readiness ready domains",
+                meaning="Alpha-visible domains with recent observed activity",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Readiness ready pairs",
+                meaning="Alpha-enabled pair profiles with sufficient recent activity",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Readiness domain event counts",
+                meaning="Recent event counts by alpha-visible domain",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha enabled",
+                meaning="Private alpha enablement flag",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha invite only",
+                meaning="Invite-only registration gate",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha max users",
+                meaning="Configured private alpha user cap",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha visible domains",
+                meaning="Alpha-visible inquiry domains",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha enabled pair profiles",
+                meaning="Alpha-enabled cross-domain pair profiles",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha technical brief enabled",
+                meaning="Technical brief visibility gate",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha history enabled",
+                meaning="Inquiry history visibility gate",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha inquiry feedback enabled",
+                meaning="Results-page inquiry feedback gate",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha hide domain crud",
+                meaning="Hidden-domain CRUD suppression gate",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha require data readiness",
+                meaning="Inquiry readiness enforcement gate",
+                source="system_derived",
+                stability="stable",
+            ),
+            SurfaceField(
+                label="Alpha calendar sync enabled",
+                meaning="Calendar sync availability gate",
+                source="system_derived",
+                stability="stable",
             ),
             SurfaceField(
                 label="Created timestamp",

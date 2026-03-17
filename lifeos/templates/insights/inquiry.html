@@ -1,5 +1,6 @@
 {% extends "layouts/base.html" %}
 {% block content %}
+{% set private_alpha_enabled = config.get("ENABLE_PRIVATE_ALPHA", False) %}
 <div class="container inquiry-container">
   <div class="card inquiry-header-card">
     <div class="inquiry-header">
@@ -8,7 +9,12 @@
         <p class="inquiry-lede">Ask one scoped question and generate one bounded evidence-based brief.</p>
       </div>
       <div class="inquiry-header-actions">
+        {% if private_alpha_enabled %}
+        <a class="btn btn-secondary" href="/insights/data">Data Readiness</a>
+        <a class="btn btn-secondary" href="/insights/history">History</a>
+        {% else %}
         <a class="btn btn-secondary" href="/insights">Back to Insight Feed</a>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -22,6 +28,8 @@
     <div id="inquiry-login-hint" class="auth-status" data-tone="error" style="display:none;">
       Please sign in to generate inquiry briefs.
     </div>
+    <div id="inquiry-alpha-scope-note" class="auth-status" style="display:none;"></div>
+    <div id="inquiry-readiness-status" class="auth-status" style="display:none;"></div>
     <div id="inquiry-setup-status" class="auth-status" aria-live="polite"></div>
 
     <form id="inquiry-form" class="inquiry-form" autocomplete="off">
@@ -131,6 +139,22 @@
         <div class="inquiry-block-label">Readable Brief</div>
         <div id="inquiry-humanized-answer" class="inquiry-summary"></div>
         <div id="inquiry-humanized-sections" class="inquiry-findings"></div>
+      </div>
+
+      <div class="inquiry-block" id="inquiry-feedback-block" style="display:none;">
+        <div class="inquiry-block-label">Feedback</div>
+        <div id="inquiry-feedback-surface" class="inquiry-context-note">Surface: humanized brief</div>
+        <div class="inquiry-feedback-actions">
+          <button type="button" class="btn btn-secondary" data-feedback-type="helpful">Helpful</button>
+          <button type="button" class="btn btn-secondary" data-feedback-type="unclear">Unclear</button>
+          <button type="button" class="btn btn-secondary" data-feedback-type="too_technical">Too technical</button>
+          <button type="button" class="btn btn-secondary" data-feedback-type="not_useful_yet">Not useful yet</button>
+        </div>
+        <div class="field" style="margin-top:0.5rem;">
+          <label for="inquiry-feedback-note">Optional note</label>
+          <textarea id="inquiry-feedback-note" rows="2" maxlength="280" placeholder="Optional feedback note"></textarea>
+        </div>
+        <div id="inquiry-feedback-status" class="auth-status" style="margin-top:0.35rem;"></div>
       </div>
 
       <div id="inquiry-technical-brief-block" style="display:none;">
@@ -246,7 +270,7 @@
     </div>
   </div>
 
-  <div class="card inquiry-history-card">
+  <div class="card inquiry-history-card" id="inquiry-history-card">
     <div class="inquiry-history-header">
       <div class="inquiry-section-heading" style="margin:0;">
         <h3>Inquiry History</h3>
@@ -263,7 +287,7 @@
 
 <script>
   (() => {
-    const DOMAINS = [
+    const DOMAIN_CATALOG = [
       { key: 'calendar', label: 'Calendar' },
       { key: 'finance', label: 'Finance' },
       { key: 'habits', label: 'Habits' },
@@ -273,6 +297,13 @@
       { key: 'relationships', label: 'Relationships' },
       { key: 'journal', label: 'Journal' },
     ];
+    let DOMAINS = [...DOMAIN_CATALOG];
+    const ALPHA_DOMAIN_LABELS = {
+      calendar: 'Calendar',
+      habits: 'Habits',
+      projects: 'Projects',
+      skills: 'Skills',
+    };
 
     const state = {
       inquiries: [],
@@ -282,9 +313,13 @@
       refineInquiryId: null,
       inquiryCache: new Map(),
       technicalViewOpen: false,
+      alphaConfig: null,
+      readiness: null,
     };
 
     const loginHint = document.getElementById('inquiry-login-hint');
+    const alphaScopeNote = document.getElementById('inquiry-alpha-scope-note');
+    const readinessStatus = document.getElementById('inquiry-readiness-status');
     const setupStatus = document.getElementById('inquiry-setup-status');
     const historyStatus = document.getElementById('inquiry-history-status');
 
@@ -313,6 +348,10 @@
     const briefStatus = document.getElementById('inquiry-brief-status');
     const technicalViewBtn = document.getElementById('inquiry-technical-view-btn');
     const technicalBriefBlock = document.getElementById('inquiry-technical-brief-block');
+    const feedbackBlock = document.getElementById('inquiry-feedback-block');
+    const feedbackSurface = document.getElementById('inquiry-feedback-surface');
+    const feedbackNote = document.getElementById('inquiry-feedback-note');
+    const feedbackStatus = document.getElementById('inquiry-feedback-status');
     const versionList = document.getElementById('inquiry-version-list');
     const humanizedBriefBlock = document.getElementById('inquiry-humanized-brief-block');
     const humanizedAnswerEl = document.getElementById('inquiry-humanized-answer');
@@ -361,6 +400,7 @@
     const historyRefresh = document.getElementById('inquiry-history-refresh');
     const historyEmpty = document.getElementById('inquiry-history-empty');
     const historyList = document.getElementById('inquiry-history-list');
+    const historyCard = document.getElementById('inquiry-history-card');
 
     const EXPERT_RENDERED_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills', 'journal', 'relationships', 'health']);
     const TIMELINE_FIRST_WAVE_DOMAINS = new Set(['finance', 'habits', 'projects', 'skills', 'calendar']);
@@ -369,7 +409,7 @@
       'projects__skills',
       'projects__calendar',
     ]);
-    const APPROVED_CROSS_DOMAIN_PAIRS = [
+    const CROSS_DOMAIN_PAIR_CATALOG = [
       { key: 'finance__habits', profile: 'finance_habits_v1', domains: ['finance', 'habits'] },
       { key: 'projects__skills', profile: 'projects_skills_v1', domains: ['projects', 'skills'] },
       { key: 'journal__habits', profile: 'journal_habits_v1', domains: ['journal', 'habits'] },
@@ -377,6 +417,7 @@
       { key: 'projects__calendar', profile: 'projects_calendar_v1', domains: ['projects', 'calendar'] },
       { key: 'relationships__journal', profile: 'relationships_journal_v1', domains: ['relationships', 'journal'] },
     ];
+    let APPROVED_CROSS_DOMAIN_PAIRS = [...CROSS_DOMAIN_PAIR_CATALOG];
     const DOMAIN_CATEGORY_LABELS = {
       cross_domain: {
         co_occurrence_observation: 'Co-occurrence observation',
@@ -529,12 +570,52 @@
 
     const labelForDomain = (domain) => {
       const found = DOMAINS.find((item) => item.key === domain);
-      return found?.label || String(domain || 'Unknown');
+      if (found?.label) return found.label;
+      return ALPHA_DOMAIN_LABELS[String(domain || '').toLowerCase()] || String(domain || 'Unknown');
     };
 
     const labelForDomainPair = (domains = []) => {
       const parts = domains.map((domain) => labelForDomain(domain));
       return parts.join(' + ');
+    };
+
+    const applyAlphaShellScope = (alpha) => {
+      state.alphaConfig = alpha || null;
+      if (!alpha || !alpha.enabled) {
+        DOMAINS = [...DOMAIN_CATALOG];
+        APPROVED_CROSS_DOMAIN_PAIRS = [...CROSS_DOMAIN_PAIR_CATALOG];
+        alphaScopeNote.style.display = 'none';
+        if (historyCard) historyCard.style.display = '';
+        return;
+      }
+
+      const visibleDomains = new Set((alpha.visible_domains || []).map((item) => String(item || '').trim().toLowerCase()).filter(Boolean));
+      DOMAINS = DOMAIN_CATALOG.filter((domain) => visibleDomains.has(domain.key));
+
+      const enabledProfiles = new Set((alpha.enabled_pair_profiles || []).map((item) => String(item || '').trim()));
+      APPROVED_CROSS_DOMAIN_PAIRS = CROSS_DOMAIN_PAIR_CATALOG.filter((pair) => enabledProfiles.has(pair.profile));
+
+      const visibleDomainCopy = DOMAINS.map((item) => item.label).join(', ') || 'none';
+      const visiblePairCopy = APPROVED_CROSS_DOMAIN_PAIRS.map((pair) => labelForDomainPair(pair.domains)).join(' · ') || 'none';
+      setStatus(
+        alphaScopeNote,
+        `Private alpha scope · domains: ${visibleDomainCopy} · pairs: ${visiblePairCopy}`,
+        'warning',
+      );
+      alphaScopeNote.style.display = 'block';
+      if (historyCard && alpha.history_enabled === false) {
+        historyCard.style.display = 'none';
+      }
+    };
+
+    const loadBootstrapAlpha = async () => {
+      try {
+        const res = await fetch('/api/bootstrap', { headers: getAuthHeaders() });
+        const body = await res.json().catch(() => ({}));
+        applyAlphaShellScope(body?.private_alpha || null);
+      } catch (_) {
+        applyAlphaShellScope(null);
+      }
     };
 
     const findApprovedPair = (pairKey) => APPROVED_CROSS_DOMAIN_PAIRS.find((pair) => pair.key === pairKey) || null;
@@ -820,6 +901,9 @@
         node.disabled = !authed;
       });
       historyRefresh.disabled = !authed;
+      if (authed && state.alphaConfig?.enabled && state.alphaConfig?.require_data_readiness && state.readiness && !state.readiness.ready) {
+        generateBtn.disabled = true;
+      }
       if (!authed) {
         setStatus(setupStatus, 'Please sign in to generate a brief.', 'error');
         setStatus(historyStatus, 'Please sign in to view inquiry history.', 'error');
@@ -854,6 +938,13 @@
         option.textContent = `${labelForDomainPair(pair.domains)} (${pair.profile})`;
         crossDomainPairSelect.appendChild(option);
       });
+      if (!APPROVED_CROSS_DOMAIN_PAIRS.length) {
+        crossDomainInput.checked = false;
+        crossDomainInput.disabled = true;
+        crossDomainPairWrap.style.display = 'none';
+      } else {
+        crossDomainInput.disabled = false;
+      }
     };
 
     const applyCrossDomainPairSelection = () => {
@@ -931,6 +1022,16 @@
     const parseError = (body, res) => {
       const contractError = resolveContractError(body, res);
       if (contractError) return contractError;
+      const alphaErrors = {
+        alpha_domain_not_visible: 'That domain is not visible in private alpha.',
+        alpha_pair_not_enabled: 'That cross-domain pair is not enabled in private alpha.',
+        alpha_readiness_not_met: 'Data readiness is not met yet. Open Data Readiness for next steps.',
+        alpha_history_disabled: 'Inquiry history is disabled for this private alpha configuration.',
+        alpha_pair_required: 'Select one approved cross-domain pair.',
+      };
+      if (body?.error && alphaErrors[body.error]) {
+        return alphaErrors[body.error];
+      }
       if (body?.error === 'validation_error') {
         const details = Array.isArray(body.details) ? body.details.map((item) => item.msg || item.type).filter(Boolean) : [];
         return details.length ? `Invalid inquiry: ${details.join('; ')}` : 'Invalid inquiry. Please review scope and timeframe.';
@@ -1281,6 +1382,51 @@
         technicalViewBtn.textContent = state.technicalViewOpen ? 'Hide technical brief' : 'Technical brief';
         technicalViewBtn.setAttribute('aria-expanded', state.technicalViewOpen ? 'true' : 'false');
       }
+      if (feedbackSurface) {
+        feedbackSurface.textContent = `Surface: ${state.technicalViewOpen ? 'technical brief' : 'humanized brief'}`;
+      }
+    };
+
+    const renderFeedbackVisibility = () => {
+      const enabled = !state.alphaConfig?.enabled || state.alphaConfig?.inquiry_feedback_enabled;
+      const hasInquiry = Boolean(state.selectedInquiry?.id && state.selectedVersionId);
+      if (!feedbackBlock) return;
+      feedbackBlock.style.display = enabled && hasInquiry ? 'block' : 'none';
+      if (!enabled) {
+        setStatus(feedbackStatus, 'Feedback is disabled for this alpha configuration.', 'warning');
+      } else {
+        setStatus(feedbackStatus, '');
+      }
+    };
+
+    const submitFeedback = async (feedbackType) => {
+      if (!state.selectedInquiry?.id || !state.selectedVersionId) {
+        setStatus(feedbackStatus, 'Open a generated inquiry result before sending feedback.', 'warning');
+        return;
+      }
+      const payload = {
+        version_id: state.selectedVersionId,
+        feedback_type: feedbackType,
+        surface: state.technicalViewOpen ? 'technical' : 'humanized',
+        note: (feedbackNote?.value || '').trim() || null,
+      };
+      setStatus(feedbackStatus, 'Sending feedback...');
+      try {
+        const res = await fetch(`/api/v1/inquiries/${state.selectedInquiry.id}/feedback`, {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus(feedbackStatus, parseError(body, res), 'error');
+          return;
+        }
+        const deduped = Boolean(body.deduped);
+        setStatus(feedbackStatus, deduped ? 'Feedback already recorded for this result version.' : 'Feedback saved.', 'success');
+      } catch (_) {
+        setStatus(feedbackStatus, 'Feedback could not be saved right now. Please retry.', 'error');
+      }
     };
 
     const renderHumanizedBrief = (brief) => {
@@ -1355,6 +1501,13 @@
 
     const renderBrief = (brief, meta = {}) => {
       state.brief = brief;
+      if (meta.inquiryId) {
+        state.selectedInquiry = state.selectedInquiry || {};
+        state.selectedInquiry.id = meta.inquiryId;
+      }
+      if (meta.versionId) {
+        state.selectedVersionId = meta.versionId;
+      }
       briefEmpty.style.display = 'none';
       briefContent.style.display = 'block';
 
@@ -1445,6 +1598,7 @@
         briefAlert.style.display = 'none';
         setStatus(briefAlert, '');
       }
+      renderFeedbackVisibility();
     };
 
     const renderVersions = (versions = [], activeVersionId = null) => {
@@ -1458,7 +1612,11 @@
         btn.addEventListener('click', () => {
           state.selectedVersionId = version.id;
           renderVersions(versions, version.id);
-          renderBrief(version.brief, { versionNumber: version.version_number });
+          renderBrief(version.brief, {
+            versionNumber: version.version_number,
+            versionId: version.id,
+            inquiryId: state.selectedInquiry?.id || null,
+          });
         });
         versionList.appendChild(btn);
       });
@@ -1562,6 +1720,54 @@
       setStatus(setupStatus, '');
     };
 
+    const renderReadinessStatus = (readiness) => {
+      state.readiness = readiness || null;
+      if (!state.alphaConfig?.enabled) {
+        readinessStatus.style.display = 'none';
+        return;
+      }
+      if (!readiness) {
+        readinessStatus.style.display = 'none';
+        return;
+      }
+      readinessStatus.style.display = 'block';
+      if (readiness.ready) {
+        const readyDomains = Array.isArray(readiness.ready_domains)
+          ? readiness.ready_domains.map((domain) => labelForDomain(domain)).join(', ')
+          : '';
+        setStatus(
+          readinessStatus,
+          `Readiness met${readyDomains ? ` · ${readyDomains}` : ''}.`,
+          'success',
+        );
+      } else {
+        setStatus(
+          readinessStatus,
+          `${readiness.next_step || 'Data readiness is not met yet.'} Open Data Readiness for setup guidance.`,
+          'warning',
+        );
+      }
+      ensureAuth();
+    };
+
+    const loadReadiness = async () => {
+      if (!state.alphaConfig?.enabled) return;
+      if (!ensureAuth()) return;
+      try {
+        const res = await fetch('/api/v1/inquiries/readiness', { headers: getAuthHeaders() });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus(readinessStatus, parseError(body, res), 'error');
+          readinessStatus.style.display = 'block';
+          return;
+        }
+        renderReadinessStatus(body.readiness || null);
+      } catch (_) {
+        setStatus(readinessStatus, 'Unable to check readiness. You can retry from Data Readiness.', 'warning');
+        readinessStatus.style.display = 'block';
+      }
+    };
+
     const loadHistory = async () => {
       if (!ensureAuth()) return;
       setStatus(historyStatus, 'Loading history...');
@@ -1594,7 +1800,11 @@
         state.selectedVersionId = selectedVersion?.id || null;
         renderVersions(versions, state.selectedVersionId);
         if (selectedVersion?.brief) {
-          renderBrief(selectedVersion.brief, { versionNumber: selectedVersion.version_number });
+          renderBrief(selectedVersion.brief, {
+            versionNumber: selectedVersion.version_number,
+            versionId: selectedVersion.id,
+            inquiryId: inquiryId,
+          });
         }
         return;
       }
@@ -1614,7 +1824,11 @@
         state.selectedVersionId = selectedVersion?.id || null;
         renderVersions(versions, state.selectedVersionId);
         if (selectedVersion?.brief) {
-          renderBrief(selectedVersion.brief, { versionNumber: selectedVersion.version_number });
+          renderBrief(selectedVersion.brief, {
+            versionNumber: selectedVersion.version_number,
+            versionId: selectedVersion.id,
+            inquiryId: inquiry.id,
+          });
         }
       } catch (_) {
         setStatus(historyStatus, 'Unable to load inquiry detail.', 'error');
@@ -1648,6 +1862,9 @@
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.ok === false) {
           setStatus(setupStatus, parseError(body, res), 'error');
+          if (body?.error === 'alpha_readiness_not_met') {
+            renderReadinessStatus(body?.details || null);
+          }
           briefAlert.style.display = 'block';
           setStatus(briefAlert, 'Generation failure. Review scope and try again.', 'error');
           return;
@@ -1655,8 +1872,15 @@
 
         const inquiryId = body.inquiry_id || body.inquiry?.id;
         const versionNumber = body.version_number || body.inquiry?.last_version_number || 1;
+        const versionId = body.version_id || body.latest_brief?.id || null;
         const brief = body.brief || body.latest_brief;
-        if (brief) renderBrief(brief, { versionNumber });
+        if (brief) {
+          renderBrief(brief, {
+            versionNumber,
+            versionId: versionId,
+            inquiryId: inquiryId || null,
+          });
+        }
         if (inquiryId) {
           state.inquiryCache.delete(inquiryId);
           await loadInquiryDetail(inquiryId, { useCache: false });
@@ -1773,9 +1997,16 @@
         setTechnicalView(!state.technicalViewOpen);
       });
 
+      feedbackBlock.querySelectorAll('[data-feedback-type]').forEach((button) => {
+        button.addEventListener('click', () => {
+          submitFeedback(button.dataset.feedbackType);
+        });
+      });
+
       window.addEventListener('lifeos:auth-changed', (e) => {
         if (e.detail?.loggedIn) {
           ensureAuth();
+          loadReadiness();
           loadHistory();
         } else {
           ensureAuth();
@@ -1783,11 +2014,13 @@
           historyEmpty.style.display = 'block';
           briefEmpty.style.display = 'block';
           briefContent.style.display = 'none';
+          renderFeedbackVisibility();
         }
       });
     };
 
     const start = async () => {
+      await loadBootstrapAlpha();
       populateDomains();
       populateCrossDomainPairs();
       bindEvents();
@@ -1795,12 +2028,18 @@
       ensureAuth();
       if (!lifeosAuth.isAuthenticated()) {
         historyEmpty.style.display = 'block';
+        renderFeedbackVisibility();
         return;
       }
+      await loadReadiness();
       await loadHistory();
-      if (state.inquiries.length) {
+      const queryInquiryId = Number(new URLSearchParams(window.location.search).get('inquiry_id') || 0);
+      if (queryInquiryId > 0) {
+        await loadInquiryDetail(queryInquiryId, { useCache: false });
+      } else if (state.inquiries.length) {
         await loadInquiryDetail(state.inquiries[0].id);
       }
+      renderFeedbackVisibility();
     };
 
     if (window.lifeosAuthReady?.then) {

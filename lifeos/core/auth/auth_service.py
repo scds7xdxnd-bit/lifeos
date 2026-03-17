@@ -15,18 +15,34 @@ from flask_jwt_extended import (
 from sqlalchemy import func
 
 from lifeos.core.auth.events import (
+    AUTH_PRIVATE_ALPHA_INVITE_ACCEPTED,
+    AUTH_PRIVATE_ALPHA_INVITE_ISSUED,
+    AUTH_PRIVATE_ALPHA_INVITE_REJECTED,
     AUTH_USER_PASSWORD_RESET_COMPLETED,
     AUTH_USER_PASSWORD_RESET_REQUESTED,
     AUTH_USER_REGISTERED,
     AUTH_USER_USERNAME_REMINDER_REQUESTED,
 )
-from lifeos.core.auth.models import JWTBlocklist, PasswordResetToken, Role, SessionToken
+from lifeos.core.auth.models import JWTBlocklist, PasswordResetToken, PrivateAlphaInvite, Role, SessionToken
 from lifeos.core.auth.password import hash_password, verify_password
 from lifeos.core.auth.schemas import (
     ForgotPasswordRequest,
     ForgotUsernameRequest,
     RegisterRequest,
     ResetPasswordRequest,
+)
+from lifeos.core.observability import (
+    record_private_alpha_invite_accepted,
+    record_private_alpha_invite_issued,
+    record_private_alpha_invite_rejected,
+    set_private_alpha_user_state,
+)
+from lifeos.core.private_alpha import (
+    AlphaGateError,
+    alpha_enabled,
+    alpha_flags,
+    hash_invite_token,
+    normalize_invite_email,
 )
 from lifeos.core.users.models import User
 from lifeos.extensions import db
@@ -100,6 +116,11 @@ def register_user(payload: RegisterRequest, auto_issue_tokens: bool = False) -> 
     if existing:
         raise ValueError("email_already_exists")
 
+    invite: PrivateAlphaInvite | None = None
+    if alpha_enabled():
+        _enforce_private_alpha_user_cap()
+        invite = _validate_private_alpha_invite(payload.invite_token, normalized_email)
+
     timezone = payload.timezone or DEFAULT_TIMEZONE
     user = User(
         email=normalized_email,
@@ -111,6 +132,20 @@ def register_user(payload: RegisterRequest, auto_issue_tokens: bool = False) -> 
     db.session.add(user)
     _assign_default_role(user)
     db.session.flush()  # ensure user.id for events
+    if invite is not None:
+        invite.accepted_by_user_id = user.id
+        invite.accepted_at = datetime.utcnow()
+        record_private_alpha_invite_accepted()
+        enqueue_outbox(
+            AUTH_PRIVATE_ALPHA_INVITE_ACCEPTED,
+            {
+                "invite_id": invite.id,
+                "invited_email": invite.invited_email,
+                "accepted_by_user_id": user.id,
+                "accepted_at": invite.accepted_at.isoformat(),
+            },
+            user_id=user.id,
+        )
 
     enqueue_outbox(
         AUTH_USER_REGISTERED,
@@ -129,6 +164,13 @@ def register_user(payload: RegisterRequest, auto_issue_tokens: bool = False) -> 
     )
 
     db.session.commit()
+    if alpha_enabled():
+        flags = alpha_flags()
+        set_private_alpha_user_state(
+            active_users=_active_alpha_user_count(),
+            max_users=flags.max_users,
+            enabled=flags.enabled,
+        )
 
     tokens = issue_tokens(user) if auto_issue_tokens else {}
     return {"user": user, **tokens}
@@ -241,7 +283,7 @@ def _hash_token(raw: str) -> str:
 
 
 def _assign_default_role(user: User) -> None:
-    for code in DEFAULT_REGISTER_ROLES:
+    for code in _default_register_roles():
         role = Role.query.filter_by(name=code).first()
         if not role:
             role = Role(name=code, description=f"Auto-created role {code}")
@@ -252,3 +294,132 @@ def _assign_default_role(user: User) -> None:
 
 def _revoke_user_sessions(user_id: int) -> None:
     SessionToken.query.filter_by(user_id=user_id, revoked=False).update({"revoked": True}, synchronize_session=False)
+
+
+def issue_private_alpha_invite(
+    invited_email: str,
+    *,
+    issued_by_user_id: int | None = None,
+    expires_at: datetime | None = None,
+) -> tuple[PrivateAlphaInvite, str]:
+    normalized_email = normalize_invite_email(invited_email)
+    raw_token = secrets.token_urlsafe(24)
+    invite = PrivateAlphaInvite(
+        invited_email=normalized_email,
+        token_hash=hash_invite_token(raw_token),
+        issued_by_user_id=issued_by_user_id,
+        expires_at=expires_at,
+    )
+    db.session.add(invite)
+    db.session.flush()
+    enqueue_outbox(
+        AUTH_PRIVATE_ALPHA_INVITE_ISSUED,
+        {
+            "invite_id": invite.id,
+            "invited_email": normalized_email,
+            "issued_by_user_id": issued_by_user_id,
+            "expires_at": expires_at.isoformat() if expires_at else None,
+        },
+        user_id=issued_by_user_id,
+    )
+    record_private_alpha_invite_issued()
+    db.session.commit()
+    return invite, raw_token
+
+
+def _default_register_roles() -> tuple[str, ...]:
+    if not alpha_enabled():
+        return DEFAULT_REGISTER_ROLES
+    flags = alpha_flags()
+    roles = ["user", "alpha_user"]
+    for domain in flags.visible_domains:
+        roles.append(f"{domain}:write")
+    return tuple(dict.fromkeys(roles))
+
+
+def _enforce_private_alpha_user_cap() -> None:
+    flags = alpha_flags()
+    if not flags.enabled or flags.max_users <= 0:
+        set_private_alpha_user_state(active_users=0, max_users=flags.max_users, enabled=flags.enabled)
+        return
+    active_alpha_users = _active_alpha_user_count()
+    set_private_alpha_user_state(active_users=active_alpha_users, max_users=flags.max_users, enabled=flags.enabled)
+    if active_alpha_users >= flags.max_users:
+        record_private_alpha_invite_rejected("alpha_user_cap_reached")
+        raise AlphaGateError("alpha_user_cap_reached", details={"max_users": flags.max_users})
+
+
+def _validate_private_alpha_invite(raw_token: str | None, normalized_email: str) -> PrivateAlphaInvite | None:
+    flags = alpha_flags()
+    if not flags.enabled or not flags.invite_only:
+        return None
+    if not raw_token:
+        enqueue_outbox(
+            AUTH_PRIVATE_ALPHA_INVITE_REJECTED,
+            {"invited_email": normalized_email, "reason": "invite_required"},
+            user_id=None,
+        )
+        record_private_alpha_invite_rejected("invite_required")
+        db.session.commit()
+        raise AlphaGateError("invite_required")
+    invite = PrivateAlphaInvite.query.filter_by(token_hash=hash_invite_token(raw_token)).first()
+    now = datetime.utcnow()
+    if invite is None:
+        enqueue_outbox(
+            AUTH_PRIVATE_ALPHA_INVITE_REJECTED,
+            {"invited_email": normalized_email, "reason": "invite_invalid"},
+            user_id=None,
+        )
+        record_private_alpha_invite_rejected("invite_invalid")
+        db.session.commit()
+        raise AlphaGateError("invite_invalid")
+    if normalize_invite_email(invite.invited_email) != normalized_email:
+        enqueue_outbox(
+            AUTH_PRIVATE_ALPHA_INVITE_REJECTED,
+            {"invited_email": normalized_email, "reason": "invite_email_mismatch"},
+            user_id=None,
+        )
+        record_private_alpha_invite_rejected("invite_email_mismatch")
+        db.session.commit()
+        raise AlphaGateError("invite_email_mismatch")
+    if invite.revoked_at is not None:
+        enqueue_outbox(
+            AUTH_PRIVATE_ALPHA_INVITE_REJECTED,
+            {"invited_email": normalized_email, "reason": "invite_revoked"},
+            user_id=None,
+        )
+        record_private_alpha_invite_rejected("invite_revoked")
+        db.session.commit()
+        raise AlphaGateError("invite_revoked")
+    if invite.accepted_at is not None:
+        enqueue_outbox(
+            AUTH_PRIVATE_ALPHA_INVITE_REJECTED,
+            {"invited_email": normalized_email, "reason": "invite_already_used"},
+            user_id=None,
+        )
+        record_private_alpha_invite_rejected("invite_already_used")
+        db.session.commit()
+        raise AlphaGateError("invite_already_used")
+    if invite.expires_at is not None and invite.expires_at < now:
+        enqueue_outbox(
+            AUTH_PRIVATE_ALPHA_INVITE_REJECTED,
+            {"invited_email": normalized_email, "reason": "invite_expired"},
+            user_id=None,
+        )
+        record_private_alpha_invite_rejected("invite_expired")
+        db.session.commit()
+        raise AlphaGateError("invite_expired")
+    return invite
+
+
+def _active_alpha_user_count() -> int:
+    role = Role.query.filter_by(name="alpha_user").first()
+    if role is None:
+        return 0
+    return (
+        db.session.query(User.id)
+        .join(User.roles)
+        .filter(Role.name == "alpha_user", User.is_active.is_(True))
+        .distinct()
+        .count()
+    )

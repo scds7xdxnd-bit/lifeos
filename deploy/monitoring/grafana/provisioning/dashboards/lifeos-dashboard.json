@@ -1,5 +1,6 @@
 {
   "title": "LifeOS Application Monitoring",
+  "uid": "lifeos-app-monitoring",
   "description": "Core LifeOS application metrics and health",
   "tags": [
     "lifeos",

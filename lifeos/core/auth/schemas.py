@@ -19,6 +19,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8)
     full_name: Optional[str] = Field(default=None, max_length=255)
     timezone: Optional[str] = None
+    invite_token: Optional[str] = Field(default=None, min_length=8, max_length=255)
 
     @field_validator("email")
     @classmethod
@@ -40,6 +41,14 @@ class RegisterRequest(BaseModel):
         if v not in _TIMEZONES:
             raise ValueError("invalid timezone")
         return v
+
+    @field_validator("invite_token")
+    @classmethod
+    def validate_invite_token(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
 
 
 class SessionAdminResetRequest(BaseModel):

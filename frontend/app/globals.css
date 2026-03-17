@@ -1,0 +1,97 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* LifeOS "Quiet Authority" design tokens mapped to shadcn semantic names */
+@theme inline {
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-primary:            var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:          var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
+  --font-sans:                var(--font-sans);
+  --radius-sm: calc(var(--radius) * 0.75);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.5);
+}
+
+:root {
+  /* Backgrounds */
+  --background:        #f6f7f9;
+  --foreground:        #1f2432;
+
+  /* Cards / surfaces */
+  --card:              #ffffff;
+  --card-foreground:   #1f2432;
+  --popover:           #ffffff;
+  --popover-foreground: #1f2432;
+
+  /* Primary = LifeOS accent blue */
+  --primary:           #2c5aa0;
+  --primary-foreground: #ffffff;
+
+  /* Secondary / muted */
+  --secondary:         #eef1f5;
+  --secondary-foreground: #1f2432;
+  --muted:             #eef1f5;
+  --muted-foreground:  #5c6474;
+
+  /* Accent (interactive highlight) */
+  --accent:            #eef1f5;
+  --accent-foreground: #1f2432;
+
+  /* Destructive */
+  --destructive:       #b54a36;
+
+  /* Borders & inputs */
+  --border:            #e0e5ec;
+  --input:             #e0e5ec;
+  --ring:              #2c5aa0;
+
+  /* Radius — matches LifeOS --radius-m: 10px */
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background:        #141720;
+  --foreground:        #e8eaf0;
+  --card:              #1e2130;
+  --card-foreground:   #e8eaf0;
+  --popover:           #1e2130;
+  --popover-foreground: #e8eaf0;
+  --primary:           #5b8cd4;
+  --primary-foreground: #ffffff;
+  --secondary:         #262b3d;
+  --secondary-foreground: #e8eaf0;
+  --muted:             #262b3d;
+  --muted-foreground:  #8892a4;
+  --accent:            #262b3d;
+  --accent-foreground: #e8eaf0;
+  --destructive:       #d4614b;
+  --border:            rgba(255,255,255,0.08);
+  --input:             rgba(255,255,255,0.10);
+  --ring:              #5b8cd4;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+}

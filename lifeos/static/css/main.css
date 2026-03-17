@@ -1628,6 +1628,13 @@ select:focus {
   gap: 0.45rem;
 }
 
+.inquiry-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
 .inquiry-direct-answer {
   color: var(--text-strong);
   font-weight: 600;

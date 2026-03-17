@@ -95,4 +95,6 @@ def test_refine_creates_new_version_and_preserves_prior_payload(app, client):
         )
         assert len(db_versions) == 2
         assert db_versions[1].parent_version_id == db_versions[0].id
-        assert db_versions[0].brief_payload == first_brief
+        canonical_first_brief = dict(first_brief)
+        canonical_first_brief.pop("humanized_brief", None)
+        assert db_versions[0].brief_payload == canonical_first_brief

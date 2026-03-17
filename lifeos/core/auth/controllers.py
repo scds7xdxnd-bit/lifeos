@@ -28,6 +28,7 @@ from lifeos.core.auth.schemas import (
     RegisterRequest,
     ResetPasswordRequest,
 )
+from lifeos.core.private_alpha import AlphaGateError
 from lifeos.core.users.schemas import LoginRequest, serialize_user
 from lifeos.core.utils.decorators import csrf_protected
 from lifeos.extensions import limiter
@@ -60,6 +61,8 @@ def register():
             data,
             auto_issue_tokens=current_app.config.get("AUTO_LOGIN_ON_REGISTER", False),
         )
+    except AlphaGateError as exc:
+        return jsonify({"ok": False, "error": exc.code, "details": exc.details}), 403
     except ValueError as exc:
         code = str(exc)
         if code == "email_already_exists":
@@ -190,4 +193,20 @@ def reset_password_route():
 @auth_pages_bp.get("/login")
 def login_page():
     # Read-mode login page; keeps API unchanged.
-    return render_template("auth/login.html")
+    return render_template(
+        "auth/login.html",
+        invite_token=request.args.get("invite_token", "").strip(),
+        private_alpha_enabled=bool(current_app.config.get("ENABLE_PRIVATE_ALPHA", False)),
+        private_alpha_invite_only=bool(current_app.config.get("ALPHA_INVITE_ONLY", False)),
+    )
+
+
+@auth_pages_bp.get("/invite")
+def invite_page():
+    """Invite acceptance entrypoint for private alpha onboarding."""
+    return render_template(
+        "auth/login.html",
+        invite_token=request.args.get("token", "").strip(),
+        private_alpha_enabled=bool(current_app.config.get("ENABLE_PRIVATE_ALPHA", False)),
+        private_alpha_invite_only=bool(current_app.config.get("ALPHA_INVITE_ONLY", False)),
+    )

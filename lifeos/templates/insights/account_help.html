@@ -1,0 +1,126 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container inquiry-container">
+  <div class="card inquiry-header-card">
+    <div class="inquiry-header">
+      <div>
+        <h2 class="inquiry-title">Account / Help</h2>
+        <p class="inquiry-lede">Private alpha account access and product usage guidance.</p>
+      </div>
+      <div class="inquiry-header-actions">
+        <a class="btn btn-secondary" href="/users/profile">Profile</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card inquiry-setup-card">
+    <div class="inquiry-section-heading">
+      <h3>Account Access</h3>
+      <p>Session-cookie access only. Invite-based registration remains enforced in private alpha.</p>
+    </div>
+    <div id="alpha-account-status" class="auth-status"></div>
+    <div id="alpha-account-summary" class="inquiry-summary">Checking account status...</div>
+  </div>
+
+  <div class="card inquiry-setup-card">
+    <div class="inquiry-section-heading">
+      <h3>Support Path</h3>
+      <p>Use this path for invite, onboarding, readiness, login, or inquiry-surface issues.</p>
+    </div>
+    <div class="inquiry-block">
+      <div class="inquiry-block-label">Primary support contact</div>
+      <div class="inquiry-summary">
+        {% set support_contact = config.get("ALPHA_SUPPORT_CONTACT", "") %}
+        {% if support_contact %}
+        {{ support_contact }}
+        {% else %}
+        Contact your invite administrator for private alpha support.
+        {% endif %}
+      </div>
+    </div>
+    <div class="inquiry-block">
+      <div class="inquiry-block-label">When to use support</div>
+      <ul class="inquiry-next-questions">
+        <li>Invite token or registration problems</li>
+        <li>Readiness blocked and setup confusion</li>
+        <li>Login/access issues</li>
+        <li>Inquiry result concerns to escalate beyond in-page feedback</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card inquiry-setup-card">
+    <div class="inquiry-section-heading">
+      <h3>How to Use LifeOS Alpha</h3>
+      <p>LifeOS is a structured inquiry product, not a chatbot or recommendation assistant.</p>
+    </div>
+    <div class="inquiry-block">
+      <div class="inquiry-block-label">Primary loop</div>
+      <ul class="inquiry-next-questions">
+        <li>Check data readiness</li>
+        <li>Ask one scoped inquiry question</li>
+        <li>Read the humanized brief first</li>
+        <li>Open the technical brief when needed</li>
+        <li>Refine or return later</li>
+      </ul>
+    </div>
+    <div class="inquiry-block">
+      <div class="inquiry-block-label">Scope boundaries</div>
+      <ul class="inquiry-next-questions">
+        <li>No assistant chat mode</li>
+        <li>No recommendations or predictive advice</li>
+        <li>No broad domain management as primary UX</li>
+      </ul>
+    </div>
+    <div class="inquiry-setup-actions">
+      <a class="btn" href="/insights/inquiry">Go to Inquiry</a>
+      <a class="btn btn-secondary" href="/insights/data">View Data Readiness</a>
+      <a class="btn btn-secondary" href="/insights/history">View History</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const statusEl = document.getElementById('alpha-account-status');
+    const summaryEl = document.getElementById('alpha-account-summary');
+
+    const setStatus = (msg, tone = '') => {
+      statusEl.textContent = msg || '';
+      if (tone) statusEl.dataset.tone = tone;
+      else statusEl.removeAttribute('data-tone');
+    };
+
+    const loadAccount = async () => {
+      if (!window.lifeosAuth?.isAuthenticated()) {
+        setStatus('Please sign in to access account details.', 'error');
+        summaryEl.textContent = 'Signed out.';
+        return;
+      }
+      setStatus('Loading account...');
+      try {
+        const res = await fetch('/auth/me', { headers: window.lifeosAuth.authHeaders() });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) {
+          setStatus('Unable to load account details.', 'error');
+          summaryEl.textContent = 'Account details unavailable.';
+          return;
+        }
+        const user = body.user || {};
+        summaryEl.textContent = `${user.email || 'User'} · timezone ${user.timezone || 'UTC'}`;
+        setStatus('Account active.', 'success');
+      } catch (_) {
+        setStatus('Unable to load account details.', 'error');
+        summaryEl.textContent = 'Account details unavailable.';
+      }
+    };
+
+    window.addEventListener('lifeos:auth-changed', loadAccount);
+    if (window.lifeosAuthReady?.then) {
+      window.lifeosAuthReady.finally(loadAccount);
+    } else {
+      loadAccount();
+    }
+  })();
+</script>
+{% endblock %}
