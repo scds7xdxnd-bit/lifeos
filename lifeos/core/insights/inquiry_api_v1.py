@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json as _json
+
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
@@ -21,6 +23,17 @@ from lifeos.core.private_alpha import AlphaGateError, alpha_flags, alpha_history
 from lifeos.core.read_cache import read_cache
 from lifeos.core.utils.decorators import csrf_protected, read_only_endpoint
 from lifeos.extensions import db
+
+
+def _pydantic_errors(exc: ValidationError) -> list[dict]:
+    """Return JSON-safe error list from a Pydantic v2 ValidationError.
+
+    Pydantic v2 includes the original exception object in ``ctx["error"]``,
+    which is not JSON-serializable by Flask's jsonify. Using Pydantic's own
+    JSON encoder and then decoding gives us a clean, serializable structure.
+    """
+    return _json.loads(exc.json())
+
 
 api_v1_inquiry_bp = Blueprint("inquiry_api_v1", __name__)
 
@@ -83,7 +96,7 @@ def create_inquiry_v1():
         data = InquiryCreateRequest.model_validate(payload)
     except ValidationError as exc:
         record_inquiry_error("create", "validation_error", **_labels_from_create_payload(payload))
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return jsonify({"ok": False, "error": "validation_error", "details": _pydantic_errors(exc)}), 400
     except ValueError as exc:
         record_inquiry_error("create", "validation_error", **_labels_from_create_payload(payload))
         return jsonify({"ok": False, "error": str(exc)}), 400
@@ -193,7 +206,7 @@ def refine_inquiry_v1(inquiry_id: int):
         data = InquiryRefineRequest.model_validate(payload)
     except ValidationError as exc:
         record_inquiry_error("refine", "validation_error", **_labels_from_create_payload(payload))
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return jsonify({"ok": False, "error": "validation_error", "details": _pydantic_errors(exc)}), 400
     except ValueError as exc:
         record_inquiry_error("refine", "validation_error", **_labels_from_create_payload(payload))
         return jsonify({"ok": False, "error": str(exc)}), 400
@@ -251,7 +264,7 @@ def record_inquiry_feedback_v1(inquiry_id: int):
     try:
         data = InquiryFeedbackRequest.model_validate(payload)
     except ValidationError as exc:
-        return jsonify({"ok": False, "error": "validation_error", "details": exc.errors()}), 400
+        return jsonify({"ok": False, "error": "validation_error", "details": _pydantic_errors(exc)}), 400
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
 
