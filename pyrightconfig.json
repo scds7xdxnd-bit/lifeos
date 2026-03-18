@@ -1,0 +1,9 @@
+{
+  "pythonVersion": "3.10",
+  "pythonPlatform": "Darwin",
+  "typeCheckingMode": "basic",
+  "include": ["lifeos", "frontend"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/.*"],
+  "venvPath": ".",
+  "venv": ".venv"
+}
