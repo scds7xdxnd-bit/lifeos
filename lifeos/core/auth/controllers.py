@@ -10,6 +10,7 @@ from flask_jwt_extended import (
     jwt_required,
 )
 from flask_login import login_user, logout_user
+from flask_wtf.csrf import csrf
 from pydantic import ValidationError
 
 from lifeos.core.auth.auth_service import (
@@ -46,6 +47,7 @@ def _jsonable_errors(exc: ValidationError) -> list[dict]:
 
 
 @auth_bp.post("/register")
+@csrf.exempt  # Exempt from CSRF since unauthenticated users cannot have a valid token yet
 @limiter.limit("5/minute")
 def register():
     payload = request.get_json(silent=True) or {}
