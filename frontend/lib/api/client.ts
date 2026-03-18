@@ -34,7 +34,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     headers['X-CSRF-Token'] = tokens.csrf_token
   }
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers })
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+    credentials: 'include',  // Enable cross-origin cookies for CSRF validation
+  })
 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {

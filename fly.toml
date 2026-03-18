@@ -69,6 +69,8 @@ primary_region = 'sin'
   RATELIMIT_ENABLED = 'true'
   RUN_MIGRATIONS = 'false'
   STATIC_CACHE_MAX_AGE = '3600'
+  SESSION_COOKIE_SECURE = 'true'
+  JWT_COOKIE_SECURE = 'true'
   WORKER_LOGLEVEL = 'INFO'
 
 [processes]

@@ -74,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
+      credentials: 'include',  // Enable cross-origin cookies for CSRF validation
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.message ?? 'Registration failed')
