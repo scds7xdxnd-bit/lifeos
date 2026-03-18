@@ -265,7 +265,11 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Lax"
     JWT_COOKIE_SECURE = True
-    CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
+    # Parse CORS origins from environment, default to allowing same-domain + localhost for dev
+    _cors_env = os.environ.get(
+        "CORS_ORIGINS", "https://lifeos-black-pond-2352.fly.dev,http://localhost:3000,http://localhost:3001"
+    )
+    CORS_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
 
 class StagingConfig(ProductionConfig):
