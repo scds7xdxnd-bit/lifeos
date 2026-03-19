@@ -168,3 +168,20 @@
   transform: translateY(-1px) scale(1.02);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
 }
+
+/* ── Landing page float animations ── */
+@keyframes floatA {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-9px); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes floatC {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-11px); }
+}
+.float-a { animation: floatA 4.6s ease-in-out infinite; }
+.float-b { animation: floatB 5.4s ease-in-out infinite 1s; }
+.float-c { animation: floatC 4.0s ease-in-out infinite 1.8s; }
