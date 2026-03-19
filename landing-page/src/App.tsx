@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { translations, type Lang } from './translations';
 import { colors } from './tokens';
 
@@ -25,6 +26,7 @@ export default function App() {
       <SocialProof t={t.social} />
       <Waitlist t={t.waitlist} />
       <Footer t={t.footer} />
+      <Analytics />
     </div>
   );
 }
