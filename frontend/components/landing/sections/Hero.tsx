@@ -6,6 +6,7 @@ import { Button } from '../components/Button';
 import { ScrollReveal, ParallaxLayer } from '../components/Motion';
 import { LifeIllustration } from '../assets/Illustration';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { FernFrond } from '../assets/Botanicals';
 import { colors, fonts, typography, shadows, glass } from '../tokens';
 
 interface HeroProps {
@@ -55,6 +56,24 @@ export const Hero = ({ t }: HeroProps) => {
           zIndex: 0,
         }}
       />
+
+      {/* Botanical fern accent */}
+      {!isMobile && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '-5%',
+            right: isDesktop ? '5%' : '0%',
+            width: isDesktop ? '35%' : '40%',
+            height: '110%',
+            pointerEvents: 'none',
+            zIndex: 0,
+            opacity: 0.035,
+          }}
+        >
+          <FernFrond color={colors.onSurface} />
+        </div>
+      )}
 
       {/* Left column — text content */}
       <div
@@ -188,20 +207,19 @@ export const Hero = ({ t }: HeroProps) => {
           </div>
         </ScrollReveal>
 
-        {/* Floating card — hidden on mobile, static on tablet */}
-        {!isMobile && (
-          <ParallaxLayer
-            speed={25}
-            disabled={!isDesktop}
-            style={{
-              position: isDesktop ? 'absolute' : 'relative',
-              top: isDesktop ? '20%' : undefined,
-              left: isDesktop ? '-48px' : undefined,
-              maxWidth: '280px',
-              zIndex: 20,
-              marginTop: isDesktop ? undefined : '16px',
-            }}
-          >
+        {/* Floating card — static on mobile/tablet, absolute on desktop */}
+        <ParallaxLayer
+          speed={25}
+          disabled={!isDesktop}
+          style={{
+            position: isDesktop ? 'absolute' : 'relative',
+            top: isDesktop ? '20%' : undefined,
+            left: isDesktop ? '-48px' : undefined,
+            maxWidth: isMobile ? '100%' : '280px',
+            zIndex: 20,
+            marginTop: isDesktop ? undefined : '16px',
+          }}
+        >
             <Card style={{ padding: '20px 24px', boxShadow: shadows.floating }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                 <div
@@ -276,8 +294,7 @@ export const Hero = ({ t }: HeroProps) => {
                 </span>
               </div>
             </Card>
-          </ParallaxLayer>
-        )}
+        </ParallaxLayer>
 
         {/* Floating glass badge — desktop only */}
         {isDesktop && (
