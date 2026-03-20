@@ -5,7 +5,6 @@ import type { CSSProperties } from 'react';
 interface BotanicalProps {
   style?: CSSProperties;
   color?: string;
-  className?: string;
 }
 
 /**
@@ -17,6 +16,7 @@ export const FernFrond = ({ style, color = 'currentColor' }: BotanicalProps) => 
     viewBox="0 0 400 600"
     fill="none"
     style={{ width: '100%', height: '100%', ...style }}
+    aria-hidden="true"
   >
     {/* Main stem */}
     <path
@@ -56,6 +56,7 @@ export const VineDivider = ({ style, color = 'currentColor' }: BotanicalProps) =
     viewBox="0 0 800 60"
     fill="none"
     style={{ width: '100%', height: 'auto', ...style }}
+    aria-hidden="true"
   >
     {/* Main vine stem — organic curve */}
     <path

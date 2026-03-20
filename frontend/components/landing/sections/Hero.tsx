@@ -207,19 +207,18 @@ export const Hero = ({ t }: HeroProps) => {
           </div>
         </ScrollReveal>
 
-        {/* Floating card — static on mobile/tablet, absolute on desktop */}
-        <ParallaxLayer
-          speed={25}
-          disabled={!isDesktop}
-          style={{
-            position: isDesktop ? 'absolute' : 'relative',
-            top: isDesktop ? '20%' : undefined,
-            left: isDesktop ? '-48px' : undefined,
-            maxWidth: isMobile ? '100%' : '280px',
-            zIndex: 20,
-            marginTop: isDesktop ? undefined : '16px',
-          }}
-        >
+        {/* Floating card — plain div on mobile/tablet, ParallaxLayer on desktop */}
+        {isDesktop ? (
+          <ParallaxLayer
+            speed={25}
+            style={{
+              position: 'absolute',
+              top: '20%',
+              left: '-48px',
+              maxWidth: '280px',
+              zIndex: 20,
+            }}
+          >
             <Card style={{ padding: '20px 24px', boxShadow: shadows.floating }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                 <div
@@ -294,7 +293,92 @@ export const Hero = ({ t }: HeroProps) => {
                 </span>
               </div>
             </Card>
-        </ParallaxLayer>
+          </ParallaxLayer>
+        ) : (
+          <div
+            style={{
+              position: 'relative',
+              maxWidth: isMobile ? '100%' : '280px',
+              zIndex: 20,
+              marginTop: '16px',
+            }}
+          >
+            <Card style={{ padding: '20px 24px', boxShadow: shadows.floating }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    background: colors.secondaryContainer,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="9" height="9" rx="2" fill={colors.onSecondaryContainer} opacity="0.7" />
+                    <rect x="13" y="2" width="9" height="9" rx="2" fill={colors.onSecondaryContainer} opacity="0.4" />
+                    <rect x="2" y="13" width="9" height="9" rx="2" fill={colors.onSecondaryContainer} opacity="0.4" />
+                    <rect x="13" y="13" width="9" height="9" rx="2" fill={colors.onSecondaryContainer} opacity="0.7" />
+                  </svg>
+                </div>
+                <span
+                  style={{
+                    fontFamily: fonts.serif,
+                    fontStyle: 'italic',
+                    fontSize: '1.05rem',
+                    color: colors.onSurface,
+                  }}
+                >
+                  {t.cards.card1.label}
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: '0.85rem',
+                  color: colors.onSurfaceVariant,
+                  lineHeight: 1.5,
+                  margin: '0 0 12px',
+                  fontFamily: fonts.sans,
+                }}
+              >
+                {t.cards.card1.text}
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    background: colors.primaryContainer,
+                    color: colors.primaryDim,
+                    borderRadius: '100px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase' as const,
+                  }}
+                >
+                  {t.cardTag1}
+                </span>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    background: colors.secondaryContainer,
+                    color: colors.onSecondaryContainer,
+                    borderRadius: '100px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase' as const,
+                  }}
+                >
+                  {t.cardTag2}
+                </span>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Floating glass badge — desktop only */}
         {isDesktop && (
