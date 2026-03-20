@@ -61,6 +61,60 @@ def _cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def _resolve_status(invite: PrivateAlphaInvite, now: datetime) -> str:
+    if invite.revoked_at is not None:
+        return "revoked"
+    if invite.accepted_at is not None:
+        return "accepted"
+    if invite.expires_at is not None and invite.expires_at < now:
+        return "expired"
+    return "pending"
+
+
+def _cmd_list(args: argparse.Namespace) -> int:
+    now = datetime.utcnow()
+    query = PrivateAlphaInvite.query.order_by(PrivateAlphaInvite.created_at.desc())
+    if args.status:
+        filter_status = args.status.strip().lower()
+        if filter_status == "accepted":
+            query = query.filter(PrivateAlphaInvite.accepted_at.isnot(None), PrivateAlphaInvite.revoked_at.is_(None))
+        elif filter_status == "revoked":
+            query = query.filter(PrivateAlphaInvite.revoked_at.isnot(None))
+        elif filter_status == "expired":
+            query = query.filter(
+                PrivateAlphaInvite.accepted_at.is_(None),
+                PrivateAlphaInvite.revoked_at.is_(None),
+                PrivateAlphaInvite.expires_at.isnot(None),
+                PrivateAlphaInvite.expires_at < now,
+            )
+        elif filter_status == "pending":
+            query = query.filter(
+                PrivateAlphaInvite.accepted_at.is_(None),
+                PrivateAlphaInvite.revoked_at.is_(None),
+                or_(PrivateAlphaInvite.expires_at.is_(None), PrivateAlphaInvite.expires_at >= now),
+            )
+        else:
+            print(f"ERROR: unknown status filter '{args.status}'; use pending/accepted/expired/revoked.", file=sys.stderr)
+            return 2
+
+    invites = query.all()
+    if not invites:
+        print("No invites found.")
+        return 0
+
+    print(f"{'id':<6} {'email':<30} {'status':<10} {'created':<20} {'expires':<20} {'token_hash_tail':<15}")
+    print("-" * 101)
+    for inv in invites:
+        status = _resolve_status(inv, now)
+        created = inv.created_at.strftime("%Y-%m-%d %H:%M") if inv.created_at else "-"
+        expires = inv.expires_at.strftime("%Y-%m-%d %H:%M") if inv.expires_at else "never"
+        tail = inv.token_hash[-6:] if inv.token_hash else "-"
+        print(f"{inv.id:<6} {inv.invited_email:<30} {status:<10} {created:<20} {expires:<20} {tail:<15}")
+
+    print(f"\ntotal={len(invites)}")
+    return 0
+
+
 def _cmd_issue(args: argparse.Namespace) -> int:
     flags = alpha_flags()
     if not flags.enabled:
@@ -131,6 +185,10 @@ def _build_parser() -> argparse.ArgumentParser:
     status = sub.add_parser("status", help="Show invite capacity counters.")
     status.add_argument("--cohort-target", type=int, default=None, help="Current cohort target cap.")
     status.set_defaults(func=_cmd_status)
+
+    list_cmd = sub.add_parser("list", help="List invite tokens.")
+    list_cmd.add_argument("--status", default=None, help="Filter by status: pending, accepted, expired, revoked.")
+    list_cmd.set_defaults(func=_cmd_list)
 
     issue = sub.add_parser("issue", help="Issue an invite token.")
     issue.add_argument("--email", required=True, help="Invited user email.")
