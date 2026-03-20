@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import type { Translations } from '../translations';
 import { ScrollReveal } from '../components/Motion';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { LeafCluster } from '../assets/Botanicals';
 import { colors, fonts, typography, shadows, glass, spacing } from '../tokens';
 
 declare global {
@@ -87,6 +88,21 @@ export const Waitlist = ({ t }: CallToActionProps) => {
           boxShadow: shadows.floating,
         }}
       >
+        {/* Botanical leaf cluster — bottom-right accent */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '-10px',
+            right: '-10px',
+            width: isMobile ? '150px' : '220px',
+            height: isMobile ? '150px' : '220px',
+            pointerEvents: 'none',
+            opacity: 0.1,
+          }}
+        >
+          <LeafCluster color="#ffffff" />
+        </div>
+
         <ScrollReveal>
           {/* Decorative quote mark */}
           <span
