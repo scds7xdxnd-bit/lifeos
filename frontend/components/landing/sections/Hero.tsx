@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import type { Translations } from '../translations';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -98,17 +97,8 @@ export const Hero = ({ t }: HeroProps) => (
 
       <ScrollReveal delay={0.45} distance={16}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <Link href="/login" style={{ textDecoration: 'none' }}>
-            <Button variant="primary">{t.primaryCta}</Button>
-          </Link>
-          <Button variant="secondary" onClick={() => scrollTo('waitlist')}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                <polygon points="10,8 16,12 10,16" fill="currentColor" />
-              </svg>
-              {t.secondaryCta}
-            </span>
+          <Button variant="primary" onClick={() => scrollTo('waitlist')}>
+            {t.primaryCta}
           </Button>
         </div>
 
