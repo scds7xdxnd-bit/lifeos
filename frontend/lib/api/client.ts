@@ -37,7 +37,8 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
-    credentials: 'include',  // Enable cross-origin cookies for CSRF validation
+    // Omit credentials to avoid sending session cookies alongside JWT,
+    // which triggers the backend's mixed-auth rejection (403).
   })
 
   if (res.status === 401) {
