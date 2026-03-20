@@ -113,7 +113,7 @@ export const InquiryDemo = ({ t }: InquiryBentoProps) => {
                     padding: isMobile ? '16px 20px' : '20px 24px',
                     background: colors.surfaceContainerLow,
                     borderRadius: '12px',
-                    borderLeft: `4px solid ${colors.primary}`,
+                    borderLeft: `4px solid ${colors.accentCoral}`,
                     marginBottom: isMobile ? '16px' : '24px',
                   }}
                 >

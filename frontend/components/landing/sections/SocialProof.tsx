@@ -32,7 +32,7 @@ export const SocialProof = ({ t }: TimelineProps) => {
           <div
             style={{
               width: '100%',
-              aspectRatio: isMobile ? '16/10' : '4/3',
+              aspectRatio: isMobile ? '3/4' : '4/3',
               background: colors.surfaceContainerLowest,
               borderRadius: '16px',
               boxShadow: shadows.floating,
@@ -69,8 +69,8 @@ export const SocialProof = ({ t }: TimelineProps) => {
             <div
               style={{
                 position: 'absolute',
-                top: '25%',
-                left: isMobile ? '15%' : '25%',
+                top: isMobile ? '12%' : '25%',
+                left: isMobile ? '10%' : '25%',
                 width: isMobile ? '80%' : '75%',
                 padding: isMobile ? '14px 16px' : '20px 24px',
                 background: colors.surfaceContainerLowest,
@@ -152,8 +152,8 @@ export const SocialProof = ({ t }: TimelineProps) => {
             <div
               style={{
                 position: 'absolute',
-                bottom: '25%',
-                right: isMobile ? '15%' : '25%',
+                bottom: isMobile ? '12%' : '25%',
+                right: isMobile ? '10%' : '25%',
                 width: isMobile ? '80%' : '75%',
                 padding: isMobile ? '12px 14px' : '16px 20px',
                 background: `linear-gradient(135deg, ${colors.primary}, ${colors.primaryDim})`,
@@ -263,11 +263,11 @@ export const SocialProof = ({ t }: TimelineProps) => {
                       width: isMobile ? 40 : 48,
                       height: isMobile ? 40 : 48,
                       borderRadius: '50%',
-                      background: i === 0 ? colors.primaryContainer : colors.secondaryContainer,
+                      background: i === 0 ? colors.primaryContainer : colors.accentAmberContainer,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: i === 0 ? colors.primary : colors.onSecondaryContainer,
+                      color: i === 0 ? colors.primary : colors.accentAmber,
                     }}
                   >
                     {i === 0 ? (

@@ -31,12 +31,12 @@ export const NavBar = ({ t, lang, setLang }: NavBarProps) => {
         padding: '3px',
       }}
     >
-      {(['en', 'zh'] as Lang[]).map((l) => (
+      {(['en', 'zh', 'ko'] as Lang[]).map((l) => (
         <button
           key={l}
           onClick={() => setLang(l)}
           style={{
-            padding: '5px 14px',
+            padding: '5px 12px',
             border: 'none',
             borderRadius: '100px',
             fontSize: '0.82rem',
@@ -49,7 +49,7 @@ export const NavBar = ({ t, lang, setLang }: NavBarProps) => {
             transition: 'all 0.18s ease',
           }}
         >
-          {l === 'en' ? 'EN' : '\u4E2D\u6587'}
+          {l === 'en' ? 'EN' : l === 'zh' ? '\u4E2D\u6587' : '\uD55C\uAD6D\uC5B4'}
         </button>
       ))}
     </div>
