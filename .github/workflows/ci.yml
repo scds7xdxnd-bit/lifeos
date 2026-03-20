@@ -1,14 +1,9 @@
-name: CI - Build & Test
+# DEPRECATED: This workflow is superseded by lifeos-pr.yml (PRs) and lifeos-main.yml (push).
+# Kept as manual-only for emergency use.
+name: CI - Build & Test (Legacy)
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+  workflow_dispatch:  # Manual trigger only
 
 env:
   PYTHON_VERSION: "3.11"
