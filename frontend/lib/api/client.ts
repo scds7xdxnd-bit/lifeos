@@ -37,8 +37,10 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
-    // Omit credentials to avoid sending session cookies alongside JWT,
+    // Explicitly omit cookies to prevent sending session cookies alongside JWT,
     // which triggers the backend's mixed-auth rejection (403).
+    // Placed after ...options so callers can't accidentally re-enable cookies.
+    credentials: 'omit',
   })
 
   if (res.status === 401) {
