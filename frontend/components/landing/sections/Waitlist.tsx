@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import type { Translations } from '../translations';
 import { ScrollReveal } from '../components/Motion';
-import { colors, fonts, typography, shadows, glass } from '../tokens';
+import { useBreakpoint } from '../hooks/useBreakpoint';
+import { colors, fonts, typography, shadows, glass, spacing } from '../tokens';
 
 declare global {
   interface Window {
@@ -16,6 +17,9 @@ interface CallToActionProps {
 }
 
 export const Waitlist = ({ t }: CallToActionProps) => {
+  const bp = useBreakpoint();
+  const isMobile = bp === 'mobile';
+
   useEffect(() => {
     // If Tally already loaded (e.g. remount after language switch), refresh embeds
     if (typeof window.Tally !== 'undefined') {
@@ -34,14 +38,18 @@ export const Waitlist = ({ t }: CallToActionProps) => {
   }, []);
 
   return (
-    <section id="waitlist" style={{ padding: '120px 48px' }}>
+    <section id="waitlist" style={{ padding: spacing.sectionPadding[bp] }}>
       <div
         style={{
           maxWidth: '900px',
           margin: '0 auto',
-          borderRadius: '20px',
+          borderRadius: isMobile ? '16px' : '20px',
           background: `linear-gradient(135deg, ${colors.primary}, ${colors.primaryDim})`,
-          padding: '64px 48px 80px',
+          padding: isMobile
+            ? '40px 20px 48px'
+            : bp === 'tablet'
+              ? '48px 32px 60px'
+              : '64px 48px 80px',
           textAlign: 'center',
           color: '#ffffff',
           position: 'relative',
@@ -54,11 +62,11 @@ export const Waitlist = ({ t }: CallToActionProps) => {
           <span
             style={{
               fontFamily: fonts.serif,
-              fontSize: '5rem',
+              fontSize: isMobile ? '3.5rem' : '5rem',
               opacity: 0.25,
               display: 'block',
               lineHeight: 1,
-              marginBottom: '16px',
+              marginBottom: isMobile ? '8px' : '16px',
             }}
           >
             &ldquo;
@@ -68,7 +76,7 @@ export const Waitlist = ({ t }: CallToActionProps) => {
             style={{
               ...typography.headline,
               fontStyle: 'italic',
-              fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+              fontSize: 'clamp(1.5rem, 4vw, 3.5rem)',
               color: '#ffffff',
               margin: '0 0 20px',
               lineHeight: 1.2,
@@ -80,7 +88,7 @@ export const Waitlist = ({ t }: CallToActionProps) => {
           <p
             style={{
               ...typography.body,
-              fontSize: '1.15rem',
+              fontSize: isMobile ? '1rem' : '1.15rem',
               opacity: 0.9,
               maxWidth: '560px',
               margin: '0 auto 40px',
@@ -92,11 +100,11 @@ export const Waitlist = ({ t }: CallToActionProps) => {
           {/* Tally form in glassmorphic container */}
           <div
             style={{
-              maxWidth: '500px',
+              maxWidth: isMobile ? '100%' : '500px',
               margin: '0 auto',
               background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '16px',
-              padding: '32px',
+              padding: isMobile ? '20px' : '32px',
               backdropFilter: glass.blur,
               WebkitBackdropFilter: glass.blur,
               border: '1px solid rgba(255, 255, 255, 0.25)',
@@ -105,7 +113,7 @@ export const Waitlist = ({ t }: CallToActionProps) => {
             <p
               style={{
                 fontFamily: fonts.serif,
-                fontSize: '1.1rem',
+                fontSize: isMobile ? '1rem' : '1.1rem',
                 fontWeight: 400,
                 color: '#ffffff',
                 margin: '0 0 16px',

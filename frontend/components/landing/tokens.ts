@@ -64,6 +64,16 @@ export const glass = {
   border: '1px solid rgba(255, 255, 255, 0.20)',
 } as const;
 
+export type Breakpoint = 'mobile' | 'tablet' | 'desktop';
+type Responsive<T> = Record<Breakpoint, T>;
+
+export const spacing = {
+  sectionPadding: { mobile: '60px 20px', tablet: '80px 32px', desktop: '120px 48px' } as Responsive<string>,
+  sectionX: { mobile: '20px', tablet: '32px', desktop: '48px' } as Responsive<string>,
+  containerGap: { mobile: '16px', tablet: '20px', desktop: '24px' } as Responsive<string>,
+  navPadding: { mobile: '0 16px', tablet: '0 32px', desktop: '0 48px' } as Responsive<string>,
+} as const;
+
 export const typography = {
   display: {
     fontFamily: fonts.serif,

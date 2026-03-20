@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-14 (v2.21 — Phase 10 approved; private alpha cut ratified)_
+_Last updated: 2026-03-20 (v2.22 — Section 14 rewritten for Next.js frontend + responsive landing page architecture)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -898,32 +898,58 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-# 14. Frontend Architecture (Jinja2 + htmx/Alpine.js)
-**Server-Rendered Templates:**
-- Base layout: `lifeos/templates/layouts/base.html` (navigation, sidebar, footer)
-- Domain views: `lifeos/templates/{domain}/` (accounts.html, journal.html, etc.)
-- Components: `lifeos/templates/components/` (forms, alerts, cards)
-- Streaming: server renders initially; can stream updates via htmx
+# 14. Frontend Architecture
 
-**Interactivity (Progressive Enhancement):**
-- htmx for AJAX interactions (e.g., add habit without page reload)
-- Alpine.js for client-side state (modals, dropdowns, tabs)
-- No heavy SPA framework; keeps payload small and server-side rendering fast
+## 14a. Next.js Frontend (`frontend/`)
 
-**Frontend Routes (Flask blueprints):**
-- `lifeos/domains/<domain>/controllers.py`: Flask routes returning rendered HTML
-- Route pattern: `GET /finance/accounts` → renders account list with insight badges
-- Form submission: `POST /finance/accounts` → creates account, emits event, redirects with flash message
+The primary frontend is a Next.js 16 + React 19 + TypeScript application.
 
-**Styling:**
-- Tailwind CSS (or Bootstrap) for responsive design
-- Dark mode support via CSS custom properties
+**Folder Structure:**
+```
+frontend/
+├── app/                    # Next.js App Router
+│   ├── (app)/              # Protected routes (calendar, habits, projects, skills, insights)
+│   ├── (auth)/             # Auth routes (login)
+│   ├── layout.tsx          # Root layout (fonts, providers)
+│   ├── providers.tsx       # React Query, auth context
+│   └── globals.css         # Tailwind base styles
+├── components/
+│   ├── landing/            # Landing page (inline styles + design tokens)
+│   │   ├── sections/       # NavBar, Hero, Features, InquiryDemo, SocialProof, Waitlist, Footer
+│   │   ├── components/     # Button, Card, GlassContainer, MicroLabel, Motion
+│   │   ├── hooks/          # useBreakpoint (responsive)
+│   │   ├── assets/         # Illustration SVGs
+│   │   ├── tokens.ts       # Design tokens (colors, fonts, shadows, spacing, etc.)
+│   │   └── translations.ts # EN + ZH i18n with typed interfaces
+│   ├── shell/              # App shell (sidebar, top bar)
+│   └── ui/                 # shadcn/ui component library
+└── lib/
+    ├── api/                # Fetch wrappers, API client
+    ├── auth/               # Auth context, token management
+    └── utils.ts            # Common utilities
+```
+
+**Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS v4 + PostCSS, React Query v5, shadcn/ui + Base UI, lucide-react.
+
+**Landing Page Pattern:** Uses inline React styles + centralized design tokens (`tokens.ts`) — NOT Tailwind. Responsive via `useBreakpoint()` hook (mobile ≤639px, tablet 640–1023px, desktop 1024px+). i18n via `translations.ts` (EN + ZH). See `DESIGN.md` §6 for full responsive spec.
+
+**App Pages Pattern:** Uses Tailwind CSS + shadcn/ui. API client in `lib/api/`, React Query for server state. Auth via custom JWT/cookie flow (future Clerk migration planned — AuthContext must stay swappable).
+
+**Auth:** JWT (API) + Session (cookies) + CSRF. Protected routes in `(app)/` group, auth routes in `(auth)/`.
+
+## 14b. Legacy Jinja2 Frontend (`lifeos/templates/`)
+
+Server-rendered templates still exist for the original Flask-based UI:
+- Base layout: `lifeos/templates/layouts/base.html`
+- Domain views: `lifeos/templates/{domain}/`
+- Components: `lifeos/templates/components/`
+- Interactivity: htmx for AJAX, Alpine.js for client-side state
+
+**Note:** The Next.js frontend is the primary frontend. Jinja2 templates are retained for backward compatibility during migration.
+
+**Styling (both frontends):**
+- Design system: "The Botanical Editorial" (see `DESIGN.md`)
 - Accessibility: WCAG 2.1 AA (contrast, keyboard nav, ARIA labels)
-
-**State Management:**
-- Form state: server-side (session/database)
-- UI state: Alpine.js (modals, collapses, tabs)
-- Real-time updates: (post-v1) WebSocket or Server-Sent Events (SSE)
 
 ---
 
@@ -1105,7 +1131,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 - ❌ No multi-tenancy (single user per deployment)
 - ❌ No API versioning (HTTP routes only)
 - ❌ No WebSocket/SSE (polling-based UI updates)
-- ❌ No mobile app (web-only)
+- ❌ No native mobile app (web-only; landing page is responsive across mobile/tablet/desktop)
 - ❌ No third-party integrations (Stripe, Plaid, etc.)
 - ⚠️ Session lifecycle scaffold only: admin_reset path minimal; no device identity policy, no session read models used for authz, no multi-device/offline coherence. Login issue quarantined until Phase 3c.
 - ⚠️ ML account suggester: basic TF-IDF ranker (not neural)
@@ -1133,7 +1159,7 @@ pytest --cov=lifeos lifeos/tests/             # With coverage report
 
 ---
 
-_Constitution v2.21 (Phase 10 approved; private alpha cut ratified): 2026-03-14. Author: LifeOS Architect._
+_Constitution v2.22 (Section 14 rewritten for Next.js frontend + responsive landing page): 2026-03-20. Author: LifeOS Architect._
 
 **Sprint Summary:**
 - ✅ Phase 2.5 semantic contract freeze completed; canon published under `lifeos/docs/semantics/`

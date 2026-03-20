@@ -138,6 +138,8 @@ interface ParallaxLayerProps {
   className?: string;
   /** Parallax intensity: px offset over the scroll range (default 40) */
   speed?: number;
+  /** When true, renders a plain div with no parallax effect */
+  disabled?: boolean;
 }
 
 export const ParallaxLayer = ({
@@ -145,6 +147,7 @@ export const ParallaxLayer = ({
   style,
   className,
   speed = 40,
+  disabled = false,
 }: ParallaxLayerProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -152,6 +155,14 @@ export const ParallaxLayer = ({
     offset: ['start end', 'end start'],
   });
   const y = useTransform(scrollYProgress, [0, 1], [speed, -speed]);
+
+  if (disabled) {
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <motion.div ref={ref} className={className} style={{ ...style, y }}>

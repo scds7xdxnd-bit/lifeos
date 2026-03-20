@@ -3,7 +3,8 @@
 import type { Translations } from '../translations';
 import { MicroLabel } from '../components/MicroLabel';
 import { ScrollReveal, StaggerChildren, StaggerItem } from '../components/Motion';
-import { colors, fonts, typography, shadows, radii } from '../tokens';
+import { useBreakpoint } from '../hooks/useBreakpoint';
+import { colors, fonts, typography, shadows, radii, spacing } from '../tokens';
 
 interface DomainsProps {
   t: Translations['domains'];
@@ -63,156 +64,185 @@ const iconColors = [
   { bg: 'rgba(232, 115, 92, 0.15)', fg: colors.accentCoral, hoverBg: colors.accentCoral, hoverFg: '#ffffff' },
 ] as const;
 
-export const Features = ({ t }: DomainsProps) => (
-  <section id="features" style={{ padding: '120px 48px', background: colors.surfaceContainerLow }}>
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <ScrollReveal style={{ textAlign: 'center', marginBottom: '64px' }}>
-        <MicroLabel style={{ marginBottom: '16px', display: 'block' }}>{t.eyebrow}</MicroLabel>
-        <h2
-          style={{
-            ...typography.headline,
-            fontStyle: 'italic',
-            fontSize: 'clamp(2rem, 3.5vw, 3rem)',
-            color: colors.onSurface,
-            margin: '0 0 16px',
-            lineHeight: 1.2,
-          }}
-        >
-          {t.headline}
-        </h2>
-        <p
-          style={{
-            ...typography.body,
-            fontSize: '1.1rem',
-            color: colors.onSurfaceVariant,
-            maxWidth: '600px',
-            margin: '0 auto',
-          }}
-        >
-          {t.sub}
-        </p>
-      </ScrollReveal>
+export const Features = ({ t }: DomainsProps) => {
+  const bp = useBreakpoint();
+  const isMobile = bp === 'mobile';
+  const isDesktop = bp === 'desktop';
 
-      {/* 4-column domain cards */}
-      <StaggerChildren
-        stagger={0.12}
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '28px' }}
-      >
-        {t.items.map((item, i) => (
-          <StaggerItem key={item.title}>
-            <div
-              style={{
-                transform: i % 2 === 1 ? 'perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(32px)' : 'perspective(1000px) rotateX(2deg) rotateY(-2deg)',
-                background: colors.surfaceContainerLowest,
-                borderRadius: radii.card,
-                padding: '32px',
-                boxShadow: shadows.floating,
-                transition: 'transform 0.4s ease, box-shadow 0.4s ease',
-                display: 'flex',
-                flexDirection: 'column' as const,
-                gap: '20px',
-                cursor: 'default',
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget;
-                el.style.transform = i % 2 === 1
-                  ? 'perspective(1000px) rotateX(0) rotateY(0) translateY(24px)'
-                  : 'perspective(1000px) rotateX(0) rotateY(0) translateY(-8px)';
-                el.style.boxShadow = shadows.cardHover;
-                const iconEl = el.querySelector<HTMLElement>('[data-icon]');
-                if (iconEl) {
-                  iconEl.style.background = iconColors[i].hoverBg;
-                  iconEl.style.color = iconColors[i].hoverFg;
-                }
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget;
-                el.style.transform = i % 2 === 1
-                  ? 'perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(32px)'
-                  : 'perspective(1000px) rotateX(2deg) rotateY(-2deg)';
-                el.style.boxShadow = shadows.floating;
-                const iconEl = el.querySelector<HTMLElement>('[data-icon]');
-                if (iconEl) {
-                  iconEl.style.background = iconColors[i].bg;
-                  iconEl.style.color = iconColors[i].fg;
-                }
-              }}
-            >
+  const gridCols = isMobile
+    ? 'repeat(1, 1fr)'
+    : bp === 'tablet'
+      ? 'repeat(2, 1fr)'
+      : 'repeat(4, 1fr)';
+
+  return (
+    <section
+      id="features"
+      style={{ padding: spacing.sectionPadding[bp], background: colors.surfaceContainerLow }}
+    >
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Header */}
+        <ScrollReveal style={{ textAlign: 'center', marginBottom: isMobile ? '40px' : '64px' }}>
+          <MicroLabel style={{ marginBottom: '16px', display: 'block' }}>{t.eyebrow}</MicroLabel>
+          <h2
+            style={{
+              ...typography.headline,
+              fontStyle: 'italic',
+              fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+              color: colors.onSurface,
+              margin: '0 0 16px',
+              lineHeight: 1.2,
+            }}
+          >
+            {t.headline}
+          </h2>
+          <p
+            style={{
+              ...typography.body,
+              fontSize: isMobile ? '1rem' : '1.1rem',
+              color: colors.onSurfaceVariant,
+              maxWidth: '600px',
+              margin: '0 auto',
+            }}
+          >
+            {t.sub}
+          </p>
+        </ScrollReveal>
+
+        {/* Domain cards grid */}
+        <StaggerChildren
+          stagger={0.12}
+          style={{ display: 'grid', gridTemplateColumns: gridCols, gap: isMobile ? '20px' : '28px' }}
+        >
+          {t.items.map((item, i) => (
+            <StaggerItem key={item.title}>
               <div
-                data-icon=""
                 style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: iconColors[i].bg,
-                  color: iconColors[i].fg,
+                  transform: isDesktop
+                    ? i % 2 === 1
+                      ? 'perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(32px)'
+                      : 'perspective(1000px) rotateX(2deg) rotateY(-2deg)'
+                    : 'none',
+                  background: colors.surfaceContainerLowest,
+                  borderRadius: radii.card,
+                  padding: isMobile ? '24px' : '32px',
+                  boxShadow: shadows.floating,
+                  transition: 'transform 0.4s ease, box-shadow 0.4s ease',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'background 0.5s ease, color 0.5s ease',
+                  flexDirection: 'column' as const,
+                  gap: isMobile ? '16px' : '20px',
+                  cursor: 'default',
                 }}
+                onMouseEnter={
+                  isDesktop
+                    ? (e) => {
+                        const el = e.currentTarget;
+                        el.style.transform =
+                          i % 2 === 1
+                            ? 'perspective(1000px) rotateX(0) rotateY(0) translateY(24px)'
+                            : 'perspective(1000px) rotateX(0) rotateY(0) translateY(-8px)';
+                        el.style.boxShadow = shadows.cardHover;
+                        const iconEl = el.querySelector<HTMLElement>('[data-icon]');
+                        if (iconEl) {
+                          iconEl.style.background = iconColors[i].hoverBg;
+                          iconEl.style.color = iconColors[i].hoverFg;
+                        }
+                      }
+                    : undefined
+                }
+                onMouseLeave={
+                  isDesktop
+                    ? (e) => {
+                        const el = e.currentTarget;
+                        el.style.transform =
+                          i % 2 === 1
+                            ? 'perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(32px)'
+                            : 'perspective(1000px) rotateX(2deg) rotateY(-2deg)';
+                        el.style.boxShadow = shadows.floating;
+                        const iconEl = el.querySelector<HTMLElement>('[data-icon]');
+                        if (iconEl) {
+                          iconEl.style.background = iconColors[i].bg;
+                          iconEl.style.color = iconColors[i].fg;
+                        }
+                      }
+                    : undefined
+                }
               >
-                {icons[i]}
-              </div>
-              <h3
-                style={{
-                  ...typography.headline,
-                  fontSize: '1.5rem',
-                  color: colors.onSurface,
-                  margin: 0,
-                }}
-              >
-                {item.title}
-              </h3>
-              <p
-                style={{
-                  ...typography.body,
-                  fontSize: '0.9rem',
-                  color: colors.onSurfaceVariant,
-                  margin: 0,
-                }}
-              >
-                {item.body}
-              </p>
-              <div
-                style={{
-                  paddingTop: '16px',
-                  borderTop: `1px solid ${colors.surfaceContainerLow}`,
-                  marginTop: 'auto',
-                }}
-              >
-                <span
+                <div
+                  data-icon=""
                   style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase' as const,
-                    color: colors.outline,
-                    fontFamily: fonts.sans,
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    background: iconColors[i].bg,
+                    color: iconColors[i].fg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.5s ease, color 0.5s ease',
                   }}
                 >
-                  {item.stat}
-                </span>
+                  {icons[i]}
+                </div>
+                <h3
+                  style={{
+                    ...typography.headline,
+                    fontSize: isMobile ? '1.3rem' : '1.5rem',
+                    color: colors.onSurface,
+                    margin: 0,
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p
+                  style={{
+                    ...typography.body,
+                    fontSize: '0.9rem',
+                    color: colors.onSurfaceVariant,
+                    margin: 0,
+                  }}
+                >
+                  {item.body}
+                </p>
+                <div
+                  style={{
+                    paddingTop: '16px',
+                    borderTop: `1px solid ${colors.surfaceContainerLow}`,
+                    marginTop: 'auto',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase' as const,
+                      color: colors.outline,
+                      fontFamily: fonts.sans,
+                    }}
+                  >
+                    {item.stat}
+                  </span>
+                </div>
               </div>
-            </div>
-          </StaggerItem>
-        ))}
-      </StaggerChildren>
+            </StaggerItem>
+          ))}
+        </StaggerChildren>
 
-      {/* Coming soon note */}
-      <ScrollReveal delay={0.5} style={{ textAlign: 'center', marginTop: '48px' }}>
-        <p
-          style={{
-            ...typography.body,
-            fontSize: '0.95rem',
-            color: colors.outline,
-            fontStyle: 'italic',
-          }}
-        >
-          {t.comingSoon}
-        </p>
-      </ScrollReveal>
-    </div>
-  </section>
-);
+        {/* Coming soon note */}
+        <ScrollReveal delay={0.5} style={{ textAlign: 'center', marginTop: isMobile ? '32px' : '48px' }}>
+          <p
+            style={{
+              ...typography.body,
+              fontSize: '0.95rem',
+              color: colors.outline,
+              fontStyle: 'italic',
+            }}
+          >
+            {t.comingSoon}
+          </p>
+        </ScrollReveal>
+      </div>
+    </section>
+  );
+};

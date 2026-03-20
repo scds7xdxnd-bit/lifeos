@@ -23,7 +23,7 @@
 - Modes: Default “read mode” (summaries, guidance). “Edit mode” is explicit and scoped; forms open in overlays/drawers and close on completion. No always-on forms.
 - Forms: Collapsed by default; opened by explicit user intent (button/link). Save/cancel are always visible; autosave only when clearly messaged.
 - Tables: Allowed only when comparison across many rows is the intent. Otherwise use summarized cards/rows. Tables are tucked behind “View all” or “Manage” affordances.
-- Mobile-first implications: Vertical flow, one primary action visible, filters and bulk actions behind drawers. Avoid dense grids; prioritize readability and thumb reach without committing to specific mobile UI.
+- Mobile-first implications: Vertical flow, one primary action visible, filters and bulk actions behind drawers. Avoid dense grids; prioritize readability and thumb reach. **Landing page:** Three responsive breakpoints (mobile ≤639px, tablet 640–1023px, desktop 1024px+) implemented via `useBreakpoint()` hook; multi-column layouts collapse to single-column, parallax effects disabled, navigation collapses to hamburger menu. See `DESIGN.md` §6 "Landing Page — Responsive Breakpoints" for full spec.
 - History & audit: Rejections, confirmations, edits surface in a visible, filterable activity log per domain screen.
 - Cross-domain consistency: identical patterns (confirm/reject, edit overlays, history access) behave the same across domains to avoid fragmentation.
 
@@ -60,7 +60,7 @@ For each domain: answer the primary user question first; hide complexity until i
 ## 7. Explicit Non-Goals (Do Not Do Now)
 - No cosmetic reskinning for its own sake; no branding/marketing language.
 - No framework/library choices in this document.
-- No mobile UI spec; only mobile-first implications for flow and hierarchy.
+- No dedicated mobile app UI spec. Landing page responsive design is implemented (see `DESIGN.md` §6). App shell mobile responsiveness is deferred.
 - No multi-device/offline UX commitments (deferred to Phase 3c triggers).
 - No new data exposure beyond what backend already emits; frontend should down-scope, not up-scope.
 

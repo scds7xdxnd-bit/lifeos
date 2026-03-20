@@ -250,6 +250,36 @@ Full-width sections with alternating backgrounds (`background` → `surface-cont
 
 7. **Footer:** `dark` background. Active links `dark-text-active`, inactive `dark-text-inactive`.
 
+**Responsive Breakpoints:**
+
+The landing page is responsive across three breakpoints. The `useBreakpoint()` hook (at `frontend/components/landing/hooks/useBreakpoint.ts`) returns `'mobile' | 'tablet' | 'desktop'` and all sections adapt their inline styles accordingly. Responsive spacing tokens live in `tokens.ts`.
+
+| Breakpoint | Range | Purpose |
+|---|---|---|
+| `mobile` | 0–639px | Phones (portrait + landscape) |
+| `tablet` | 640–1023px | Tablets, small laptops |
+| `desktop` | 1024px+ | Current design target |
+
+**Per-Section Responsive Behavior:**
+
+| Section | Mobile | Tablet | Desktop |
+|---|---|---|---|
+| NavBar | Hamburger menu with slide-down overlay; language toggle stays inline | Reduced horizontal padding | Full button row |
+| Hero | Single column (text above image); floating cards hidden; image aspect ratio 4:3; reduced animation distance | Single column; floating card shown inline (no parallax); glass badge hidden | Two-column split with parallax floating cards |
+| Domain Showcase | 1-column grid; no isometric tilt; no hover effects | 2-column grid; no tilt | 4-column grid with isometric perspective + hover |
+| Inquiry Bento | Single column; source/reference blocks stack vertically; no minHeight | Single column; sidebar cards side-by-side (1fr 1fr) | 7fr/5fr bento grid |
+| Timeline | Column-reverse (text first, card preview below); 16:10 aspect ratio | Same stacking order; medium gap | Side-by-side two-column layout |
+| CTA/Waitlist | Reduced padding; full-width form container | Medium padding | Full desktop spacing |
+| Footer | Stacked vertically, centered | Row with wrap | Row with space-between |
+
+**Responsive Rules:**
+
+- **Section padding** scales: `120px 48px` (desktop) → `80px 32px` (tablet) → `60px 20px` (mobile). These are codified in `spacing.sectionPadding` tokens.
+- **ParallaxLayer** is disabled on tablet/mobile (renders plain `div` via `disabled` prop). Scroll-linked transforms cause jank on touch devices and break layout at narrow widths.
+- **Isometric card perspective** (`rotateX/rotateY`) is desktop-only. On touch devices, hover effects are unreachable and the `translateY(32px)` offset wastes vertical space.
+- **ScrollReveal animation distance** is reduced on mobile (12–16px instead of 20–40px) to prevent large slide-up jumps on small screens.
+- **`clamp()` font sizes** are already partially responsive; mobile overrides further tighten the range where needed (e.g., hero headline uses `clamp(2rem, 8vw, 3rem)` on mobile).
+
 ### Auth Pages (Login/Register)
 
 Asymmetric two-column split (5/7 grid):
