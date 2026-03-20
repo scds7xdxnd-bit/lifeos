@@ -5,6 +5,7 @@ export interface Translations {
   hero: {
     badge: string; headline1: string; headline2: string; sub: string;
     primaryCta: string; secondaryCta: string; footnote: string;
+    cardTag1: string; cardTag2: string; evidenceBadge: string;
     cards: {
       card1: { label: string; text: string };
       card2: { label: string; text: string };
@@ -23,6 +24,7 @@ export interface Translations {
     headline: string;
     sub: string;
     items: { title: string; body: string; stat: string }[];
+    comingSoon: string;
   };
   inquiryBento: {
     headline: string;
@@ -64,6 +66,9 @@ export const translations: Record<Lang, Translations> = {
       primaryCta: 'Start Your Archive',
       secondaryCta: 'The Manifesto',
       footnote: 'Free to join \u00b7 Private alpha \u00b7 Limited spots',
+      cardTag1: 'Archive',
+      cardTag2: 'Pattern',
+      evidenceBadge: 'Evidence Synthesis',
       cards: {
         card1: { label: 'Cross-Domain Pattern', text: 'Your productivity drops on weeks when sleep averages under 6 hrs.' },
         card2: { label: 'Inquiry', text: '\u201cWhy am I always behind?\u201d \u2192 Your top 3 goals haven\u2019t moved in 3 weeks \u2014 your schedule is reactive.' },
@@ -116,7 +121,7 @@ export const translations: Record<Lang, Translations> = {
     },
     domains: {
       eyebrow: 'Holistic Archiving',
-      headline: 'The 8 Domains of Human Experience',
+      headline: 'The Domains of Human Experience',
       sub: 'Every aspect of your existence, meticulously organized yet infinitely alive.',
       items: [
         { title: 'Finance', body: 'Accounts, transactions, and forecasts \u2014 your complete financial narrative, not just numbers.', stat: 'Full Ledger' },
@@ -124,6 +129,7 @@ export const translations: Record<Lang, Translations> = {
         { title: 'Health', body: 'Biometrics, workouts, and nutrition \u2014 your body\u2019s story, tracked and understood.', stat: 'HealthSync Live' },
         { title: 'Relationships', body: 'Map connections, track interactions, and nurture the bonds that matter most.', stat: 'Network Ready' },
       ],
+      comingSoon: 'Calendar, Projects, Habits, Skills \u2014 and more domains coming soon.',
     },
     inquiryBento: {
       headline: 'Inquiry-First Intelligence',
@@ -176,6 +182,9 @@ export const translations: Record<Lang, Translations> = {
       primaryCta: '\u5f00\u59cb\u4f60\u7684\u6863\u6848',
       secondaryCta: '\u5ba3\u8a00',
       footnote: '\u514d\u8d39\u52a0\u5165 \u00b7 \u79c1\u5bc6 Alpha \u5185\u6d4b \u00b7 \u540d\u989d\u6709\u9650',
+      cardTag1: '\u5f52\u6863',
+      cardTag2: '\u6a21\u5f0f',
+      evidenceBadge: '\u8bc1\u636e\u7efc\u5408',
       cards: {
         card1: { label: '\u8de8\u9886\u57df\u6a21\u5f0f', text: '\u5f53\u4e00\u5468\u5e73\u5747\u7761\u7720\u4f4e\u4e8e 6 \u5c0f\u65f6\u65f6\uff0c\u4f60\u7684\u6548\u7387\u4f1a\u660e\u663e\u4e0b\u964d\u3002' },
         card2: { label: '\u95ee\u8be2', text: '\u201c\u4e3a\u4ec0\u4e48\u6211\u603b\u662f\u843d\u5728\u540e\u9762\uff1f\u201d\u2192 \u4f60\u6700\u91cd\u8981\u7684 3 \u4e2a\u76ee\u6807\u5df2\u7ecf 3 \u5468\u6ca1\u6709\u63a8\u8fdb\u2014\u2014\u4f60\u7684\u65e5\u7a0b\u5728\u9a71\u52a8\u4f60\uff0c\u800c\u4e0d\u662f\u4f60\u5728\u4e3b\u5bfc\u65e5\u7a0b\u3002' },
@@ -228,7 +237,7 @@ export const translations: Record<Lang, Translations> = {
     },
     domains: {
       eyebrow: '\u5168\u65b9\u4f4d\u5f52\u6863',
-      headline: '\u4eba\u7c7b\u4f53\u9a8c\u7684\u516b\u5927\u9886\u57df',
+      headline: '\u4eba\u7c7b\u4f53\u9a8c\u7684\u6838\u5fc3\u9886\u57df',
       sub: '\u4f60\u5b58\u5728\u7684\u6bcf\u4e00\u4e2a\u65b9\u9762\uff0c\u90fd\u88ab\u7cbe\u5fc3\u7ec4\u7ec7\uff0c\u5374\u53c8\u65e0\u9650\u9c9c\u6d3b\u3002',
       items: [
         { title: '\u8d22\u52a1', body: '\u8d26\u6237\u3001\u4ea4\u6613\u548c\u9884\u6d4b\u2014\u2014\u4f60\u5b8c\u6574\u7684\u8d22\u52a1\u53d9\u4e8b\uff0c\u4e0d\u53ea\u662f\u6570\u5b57\u3002', stat: '\u5b8c\u6574\u8d26\u672c' },
@@ -236,6 +245,7 @@ export const translations: Record<Lang, Translations> = {
         { title: '\u5065\u5eb7', body: '\u751f\u7269\u6307\u6807\u3001\u8fd0\u52a8\u548c\u8425\u517b\u2014\u2014\u4f60\u8eab\u4f53\u7684\u6545\u4e8b\uff0c\u88ab\u8ffd\u8e2a\u548c\u7406\u89e3\u3002', stat: '\u5065\u5eb7\u540c\u6b65' },
         { title: '\u5173\u7cfb', body: '\u6620\u5c04\u8fde\u63a5\uff0c\u8ffd\u8e2a\u4e92\u52a8\uff0c\u5475\u62a4\u6700\u91cd\u8981\u7684\u7ebd\u5e26\u3002', stat: '\u793e\u4ea4\u56fe\u8c31' },
       ],
+      comingSoon: '\u65e5\u5386\u3001\u9879\u76ee\u3001\u4e60\u60ef\u3001\u6280\u80fd\u2014\u2014\u66f4\u591a\u9886\u57df\u5373\u5c06\u63a8\u51fa\u3002',
     },
     inquiryBento: {
       headline: '\u8be2\u95ee\u4f18\u5148\u7684\u667a\u80fd',

@@ -228,7 +228,7 @@ export const Hero = ({ t }: HeroProps) => (
                 textTransform: 'uppercase' as const,
               }}
             >
-              Archive
+              {t.cardTag1}
             </span>
             <span
               style={{
@@ -242,7 +242,7 @@ export const Hero = ({ t }: HeroProps) => (
                 textTransform: 'uppercase' as const,
               }}
             >
-              Pattern
+              {t.cardTag2}
             </span>
           </div>
         </Card>
@@ -288,7 +288,7 @@ export const Hero = ({ t }: HeroProps) => (
               textTransform: 'uppercase' as const,
             }}
           >
-            Evidence Synthesis
+            {t.evidenceBadge}
           </span>
         </div>
       </ParallaxLayer>

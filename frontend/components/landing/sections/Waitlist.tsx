@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import type { Translations } from '../translations';
 import { ScrollReveal } from '../components/Motion';
 import { colors, fonts, typography, shadows, glass } from '../tokens';
@@ -16,11 +16,14 @@ interface CallToActionProps {
 }
 
 export const Waitlist = ({ t }: CallToActionProps) => {
-  const scriptLoaded = useRef(false);
-
   useEffect(() => {
-    if (scriptLoaded.current) return;
-    scriptLoaded.current = true;
+    // If Tally already loaded (e.g. remount after language switch), refresh embeds
+    if (typeof window.Tally !== 'undefined') {
+      window.Tally.loadEmbeds();
+      return;
+    }
+    // Only inject script once globally
+    if (document.querySelector('script[src*="tally.so"]')) return;
     const s = document.createElement('script');
     s.src = 'https://tally.so/widgets/embed.js';
     s.async = true;
@@ -91,12 +94,12 @@ export const Waitlist = ({ t }: CallToActionProps) => {
             style={{
               maxWidth: '500px',
               margin: '0 auto',
-              background: 'rgba(255, 255, 255, 0.1)',
+              background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '16px',
               padding: '32px',
               backdropFilter: glass.blur,
               WebkitBackdropFilter: glass.blur,
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
             }}
           >
             <p

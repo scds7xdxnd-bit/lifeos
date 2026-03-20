@@ -199,6 +199,20 @@ export const Features = ({ t }: DomainsProps) => (
           </StaggerItem>
         ))}
       </StaggerChildren>
+
+      {/* Coming soon note */}
+      <ScrollReveal delay={0.5} style={{ textAlign: 'center', marginTop: '48px' }}>
+        <p
+          style={{
+            ...typography.body,
+            fontSize: '0.95rem',
+            color: colors.outline,
+            fontStyle: 'italic',
+          }}
+        >
+          {t.comingSoon}
+        </p>
+      </ScrollReveal>
     </div>
   </section>
 );
