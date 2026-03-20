@@ -56,8 +56,14 @@ phase5b-runner, prometheus, grafana, statsd-exporter, cadvisor, alertmanager
 - Secrets: never commit `.env` files. Use `.env.example` as template.
 - Monitoring: every new service must export Prometheus metrics
 
+### Git Workflow
+- **Never push directly to `main`.** All changes must go through a feature branch and pull request.
+- Create a descriptive branch (`feat/`, `fix/`, `docs/`, `chore/` prefixes), push with `-u`, and open a PR via `gh pr create`.
+- Branch protection on `main` requires PR review and passing status checks — do not bypass.
+
 ### Do NOT:
 - Modify architecture docs — that's the architect's job
 - Change application code — that's the backend/frontend team's job
 - Skip security scanning in CI pipelines
 - Expose monitoring dashboards to public networks
+- Push directly to `main` or use `--force` on protected branches

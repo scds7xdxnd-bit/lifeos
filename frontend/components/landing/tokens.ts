@@ -28,6 +28,9 @@ export const colors = {
 
   // Accent
   accentCoral: '#e8735c',
+  accentCoralContainer: 'rgba(232, 115, 92, 0.12)',
+  accentAmber: '#c49a6c',
+  accentAmberContainer: 'rgba(196, 154, 108, 0.15)',
 
   // Secondary
   secondaryContainer: '#d6e8ce',

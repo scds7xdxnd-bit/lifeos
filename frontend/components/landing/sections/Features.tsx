@@ -59,9 +59,9 @@ const icons = [FinanceIcon, JournalIcon, HealthIcon, RelationshipsIcon];
 
 const iconColors = [
   { bg: colors.primaryContainer, fg: colors.primary, hoverBg: colors.primary, hoverFg: '#ffffff' },
+  { bg: colors.accentAmberContainer, fg: colors.accentAmber, hoverBg: colors.accentAmber, hoverFg: '#ffffff' },
+  { bg: colors.accentCoralContainer, fg: colors.accentCoral, hoverBg: colors.accentCoral, hoverFg: '#ffffff' },
   { bg: colors.secondaryContainer, fg: colors.onSecondaryContainer, hoverBg: colors.onSecondaryContainer, hoverFg: '#ffffff' },
-  { bg: colors.primaryContainer, fg: colors.primary, hoverBg: colors.primary, hoverFg: '#ffffff' },
-  { bg: 'rgba(232, 115, 92, 0.15)', fg: colors.accentCoral, hoverBg: colors.accentCoral, hoverFg: '#ffffff' },
 ] as const;
 
 export const Features = ({ t }: DomainsProps) => {
@@ -168,6 +168,17 @@ export const Features = ({ t }: DomainsProps) => {
                     : undefined
                 }
               >
+                {/* Decorative accent bar */}
+                <div
+                  style={{
+                    width: '36px',
+                    height: '3px',
+                    borderRadius: '2px',
+                    background: iconColors[i].fg,
+                    opacity: 0.5,
+                    marginBottom: isMobile ? '4px' : '8px',
+                  }}
+                />
                 <div
                   data-icon=""
                   style={{
@@ -213,11 +224,15 @@ export const Features = ({ t }: DomainsProps) => {
                 >
                   <span
                     style={{
-                      fontSize: '0.72rem',
+                      display: 'inline-block',
+                      padding: '4px 12px',
+                      borderRadius: '100px',
+                      background: iconColors[i].bg,
+                      color: iconColors[i].fg,
+                      fontSize: '0.7rem',
                       fontWeight: 700,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase' as const,
-                      color: colors.outline,
                       fontFamily: fonts.sans,
                     }}
                   >

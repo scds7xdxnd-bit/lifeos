@@ -21,20 +21,33 @@ export const Waitlist = ({ t }: CallToActionProps) => {
   const isMobile = bp === 'mobile';
 
   useEffect(() => {
-    // If Tally already loaded (e.g. remount after language switch), refresh embeds
+    const loadEmbeds = () => {
+      if (typeof window.Tally !== 'undefined') window.Tally.loadEmbeds();
+    };
+
+    // If Tally already loaded, refresh after next frame so the new iframe is in the DOM
     if (typeof window.Tally !== 'undefined') {
-      window.Tally.loadEmbeds();
-      return;
+      const raf = requestAnimationFrame(loadEmbeds);
+      return () => cancelAnimationFrame(raf);
     }
-    // Only inject script once globally
-    if (document.querySelector('script[src*="tally.so"]')) return;
+
+    // Script tag exists but hasn't finished loading yet — poll until ready
+    if (document.querySelector('script[src*="tally.so"]')) {
+      const interval = setInterval(() => {
+        if (typeof window.Tally !== 'undefined') {
+          clearInterval(interval);
+          window.Tally.loadEmbeds();
+        }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+
+    // First load — inject the script
     const s = document.createElement('script');
     s.src = 'https://tally.so/widgets/embed.js';
     s.async = true;
     document.body.appendChild(s);
-    s.onload = () => {
-      if (typeof window.Tally !== 'undefined') window.Tally.loadEmbeds();
-    };
+    s.onload = loadEmbeds;
   }, []);
 
   return (
@@ -63,7 +76,8 @@ export const Waitlist = ({ t }: CallToActionProps) => {
             style={{
               fontFamily: fonts.serif,
               fontSize: isMobile ? '3.5rem' : '5rem',
-              opacity: 0.25,
+              color: colors.accentCoral,
+              opacity: 0.4,
               display: 'block',
               lineHeight: 1,
               marginBottom: isMobile ? '8px' : '16px',
@@ -124,7 +138,7 @@ export const Waitlist = ({ t }: CallToActionProps) => {
             </p>
             <iframe
               data-tally-src="https://tally.so/embed/kdZZW6?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
-              loading="lazy"
+              loading="eager"
               width="100%"
               height="284"
               style={{ border: 'none', display: 'block' }}
