@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Lora, Newsreader, Manrope } from 'next/font/google'
+import { Inter, Newsreader, Manrope } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Providers } from './providers'
@@ -10,15 +10,9 @@ const inter = Inter({
   variable: '--font-sans',
 })
 
-const lora = Lora({
-  subsets: ['latin'],
-  variable: '--font-serif',
-  style: ['normal'],
-})
-
 const newsreader = Newsreader({
   subsets: ['latin'],
-  variable: '--font-newsreader',
+  variable: '--font-serif',
   style: ['normal', 'italic'],
   weight: ['300', '400'],
 })
@@ -37,7 +31,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${lora.variable} ${newsreader.variable} ${manrope.variable} antialiased`}>
+      <body className={`${inter.variable} ${newsreader.variable} ${manrope.variable} antialiased`}>
         <Providers>{children}</Providers>
         <Analytics />
         <SpeedInsights />

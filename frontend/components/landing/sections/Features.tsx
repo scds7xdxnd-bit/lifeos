@@ -1,75 +1,204 @@
 'use client';
 
 import type { Translations } from '../translations';
-import { Card } from '../components/Card';
 import { MicroLabel } from '../components/MicroLabel';
-import { colors, typography } from '../tokens';
+import { ScrollReveal, StaggerChildren, StaggerItem } from '../components/Motion';
+import { colors, fonts, typography, shadows, radii } from '../tokens';
 
-interface FeaturesProps {
-  t: Translations['features'];
+interface DomainsProps {
+  t: Translations['domains'];
 }
 
-const UnifiedIcon = () => (
-  <svg viewBox="0 0 40 40" fill="none" width="40" height="40" aria-hidden="true">
-    <circle cx="20" cy="20" r="20" fill={colors.primaryContainer} />
-    <rect x="12" y="12" width="7" height="7" rx="1.5" stroke={colors.primary} strokeWidth="1.8" />
-    <rect x="21" y="12" width="7" height="7" rx="1.5" stroke={colors.primary} strokeWidth="1.8" />
-    <rect x="12" y="21" width="7" height="7" rx="1.5" stroke={colors.primary} strokeWidth="1.8" />
-    <rect x="21" y="21" width="7" height="7" rx="1.5" stroke={colors.primary} strokeWidth="1.8" />
+/* ── Inline SVG icons ──────────────────────────────────────── */
+
+const FinanceIcon = (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <rect x="4" y="16" width="5" height="8" rx="1.5" fill="currentColor" opacity="0.4" />
+    <rect x="11.5" y="10" width="5" height="14" rx="1.5" fill="currentColor" opacity="0.65" />
+    <rect x="19" y="5" width="5" height="19" rx="1.5" fill="currentColor" />
   </svg>
 );
 
-const InsightIcon = () => (
-  <svg viewBox="0 0 40 40" fill="none" width="40" height="40" aria-hidden="true">
-    <circle cx="20" cy="20" r="20" fill={colors.primaryContainer} />
-    <path d="M12 28l5-8 4 5 4-10 3 6" stroke={colors.primaryDim} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+const JournalIcon = (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <path
+      d="M6 22V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M6 22a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path d="M10 9h8M10 13h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
-const InquiryIcon = () => (
-  <svg viewBox="0 0 40 40" fill="none" width="40" height="40" aria-hidden="true">
-    <circle cx="20" cy="20" r="20" fill={colors.primaryContainer} />
-    <path d="M13 20h14M20 13v14" stroke={colors.primary} strokeWidth="2.2" strokeLinecap="round" />
-    <circle cx="20" cy="20" r="7" stroke={colors.darkAccent} strokeWidth="1.8" />
+const HealthIcon = (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <path
+      d="M14 24s-9-6.5-9-12.5C5 7.4 7.7 5 11 5c1.8 0 3.4.9 3 2.2C14.4 5.9 16.2 5 18 5c3.3 0 6 2.4 6 6.5 0 6-9 12.5-9 12.5z"
+      fill="currentColor"
+    />
   </svg>
 );
 
-const ICONS = [UnifiedIcon, InsightIcon, InquiryIcon];
+const RelationshipsIcon = (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <circle cx="10" cy="10" r="4" fill="currentColor" opacity="0.6" />
+    <circle cx="18" cy="10" r="4" fill="currentColor" opacity="0.4" />
+    <circle cx="14" cy="18" r="4" fill="currentColor" />
+  </svg>
+);
 
-export const Features = ({ t }: FeaturesProps) => (
+const icons = [FinanceIcon, JournalIcon, HealthIcon, RelationshipsIcon];
+
+const iconColors = [
+  { bg: colors.primaryContainer, fg: colors.primary, hoverBg: colors.primary, hoverFg: '#ffffff' },
+  { bg: colors.secondaryContainer, fg: colors.onSecondaryContainer, hoverBg: colors.onSecondaryContainer, hoverFg: '#ffffff' },
+  { bg: colors.primaryContainer, fg: colors.primary, hoverBg: colors.primary, hoverFg: '#ffffff' },
+  { bg: 'rgba(232, 115, 92, 0.15)', fg: colors.accentCoral, hoverBg: colors.accentCoral, hoverFg: '#ffffff' },
+] as const;
+
+export const Features = ({ t }: DomainsProps) => (
   <section id="features" style={{ padding: '120px 48px', background: colors.surfaceContainerLow }}>
-    <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Header */}
+      <ScrollReveal style={{ textAlign: 'center', marginBottom: '64px' }}>
         <MicroLabel style={{ marginBottom: '16px', display: 'block' }}>{t.eyebrow}</MicroLabel>
         <h2
           style={{
             ...typography.headline,
-            fontSize: 'clamp(2rem, 3vw, 2.8rem)',
+            fontStyle: 'italic',
+            fontSize: 'clamp(2rem, 3.5vw, 3rem)',
             color: colors.onSurface,
-            margin: 0,
+            margin: '0 0 16px',
             lineHeight: 1.2,
           }}
         >
           {t.headline}
         </h2>
-      </div>
+        <p
+          style={{
+            ...typography.body,
+            fontSize: '1.1rem',
+            color: colors.onSurfaceVariant,
+            maxWidth: '600px',
+            margin: '0 auto',
+          }}
+        >
+          {t.sub}
+        </p>
+      </ScrollReveal>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px' }}>
-        {t.items.map(({ title, body }, i) => {
-          const Icon = ICONS[i];
-          return (
-            <Card key={title} style={{ padding: '36px 32px' }}>
-              <div style={{ marginBottom: '20px' }}><Icon /></div>
-              <h3 style={{ ...typography.headline, fontSize: '1.2rem', color: colors.onSurface, margin: '0 0 12px' }}>
-                {title}
+      {/* 4-column domain cards */}
+      <StaggerChildren
+        stagger={0.12}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '28px' }}
+      >
+        {t.items.map((item, i) => (
+          <StaggerItem key={item.title}>
+            <div
+              style={{
+                transform: i % 2 === 1 ? 'perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(32px)' : 'perspective(1000px) rotateX(2deg) rotateY(-2deg)',
+                background: colors.surfaceContainerLowest,
+                borderRadius: radii.card,
+                padding: '32px',
+                boxShadow: shadows.floating,
+                transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+                display: 'flex',
+                flexDirection: 'column' as const,
+                gap: '20px',
+                cursor: 'default',
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.style.transform = i % 2 === 1
+                  ? 'perspective(1000px) rotateX(0) rotateY(0) translateY(24px)'
+                  : 'perspective(1000px) rotateX(0) rotateY(0) translateY(-8px)';
+                el.style.boxShadow = shadows.cardHover;
+                const iconEl = el.querySelector<HTMLElement>('[data-icon]');
+                if (iconEl) {
+                  iconEl.style.background = iconColors[i].hoverBg;
+                  iconEl.style.color = iconColors[i].hoverFg;
+                }
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                el.style.transform = i % 2 === 1
+                  ? 'perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(32px)'
+                  : 'perspective(1000px) rotateX(2deg) rotateY(-2deg)';
+                el.style.boxShadow = shadows.floating;
+                const iconEl = el.querySelector<HTMLElement>('[data-icon]');
+                if (iconEl) {
+                  iconEl.style.background = iconColors[i].bg;
+                  iconEl.style.color = iconColors[i].fg;
+                }
+              }}
+            >
+              <div
+                data-icon=""
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: iconColors[i].bg,
+                  color: iconColors[i].fg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.5s ease, color 0.5s ease',
+                }}
+              >
+                {icons[i]}
+              </div>
+              <h3
+                style={{
+                  ...typography.headline,
+                  fontSize: '1.5rem',
+                  color: colors.onSurface,
+                  margin: 0,
+                }}
+              >
+                {item.title}
               </h3>
-              <p style={{ ...typography.body, fontSize: '0.95rem', color: colors.onSurfaceVariant, margin: 0 }}>
-                {body}
+              <p
+                style={{
+                  ...typography.body,
+                  fontSize: '0.9rem',
+                  color: colors.onSurfaceVariant,
+                  margin: 0,
+                }}
+              >
+                {item.body}
               </p>
-            </Card>
-          );
-        })}
-      </div>
+              <div
+                style={{
+                  paddingTop: '16px',
+                  borderTop: `1px solid ${colors.surfaceContainerLow}`,
+                  marginTop: 'auto',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase' as const,
+                    color: colors.outline,
+                    fontFamily: fonts.sans,
+                  }}
+                >
+                  {item.stat}
+                </span>
+              </div>
+            </div>
+          </StaggerItem>
+        ))}
+      </StaggerChildren>
     </div>
   </section>
 );

@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* LifeOS "Warm Glass" design tokens — inspired by Fauna + landing page */
+/* LifeOS "Botanical Editorial" design tokens — derived from DESIGN.md */
 @theme inline {
   --color-background:           var(--background);
   --color-foreground:           var(--foreground);
@@ -31,64 +31,62 @@
 }
 
 :root {
-  /* Backgrounds — warm off-white */
-  --background:        #F4F2EE;
-  --foreground:        #1A1A1A;
+  /* Backgrounds — sage paper tones (DESIGN.md §2) */
+  --background:        #f8faf2;
+  --foreground:        #2e342b;
 
-  /* Cards — translucent white for glass effect */
-  --card:              rgba(255, 255, 255, 0.72);
-  --card-foreground:   #1A1A1A;
-  --popover:           rgba(255, 255, 255, 0.92);
-  --popover-foreground: #1A1A1A;
+  /* Cards — surface-container-lowest for elevated cards */
+  --card:              #ffffff;
+  --card-foreground:   #2e342b;
+  --popover:           rgba(248, 250, 242, 0.92);
+  --popover-foreground: #2e342b;
 
-  /* Primary = near-black */
-  --primary:           #1A1A1A;
+  /* Primary — botanical sage green */
+  --primary:           #4b6646;
   --primary-foreground: #ffffff;
 
-  /* Secondary / muted — warm gray */
-  --secondary:         rgba(0, 0, 0, 0.04);
-  --secondary-foreground: #1A1A1A;
-  --muted:             rgba(0, 0, 0, 0.04);
-  --muted-foreground:  #8A847A;
+  /* Secondary — subtle sage tint */
+  --secondary:         #f1f5eb;
+  --secondary-foreground: #2e342b;
+  --muted:             #f1f5eb;
+  --muted-foreground:  #5a6157;
 
-  /* Accent = warm hover surface */
-  --accent:            rgba(0, 0, 0, 0.04);
-  --accent-foreground: #1A1A1A;
+  /* Accent — sage hover surface */
+  --accent:            #e5eade;
+  --accent-foreground: #2e342b;
 
-  /* Destructive */
-  --destructive:       #b54a36;
+  /* Destructive — earthy coral */
+  --destructive:       #e8735c;
 
-  /* Borders — nearly invisible, like Fauna */
-  --border:            rgba(0, 0, 0, 0.06);
-  --input:             rgba(0, 0, 0, 0.07);
-  --ring:              #5C8A52;
+  /* Borders — sage-tinted ghost borders (DESIGN.md "No-Line" rule) */
+  --border:            rgba(173, 180, 168, 0.15);
+  --input:             rgba(173, 180, 168, 0.20);
+  --ring:              #4b6646;
 
-  /* Radius — 16px base for rounder cards */
+  /* Radius — 16px base */
   --radius: 1rem;
-
-  /* Serif font stack */
-  --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
 }
 
 .dark {
-  --background:        #131210;
-  --foreground:        #EAE8E4;
-  --card:              rgba(255, 255, 255, 0.06);
-  --card-foreground:   #EAE8E4;
-  --popover:           rgba(30, 28, 26, 0.92);
-  --popover-foreground: #EAE8E4;
-  --primary:           #EAE8E4;
-  --primary-foreground: #1A1A1A;
+  /* Dark — muted forest (DESIGN.md §5 Dark Sections) */
+  --background:        #1a1f1a;
+  --foreground:        #a8c4a0;
+  --card:              rgba(255, 255, 255, 0.05);
+  --card-foreground:   #a8c4a0;
+  --popover:           rgba(26, 31, 26, 0.92);
+  --popover-foreground: #a8c4a0;
+  --primary:           #a8c4a0;
+  --primary-foreground: #1a1f1a;
   --secondary:         rgba(255, 255, 255, 0.06);
-  --secondary-foreground: #EAE8E4;
+  --secondary-foreground: #a8c4a0;
   --muted:             rgba(255, 255, 255, 0.06);
-  --muted-foreground:  #8A8278;
-  --accent:            rgba(255, 255, 255, 0.06);
-  --accent-foreground: #EAE8E4;
-  --destructive:       #d4614b;
-  --border:            rgba(255, 255, 255, 0.07);
-  --input:             rgba(255, 255, 255, 0.08);
-  --ring:              #7AB87A;
+  --muted-foreground:  #5a6857;
+  --accent:            rgba(107, 143, 101, 0.08);
+  --accent-foreground: #a8c4a0;
+  --destructive:       #e8735c;
+  --border:            rgba(168, 196, 160, 0.10);
+  --input:             rgba(168, 196, 160, 0.12);
+  --ring:              #6b8f65;
 }
 
 @layer base {
@@ -103,27 +101,27 @@
   }
   h1, h2, h3 {
     font-family: var(--font-serif);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
   }
 }
 
-/* ── Glass surface — translucent frosted card ── */
+/* ── Glass surface — sage-tinted frosted card (DESIGN.md §2 Glassmorphism) ── */
 .glass {
-  background: rgba(255, 255, 255, 0.60);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.50);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  background: rgba(248, 250, 242, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow: 0 4px 24px rgba(46, 52, 43, 0.04);
 }
 
 .glass-subtle {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(248, 250, 242, 0.60);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* ── Glass button — the distinctive Fauna style ── */
+/* ── Glass button — pill with frosted sage effect ── */
 .glass-btn {
   display: flex;
   align-items: center;
@@ -132,41 +130,41 @@
   width: 100%;
   padding: 0.875rem 1.5rem;
   border-radius: 100px;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.50);
+  background: rgba(248, 250, 242, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.20);
   font-size: 0.9375rem;
   font-weight: 500;
-  color: #1A1A1A;
+  color: #2e342b;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.18s ease, box-shadow 0.2s ease;
 }
 .glass-btn:hover {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(248, 250, 242, 0.85);
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 28px rgba(46, 52, 43, 0.08);
 }
 .glass-btn:active {
   transform: translateY(0px);
 }
 
-/* ── Card lift hover ── */
+/* ── Card lift hover — tinted shadows (DESIGN.md §4) ── */
 .card-lift {
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 .card-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 32px rgba(46, 52, 43, 0.06);
 }
 
-/* ── Pill button hover (solid dark) ── */
+/* ── Pill button hover ── */
 .btn-pill {
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .btn-pill:hover {
   transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 28px rgba(46, 52, 43, 0.18);
 }
 
 /* ── Landing page float animations ── */

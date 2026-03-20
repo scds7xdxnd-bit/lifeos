@@ -73,8 +73,14 @@ export const NavBar = ({ t, lang, setLang }: NavBarProps) => (
         ))}
       </div>
 
+      <Button
+        variant="secondary"
+        onClick={() => document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' })}
+      >
+        {t.cta}
+      </Button>
       <Link href="/login" style={{ textDecoration: 'none' }}>
-        <Button variant="primary">{t.cta}</Button>
+        <Button variant="primary">{t.login}</Button>
       </Link>
     </div>
   </GlassContainer>

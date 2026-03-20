@@ -7,7 +7,6 @@ import { colors } from './tokens';
 import { NavBar } from './sections/NavBar';
 import { Hero } from './sections/Hero';
 import { Features } from './sections/Features';
-import { HowItWorks } from './sections/HowItWorks';
 import { InquiryDemo } from './sections/InquiryDemo';
 import { SocialProof } from './sections/SocialProof';
 import { Waitlist } from './sections/Waitlist';
@@ -21,11 +20,10 @@ export default function LandingPage() {
     <div style={{ background: colors.background, overflowX: 'hidden' }}>
       <NavBar t={t.nav} lang={lang} setLang={setLang} />
       <Hero t={t.hero} />
-      <Features t={t.features} />
-      <HowItWorks t={t.howItWorks} />
-      <InquiryDemo t={t.inquiry} />
-      <SocialProof t={t.social} />
-      <Waitlist t={t.waitlist} />
+      <Features t={t.domains} />
+      <InquiryDemo t={t.inquiryBento} />
+      <SocialProof t={t.timeline} />
+      <Waitlist t={t.cta} />
       <Footer t={t.footer} />
     </div>
   );

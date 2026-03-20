@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import type { Translations } from '../translations';
-import { Card } from '../components/Card';
-import { MicroLabel } from '../components/MicroLabel';
-import { colors, fonts, typography } from '../tokens';
+import { ScrollReveal } from '../components/Motion';
+import { colors, fonts, typography, shadows, glass } from '../tokens';
 
 declare global {
   interface Window {
@@ -12,11 +11,11 @@ declare global {
   }
 }
 
-interface WaitlistProps {
-  t: Translations['waitlist'];
+interface CallToActionProps {
+  t: Translations['cta'];
 }
 
-export const Waitlist = ({ t }: WaitlistProps) => {
+export const Waitlist = ({ t }: CallToActionProps) => {
   const scriptLoaded = useRef(false);
 
   useEffect(() => {
@@ -32,74 +31,109 @@ export const Waitlist = ({ t }: WaitlistProps) => {
   }, []);
 
   return (
-    <section id="waitlist" style={{ padding: '120px 48px 140px', background: colors.surfaceContainerLow }}>
-      <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
-        <MicroLabel style={{ marginBottom: '16px', display: 'block' }}>{t.eyebrow}</MicroLabel>
-        <h2
-          style={{
-            ...typography.headline,
-            fontSize: 'clamp(2rem, 3vw, 2.8rem)',
-            color: colors.onSurface,
-            margin: '0 0 20px',
-            lineHeight: 1.2,
-          }}
-        >
-          {t.headline}
-        </h2>
-        <p style={{ ...typography.body, fontSize: '1.05rem', color: colors.onSurfaceVariant, margin: '0 0 32px' }}>
-          {t.sub}
-        </p>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: '48px' }}>
-          {t.tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                padding: '7px 16px',
-                background: colors.secondaryContainer,
-                color: colors.onSecondaryContainer,
-                borderRadius: '100px',
-                fontSize: '0.82rem',
-                fontFamily: fonts.sans,
-                fontWeight: 700,
-                transition: 'transform 0.15s ease',
-                cursor: 'default',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.04)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-            >
-              &ldquo;{tag}&rdquo;
-            </span>
-          ))}
-        </div>
-
-        <Card style={{ padding: '40px', textAlign: 'left' }}>
-          <p
+    <section id="waitlist" style={{ padding: '120px 48px' }}>
+      <div
+        style={{
+          maxWidth: '900px',
+          margin: '0 auto',
+          borderRadius: '20px',
+          background: `linear-gradient(135deg, ${colors.primary}, ${colors.primaryDim})`,
+          padding: '64px 48px 80px',
+          textAlign: 'center',
+          color: '#ffffff',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: shadows.floating,
+        }}
+      >
+        <ScrollReveal>
+          {/* Decorative quote mark */}
+          <span
             style={{
               fontFamily: fonts.serif,
-              fontSize: '1.15rem',
-              fontWeight: 400,
-              color: colors.onSurface,
-              margin: '0 0 20px',
-              textAlign: 'center',
-              letterSpacing: '-0.03em',
+              fontSize: '5rem',
+              opacity: 0.25,
+              display: 'block',
+              lineHeight: 1,
+              marginBottom: '16px',
             }}
           >
-            {t.formTitle}
-          </p>
-          <iframe
-            data-tally-src="https://tally.so/embed/kdZZW6?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
-            loading="lazy"
-            width="100%"
-            height="284"
-            style={{ border: 'none', display: 'block' }}
-            title={t.formTitle}
-          />
-        </Card>
+            &ldquo;
+          </span>
 
-        <p style={{ marginTop: '20px', fontSize: '0.82rem', color: colors.outline, fontFamily: fonts.sans }}>
-          {t.footnote}
-        </p>
+          <h2
+            style={{
+              ...typography.headline,
+              fontStyle: 'italic',
+              fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+              color: '#ffffff',
+              margin: '0 0 20px',
+              lineHeight: 1.2,
+            }}
+          >
+            {t.headline}
+          </h2>
+
+          <p
+            style={{
+              ...typography.body,
+              fontSize: '1.15rem',
+              opacity: 0.9,
+              maxWidth: '560px',
+              margin: '0 auto 40px',
+            }}
+          >
+            {t.sub}
+          </p>
+
+          {/* Tally form in glassmorphic container */}
+          <div
+            style={{
+              maxWidth: '500px',
+              margin: '0 auto',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              padding: '32px',
+              backdropFilter: glass.blur,
+              WebkitBackdropFilter: glass.blur,
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: '1.1rem',
+                fontWeight: 400,
+                color: '#ffffff',
+                margin: '0 0 16px',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              {t.formTitle}
+            </p>
+            <iframe
+              data-tally-src="https://tally.so/embed/kdZZW6?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
+              loading="lazy"
+              width="100%"
+              height="284"
+              style={{ border: 'none', display: 'block' }}
+              title={t.formTitle}
+            />
+          </div>
+
+          <p
+            style={{
+              marginTop: '24px',
+              fontSize: '0.88rem',
+              opacity: 0.5,
+              fontStyle: 'italic',
+              fontFamily: fonts.serif,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {t.footnote}
+          </p>
+        </ScrollReveal>
       </div>
     </section>
   );

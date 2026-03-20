@@ -41,7 +41,7 @@ export const colors = {
 } as const;
 
 export const fonts = {
-  serif: "var(--font-newsreader), 'Newsreader', Georgia, 'Times New Roman', serif",
+  serif: "var(--font-serif), 'Newsreader', Georgia, 'Times New Roman', serif",
   sans: "var(--font-manrope), 'Manrope', system-ui, -apple-system, sans-serif",
 } as const;
 
