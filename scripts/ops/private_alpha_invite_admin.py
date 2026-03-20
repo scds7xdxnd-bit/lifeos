@@ -75,7 +75,7 @@ def _cmd_list(args: argparse.Namespace) -> int:
     now = datetime.utcnow()
     query = PrivateAlphaInvite.query.order_by(PrivateAlphaInvite.created_at.desc())
     if args.status:
-        filter_status = args.status.strip().lower()
+        filter_status = args.status
         if filter_status == "accepted":
             query = query.filter(PrivateAlphaInvite.accepted_at.isnot(None), PrivateAlphaInvite.revoked_at.is_(None))
         elif filter_status == "revoked":
@@ -93,23 +93,21 @@ def _cmd_list(args: argparse.Namespace) -> int:
                 PrivateAlphaInvite.revoked_at.is_(None),
                 or_(PrivateAlphaInvite.expires_at.is_(None), PrivateAlphaInvite.expires_at >= now),
             )
-        else:
-            print(f"ERROR: unknown status filter '{args.status}'; use pending/accepted/expired/revoked.", file=sys.stderr)
-            return 2
 
     invites = query.all()
     if not invites:
         print("No invites found.")
         return 0
 
-    print(f"{'id':<6} {'email':<30} {'status':<10} {'created':<20} {'expires':<20} {'token_hash_tail':<15}")
-    print("-" * 101)
+    header = f"{'id':<6} {'email':<30} {'status':<10} {'created':<28} {'expires':<28} {'token_hash_tail':<15}"
+    print(header)
+    print("-" * len(header))
     for inv in invites:
         status = _resolve_status(inv, now)
-        created = inv.created_at.strftime("%Y-%m-%d %H:%M") if inv.created_at else "-"
-        expires = inv.expires_at.strftime("%Y-%m-%d %H:%M") if inv.expires_at else "never"
+        created = inv.created_at.isoformat() if inv.created_at else "-"
+        expires = inv.expires_at.isoformat() if inv.expires_at else "never"
         tail = inv.token_hash[-6:] if inv.token_hash else "-"
-        print(f"{inv.id:<6} {inv.invited_email:<30} {status:<10} {created:<20} {expires:<20} {tail:<15}")
+        print(f"{inv.id:<6} {inv.invited_email:<30} {status:<10} {created:<28} {expires:<28} {tail:<15}")
 
     print(f"\ntotal={len(invites)}")
     return 0
@@ -187,7 +185,7 @@ def _build_parser() -> argparse.ArgumentParser:
     status.set_defaults(func=_cmd_status)
 
     list_cmd = sub.add_parser("list", help="List invite tokens.")
-    list_cmd.add_argument("--status", default=None, help="Filter by status: pending, accepted, expired, revoked.")
+    list_cmd.add_argument("--status", default=None, choices=["pending", "accepted", "expired", "revoked"], help="Filter by status.")
     list_cmd.set_defaults(func=_cmd_list)
 
     issue = sub.add_parser("issue", help="Issue an invite token.")
