@@ -1,7 +1,13 @@
 # LifeOS PR Pipeline
 # Purpose: Fast feedback loop for developers; blocks merge if quality gates fail
 # Trigger: Pull request to main, develop, or release/*
-# Target: < 10 min total runtime
+# Target: < 5 min for frontend-only, < 8 min for backend changes
+#
+# Optimizations:
+#   - Change detection: skips backend jobs on frontend-only PRs (and vice versa)
+#   - Dependency caching: pip cache via setup-python
+#   - Fail fast: cancel in-progress runs on new pushes
+#   - Unit tests only: integration/ml tests run on merge to main (lifeos-main.yml)
 
 name: PR - Validate
 
@@ -21,10 +27,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ─── Change detection ──────────────────────────────────────────────
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'lifeos/**'
+              - 'Makefile'
+              - 'scripts/**'
+              - '.env.ci'
+              - 'lifeos/requirements.txt'
+            frontend:
+              - 'frontend/**'
+            infra:
+              - '.github/workflows/**'
+              - 'deploy/**'
+              - 'docker-compose*.yml'
+              - 'fly.toml'
+              - 'codecov.yml'
+
+  # ─── Backend jobs (skipped on frontend-only PRs) ───────────────────
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -40,9 +80,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff "black==25.12.0" isort flake8
 
-      - name: Show Black version
-        run: black --version
-
       - name: Run lint checks
         run: make lint
 
@@ -50,6 +87,8 @@ jobs:
     name: Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -74,6 +113,8 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -106,6 +147,8 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -137,7 +180,8 @@ jobs:
             --cov-report=xml:coverage-unit.xml \
             --cov-report=term-missing \
             --junitxml=test-results-unit.xml \
-            -v
+            -x \
+            -q
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -161,6 +205,8 @@ jobs:
     name: Migration Consistency
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -184,9 +230,7 @@ jobs:
         run: make check-migrations
 
       - name: Flag dangerous migrations
-        if: github.event_name == 'pull_request'
         run: |
-          # Check if PR contains new migrations
           MIGRATION_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "migrations/versions/" || true)
           if [ -n "$MIGRATION_FILES" ]; then
             echo "::warning::This PR contains database migrations. DB team review required."
@@ -194,15 +238,46 @@ jobs:
             echo "$MIGRATION_FILES"
           fi
 
-  # Optional: Integration tests (can be slow, not blocking by default)
+  # ─── Frontend jobs (skipped on backend-only PRs) ───────────────────
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  # ─── Integration tests (opt-in only on PRs) ────────────────────────
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, unit-tests]
+    needs: [changes, lint, unit-tests]
     if: |
-      contains(github.event.pull_request.labels.*.name, 'run-integration') ||
-      contains(github.head_ref, 'integration')
+      needs.changes.outputs.backend == 'true' && (
+        contains(github.event.pull_request.labels.*.name, 'run-integration') ||
+        contains(github.head_ref, 'integration')
+      )
     services:
       postgres:
         image: postgres:16-alpine
@@ -243,4 +318,5 @@ jobs:
             -m "integration" \
             --tb=short \
             --junitxml=test-results-integration.xml \
-            -v
+            -x \
+            -q
