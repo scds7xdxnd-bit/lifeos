@@ -8,7 +8,7 @@ import { colors, fonts, typography, shadows, glass, spacing } from '../tokens';
 
 declare global {
   interface Window {
-    Tally: { loadEmbeds: () => void };
+    Tally?: { loadEmbeds: () => void };
   }
 }
 
@@ -31,15 +31,32 @@ export const Waitlist = ({ t }: CallToActionProps) => {
       return () => cancelAnimationFrame(raf);
     }
 
-    // Script tag exists but hasn't finished loading yet — poll until ready
-    if (document.querySelector('script[src*="tally.so"]')) {
+    // Script tag exists but hasn't finished loading yet — listen + bounded poll fallback
+    const existingScript = document.querySelector<HTMLScriptElement>('script[src*="tally.so"]');
+    if (existingScript) {
+      const handleLoad = () => {
+        existingScript.removeEventListener('load', handleLoad);
+        loadEmbeds();
+      };
+      existingScript.addEventListener('load', handleLoad);
+
+      let attempts = 0;
+      const maxAttempts = 50; // ~10s at 200ms
       const interval = setInterval(() => {
         if (typeof window.Tally !== 'undefined') {
           clearInterval(interval);
-          window.Tally.loadEmbeds();
+          existingScript.removeEventListener('load', handleLoad);
+          loadEmbeds();
+        } else if (++attempts >= maxAttempts) {
+          clearInterval(interval);
+          existingScript.removeEventListener('load', handleLoad);
         }
       }, 200);
-      return () => clearInterval(interval);
+
+      return () => {
+        clearInterval(interval);
+        existingScript.removeEventListener('load', handleLoad);
+      };
     }
 
     // First load — inject the script
