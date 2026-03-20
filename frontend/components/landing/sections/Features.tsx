@@ -4,6 +4,7 @@ import type { Translations } from '../translations';
 import { MicroLabel } from '../components/MicroLabel';
 import { ScrollReveal, StaggerChildren, StaggerItem } from '../components/Motion';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { VineDivider } from '../assets/Botanicals';
 import { colors, fonts, typography, shadows, radii, spacing } from '../tokens';
 
 interface DomainsProps {
@@ -108,6 +109,18 @@ export const Features = ({ t }: DomainsProps) => {
             {t.sub}
           </p>
         </ScrollReveal>
+
+        {/* Botanical vine divider */}
+        <div
+          style={{
+            maxWidth: '480px',
+            margin: isMobile ? '0 auto 32px' : '0 auto 52px',
+            opacity: 0.07,
+            pointerEvents: 'none',
+          }}
+        >
+          <VineDivider color={colors.onSurface} />
+        </div>
 
         {/* Domain cards grid */}
         <StaggerChildren
