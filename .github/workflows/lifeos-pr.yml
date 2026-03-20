@@ -49,6 +49,10 @@ jobs:
               - 'scripts/**'
               - '.env.ci'
               - 'lifeos/requirements.txt'
+              - 'alembic.ini'
+              - 'pyproject.toml'
+              - 'ruff.toml'
+              - 'pyrightconfig.json'
             frontend:
               - 'frontend/**'
             infra:
@@ -209,6 +213,8 @@ jobs:
     if: needs.changes.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for migration diff
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -231,6 +237,7 @@ jobs:
 
       - name: Flag dangerous migrations
         run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
           MIGRATION_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "migrations/versions/" || true)
           if [ -n "$MIGRATION_FILES" ]; then
             echo "::warning::This PR contains database migrations. DB team review required."
