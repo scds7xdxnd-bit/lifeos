@@ -14,14 +14,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   const [fade, setFade] = useState(true)
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     const timer = setInterval(() => {
       setFade(false)
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         setQuoteIdx((i) => (i + 1) % testimonials.length)
         setFade(true)
       }, 400)
     }, 6000)
-    return () => clearInterval(timer)
+    return () => {
+      clearInterval(timer)
+      if (timeoutId !== null) clearTimeout(timeoutId)
+    }
   }, [])
 
   const t = testimonials[quoteIdx]

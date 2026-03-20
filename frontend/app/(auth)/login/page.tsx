@@ -41,9 +41,22 @@ export default function LoginPage() {
 
   return (
     <div style={{ width: '100%', maxWidth: '420px', position: 'relative' }}>
+      <style>{`
+        .auth-back-link { color: #5a6157; text-decoration: none; transition: color 0.2s; }
+        .auth-back-link:hover, .auth-back-link:focus-visible { color: #4b6646; }
+        .auth-submit { transition: all 0.25s ease; }
+        .auth-submit:hover:not(:disabled), .auth-submit:focus-visible:not(:disabled) {
+          background: #3f5a3a !important;
+          box-shadow: 0 10px 34px rgba(46, 52, 43, 0.24) !important;
+          transform: translateY(-1px);
+        }
+        .auth-submit:focus-visible { outline: 2px solid #4b6646; outline-offset: 2px; }
+      `}</style>
+
       {/* Back to home */}
       <Link
         href="/"
+        className="auth-back-link"
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -51,15 +64,10 @@ export default function LoginPage() {
           fontFamily: "var(--font-manrope), 'Manrope', sans-serif",
           fontSize: '0.78rem',
           fontWeight: 500,
-          color: '#5a6157',
-          textDecoration: 'none',
           marginBottom: '32px',
-          transition: 'color 0.2s',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#4b6646')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#5a6157')}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable={false}>
           <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
         </svg>
         Back to home
@@ -81,6 +89,7 @@ export default function LoginPage() {
       >
         {/* Botanical corner accent */}
         <div
+          aria-hidden="true"
           style={{
             position: 'absolute',
             bottom: '-20px',
@@ -269,6 +278,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
+            className="auth-submit"
             style={{
               width: '100%',
               padding: '13px 24px',
@@ -282,21 +292,8 @@ export default function LoginPage() {
               letterSpacing: '0.01em',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
               opacity: isSubmitting ? 0.6 : 1,
-              transition: 'all 0.25s ease',
               boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
               marginTop: '4px',
-            }}
-            onMouseEnter={(e) => {
-              if (!isSubmitting) {
-                e.currentTarget.style.background = '#3f5a3a'
-                e.currentTarget.style.boxShadow = '0 10px 34px rgba(46, 52, 43, 0.24)'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#4b6646'
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(46, 52, 43, 0.18)'
-              e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
             {isSubmitting
