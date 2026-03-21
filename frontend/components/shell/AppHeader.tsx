@@ -16,24 +16,22 @@ import {
   X,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
+import { LanguageMenu } from '@/components/common/LanguageMenu'
 
 /* ── Navigation structure ──────────────────────────────────────────────────── */
 
-const PRIMARY_LINKS = [
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/insights/inquiry', label: 'Inquiry', icon: Search },
+const PRIMARY_LINK_KEYS = [
+  { href: '/calendar', key: 'calendar' as const, icon: Calendar },
+  { href: '/insights/inquiry', key: 'inquiry' as const, icon: Search },
 ]
 
-const DOMAIN_LINKS = [
-  { href: '/finances', label: 'Finances', icon: Wallet, accent: '#3a5c35' },
-  { href: '/health', label: 'Health', icon: Heart, accent: '#8b4a3a' },
-  { href: '/habits', label: 'Habits', icon: Repeat, accent: '#3a5272' },
-  { href: '/skills', label: 'Skills', icon: BookOpen, accent: '#6b5a35' },
-]
-
-const ALL_LINKS = [
-  ...PRIMARY_LINKS.map((l) => ({ ...l, accent: '#4b6646' })),
-  ...DOMAIN_LINKS,
+const DOMAIN_LINK_KEYS = [
+  { href: '/finances', key: 'finances' as const, icon: Wallet, accent: '#3a5c35' },
+  { href: '/health', key: 'health' as const, icon: Heart, accent: '#8b4a3a' },
+  { href: '/habits', key: 'habits' as const, icon: Repeat, accent: '#3a5272' },
+  { href: '/skills', key: 'skills' as const, icon: BookOpen, accent: '#6b5a35' },
 ]
 
 /* ── Component ─────────────────────────────────────────────────────────────── */
@@ -43,6 +41,16 @@ export function AppHeader() {
   const router = useRouter()
   const { logout, user } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [desktopMenuOpen, setDesktopMenuOpen] = useState(false)
+  const [lang, setLang] = useLang()
+  const t = getAppTranslations(lang).header
+
+  const PRIMARY_LINKS = PRIMARY_LINK_KEYS.map((l) => ({ ...l, label: t[l.key] }))
+  const DOMAIN_LINKS = DOMAIN_LINK_KEYS.map((l) => ({ ...l, label: t[l.key] }))
+  const ALL_LINKS = [
+    ...PRIMARY_LINKS.map((l) => ({ ...l, accent: '#4b6646' })),
+    ...DOMAIN_LINKS,
+  ]
 
   async function handleLogout() {
     await logout()
@@ -151,7 +159,7 @@ export function AppHeader() {
           {/* Right side: user area (desktop) + mobile menu toggle */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Desktop user area */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3 relative">
               {user && (
                 <div className="flex items-center gap-2">
                   <div
@@ -176,30 +184,61 @@ export function AppHeader() {
                 </div>
               )}
               <button
-                onClick={handleLogout}
+                onClick={() => setDesktopMenuOpen((v) => !v)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all duration-200"
+                aria-label="Open user menu"
                 style={{
                   fontFamily: 'var(--font-manrope), sans-serif',
                   fontWeight: 700,
                   color: '#767d72',
-                  background: 'transparent',
+                  background: desktopMenuOpen ? '#e5eade' : 'transparent',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase' as const,
                   cursor: 'pointer',
                   border: 'none',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#4b6646'
-                  e.currentTarget.style.background = '#e5eade'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#767d72'
-                  e.currentTarget.style.background = 'transparent'
-                }}
               >
-                <LogOut size={13} strokeWidth={2} />
-                Sign out
+                {desktopMenuOpen ? <X size={13} strokeWidth={2} /> : <Menu size={13} strokeWidth={2} />}
               </button>
+
+              {desktopMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '42px',
+                    right: 0,
+                    minWidth: '220px',
+                    background: '#ffffff',
+                    borderRadius: '0 12px 12px 12px',
+                    boxShadow: '0 8px 24px rgba(46, 52, 43, 0.12)',
+                    padding: '10px',
+                    zIndex: 60,
+                  }}
+                >
+                  <div className="mb-2">
+                    <LanguageMenu lang={lang} setLang={setLang} />
+                  </div>
+                  <button
+                    onClick={() => { setDesktopMenuOpen(false); handleLogout() }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all duration-200"
+                    style={{
+                      width: '100%',
+                      justifyContent: 'center',
+                      fontFamily: 'var(--font-manrope), sans-serif',
+                      fontWeight: 700,
+                      color: '#767d72',
+                      background: '#ebefe4',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase' as const,
+                      cursor: 'pointer',
+                      border: 'none',
+                    }}
+                  >
+                    <LogOut size={13} strokeWidth={2} />
+                    {t.signOut}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Mobile menu toggle */}
@@ -282,29 +321,17 @@ export function AppHeader() {
                 borderTop: '1px solid rgba(173, 180, 168, 0.15)',
               }}
             >
-              {user && (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                {user && (
                   <div
                     className="w-7 h-7 rounded-full flex items-center justify-center"
                     style={{ background: '#e5eade', color: '#4b6646' }}
                   >
                     <User size={14} strokeWidth={2} />
                   </div>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-manrope), sans-serif',
-                      fontSize: '0.75rem',
-                      color: '#767d72',
-                      maxWidth: '180px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {user.email}
-                  </span>
-                </div>
-              )}
+                )}
+                <LanguageMenu lang={lang} setLang={setLang} iconOnly />
+              </div>
               <button
                 onClick={() => { setMobileMenuOpen(false); handleLogout() }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200"
@@ -321,7 +348,7 @@ export function AppHeader() {
                 }}
               >
                 <LogOut size={13} strokeWidth={2} />
-                Sign out
+                {t.signOut}
               </button>
             </div>
           </div>

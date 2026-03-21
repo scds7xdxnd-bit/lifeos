@@ -1,8 +1,13 @@
 'use client'
 
 import { Heart } from 'lucide-react'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
 
 export default function HealthPage() {
+  const [lang] = useLang()
+  const t = getAppTranslations(lang).health
+
   return (
     <div className="space-y-8">
       {/* Page header */}
@@ -15,7 +20,7 @@ export default function HealthPage() {
             color: '#8b4a3a',
           }}
         >
-          Domain
+          {t.eyebrow}
         </p>
         <h1
           style={{
@@ -26,7 +31,7 @@ export default function HealthPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Health
+          {t.title}
         </h1>
         <p
           className="mt-2"
@@ -37,7 +42,7 @@ export default function HealthPage() {
             lineHeight: 1.65,
           }}
         >
-          Biometrics, workouts, and nutrition. A gentle record of how you feel.
+          {t.subtitle}
         </p>
       </div>
 
@@ -65,7 +70,7 @@ export default function HealthPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Health domain coming soon
+          {t.comingSoonTitle}
         </h3>
         <p
           className="mt-2 max-w-md mx-auto"
@@ -76,8 +81,7 @@ export default function HealthPage() {
             lineHeight: 1.65,
           }}
         >
-          Biometrics, workout logs, and nutrition tracking will appear here
-          once the frontend integration is complete.
+          {t.comingSoonBody}
         </p>
       </div>
     </div>

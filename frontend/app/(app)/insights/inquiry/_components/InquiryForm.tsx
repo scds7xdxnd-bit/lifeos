@@ -3,6 +3,7 @@
 import { useEffect, useReducer } from 'react'
 import { Input } from '@/components/ui/input'
 import type { CreateInquiryInput, Inquiry } from '@/lib/api/inquiries'
+import type { InquiryPageTranslations } from '@/lib/translations/inquiry'
 import {
   CROSS_DOMAIN_PAIR_CATALOG,
   todayIso, shiftDateIso, datetimeLocalNow, pairLabel,
@@ -126,6 +127,7 @@ const inputStyle: React.CSSProperties = {
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface InquiryFormProps {
+  t: InquiryPageTranslations['form']
   domains: DomainOption[]
   crossDomainPairs: CrossDomainPair[]
   readinessReady: boolean
@@ -140,6 +142,7 @@ interface InquiryFormProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function InquiryForm({
+  t,
   domains,
   crossDomainPairs,
   readinessReady,
@@ -165,11 +168,11 @@ export function InquiryForm({
     e.preventDefault()
     const { question, primaryDomain, crossDomain, pairKey, start, end, asOf, contextText } = form
 
-    if (question.trim().length < 3) return alert('Enter a clear question (minimum 3 characters).')
-    if (!primaryDomain && !crossDomain) return alert('Select a primary domain.')
-    if (!start || !end) return alert('Select a valid timeframe.')
-    if (start > end) return alert('Timeframe start must be before end.')
-    if (crossDomain && !pairKey) return alert('Select an approved cross-domain pair profile.')
+    if (question.trim().length < 3) return alert(t.alertQuestion)
+    if (!primaryDomain && !crossDomain) return alert(t.alertPrimaryDomain)
+    if (!start || !end) return alert(t.alertTimeframe)
+    if (start > end) return alert(t.alertStartBeforeEnd)
+    if (crossDomain && !pairKey) return alert(t.alertSelectPair)
 
     const pair = crossDomain ? crossDomainPairs.find((p) => p.key === pairKey) : null
     const resolvedDomains = pair ? [...pair.domains] : [primaryDomain]
@@ -220,7 +223,7 @@ export function InquiryForm({
             letterSpacing: '-0.03em',
           }}
         >
-          Inquiry Setup
+          {t.setupTitle}
         </h3>
         <p
           className="mt-1"
@@ -231,7 +234,7 @@ export function InquiryForm({
             lineHeight: 1.65,
           }}
         >
-          Define scope first. Generate only when the question and domain lens are explicit.
+          {t.setupSub}
         </p>
       </div>
 
@@ -265,13 +268,13 @@ export function InquiryForm({
       <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
         {/* Question */}
         <div className="space-y-2">
-          <label htmlFor="inq-question" style={microLabel}>Question</label>
+          <label htmlFor="inq-question" style={microLabel}>{t.question}</label>
           <textarea
             id="inq-question"
             rows={3}
             maxLength={500}
             required
-            placeholder="What exactly am I trying to understand right now?"
+            placeholder={t.questionPlaceholder}
             value={form.question}
             onChange={(e) => dispatch({ type: 'SET', field: 'question', value: e.target.value })}
             style={{
@@ -293,7 +296,7 @@ export function InquiryForm({
         {/* Domain + Timeframe preset */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="inq-domain" style={microLabel}>Primary domain</label>
+            <label htmlFor="inq-domain" style={microLabel}>{t.primaryDomain}</label>
             <select
               id="inq-domain"
               required={!form.crossDomain}
@@ -305,24 +308,24 @@ export function InquiryForm({
                 ...(form.crossDomain ? { opacity: 0.5 } : {}),
               }}
             >
-              <option value="">Select domain…</option>
+              <option value="">{t.selectDomain}</option>
               {domains.map((d) => (
                 <option key={d.key} value={d.key}>{d.label}</option>
               ))}
             </select>
           </div>
           <div className="space-y-2">
-            <label htmlFor="inq-preset" style={microLabel}>Timeframe</label>
+            <label htmlFor="inq-preset" style={microLabel}>{t.timeframe}</label>
             <select
               id="inq-preset"
               value={form.timeframePreset}
               onChange={(e) => dispatch({ type: 'SET_PRESET', preset: e.target.value as FormState['timeframePreset'] })}
               style={inputStyle}
             >
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="custom">Custom range</option>
+              <option value="7">{t.last7Days}</option>
+              <option value="30">{t.last30Days}</option>
+              <option value="90">{t.last90Days}</option>
+              <option value="custom">{t.customRange}</option>
             </select>
           </div>
         </div>
@@ -330,7 +333,7 @@ export function InquiryForm({
         {/* Date range */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="inq-start" style={microLabel}>Start date</label>
+            <label htmlFor="inq-start" style={microLabel}>{t.startDate}</label>
             <Input
               id="inq-start"
               type="date"
@@ -343,7 +346,7 @@ export function InquiryForm({
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="inq-end" style={microLabel}>End date</label>
+            <label htmlFor="inq-end" style={microLabel}>{t.endDate}</label>
             <Input
               id="inq-end"
               type="date"
@@ -360,7 +363,7 @@ export function InquiryForm({
         {/* As-of */}
         <div className="space-y-2">
           <label htmlFor="inq-asof" style={microLabel}>
-            As of <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(optional)</span>
+            {t.asOf} <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>{t.optional}</span>
           </label>
           <Input
             id="inq-asof"
@@ -369,7 +372,7 @@ export function InquiryForm({
             onChange={(e) => dispatch({ type: 'SET', field: 'asOf', value: e.target.value })}
           />
           <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
-            Locks replay to a deterministic cutoff time.
+            {t.asOfHint}
           </p>
         </div>
 
@@ -389,11 +392,11 @@ export function InquiryForm({
               style={{ accentColor: '#4b6646' }}
             />
             <span style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', color: '#2e342b' }}>
-              Enable explicit cross-domain mode
+              {t.crossDomainMode}
             </span>
           </label>
           <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
-            Cross-domain claims are generated only when selected domains are explicit and evidence-backed.
+            {t.crossDomainHint}
           </p>
         </div>
 
@@ -403,15 +406,15 @@ export function InquiryForm({
             className="space-y-3 pl-5"
             style={{ borderLeft: '2px solid rgba(75, 102, 70, 0.15)' }}
           >
-            <p style={microLabel}>Approved domain pair profile</p>
-            <label htmlFor="inq-pair" style={microLabel}>Domain pair</label>
+            <p style={microLabel}>{t.approvedPairProfile}</p>
+            <label htmlFor="inq-pair" style={microLabel}>{t.domainPair}</label>
             <select
               id="inq-pair"
               value={form.pairKey}
               onChange={(e) => dispatch({ type: 'SET_PAIR', pairKey: e.target.value, pairs: crossDomainPairs })}
               style={inputStyle}
             >
-              <option value="">Select approved pair…</option>
+              <option value="">{t.selectApprovedPair}</option>
               {crossDomainPairs.map((p) => (
                 <option key={p.key} value={p.key}>
                   {pairLabel(p.domains)} ({p.profile})
@@ -419,7 +422,7 @@ export function InquiryForm({
               ))}
             </select>
             <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
-              Cross-domain pair profiles activate only for approved 2-domain scopes.
+              {t.pairHint}
             </p>
           </div>
         )}
@@ -443,20 +446,20 @@ export function InquiryForm({
             onMouseEnter={(e) => { e.currentTarget.style.color = '#4b6646' }}
             onMouseLeave={(e) => { e.currentTarget.style.color = '#767d72' }}
           >
-            {form.showContext ? 'Hide optional context' : 'Add optional context'}
+            {form.showContext ? t.hideOptionalContext : t.addOptionalContext}
           </button>
         </div>
 
         {form.showContext && (
           <div className="space-y-2">
             <label htmlFor="inq-context" style={microLabel}>
-              Context <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(not evidence)</span>
+              {t.context} <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>{t.notEvidence}</span>
             </label>
             <textarea
               id="inq-context"
               rows={3}
               maxLength={1000}
-              placeholder="Optional framing context. This is not treated as factual evidence."
+              placeholder={t.contextPlaceholder}
               value={form.contextText}
               onChange={(e) => dispatch({ type: 'SET', field: 'contextText', value: e.target.value })}
               style={{ ...inputStyle, resize: 'none' }}
@@ -470,7 +473,7 @@ export function InquiryForm({
               }}
             />
             <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
-              User context is displayed separately and not promoted to system evidence.
+              {t.contextHint}
             </p>
           </div>
         )}
@@ -498,8 +501,8 @@ export function InquiryForm({
             }}
           >
             {isSubmitting
-              ? refineTarget ? 'Refining…' : 'Generating…'
-              : refineTarget ? 'Refine Brief' : 'Generate Brief'}
+              ? refineTarget ? t.refining : t.generating
+              : refineTarget ? t.refineBrief : t.generateBrief}
           </button>
           <button
             type="button"
@@ -519,7 +522,7 @@ export function InquiryForm({
             onMouseEnter={(e) => { e.currentTarget.style.color = '#5a6157' }}
             onMouseLeave={(e) => { e.currentTarget.style.color = '#767d72' }}
           >
-            Reset
+            {t.reset}
           </button>
           {refineTarget && (
             <span
@@ -535,7 +538,7 @@ export function InquiryForm({
                 borderRadius: '100px',
               }}
             >
-              Refining selected inquiry
+              {t.refiningSelectedInquiry}
             </span>
           )}
         </div>

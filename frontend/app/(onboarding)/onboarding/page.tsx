@@ -19,12 +19,13 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { onboardingApi } from '@/lib/api/onboarding'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
+import { LanguageMenu } from '@/components/common/LanguageMenu'
 
 /* ── Domain definitions (top 4 user-voted) ── */
 interface Domain {
   id: string
-  label: string
-  description: string
   icon: React.ElementType
   accent: string      // icon bg tint
   accentDark: string   // icon colour when selected
@@ -33,22 +34,22 @@ interface Domain {
 
 const DOMAINS: Domain[] = [
   {
-    id: 'finance', label: 'Finances', description: 'Track spending, budgets & goals',
+    id: 'finance',
     icon: Wallet, accent: '#e8f0e3', accentDark: '#3a5c35',
     gradient: 'linear-gradient(135deg, #edf5e8 0%, #d9ebcf 100%)',
   },
   {
-    id: 'health', label: 'Health', description: 'Biometrics, workouts & nutrition',
+    id: 'health',
     icon: Heart, accent: '#fce8e4', accentDark: '#8b4a3a',
     gradient: 'linear-gradient(135deg, #fdf0ed 0%, #f5ddd6 100%)',
   },
   {
-    id: 'habits', label: 'Habits', description: 'Build routines & track streaks',
+    id: 'habits',
     icon: Repeat, accent: '#e4edf5', accentDark: '#3a5272',
     gradient: 'linear-gradient(135deg, #edf2f8 0%, #d6e3f0 100%)',
   },
   {
-    id: 'skills', label: 'Skills', description: 'Practice sessions & growth',
+    id: 'skills',
     icon: BookOpen, accent: '#f5f0e4', accentDark: '#6b5a35',
     gradient: 'linear-gradient(135deg, #f8f3eb 0%, #ede4d0 100%)',
   },
@@ -57,8 +58,6 @@ const DOMAINS: Domain[] = [
 /* ── Calendar providers ── */
 interface CalendarOption {
   id: 'google' | 'apple' | 'skip'
-  label: string
-  subtitle: string
   icon: React.ElementType
   iconColor: string
   accent: string
@@ -67,35 +66,31 @@ interface CalendarOption {
 
 const CALENDAR_OPTIONS: CalendarOption[] = [
   {
-    id: 'google', label: 'Google Calendar', subtitle: 'Sync events from Google Workspace',
+    id: 'google',
     icon: Calendar, iconColor: '#4b6646', accent: '#e8f0e3',
     gradient: 'linear-gradient(135deg, #edf5e8 0%, #d9ebcf 100%)',
   },
   {
-    id: 'apple', label: 'Apple Calendar', subtitle: 'Sync events from iCloud',
+    id: 'apple',
     icon: Cloud, iconColor: '#3a5272', accent: '#e4edf5',
     gradient: 'linear-gradient(135deg, #edf2f8 0%, #d6e3f0 100%)',
   },
   {
-    id: 'skip', label: 'Skip for now', subtitle: 'You can connect a calendar later',
+    id: 'skip',
     icon: ArrowRight, iconColor: '#767d72', accent: '#f1f1ed',
     gradient: 'linear-gradient(135deg, #f3f3ef 0%, #e8e8e2 100%)',
   },
 ]
 
 type Step = 'domains' | 'calendar' | 'processing'
+type ProcessingCopy = ReturnType<typeof getAppTranslations>['onboarding']['processing']
 
 /* ── Processing screen — inspired by "Listening to the Archive" ── */
-function ProcessingScreen() {
+function ProcessingScreen({ t }: { t: ProcessingCopy }) {
   const [progress, setProgress] = useState(0)
   const [activeCard, setActiveCard] = useState(0)
 
-  const discoveryItems = [
-    { label: 'Habit Patterns', status: 'FOUND' },
-    { label: 'Weekly Rhythm', status: 'ANALYZING' },
-    { label: 'Focus Windows', status: 'MAPPING' },
-    { label: 'Growth Trajectory', status: 'CONNECTED' },
-  ]
+  const discoveryItems = t.items
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -151,33 +146,33 @@ function ProcessingScreen() {
       </div>
 
       {/* Headline */}
-      <h1 className="processing-title">Listening to the Archive...</h1>
+      <h1 className="processing-title">{t.title}</h1>
       <p className="processing-subtitle">
-        Your personal digital ecosystem is being harmonized.
+        {t.subtitle}
       </p>
 
       {/* Progress bar */}
       <div className="progress-track">
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
-      <span className="progress-label">{progress}% Complete</span>
+      <span className="progress-label">{progress}% {t.complete}</span>
 
       {/* Bottom status cards */}
       <div className="status-cards">
         <div className="status-card status-card-light">
           <LayoutGrid size={20} color="#4b6646" strokeWidth={1.8} />
-          <div className="status-badge status-badge-connected">CONNECTED</div>
-          <h3 className="status-card-title">Digital Rhythm</h3>
+          <div className="status-badge status-badge-connected">{t.connected}</div>
+          <h3 className="status-card-title">{t.digitalRhythm}</h3>
           <p className="status-card-desc">
-            Aligning with your focus cycles and natural downtime.
+            {t.digitalRhythmDesc}
           </p>
         </div>
         <div className="status-card status-card-dark">
           <Sparkles size={20} color="#a8c4a0" strokeWidth={1.8} />
-          <div className="status-badge status-badge-processing">PROCESSING</div>
-          <h3 className="status-card-title-dark">Intent Mapping</h3>
+          <div className="status-badge status-badge-processing">{t.processing}</div>
+          <h3 className="status-card-title-dark">{t.intentMapping}</h3>
           <p className="status-card-desc-dark">
-            Translating logs into actionable wisdom for your next chapter.
+            {t.intentMappingDesc}
           </p>
         </div>
       </div>
@@ -187,12 +182,17 @@ function ProcessingScreen() {
 
 /* ── Main onboarding wizard ── */
 export default function OnboardingPage() {
+  const [lang, setLang] = useLang()
+  const t = getAppTranslations(lang).onboarding
   const router = useRouter()
   const [step, setStep] = useState<Step>('domains')
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set())
   const [calendarProvider, setCalendarProvider] = useState<'google' | 'apple' | 'skip' | null>(null)
   const [fadeIn, setFadeIn] = useState(true)
   const [enterDirection, setEnterDirection] = useState<'right' | 'left'>('right')
+
+  const domainCopy = Object.fromEntries(t.domains.map((d) => [d.id, d])) as Record<string, { id: string; label: string; description: string }>
+  const calendarCopy = Object.fromEntries(t.calendar.map((c) => [c.id, c])) as Record<'google' | 'apple' | 'skip', { id: string; label: string; subtitle: string }>
 
   /* ── Mutations ── */
   const domainsMutation = useMutation({
@@ -273,6 +273,9 @@ export default function OnboardingPage() {
 
   return (
     <>
+      <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 70 }}>
+        <LanguageMenu lang={lang} setLang={setLang} iconOnly />
+      </div>
       <style>{`
         /* ── Animations ── */
         @keyframes slideIn {
@@ -728,7 +731,7 @@ export default function OnboardingPage() {
                   marginBottom: '12px',
                 }}
               >
-                Step 1 of 2
+                {t.step1of2}
               </p>
               <h1
                 style={{
@@ -741,7 +744,7 @@ export default function OnboardingPage() {
                   lineHeight: 1.2,
                 }}
               >
-                What would you like to track?
+                {t.whatToTrack}
               </h1>
               <p
                 style={{
@@ -751,7 +754,7 @@ export default function OnboardingPage() {
                   lineHeight: 1.6,
                 }}
               >
-                Choose the areas of your life you&apos;d like to organize.
+                {t.whatToTrackSub}
               </p>
             </div>
 
@@ -759,6 +762,7 @@ export default function OnboardingPage() {
               {DOMAINS.map((domain, index) => {
                 const isSelected = selectedDomains.has(domain.id)
                 const Icon = domain.icon
+                const copy = domainCopy[domain.id]
                 return (
                   <button
                     key={domain.id}
@@ -813,7 +817,7 @@ export default function OnboardingPage() {
                           marginBottom: '4px',
                         }}
                       >
-                        {domain.label}
+                        {copy?.label ?? domain.id}
                       </span>
                       <span
                         style={{
@@ -823,7 +827,7 @@ export default function OnboardingPage() {
                           lineHeight: 1.4,
                         }}
                       >
-                        {domain.description}
+                        {copy?.description ?? ''}
                       </span>
                     </div>
                   </button>
@@ -836,7 +840,7 @@ export default function OnboardingPage() {
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
                 <div className="selection-counter">
                   <Check size={14} strokeWidth={2.5} />
-                  {selectedDomains.size} selected
+                  {selectedDomains.size} {t.selected}
                 </div>
               </div>
             )}
@@ -849,7 +853,7 @@ export default function OnboardingPage() {
                 textAlign: 'center',
                 marginTop: '16px',
               }}>
-                Something went wrong. Please try again.
+                {t.errorGeneric}
               </p>
             )}
           </div>
@@ -870,7 +874,7 @@ export default function OnboardingPage() {
                   marginBottom: '12px',
                 }}
               >
-                Step 2 of 2
+                {t.step2of2}
               </p>
               <h1
                 style={{
@@ -883,7 +887,7 @@ export default function OnboardingPage() {
                   lineHeight: 1.2,
                 }}
               >
-                Connect your calendar
+                {t.connectCalendar}
               </h1>
               <p
                 style={{
@@ -893,7 +897,7 @@ export default function OnboardingPage() {
                   lineHeight: 1.6,
                 }}
               >
-                Import your schedule to let LifeOS understand your time.
+                {t.connectCalendarSub}
               </p>
             </div>
 
@@ -901,6 +905,7 @@ export default function OnboardingPage() {
               {CALENDAR_OPTIONS.map((option, index) => {
                 const isActive = calendarProvider === option.id
                 const OptionIcon = option.icon
+                const copy = calendarCopy[option.id]
                 return (
                   <button
                     key={option.id}
@@ -951,7 +956,7 @@ export default function OnboardingPage() {
                           marginBottom: '2px',
                         }}
                       >
-                        {option.label}
+                        {copy?.label ?? option.id}
                       </span>
                       <span
                         style={{
@@ -960,7 +965,7 @@ export default function OnboardingPage() {
                           color: '#767d72',
                         }}
                       >
-                        {option.subtitle}
+                        {copy?.subtitle ?? ''}
                       </span>
                     </div>
                   </button>
@@ -976,14 +981,14 @@ export default function OnboardingPage() {
                 textAlign: 'center',
                 marginTop: '16px',
               }}>
-                Something went wrong. Please try again.
+                {t.errorGeneric}
               </p>
             )}
           </div>
         )}
 
         {/* ── Step 3: Processing Animation ── */}
-        {step === 'processing' && <ProcessingScreen />}
+        {step === 'processing' && <ProcessingScreen t={t.processing} />}
       </div>
 
       {/* ── Bottom bar ── */}
@@ -1033,7 +1038,7 @@ export default function OnboardingPage() {
                 }}
               >
                 <ChevronLeft size={18} strokeWidth={2.2} />
-                Back
+                {t.back}
               </button>
             )}
 
@@ -1078,10 +1083,10 @@ export default function OnboardingPage() {
               }}
             >
               {domainsMutation.isPending || calendarMutation.isPending ? (
-                'Saving...'
+                t.saving
               ) : (
                 <>
-                  Continue
+                  {t.continue}
                   <ChevronRight size={18} strokeWidth={2.2} />
                 </>
               )}

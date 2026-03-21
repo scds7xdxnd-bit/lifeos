@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import socket
 from datetime import timedelta
 from typing import Dict, Type
 
@@ -10,6 +11,50 @@ from dotenv import load_dotenv
 from sqlalchemy.engine.url import make_url
 
 load_dotenv()
+
+
+def _detect_lan_ip() -> str | None:
+    """Best-effort LAN IP detection for local-device testing (e.g., phone on Wi-Fi)."""
+    sock = None
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Does not send packets; used only to determine outbound interface.
+        sock.connect(("8.8.8.8", 80))
+        ip = sock.getsockname()[0]
+        if ip and ip != "127.0.0.1":
+            return ip
+    except OSError:
+        return None
+    finally:
+        if sock is not None:
+            sock.close()
+    return None
+
+
+def _build_dev_cors_origins() -> list[str]:
+    """Build CORS origins for local frontend usage, including LAN testing on devices."""
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
+
+    lan_ip = _detect_lan_ip()
+    if lan_ip:
+        origins.extend(
+            [
+                f"http://{lan_ip}:3000",
+                f"http://{lan_ip}:3001",
+            ]
+        )
+
+    extra = os.environ.get("CORS_ORIGINS", "")
+    if extra.strip():
+        origins.extend([item.strip() for item in extra.split(",") if item.strip()])
+
+    # Preserve order while deduplicating.
+    return list(dict.fromkeys(origins))
 
 
 def _engine_options_from_uri(uri: str) -> dict:
@@ -241,7 +286,7 @@ class DevelopmentConfig(BaseConfig):
     JWT_COOKIE_SECURE = False
     ENABLE_PHASE6_FOCUSED_INQUIRY = True
     ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = True
-    CORS_ORIGINS = ["http://localhost:3000", "http://localhost:3001"]
+    CORS_ORIGINS = _build_dev_cors_origins()
 
 
 class TestingConfig(BaseConfig):

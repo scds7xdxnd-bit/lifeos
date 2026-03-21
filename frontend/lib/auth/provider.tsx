@@ -14,7 +14,26 @@ import { AuthContext } from './context'
 import type { RegisterInput, StoredTokens, User } from './types'
 
 const STORAGE_KEY = 'lifeos_tokens'
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
+
+function resolveApiUrl(): string {
+  if (typeof window === 'undefined') return RAW_API_URL
+
+  if (!RAW_API_URL) {
+    return `${window.location.protocol}//${window.location.hostname}:5001`
+  }
+
+  try {
+    const parsed = new URL(RAW_API_URL)
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      const port = parsed.port || '5001'
+      return `${parsed.protocol}//${window.location.hostname}:${port}`
+    }
+    return RAW_API_URL
+  } catch {
+    return RAW_API_URL
+  }
+}
 
 function getStored(): StoredTokens | null {
   if (typeof window === 'undefined') return null
@@ -42,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const tokens = getStored()
     if (!tokens) {
       // Prime CSRF token from bootstrap endpoint for unauthenticated requests
-      fetch(`${API_URL}/api/bootstrap`, {
+      fetch(`${resolveApiUrl()}/api/bootstrap`, {
         credentials: 'include',
       })
         .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -59,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .finally(() => setIsLoading(false))
       return
     }
-    fetch(`${API_URL}/auth/me`, {
+    fetch(`${resolveApiUrl()}/auth/me`, {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -69,10 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetch(`${resolveApiUrl()}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      credentials: 'include',
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.message ?? 'Login failed')
@@ -85,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const register = useCallback(async (input: RegisterInput) => {
-    const res = await fetch(`${API_URL}/auth/register`, {
+    const res = await fetch(`${resolveApiUrl()}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -108,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearStored()
     setUser(null)
     if (tokens?.refresh_token) {
-      await fetch(`${API_URL}/auth/logout`, {
+      await fetch(`${resolveApiUrl()}/auth/logout`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${tokens.refresh_token}`,

@@ -36,7 +36,9 @@ export const NavBar = ({ t, lang, setLang }: NavBarProps) => {
           key={l}
           onClick={() => setLang(l)}
           style={{
-            padding: '5px 12px',
+            height: '32px',
+            minWidth: '62px',
+            padding: '5px 10px',
             border: 'none',
             borderRadius: '100px',
             fontSize: '0.82rem',
@@ -47,6 +49,8 @@ export const NavBar = ({ t, lang, setLang }: NavBarProps) => {
             color: lang === l ? colors.onSurface : colors.outline,
             boxShadow: lang === l ? '0 1px 4px rgba(46, 52, 43, 0.10)' : 'none',
             transition: 'all 0.18s ease',
+            whiteSpace: 'nowrap',
+            textAlign: 'center',
           }}
         >
           {l === 'en' ? 'EN' : l === 'zh' ? '\u4E2D\u6587' : '\uD55C\uAD6D\uC5B4'}
@@ -125,11 +129,20 @@ export const NavBar = ({ t, lang, setLang }: NavBarProps) => {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {langToggle}
-            <Button variant="secondary" onClick={scrollToWaitlist}>
+            <Button
+              variant="secondary"
+              onClick={scrollToWaitlist}
+              style={{ width: '196px', textAlign: 'center', whiteSpace: 'nowrap' }}
+            >
               {t.cta}
             </Button>
             <Link href="/login" style={{ textDecoration: 'none' }}>
-              <Button variant="primary">{t.login}</Button>
+              <Button
+                variant="primary"
+                style={{ width: '112px', textAlign: 'center', whiteSpace: 'nowrap' }}
+              >
+                {t.login}
+              </Button>
             </Link>
           </div>
         )}

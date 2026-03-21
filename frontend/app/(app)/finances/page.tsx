@@ -1,8 +1,13 @@
 'use client'
 
 import { Wallet } from 'lucide-react'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
 
 export default function FinancesPage() {
+  const [lang] = useLang()
+  const t = getAppTranslations(lang).finances
+
   return (
     <div className="space-y-8">
       {/* Page header */}
@@ -15,7 +20,7 @@ export default function FinancesPage() {
             color: '#3a5c35',
           }}
         >
-          Domain
+          {t.eyebrow}
         </p>
         <h1
           style={{
@@ -26,7 +31,7 @@ export default function FinancesPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Finances
+          {t.title}
         </h1>
         <p
           className="mt-2"
@@ -37,7 +42,7 @@ export default function FinancesPage() {
             lineHeight: 1.65,
           }}
         >
-          Track spending, budgets, and goals. Your financial story, told clearly.
+          {t.subtitle}
         </p>
       </div>
 
@@ -65,7 +70,7 @@ export default function FinancesPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Finance domain coming soon
+          {t.comingSoonTitle}
         </h3>
         <p
           className="mt-2 max-w-md mx-auto"
@@ -76,8 +81,7 @@ export default function FinancesPage() {
             lineHeight: 1.65,
           }}
         >
-          Accounts, journal entries, transactions, and forecasts will appear here
-          once the frontend integration is complete.
+          {t.comingSoonBody}
         </p>
       </div>
     </div>

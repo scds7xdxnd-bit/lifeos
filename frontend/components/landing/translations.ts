@@ -292,7 +292,7 @@ export const translations: Record<Lang, Translations> = {
     nav: { cta: '알파 액세스 신청', login: '로그인' },
     hero: {
       badge: '프라이빗 알파 · 인원 제한',
-      headline1: '당신의 삶을,',
+      headline1: '내 삶을,',
       headline2: '아름답게 정리하다.',
       sub: 'LifeOS는 흩어진 기록들을 근거 기반 브리프로 전환합니다. 챗봇도, 추측도 없이 — 오직 명확함만.',
       primaryCta: '아카이브 시작하기',
@@ -381,8 +381,8 @@ export const translations: Record<Lang, Translations> = {
     },
     timeline: {
       eyebrow: '타임라인 연속성',
-      headline1: '당신의 삶은 목록이 아닙니다.',
-      headline2: '이야기입니다.',
+      headline1: '내 삶은 목록이 아니다.',
+      headline2: '이야기다.',
       features: [
         { title: '시간순 명확성', body: '일, 월, 년에 걸친 아이디어의 흐름을 보세요. 더 이상 검색하지 않고 — 살아온 경험을 스크롤하기만 하면 됩니다.' },
         { title: '자동 맥락화', body: 'LifeOS는 캘린더와 노트 사이의 관계를 이해합니다. 관련 기억을 그룹화하여 전체 그림을 볼 수 있습니다.' },
