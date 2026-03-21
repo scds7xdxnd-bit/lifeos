@@ -4,15 +4,19 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, render_template, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from pydantic import ValidationError
 
 from lifeos.core.users.schemas import (
+    OnboardingStepRequest,
     UserCreateRequest,
     UserUpdateRequest,
     serialize_user,
 )
 from lifeos.core.users.services import (
     create_user,
+    get_onboarding_status,
     get_user,
+    save_onboarding_step,
     update_preferences,
     update_user,
 )
@@ -59,6 +63,35 @@ def api_update_preferences(user_id: int):
     prefs = request.get_json(silent=True) or {}
     update_preferences(user, prefs)
     return jsonify({"ok": True, "preferences": prefs})
+
+
+@user_api_bp.get("/me/onboarding-status")
+@jwt_required()
+def api_onboarding_status():
+    user = get_user(get_jwt_identity())
+    if not user:
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    status = get_onboarding_status(user)
+    return jsonify({"ok": True, **status})
+
+
+@user_api_bp.post("/me/onboarding")
+@jwt_required()
+def api_save_onboarding():
+    user = get_user(get_jwt_identity())
+    if not user:
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    payload = request.get_json(silent=True) or {}
+    try:
+        data = OnboardingStepRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"ok": False, "errors": exc.errors()}), 422
+    save_onboarding_step(user, data.step, data.data)
+    if data.step == "complete":
+        from lifeos.core.events.event_service import log_event
+
+        log_event("user.onboarding.completed", {"payload_version": 1}, user_id=user.id)
+    return jsonify({"ok": True, "step": data.step})
 
 
 @user_pages_bp.get("/profile")

@@ -37,14 +37,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         style={{
           flex: '0 0 45%',
           background: 'linear-gradient(170deg, #1a1f1a 0%, #2a3228 50%, #1a1f1a 100%)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
           padding: '64px 56px',
           position: 'relative',
           overflow: 'hidden',
         }}
-        className="hidden lg:flex"
+        className="hidden lg:flex lg:flex-col lg:justify-center"
       >
         {/* Botanical accent */}
         <div
@@ -178,15 +175,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* Right panel — form area */}
       <div
+        className="flex items-center justify-center"
         style={{
           flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px 24px',
-          background: 'linear-gradient(180deg, #F4F2EE 0%, #EAE7E0 60%, #DDD8CF 100%)',
+          padding: '40px 20px',
+          background: 'linear-gradient(180deg, #f8faf2 0%, #f1f5eb 60%, #e5eade 100%)',
           position: 'relative',
           overflow: 'hidden',
+          minHeight: '100vh',
         }}
       >
         {children}

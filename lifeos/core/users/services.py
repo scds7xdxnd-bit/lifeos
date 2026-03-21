@@ -52,6 +52,36 @@ def update_preferences(user: User, prefs: dict) -> User:
     return user
 
 
+def get_onboarding_status(user: User) -> dict:
+    """Return onboarding state from user preferences."""
+    from lifeos.core.users.preferences import get_preferences
+
+    prefs = get_preferences(user)
+
+    completed_pref = prefs.get("onboarding_completed", {})
+    completed = completed_pref.get("v", False) if isinstance(completed_pref, dict) else False
+
+    domains_pref = prefs.get("onboarding_domains", {})
+    domains = domains_pref.get("selected", []) if isinstance(domains_pref, dict) else []
+
+    calendar_pref = prefs.get("onboarding_calendar_source", {})
+    calendar_source = calendar_pref.get("provider") if isinstance(calendar_pref, dict) else None
+
+    return {"completed": completed, "domains": domains, "calendar_source": calendar_source}
+
+
+def save_onboarding_step(user: User, step: str, data: dict) -> None:
+    """Persist an onboarding step to user preferences."""
+    if step == "domains":
+        set_preference(user, "onboarding_domains", {"selected": data.get("selected", [])})
+    elif step == "calendar":
+        set_preference(user, "onboarding_calendar_source", {"provider": data.get("provider", "skip")})
+    elif step == "complete":
+        set_preference(user, "onboarding_completed", {"v": True})
+
+    db.session.commit()
+
+
 def _ensure_default_roles(user: User) -> None:
     """
     Assign baseline roles for new users.

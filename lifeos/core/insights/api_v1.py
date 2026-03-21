@@ -319,11 +319,21 @@ def _feedback_fingerprint(
 def _feedback_csrf_allowed() -> bool:
     if not current_app.config.get("WTF_CSRF_ENABLED", True):
         return True
+    # JWT-authenticated requests are inherently CSRF-safe.
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        try:
+            from flask_jwt_extended import verify_jwt_in_request
+
+            verify_jwt_in_request()
+            return True
+        except Exception:
+            pass
     token = request.headers.get("X-CSRF-Token")
     if validate_csrf_token(token or ""):
         return True
     request_id = request.headers.get("X-Request-Id") or request.headers.get("X-Request-ID")
-    auth_header_present = bool(request.headers.get("Authorization"))
+    auth_header_present = bool(auth_header)
     current_app.logger.warning(
         "csrf_failed",
         extra={

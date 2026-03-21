@@ -61,7 +61,6 @@ export default function InquiryPage() {
   const enabledPairProfiles = readinessData?.alpha?.enabled_pair_profiles ?? []
   const alphaFeedbackEnabled = alphaEnabled
 
-  // Filter catalogs based on alpha scope when alpha is active
   const domains = alphaEnabled
     ? DOMAIN_CATALOG.filter((d) => visibleDomains.includes(d.key))
     : DOMAIN_CATALOG
@@ -101,10 +100,8 @@ export default function InquiryPage() {
         })
       }
 
-      // Reload history
       queryClient.invalidateQueries({ queryKey: ['inquiries'] })
 
-      // If we have the full inquiry in the response, show it
       if (result.inquiry) {
         setSelectedInquiry(result.inquiry)
         setSelectedVersionId(result.latest_brief?.id ?? result.version_id ?? null)
@@ -205,26 +202,65 @@ export default function InquiryPage() {
   return (
     <div className="space-y-8">
 
-      {/* Header */}
+      {/* Page header — Botanical Editorial pattern */}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Inquiry</h1>
-        <p className="text-sm text-muted-foreground mt-1.5">
+        <p
+          className="text-xs font-bold uppercase mb-2"
+          style={{
+            fontFamily: 'var(--font-manrope), sans-serif',
+            letterSpacing: '0.05em',
+            color: '#4b6646',
+          }}
+        >
+          Intelligence
+        </p>
+        <h1
+          style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: '2rem',
+            fontWeight: 300,
+            color: '#4b6646',
+            letterSpacing: '-0.03em',
+          }}
+        >
+          Inquiry
+        </h1>
+        <p
+          className="mt-2"
+          style={{
+            fontFamily: 'var(--font-manrope), sans-serif',
+            fontSize: '0.9375rem',
+            color: '#5a6157',
+            lineHeight: 1.65,
+          }}
+        >
           Scope a question to a domain and timeframe. Evidence-backed briefs only.
         </p>
       </div>
 
       {/* Alpha readiness banner */}
       {alphaEnabled && !readinessReady && (
-        <div className="rounded-xl bg-amber-50/80 backdrop-blur-sm px-5 py-3.5 text-sm text-amber-800 border border-amber-200/50">
+        <div
+          className="px-5 py-3.5 text-sm"
+          style={{
+            background: 'rgba(232, 115, 92, 0.08)',
+            borderRadius: '0 12px 12px 12px',
+            color: '#8b4a3a',
+            fontFamily: 'var(--font-manrope), sans-serif',
+          }}
+        >
           Data readiness not met.{' '}
-          <a href="/insights/data" className="underline hover:no-underline font-medium">
+          <a
+            href="/insights/data"
+            className="underline hover:no-underline font-bold"
+          >
             Check Data Readiness
           </a>{' '}
           for next steps before generating a brief.
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-8 items-start">
         {/* Left column: form + history */}
         <div className="space-y-6">
           <InquiryForm
@@ -251,10 +287,28 @@ export default function InquiryPage() {
           {/* Right column: brief */}
           <div>
             {mutation.isPending ? (
-              <div className="glass rounded-2xl p-10 text-center">
-                <div className="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  {refineTarget ? 'Refining brief…' : 'Generating brief…'}
+              <div
+                className="p-10 text-center"
+                style={{
+                  background: '#ffffff',
+                  borderRadius: '0 16px 16px 16px',
+                  boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+                }}
+              >
+                <div
+                  className="inline-block w-8 h-8 rounded-full border-2 border-t-transparent animate-spin mb-4"
+                  style={{ borderColor: '#4b6646', borderTopColor: 'transparent' }}
+                />
+                <p
+                  style={{
+                    fontFamily: 'var(--font-serif), Georgia, serif',
+                    fontStyle: 'italic',
+                    color: '#767d72',
+                    fontSize: '0.9375rem',
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  {refineTarget ? 'Refining your brief…' : 'Generating your brief…'}
                 </p>
               </div>
             ) : (

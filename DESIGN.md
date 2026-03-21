@@ -42,6 +42,24 @@ The palette is rooted in organic tones designed to reduce cognitive load and mim
 | `secondary-container` | #d6e8ce | Chips, tags, pill badges |
 | `on-secondary-container` | #465642 | Chip/tag text |
 
+### Domain Accent Palette
+
+Each LifeOS domain carries a muted, botanical-adjacent accent that distinguishes it visually while staying within the organic tone family. These are NOT bright or saturated — they are desaturated, earthy tints that feel like pressed-flower pigments.
+
+| Domain | Accent Tint (bg) | Accent Dark (icon/border) | Selected Gradient |
+|---|---|---|---|
+| Finance | `#e8f0e3` (sage) | `#3a5c35` | `linear-gradient(135deg, #edf5e8, #d9ebcf)` |
+| Health | `#fce8e4` (clay rose) | `#8b4a3a` | `linear-gradient(135deg, #fdf0ed, #f5ddd6)` |
+| Habits | `#e4edf5` (pressed lavender) | `#3a5272` | `linear-gradient(135deg, #edf2f8, #d6e3f0)` |
+| Skills | `#f5f0e4` (aged parchment) | `#6b5a35` | `linear-gradient(135deg, #f8f3eb, #ede4d0)` |
+
+**Usage rules:**
+- Domain accents are used for icon containers, selected card backgrounds, and border highlights — never for text, buttons, or large surface fills.
+- The accent dark value is used for the domain icon colour when selected and for the 2px selection border on cards.
+- All domain accents must feel "found in nature" — think dried botanicals, mineral pigments, stained paper. No neon, no saturated primaries.
+- When a card is unselected, it uses `surface-container-lowest` (#ffffff) with the standard sage palette. Domain colour only appears on selection.
+- Primary actions (buttons, links, CTAs) always remain in the core `primary` (#4b6646) palette regardless of domain context.
+
 ### Dark Surface Tokens
 
 Used for sidebar, footer, and dark feature sections (e.g., inquiry demo, hero accents):
@@ -215,6 +233,31 @@ Any dark-background section (footer, dark feature demos, hero accents) follows t
 - **Labels:** Micro-label style (Manrope, Bold, Uppercase, +0.05em) positioned 8px above the field
 - **Radius:** 4px (subtle rounding, NOT pill — inputs are functional, not decorative)
 
+### Selection Cards
+
+For multi-select or single-select flows (onboarding, settings, filters):
+
+- **Shape:** Clipped specimen (`border-radius: 0 16px 16px 16px`)
+- **Unselected:** `surface-container-lowest` (#ffffff), tinted shadow (`0 2px 12px rgba(46, 52, 43, 0.05)`)
+- **Selected:** Domain-specific gradient background (see Domain Accent Palette) with 2px `accent-dark` border. Shadow deepens to `0 6px 24px rgba(46, 52, 43, 0.1)`.
+- **Check indicator:** 24px circle, top-right corner. Unselected: ghost border (`outline-variant` at 30%). Selected: filled with `accent-dark`, white checkmark, pop animation (scale 0 → 1.2 → 1, 300ms).
+- **Icon container:** Rounded square (16px radius). Unselected: `accent-tint` bg, `on-surface-variant` icon. Selected: `accent-dark` at 10% bg, `accent-dark` icon.
+- **Text:** Title in `on-surface` (#2e342b) Manrope Bold 700. Description in `outline` (#767d72) Manrope Regular.
+- **Hover:** `translateY(-3px)`, shadow deepens to `0 16px 40px rgba(46, 52, 43, 0.1)`. 300ms ease.
+- **Entrance:** Staggered `cardEntrance` animation (opacity 0→1, translateY 20→0, scale 0.96→1) with 80ms delay between cards.
+
+### Processing & Transition Screens
+
+For loading, processing, and "setting up" moments — these are editorial Moments of Wonder:
+
+- **Layout:** Full-viewport centered, no sidebar, `background` (#f8faf2)
+- **Hero Orb:** 120px circle, gradient fill (`#e3f0dc → #ccebc2 → #d6e8ce`), tinted shadow (`0 8px 40px rgba(75, 102, 70, 0.2)`). Two pulsing rings (1.5px `primary` at 15% opacity) at -4px and -12px inset. Core breathes (scale 1→1.05, 4s ease-in-out infinite). Leaf icon inside.
+- **Discovery Chips:** Pill-shaped (`rounded-full`), glassmorphic (`rgba(255,255,255,0.8)`, `backdrop-filter: blur(8px)`, `1px solid rgba(255,255,255,0.3)`). Cycle through active state with `primary-container` tint. Content: micro-label status ("FOUND", "ANALYZING") + Manrope 600 label.
+- **Headline:** Newsreader Regular Italic, `primary` (#4b6646), `-0.03em` tracking. Use evocative editorial copy ("Listening to the Archive...").
+- **Progress Bar:** 200px wide, 4px track in `primary` at 10% opacity. Fill: gradient `primary → dark-accent` (#4b6646 → #6b8f65). Glow animation on fill.
+- **Status Cards:** Two-column grid, clipped specimen corners. One light (`surface-container-lowest`, sage tokens), one dark (`on-surface` #2e342b, dark tokens). Status badges in pills: light uses `primary-container` bg, dark uses `dark-accent` at 20% bg.
+- **Particles:** 12 floating 6px circles in `primary` at 20% opacity, rising from bottom 20% with staggered delays. Purely decorative.
+
 ### Chips & Tags
 
 - **Shape:** `rounded-full` (pill)
@@ -295,17 +338,23 @@ Asymmetric two-column split (5/7 grid):
 
 ### Onboarding Pages
 
-- **Sidebar:** Persistent progress indicator (Welcome > Domains > Sync > Finish)
-- **Top bar:** Glassmorphism header
-- **Content:** Scrollable main area with generous whitespace
-- **Bottom bar:** Fixed footer with Back (secondary) and Continue (primary) CTAs
+- **Layout:** No sidebar. Centered single-column content (max-width 560px) on `background`.
+- **Step indicator:** Pill-shaped progress dots (8px inactive, 36px active) with gradient fill (`primary → dark-accent`). Centered above headline.
+- **Step label:** Micro-label pattern ("STEP 1 OF 2") above Newsreader Light (300) headline.
+- **Content:** Scrollable main area with generous whitespace. Padding: `40px 24px 140px` (bottom space for fixed bar).
+- **Bottom bar:** Fixed glassmorphic footer (`background` at 85% opacity, `backdrop-filter: blur(8px)`, `1px solid rgba(255,255,255,0.2)` frost line). Back (ghost pill) + Continue (primary gradient pill). Shadow: `0 -4px 20px rgba(46, 52, 43, 0.04)`.
+- **Step transitions:** Fade + slide (opacity + translateY 8px). 250ms ease. Direction-aware (slides right going forward, left going back).
 
-### Finish/Success Page
+**Step 1 — Domain Selection:**
+- 2-column grid of Selection Cards (see Selection Cards component). Each domain shows icon, title, description.
+- Selection counter pill below grid when ≥1 selected.
 
-- No sidebar. Full-width centered layout.
-- Large circular hero with gradient border (primary → primary-container)
-- Floating glass notification cards with gentle animations
-- Two-column info cards for status display
+**Step 2 — Calendar Source:**
+- Stacked Selection Cards (single-column). Calendar, Cloud, ArrowRight icons. Same selection pattern as Step 1.
+
+**Step 3 — Processing:**
+- Full Processing & Transition Screen (see Processing Screens component). "Listening to the Archive..." editorial moment.
+- Auto-advances after 5 seconds. Redirects to `/calendar`.
 
 ---
 
@@ -394,4 +443,4 @@ This creates a "museum display case" depth effect.
 - **Don't** use square or slightly-rounded buttons. All buttons are pills (`rounded-full`).
 - **Don't** use `backdrop-blur` values above 8px. Crisp glass, not foggy windows.
 - **Don't** align everything to a rigid center-grid. Offset images and headers for editorial rhythm.
-- **Don't** use blue, purple, or non-botanical accent colors. The palette is sage — stay in the garden.
+- **Don't** use bright, saturated, or non-botanical accent colors. Domain accents (see Domain Accent Palette) are the only permitted departures from sage — and they must feel like pressed-flower pigments, not UI primaries.

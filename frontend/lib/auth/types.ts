@@ -2,6 +2,7 @@ export interface User {
   id: number
   email: string
   timezone?: string
+  onboarding_completed?: boolean
 }
 
 export interface StoredTokens {
