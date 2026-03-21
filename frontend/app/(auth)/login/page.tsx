@@ -5,12 +5,17 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/context'
 import { LeafCluster } from '@/components/landing/assets/Botanicals'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
+import { LanguageMenu } from '@/components/common/LanguageMenu'
 
 type View = 'login' | 'register'
 
 export default function LoginPage() {
   const router = useRouter()
   const { login, register } = useAuth()
+  const [lang, setLang] = useLang()
+  const t = getAppTranslations(lang).login
 
   const [view, setView] = useState<View>('login')
   const [email, setEmail] = useState('')
@@ -39,6 +44,9 @@ export default function LoginPage() {
 
   return (
     <div style={{ width: '100%', maxWidth: '420px', position: 'relative', padding: '0 4px' }}>
+      <div style={{ position: 'absolute', top: '-8px', right: '4px', zIndex: 10 }}>
+        <LanguageMenu lang={lang} setLang={setLang} iconOnly />
+      </div>
       <style>{`
         .auth-back-link { color: #5a6157; text-decoration: none; transition: color 0.2s; }
         .auth-back-link:hover, .auth-back-link:focus-visible { color: #4b6646; }
@@ -85,7 +93,7 @@ export default function LoginPage() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable={false}>
           <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
         </svg>
-        Back to home
+        {t.backToHome}
       </Link>
 
       {/* Card */}
@@ -147,7 +155,7 @@ export default function LoginPage() {
               marginBottom: '8px',
             }}
           >
-            {view === 'login' ? 'Welcome back' : 'Join the alpha'}
+            {view === 'login' ? t.welcomeBack : t.joinAlpha}
           </h2>
           <p
             style={{
@@ -157,9 +165,7 @@ export default function LoginPage() {
               lineHeight: 1.5,
             }}
           >
-            {view === 'login'
-              ? 'Sign in to your archive.'
-              : 'Private alpha \u2014 invite token required.'}
+            {view === 'login' ? t.signInSub : t.registerSub}
           </p>
         </div>
 
@@ -194,7 +200,7 @@ export default function LoginPage() {
                 color: '#4b6646',
               }}
             >
-              Limited spots
+              {t.limitedSpots}
             </span>
           </div>
         )}
@@ -213,14 +219,14 @@ export default function LoginPage() {
                 color: '#767d72',
               }}
             >
-              Email
+              {t.email}
             </label>
             <input
               id="email"
               type="email"
               autoComplete="email"
               required
-              placeholder="you@example.com"
+              placeholder={t.emailPlaceholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="auth-input"
@@ -239,14 +245,14 @@ export default function LoginPage() {
                 color: '#767d72',
               }}
             >
-              Password
+              {t.password}
             </label>
             <input
               id="password"
               type="password"
               autoComplete={view === 'login' ? 'current-password' : 'new-password'}
               required
-              placeholder="Enter password"
+              placeholder={t.passwordPlaceholder}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="auth-input"
@@ -266,12 +272,12 @@ export default function LoginPage() {
                   color: '#767d72',
                 }}
               >
-                Invite token
+                {t.inviteToken}
               </label>
               <input
                 id="invite_token"
                 type="text"
-                placeholder="Paste your invite token"
+                placeholder={t.invitePlaceholder}
                 value={inviteToken}
                 onChange={(e) => setInviteToken(e.target.value)}
                 className="auth-input"
@@ -316,10 +322,10 @@ export default function LoginPage() {
             }}
           >
             {isSubmitting
-              ? 'Please wait\u2026'
+              ? t.pleaseWait
               : view === 'login'
-              ? 'Continue'
-              : 'Create Account'}
+              ? t.continue
+              : t.createAccount}
           </button>
         </form>
 
@@ -336,7 +342,7 @@ export default function LoginPage() {
         >
           {view === 'login' ? (
             <>
-              No account?{' '}
+              {t.noAccount}
               <button
                 type="button"
                 onClick={() => { setView('register'); setError(null) }}
@@ -353,12 +359,12 @@ export default function LoginPage() {
                   textUnderlineOffset: '3px',
                 }}
               >
-                Register
+                {t.register}
               </button>
             </>
           ) : (
             <>
-              Have an account?{' '}
+              {t.haveAccount}
               <button
                 type="button"
                 onClick={() => { setView('login'); setError(null) }}
@@ -375,7 +381,7 @@ export default function LoginPage() {
                   textUnderlineOffset: '3px',
                 }}
               >
-                Sign in
+                {t.signIn}
               </button>
             </>
           )}

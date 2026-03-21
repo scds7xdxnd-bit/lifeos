@@ -5,10 +5,14 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
 import { AppHeader } from '@/components/shell/AppHeader'
 import { AppFooter } from '@/components/shell/AppFooter'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const [lang] = useLang()
+  const t = getAppTranslations(lang).layout
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -41,7 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             letterSpacing: '-0.03em',
           }}
         >
-          Opening your sanctuary…
+          {t.loading}
         </p>
       </div>
     )

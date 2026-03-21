@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { translations, type Lang } from './translations';
+import { translations } from './translations';
 import { colors } from './tokens';
+import { useLang } from '@/lib/useLang';
 
 import { NavBar } from './sections/NavBar';
 import { Hero } from './sections/Hero';
@@ -13,7 +13,7 @@ import { Waitlist } from './sections/Waitlist';
 import { Footer } from './sections/Footer';
 
 export default function LandingPage() {
-  const [lang, setLang] = useState<Lang>('en');
+  const [lang, setLang] = useLang();
   const t = translations[lang];
 
   return (

@@ -9,7 +9,8 @@ import type {
 } from '@/lib/api/inquiries'
 import { InquiryForm } from './_components/InquiryForm'
 import { InquiryBrief } from './_components/InquiryBrief'
-import { InquiryHistory } from './_components/InquiryHistory'
+import { useLang } from '@/lib/useLang'
+import { getInquiryTranslations } from '@/lib/translations/inquiry'
 import {
   DOMAIN_CATALOG, CROSS_DOMAIN_PAIR_CATALOG, parseApiError,
 } from './_components/helpers'
@@ -21,6 +22,8 @@ type StatusMessage = { text: string; tone: 'error' | 'success' | 'warning' | '' 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function InquiryPage() {
+  const [lang] = useLang()
+  const t = getInquiryTranslations(lang)
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
 
@@ -47,37 +50,12 @@ export default function InquiryPage() {
     })
   }, [searchParams])
 
-  // ── Readiness ──────────────────────────────────────────────────────────────
-
-  const { data: readinessData } = useQuery({
-    queryKey: ['readiness'],
-    queryFn: () => inquiriesApi.readiness(),
-    staleTime: 1000 * 60 * 2,
-  })
-
-  const alphaEnabled = readinessData?.alpha?.enabled ?? false
-  const readinessReady = readinessData?.readiness?.ready ?? false
-  const visibleDomains = readinessData?.alpha?.visible_domains ?? []
-  const enabledPairProfiles = readinessData?.alpha?.enabled_pair_profiles ?? []
-  const alphaFeedbackEnabled = alphaEnabled
-
-  const domains = alphaEnabled
-    ? DOMAIN_CATALOG.filter((d) => visibleDomains.includes(d.key))
-    : DOMAIN_CATALOG
-
-  const crossDomainPairs = alphaEnabled
-    ? CROSS_DOMAIN_PAIR_CATALOG.filter((p) => enabledPairProfiles.includes(p.profile))
-    : CROSS_DOMAIN_PAIR_CATALOG
-
-  // ── History ────────────────────────────────────────────────────────────────
-
-  const { data: historyData, isLoading: historyLoading } = useQuery({
-    queryKey: ['inquiries'],
-    queryFn: () => inquiriesApi.list(20, 0),
-    staleTime: 1000 * 30,
-  })
-
-  const historyItems = historyData?.items ?? []
+  // ── Legacy surfaces removed from active flow ──────────────────────────────
+  const alphaEnabled = false
+  const readinessReady = true
+  const alphaFeedbackEnabled = false
+  const domains = DOMAIN_CATALOG
+  const crossDomainPairs = CROSS_DOMAIN_PAIR_CATALOG
 
   // ── Mutation ───────────────────────────────────────────────────────────────
 
@@ -87,15 +65,15 @@ export default function InquiryPage() {
 
     onSuccess: async (result, { refineId }) => {
       if (!result.ok) {
-        setStatusMessage({ text: 'Request failed. Please try again.', tone: 'error' })
+        setStatusMessage({ text: t.requestFailed, tone: 'error' })
         return
       }
 
       if (result.deduped) {
-        setStatusMessage({ text: 'Duplicate inquiry detected — returning existing brief.', tone: 'warning' })
+        setStatusMessage({ text: t.duplicateDetected, tone: 'warning' })
       } else {
         setStatusMessage({
-          text: refineId ? 'Refinement complete.' : 'Brief generated.',
+          text: refineId ? t.refinementComplete : t.briefGenerated,
           tone: 'success',
         })
       }
@@ -117,7 +95,7 @@ export default function InquiryPage() {
     },
 
     onError: async (err: unknown) => {
-      let message = 'Request failed. Please try again.'
+      let message = t.requestFailed
       if (err instanceof Response) {
         try {
           const body = await err.json()
@@ -212,7 +190,7 @@ export default function InquiryPage() {
             color: '#4b6646',
           }}
         >
-          Intelligence
+            {t.eyebrow}
         </p>
         <h1
           style={{
@@ -223,7 +201,7 @@ export default function InquiryPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Inquiry
+          {t.title}
         </h1>
         <p
           className="mt-2"
@@ -234,36 +212,15 @@ export default function InquiryPage() {
             lineHeight: 1.65,
           }}
         >
-          Scope a question to a domain and timeframe. Evidence-backed briefs only.
+          {t.subtitle}
         </p>
       </div>
 
-      {/* Alpha readiness banner */}
-      {alphaEnabled && !readinessReady && (
-        <div
-          className="px-5 py-3.5 text-sm"
-          style={{
-            background: 'rgba(232, 115, 92, 0.08)',
-            borderRadius: '0 12px 12px 12px',
-            color: '#8b4a3a',
-            fontFamily: 'var(--font-manrope), sans-serif',
-          }}
-        >
-          Data readiness not met.{' '}
-          <a
-            href="/insights/data"
-            className="underline hover:no-underline font-bold"
-          >
-            Check Data Readiness
-          </a>{' '}
-          for next steps before generating a brief.
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-8 items-start">
-        {/* Left column: form + history */}
+        {/* Left column: form */}
         <div className="space-y-6">
           <InquiryForm
+              t={t.form}
               domains={domains}
               crossDomainPairs={crossDomainPairs}
               readinessReady={readinessReady}
@@ -273,14 +230,6 @@ export default function InquiryPage() {
               statusMessage={statusMessage}
               onSubmit={handleSubmit}
               onReset={handleReset}
-            />
-
-            <InquiryHistory
-              items={historyItems}
-              isLoading={historyLoading}
-              selectedId={selectedInquiry?.id ?? null}
-              onView={handleView}
-              onRefine={handleRefine}
             />
           </div>
 
@@ -308,11 +257,12 @@ export default function InquiryPage() {
                     letterSpacing: '-0.03em',
                   }}
                 >
-                  {refineTarget ? 'Refining your brief…' : 'Generating your brief…'}
+                  {refineTarget ? t.refiningBrief : t.generatingBrief}
                 </p>
               </div>
             ) : (
               <InquiryBrief
+                t={t.brief}
                 brief={activeBrief}
                 versions={versions}
                 selectedVersionId={selectedVersionId}

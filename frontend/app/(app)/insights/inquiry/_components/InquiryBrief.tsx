@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import type { BriefData, BriefFinding, EvidenceRef, HumanizedBriefSection, InquiryVersion } from '@/lib/api/inquiries'
+import type { InquiryPageTranslations } from '@/lib/translations/inquiry'
 import {
   badgeClass, confidenceVariant, confidenceText,
   answerabilityVariant, answerabilityText,
@@ -148,6 +149,7 @@ function HumanizedSection({ section }: { section: HumanizedBriefSection }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface InquiryBriefProps {
+  t: InquiryPageTranslations['brief']
   brief: BriefData | null
   versions: InquiryVersion[]
   selectedVersionId: number | null
@@ -160,6 +162,7 @@ interface InquiryBriefProps {
 }
 
 export function InquiryBrief({
+  t,
   brief,
   versions,
   selectedVersionId,
@@ -199,14 +202,14 @@ export function InquiryBrief({
               letterSpacing: '-0.03em',
             }}
           >
-            Generated Brief
+            {t.title}
           </h3>
           <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72', marginTop: '4px' }}>
-            Summary first, then evidence, then limits.
+            {t.subtitle}
           </p>
         </div>
         <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72', marginTop: '16px' }}>
-          No brief generated yet.
+          {t.noBrief}
         </p>
       </div>
     )
@@ -263,10 +266,10 @@ export function InquiryBrief({
             letterSpacing: '-0.03em',
           }}
         >
-          Generated Brief
+          {t.title}
         </h3>
         <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72', marginTop: '4px' }}>
-          Summary first, then evidence, then limits.
+          {t.subtitle}
         </p>
       </div>
 

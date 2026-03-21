@@ -1,11 +1,30 @@
 const STORAGE_KEY = 'lifeos_tokens'
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 interface StoredTokens {
   access_token: string
   csrf_token: string
+}
+
+function resolveApiUrl(): string {
+  if (typeof window === 'undefined') return RAW_API_URL
+
+  if (!RAW_API_URL) {
+    return `${window.location.protocol}//${window.location.hostname}:5001`
+  }
+
+  try {
+    const parsed = new URL(RAW_API_URL)
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      const port = parsed.port || '5001'
+      return `${parsed.protocol}//${window.location.hostname}:${port}`
+    }
+    return RAW_API_URL
+  } catch {
+    return RAW_API_URL
+  }
 }
 
 function getTokens(): StoredTokens | null {
@@ -34,7 +53,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     headers['X-CSRF-Token'] = tokens.csrf_token
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${resolveApiUrl()}${path}`, {
     ...options,
     headers,
     // Explicitly omit cookies to prevent sending session cookies alongside JWT,

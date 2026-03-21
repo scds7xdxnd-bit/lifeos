@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { habitsApi, type Habit, type CreateHabitInput } from '@/lib/api/habits'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
 import { Input } from '@/components/ui/input'
 import { Repeat, Plus, X, Trash2, CheckCircle2 } from 'lucide-react'
 
@@ -28,6 +30,8 @@ const inputStyle: React.CSSProperties = {
 }
 
 export default function HabitsPage() {
+  const [lang] = useLang()
+  const t = getAppTranslations(lang).habits
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -84,7 +88,7 @@ export default function HabitsPage() {
               color: '#3a5272',
             }}
           >
-            Discipline
+            {t.eyebrow}
           </p>
           <h1
             style={{
@@ -95,7 +99,7 @@ export default function HabitsPage() {
               letterSpacing: '-0.03em',
             }}
           >
-            Habits
+            {t.title}
           </h1>
           <p
             className="mt-2"
@@ -106,7 +110,7 @@ export default function HabitsPage() {
               lineHeight: 1.65,
             }}
           >
-            Track daily habits to build inquiry data.
+            {t.subtitle}
           </p>
         </div>
         <button
@@ -125,7 +129,7 @@ export default function HabitsPage() {
             boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
           }}
         >
-          {showForm ? <><X size={14} /> Cancel</> : <><Plus size={14} /> New Habit</>}
+          {showForm ? <><X size={14} /> {t.cancel}</> : <><Plus size={14} /> {t.newHabit}</>}
         </button>
       </div>
 
@@ -149,15 +153,15 @@ export default function HabitsPage() {
               letterSpacing: '-0.03em',
             }}
           >
-            New Habit
+            {t.newHabit}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="h-name" style={microLabel}>Name</label>
-              <input id="h-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Morning run" style={inputStyle} />
+              <label htmlFor="h-name" style={microLabel}>{t.name}</label>
+              <input id="h-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} style={inputStyle} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="h-sched" style={microLabel}>Schedule</label>
+              <label htmlFor="h-sched" style={microLabel}>{t.schedule}</label>
               <select
                 id="h-sched"
                 value={scheduleType}
@@ -171,15 +175,15 @@ export default function HabitsPage() {
                   paddingRight: '36px',
                 }}
               >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="custom">Custom</option>
+                <option value="daily">{t.daily}</option>
+                <option value="weekly">{t.weekly}</option>
+                <option value="custom">{t.custom}</option>
               </select>
             </div>
           </div>
           <div className="space-y-2">
-            <label htmlFor="h-desc" style={microLabel}>Description</label>
-            <input id="h-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" style={inputStyle} />
+            <label htmlFor="h-desc" style={microLabel}>{t.description}</label>
+            <input id="h-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t.optional} style={inputStyle} />
           </div>
           <button
             type="submit"
@@ -197,7 +201,7 @@ export default function HabitsPage() {
               boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
             }}
           >
-            {createMut.isPending ? 'Creating…' : 'Create Habit'}
+            {createMut.isPending ? t.creating : t.createHabit}
           </button>
         </form>
       )}
@@ -220,7 +224,7 @@ export default function HabitsPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Your Habits
+          {t.yourHabits}
         </h2>
         {isLoading && (
           <div className="space-y-3">
@@ -229,7 +233,7 @@ export default function HabitsPage() {
         )}
         {!isLoading && habits.length === 0 && (
           <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72' }}>
-            No habits yet. Create your first habit above.
+            {t.noHabits}
           </p>
         )}
         {habits.length > 0 && (
@@ -262,13 +266,13 @@ export default function HabitsPage() {
                           letterSpacing: '0.05em',
                         }}
                       >
-                        <CheckCircle2 size={10} /> Done
+                        <CheckCircle2 size={10} /> {t.done}
                       </span>
                     )}
                   </div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1" style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
                     <span className="flex items-center gap-1"><Repeat size={11} /> {h.schedule_type}</span>
-                    <span>{h.count} logged</span>
+                    <span>{h.count} {t.logged}</span>
                     {h.last_logged_date && <span>last {h.last_logged_date}</span>}
                   </div>
                 </div>
@@ -293,7 +297,7 @@ export default function HabitsPage() {
                       opacity: h.completed_today ? 0.6 : 1,
                     }}
                   >
-                    Log
+                    {t.log}
                   </button>
                   <button
                     type="button"

@@ -1,6 +1,12 @@
 'use client'
 
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
+
 export function AppFooter() {
+  const [lang] = useLang()
+  const t = getAppTranslations(lang).footer
+
   return (
     <footer
       className="mt-16 py-6 sm:py-8 px-4 sm:px-6"
@@ -29,7 +35,7 @@ export function AppFooter() {
               color: '#5a6857',
             }}
           >
-            Your life, clearly.
+            {t.tagline}
           </span>
         </div>
 
@@ -41,7 +47,7 @@ export function AppFooter() {
             color: '#5a6857',
           }}
         >
-          Deterministic intelligence · No ML autonomy
+          {t.philosophy}
         </span>
       </div>
     </footer>

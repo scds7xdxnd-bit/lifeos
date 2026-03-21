@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { calendarApi, type CalendarEvent, type CreateEventInput } from '@/lib/api/calendar'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
 import { Input } from '@/components/ui/input'
 import { Calendar, Plus, X, Trash2, MapPin, Clock } from 'lucide-react'
 
@@ -35,6 +37,8 @@ const inputStyle: React.CSSProperties = {
 }
 
 export default function CalendarPage() {
+  const [lang] = useLang()
+  const t = getAppTranslations(lang).calendar
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [title, setTitle] = useState('')
@@ -93,7 +97,7 @@ export default function CalendarPage() {
               color: '#4b6646',
             }}
           >
-            Timeline
+            {t.eyebrow}
           </p>
           <h1
             style={{
@@ -104,7 +108,7 @@ export default function CalendarPage() {
               letterSpacing: '-0.03em',
             }}
           >
-            Calendar
+            {t.title}
           </h1>
           <p
             className="mt-2"
@@ -115,7 +119,7 @@ export default function CalendarPage() {
               lineHeight: 1.65,
             }}
           >
-            Manage calendar events for inquiry analysis.
+            {t.subtitle}
           </p>
         </div>
         <button
@@ -134,7 +138,7 @@ export default function CalendarPage() {
             boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
           }}
         >
-          {showForm ? <><X size={14} /> Cancel</> : <><Plus size={14} /> Add Event</>}
+          {showForm ? <><X size={14} /> {t.cancel}</> : <><Plus size={14} /> {t.addEvent}</>}
         </button>
       </div>
 
@@ -158,29 +162,29 @@ export default function CalendarPage() {
               letterSpacing: '-0.03em',
             }}
           >
-            New Event
+            {t.newEvent}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="ev-title" style={microLabel}>Title</label>
-              <input id="ev-title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Event title" style={inputStyle} />
+              <label htmlFor="ev-title" style={microLabel}>{t.titleLabel}</label>
+              <input id="ev-title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.titlePlaceholder} style={inputStyle} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="ev-loc" style={microLabel}>Location</label>
-              <input id="ev-loc" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional" style={inputStyle} />
+              <label htmlFor="ev-loc" style={microLabel}>{t.location}</label>
+              <input id="ev-loc" value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t.optional} style={inputStyle} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="ev-start" style={microLabel}>Start</label>
+              <label htmlFor="ev-start" style={microLabel}>{t.start}</label>
               <Input id="ev-start" type="datetime-local" required value={startTime} onChange={(e) => setStartTime(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="ev-end" style={microLabel}>End</label>
+              <label htmlFor="ev-end" style={microLabel}>{t.end}</label>
               <Input id="ev-end" type="datetime-local" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
             </div>
           </div>
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} className="rounded" style={{ accentColor: '#4b6646' }} />
-            <span style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', color: '#2e342b' }}>All day</span>
+            <span style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', color: '#2e342b' }}>{t.allDay}</span>
           </label>
           <button
             type="submit"
@@ -199,7 +203,7 @@ export default function CalendarPage() {
               boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
             }}
           >
-            {createMut.isPending ? 'Saving…' : 'Save Event'}
+            {createMut.isPending ? t.saving : t.saveEvent}
           </button>
         </form>
       )}
@@ -222,7 +226,7 @@ export default function CalendarPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Events
+          {t.events}
         </h2>
         {isLoading && (
           <div className="space-y-3">
@@ -231,7 +235,7 @@ export default function CalendarPage() {
         )}
         {!isLoading && events.length === 0 && (
           <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72' }}>
-            No events yet. Add your first event above.
+            {t.noEvents}
           </p>
         )}
         {events.length > 0 && (

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { skillsApi, type Skill, type CreateSkillInput } from '@/lib/api/skills'
+import { useLang } from '@/lib/useLang'
+import { getAppTranslations } from '@/lib/translations/app'
 import { Input } from '@/components/ui/input'
 import { Lightbulb, Plus, X, Trash2, Clock, Play, Flame } from 'lucide-react'
 
@@ -35,6 +37,8 @@ const inputStyle: React.CSSProperties = {
 }
 
 export default function SkillsPage() {
+  const [lang] = useLang()
+  const t = getAppTranslations(lang).skills
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -109,7 +113,7 @@ export default function SkillsPage() {
               color: '#6b5a35',
             }}
           >
-            Mastery
+            {t.eyebrow}
           </p>
           <h1
             style={{
@@ -120,7 +124,7 @@ export default function SkillsPage() {
               letterSpacing: '-0.03em',
             }}
           >
-            Skills
+            {t.title}
           </h1>
           <p
             className="mt-2"
@@ -131,7 +135,7 @@ export default function SkillsPage() {
               lineHeight: 1.65,
             }}
           >
-            Track skills and practice sessions for inquiry analysis.
+            {t.subtitle}
           </p>
         </div>
         <button
@@ -150,7 +154,7 @@ export default function SkillsPage() {
             boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
           }}
         >
-          {showForm ? <><X size={14} /> Cancel</> : <><Plus size={14} /> New Skill</>}
+          {showForm ? <><X size={14} /> {t.cancel}</> : <><Plus size={14} /> {t.newSkill}</>}
         </button>
       </div>
 
@@ -174,21 +178,21 @@ export default function SkillsPage() {
               letterSpacing: '-0.03em',
             }}
           >
-            New Skill
+            {t.newSkill}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="sk-name" style={microLabel}>Name</label>
-              <input id="sk-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Piano" style={inputStyle} />
+              <label htmlFor="sk-name" style={microLabel}>{t.name}</label>
+              <input id="sk-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} style={inputStyle} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="sk-cat" style={microLabel}>Category</label>
-              <input id="sk-cat" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Music" style={inputStyle} />
+              <label htmlFor="sk-cat" style={microLabel}>{t.category}</label>
+              <input id="sk-cat" value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t.categoryPlaceholder} style={inputStyle} />
             </div>
           </div>
           <div className="space-y-2">
-            <label htmlFor="sk-desc" style={microLabel}>Description</label>
-            <input id="sk-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" style={inputStyle} />
+            <label htmlFor="sk-desc" style={microLabel}>{t.description}</label>
+            <input id="sk-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t.optional} style={inputStyle} />
           </div>
           <button
             type="submit"
@@ -206,7 +210,7 @@ export default function SkillsPage() {
               boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
             }}
           >
-            {createMut.isPending ? 'Creating…' : 'Create Skill'}
+            {createMut.isPending ? t.creating : t.createSkill}
           </button>
         </form>
       )}
@@ -231,16 +235,16 @@ export default function SkillsPage() {
               letterSpacing: '-0.03em',
             }}
           >
-            Log Practice — {skills.find((s) => s.id === practiceSkillId)?.name}
+            {t.logPractice} — {skills.find((s) => s.id === practiceSkillId)?.name}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="pr-dur" style={microLabel}>Duration (minutes)</label>
+              <label htmlFor="pr-dur" style={microLabel}>{t.durationLabel}</label>
               <Input id="pr-dur" type="number" min="1" required value={duration} onChange={(e) => setDuration(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="pr-notes" style={microLabel}>Notes</label>
-              <input id="pr-notes" value={practiceNotes} onChange={(e) => setPracticeNotes(e.target.value)} placeholder="Optional" style={inputStyle} />
+              <label htmlFor="pr-notes" style={microLabel}>{t.notes}</label>
+              <input id="pr-notes" value={practiceNotes} onChange={(e) => setPracticeNotes(e.target.value)} placeholder={t.optional} style={inputStyle} />
             </div>
           </div>
           <div className="flex gap-3">
@@ -260,7 +264,7 @@ export default function SkillsPage() {
                 boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
               }}
             >
-              {practiceMut.isPending ? 'Logging…' : 'Log Session'}
+              {practiceMut.isPending ? t.logging : t.logSession}
             </button>
             <button
               type="button"
@@ -279,7 +283,7 @@ export default function SkillsPage() {
                 borderRadius: '100px',
               }}
             >
-              Cancel
+              {t.cancel}
             </button>
           </div>
         </form>
@@ -303,7 +307,7 @@ export default function SkillsPage() {
             letterSpacing: '-0.03em',
           }}
         >
-          Your Skills
+          {t.yourSkills}
         </h2>
         {isLoading && (
           <div className="space-y-3">
@@ -312,7 +316,7 @@ export default function SkillsPage() {
         )}
         {!isLoading && skills.length === 0 && (
           <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72' }}>
-            No skills yet. Create your first skill above.
+            {t.noSkills}
           </p>
         )}
         {skills.length > 0 && (
@@ -348,8 +352,8 @@ export default function SkillsPage() {
                       </span>
                     )}
                     <span className="flex items-center gap-1"><Clock size={11} /> {fmtMinutes(s.total_minutes)}</span>
-                    <span>{s.session_count} sessions</span>
-                    {s.streak_days > 0 && <span className="flex items-center gap-1"><Flame size={11} /> {s.streak_days}d streak</span>}
+                    <span>{s.session_count} {t.sessions}</span>
+                    {s.streak_days > 0 && <span className="flex items-center gap-1"><Flame size={11} /> {s.streak_days}{t.streak}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -372,7 +376,7 @@ export default function SkillsPage() {
                       boxShadow: '0 4px 12px rgba(46, 52, 43, 0.15)',
                     }}
                   >
-                    <Play size={10} /> Practice
+                    <Play size={10} /> {t.practice}
                   </button>
                   <button
                     type="button"
