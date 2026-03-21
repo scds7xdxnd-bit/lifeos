@@ -294,38 +294,41 @@ jobs:
         with:
           sarif_file: '${{ github.workspace }}/trivy-results.sarif'
 
-  deploy-staging:
-    name: Deploy to Staging
+  deploy-fly:
+    name: Deploy to Fly.io
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [build, integration-tests]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main'
     environment:
-      name: staging
-      url: https://staging.lifeos.example.com
+      name: production
+      url: https://lifeos-black-pond-2352.fly.dev
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to staging
-        run: |
-          echo "🚀 Deploying to staging..."
-          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          # Add your deployment commands here (kubectl, docker-compose, etc.)
-          echo "Deployment placeholder - configure your staging target"
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
   smoke-test:
-    name: Smoke Test Staging
+    name: Smoke Test Production
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: deploy-staging
+    needs: deploy-fly
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Run smoke tests
-        env:
-          TARGET_URL: https://staging.lifeos.example.com
+      - name: Health check
         run: |
-          echo "Running smoke tests against staging..."
-          # Placeholder - uncomment when staging is available
-          # make smoketest
-          echo "Smoke test placeholder - configure TARGET_URL"
+          for i in 1 2 3 4 5; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" https://lifeos-black-pond-2352.fly.dev/health || true)
+            if [ "$status" = "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: status=$status, retrying in 10s..."
+            sleep 10
+          done
+          echo "Health check failed after 5 attempts"
+          exit 1
