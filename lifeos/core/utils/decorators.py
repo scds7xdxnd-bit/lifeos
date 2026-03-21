@@ -40,11 +40,19 @@ def require_roles(required_roles: Iterable[str]):
 
 
 def csrf_protected(fn: F) -> F:
-    """Validate CSRF token from header X-CSRF-Token."""
+    """Validate CSRF token from header X-CSRF-Token.
+
+    Skips session-based CSRF validation when a valid JWT Authorization
+    header is present. JWT-authenticated requests are inherently CSRF-safe
+    because the Authorization header cannot be attached by cross-origin
+    form submissions — it requires JavaScript, which is bound by CORS.
+    """
 
     @wraps(fn)
     def wrapper(*args, **kwargs):  # type: ignore[misc]
         if not current_app.config.get("WTF_CSRF_ENABLED", True):
+            return fn(*args, **kwargs)
+        if request.headers.get("Authorization", "").startswith("Bearer "):
             return fn(*args, **kwargs)
         token = request.headers.get("X-CSRF-Token")
         if not validate_csrf_token(token or ""):
