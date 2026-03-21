@@ -28,7 +28,15 @@ Status: Launch-control SOP (binding for private alpha operations)
 - `expired`: invite no longer valid.
 - `rejected`: registration blocked (`invite_invalid`, `invite_email_mismatch`, etc.).
 
-### 3.2 Pre-issue checks (required)
+### 3.2 Listing invites
+To view all issued invites and their current status:
+- `python scripts/ops/private_alpha_invite_admin.py list`
+- Filter by status: `python scripts/ops/private_alpha_invite_admin.py list --status pending`
+- Valid status filters: `pending`, `accepted`, `expired`, `revoked`
+
+Output columns: `id`, `email`, `status`, `created` (ISO 8601), `expires` (ISO 8601), `token_hash_tail` (last 6 chars for ledger reconciliation).
+
+### 3.3 Pre-issue checks (required)
 1. Confirm current cohort gate is open (internal, 3, 10, or staged expansion).
 2. Run strict rollout check:
    - `bash scripts/ops/private_alpha_rollout_check.sh` with expected envs.
@@ -40,7 +48,7 @@ Status: Launch-control SOP (binding for private alpha operations)
 
 `pending_invites` means invites with `accepted_at IS NULL`, `revoked_at IS NULL`, and `expires_at` not elapsed.
 
-### 3.3 Issue procedure
+### 3.4 Issue procedure
 1. Add candidate to invite ledger with `status=pending_approval`.
 2. Product Ops Lead approves issue.
 3. Admin Ops checks capacity:
@@ -54,7 +62,7 @@ Status: Launch-control SOP (binding for private alpha operations)
    - support contact path
 7. Update ledger `status=sent` and timestamp.
 
-### 3.4 Reissue procedure
+### 3.5 Reissue procedure
 Use only for `invite_expired`, `invite_invalid` (copy/paste), or mail-delivery failure.
 1. Verify identity and invited email match ledger record.
 2. Revoke prior active invite for same email before new issue.
@@ -62,7 +70,7 @@ Use only for `invite_expired`, `invite_invalid` (copy/paste), or mail-delivery f
 4. Mark prior row `status=reissued_from` and link new invite id.
 5. Record reason category in ledger.
 
-### 3.5 Revocation procedure
+### 3.6 Revocation procedure
 Allowed reasons:
 - cohort pause
 - compromised/forwarded token
@@ -76,7 +84,7 @@ Steps:
 3. Ledger updated with `revoked_at` and `revoked_reason`.
 4. Notify user if invite was previously sent.
 
-### 3.6 Over-issuing prevention rule
+### 3.7 Over-issuing prevention rule
 - Maintain `cohort_target` variable in ledger (`3`, `10`, `15`, `20`, `30`).
 - Hard issuance formula:
   - `issue_allowed = cohort_target - accepted_users - pending_invites`
