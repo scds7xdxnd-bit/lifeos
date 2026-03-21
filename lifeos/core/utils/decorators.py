@@ -40,17 +40,34 @@ def require_roles(required_roles: Iterable[str]):
 
 
 def csrf_protected(fn: F) -> F:
-    """Validate CSRF token from header X-CSRF-Token."""
+    """Validate CSRF token from header X-CSRF-Token.
+
+    JWT-authenticated requests (Authorization: Bearer …) are exempt because
+    the token itself is un-forgeable and sent via a custom header that
+    cross-origin attackers cannot set.  Session-based CSRF validation relies
+    on the Flask session cookie being present, which stateless JWT clients
+    (credentials: 'omit') intentionally omit.
+    """
 
     @wraps(fn)
     def wrapper(*args, **kwargs):  # type: ignore[misc]
         if not current_app.config.get("WTF_CSRF_ENABLED", True):
             return fn(*args, **kwargs)
+
+        # Skip session-based CSRF for JWT-authenticated requests.
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            try:
+                verify_jwt_in_request()
+                return fn(*args, **kwargs)
+            except JWTExtendedException:
+                pass  # Fall through to normal CSRF check
+
         token = request.headers.get("X-CSRF-Token")
         if not validate_csrf_token(token or ""):
             expected = get_session_csrf_token()
             request_id = request.headers.get("X-Request-Id") or request.headers.get("X-Request-ID")
-            auth_header_present = bool(request.headers.get("Authorization"))
+            auth_header_present = bool(auth_header)
             current_app.logger.warning(
                 "csrf_failed",
                 extra={

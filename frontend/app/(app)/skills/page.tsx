@@ -3,15 +3,35 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { skillsApi, type Skill, type CreateSkillInput } from '@/lib/api/skills'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Lightbulb, Plus, X, Trash2, Clock, Play, Flame } from 'lucide-react'
 
 function fmtMinutes(m: number) {
   if (m < 60) return `${m}m`
   const h = Math.floor(m / 60)
   const rem = m % 60
   return rem ? `${h}h ${rem}m` : `${h}h`
+}
+
+const microLabel: React.CSSProperties = {
+  fontFamily: 'var(--font-manrope), sans-serif',
+  fontSize: '0.6875rem',
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: '#767d72',
+}
+
+const inputStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-manrope), sans-serif',
+  fontSize: '0.875rem',
+  color: '#2e342b',
+  background: '#ffffff',
+  border: '1px solid rgba(173, 180, 168, 0.20)',
+  borderRadius: '4px',
+  padding: '10px 14px',
+  outline: 'none',
+  width: '100%',
 }
 
 export default function SkillsPage() {
@@ -78,96 +98,298 @@ export default function SkillsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Skills</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Track skills and practice sessions for inquiry analysis.</p>
+          <p
+            className="text-xs font-bold uppercase mb-2"
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              letterSpacing: '0.05em',
+              color: '#6b5a35',
+            }}
+          >
+            Mastery
+          </p>
+          <h1
+            style={{
+              fontFamily: 'var(--font-serif), Georgia, serif',
+              fontSize: '2rem',
+              fontWeight: 300,
+              color: '#6b5a35',
+              letterSpacing: '-0.03em',
+            }}
+          >
+            Skills
+          </h1>
+          <p
+            className="mt-2"
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              fontSize: '0.9375rem',
+              color: '#5a6157',
+              lineHeight: 1.65,
+            }}
+          >
+            Track skills and practice sessions for inquiry analysis.
+          </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : 'New Skill'}
-        </Button>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2"
+          style={{
+            fontFamily: 'var(--font-manrope), sans-serif',
+            fontWeight: 700,
+            fontSize: '0.8125rem',
+            color: '#ffffff',
+            background: 'linear-gradient(135deg, #6b5a35, #5a4a2a)',
+            borderRadius: '100px',
+            padding: '10px 20px',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
+          }}
+        >
+          {showForm ? <><X size={14} /> Cancel</> : <><Plus size={14} /> New Skill</>}
+        </button>
       </div>
 
+      {/* Create form */}
       {showForm && (
-        <form onSubmit={handleCreate} className="glass rounded-2xl p-6 space-y-4">
-          <h2 className="font-semibold text-foreground">Create Skill</h2>
+        <form
+          onSubmit={handleCreate}
+          className="p-5 sm:p-7 space-y-5"
+          style={{
+            background: '#ffffff',
+            borderRadius: '0 16px 16px 16px',
+            boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: 'var(--font-serif), Georgia, serif',
+              fontSize: '1.125rem',
+              fontWeight: 400,
+              color: '#6b5a35',
+              letterSpacing: '-0.03em',
+            }}
+          >
+            New Skill
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="sk-name">Name</Label>
-              <Input id="sk-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Piano" />
+              <label htmlFor="sk-name" style={microLabel}>Name</label>
+              <input id="sk-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Piano" style={inputStyle} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sk-cat">Category</Label>
-              <Input id="sk-cat" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Music" />
+              <label htmlFor="sk-cat" style={microLabel}>Category</label>
+              <input id="sk-cat" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Music" style={inputStyle} />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="sk-desc">Description</Label>
-            <Input id="sk-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" />
+            <label htmlFor="sk-desc" style={microLabel}>Description</label>
+            <input id="sk-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" style={inputStyle} />
           </div>
-          <Button type="submit" disabled={createMut.isPending}>
+          <button
+            type="submit"
+            disabled={createMut.isPending}
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              color: '#ffffff',
+              background: 'linear-gradient(135deg, #6b5a35, #5a4a2a)',
+              borderRadius: '100px',
+              padding: '12px 28px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
+            }}
+          >
             {createMut.isPending ? 'Creating…' : 'Create Skill'}
-          </Button>
+          </button>
         </form>
       )}
 
       {/* Practice form */}
       {practiceSkillId && (
-        <form onSubmit={handlePractice} className="glass rounded-2xl p-6 space-y-4">
-          <h2 className="font-semibold text-foreground">
+        <form
+          onSubmit={handlePractice}
+          className="p-5 sm:p-7 space-y-5"
+          style={{
+            background: '#ffffff',
+            borderRadius: '0 16px 16px 16px',
+            boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: 'var(--font-serif), Georgia, serif',
+              fontSize: '1.125rem',
+              fontWeight: 400,
+              color: '#6b5a35',
+              letterSpacing: '-0.03em',
+            }}
+          >
             Log Practice — {skills.find((s) => s.id === practiceSkillId)?.name}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="pr-dur">Duration (minutes)</Label>
+              <label htmlFor="pr-dur" style={microLabel}>Duration (minutes)</label>
               <Input id="pr-dur" type="number" min="1" required value={duration} onChange={(e) => setDuration(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pr-notes">Notes</Label>
-              <Input id="pr-notes" value={practiceNotes} onChange={(e) => setPracticeNotes(e.target.value)} placeholder="Optional" />
+              <label htmlFor="pr-notes" style={microLabel}>Notes</label>
+              <input id="pr-notes" value={practiceNotes} onChange={(e) => setPracticeNotes(e.target.value)} placeholder="Optional" style={inputStyle} />
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button type="submit" disabled={practiceMut.isPending}>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={practiceMut.isPending}
+              style={{
+                fontFamily: 'var(--font-manrope), sans-serif',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                color: '#ffffff',
+                background: 'linear-gradient(135deg, #6b5a35, #5a4a2a)',
+                borderRadius: '100px',
+                padding: '12px 28px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
+              }}
+            >
               {practiceMut.isPending ? 'Logging…' : 'Log Session'}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setPracticeSkillId(null)}>Cancel</Button>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPracticeSkillId(null)}
+              style={{
+                fontFamily: 'var(--font-manrope), sans-serif',
+                fontWeight: 700,
+                fontSize: '0.8125rem',
+                textTransform: 'uppercase' as const,
+                letterSpacing: '0.05em',
+                color: '#767d72',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '12px 20px',
+                borderRadius: '100px',
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
 
-      <div className="glass rounded-2xl p-6 space-y-4">
-        <h2 className="font-semibold text-foreground">Your Skills</h2>
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {/* Skills list */}
+      <div
+        className="p-7 space-y-5"
+        style={{
+          background: '#ffffff',
+          borderRadius: '0 16px 16px 16px',
+          boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: '1.125rem',
+            fontWeight: 400,
+            color: '#6b5a35',
+            letterSpacing: '-0.03em',
+          }}
+        >
+          Your Skills
+        </h2>
+        {isLoading && (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: '#f5f0e4' }} />)}
+          </div>
+        )}
         {!isLoading && skills.length === 0 && (
-          <p className="text-sm text-muted-foreground">No skills yet. Create your first skill above.</p>
+          <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72' }}>
+            No skills yet. Create your first skill above.
+          </p>
         )}
         {skills.length > 0 && (
-          <ul className="space-y-2.5">
+          <ul className="space-y-3">
             {skills.map((s: Skill) => (
-              <li key={s.id} className="rounded-xl bg-white/30 hover:bg-white/50 transition-all px-5 py-4 flex items-center justify-between gap-4">
+              <li
+                key={s.id}
+                className="px-5 py-4 flex items-start justify-between gap-4 transition-all duration-220 card-lift"
+                style={{
+                  borderRadius: '0 12px 12px 12px',
+                  background: '#f8faf2',
+                }}
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">{s.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {s.category && `${s.category} · `}
-                    {fmtMinutes(s.total_minutes)} total · {s.session_count} sessions
-                    {s.streak_days > 0 && ` · ${s.streak_days}d streak`}
+                  <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', fontWeight: 600, color: '#2e342b' }}>
+                    {s.name}
                   </p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1" style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
+                    {s.category && (
+                      <span
+                        className="px-2 py-0.5"
+                        style={{
+                          background: '#f5f0e4',
+                          color: '#6b5a35',
+                          borderRadius: '100px',
+                          fontSize: '0.625rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        {s.category}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1"><Clock size={11} /> {fmtMinutes(s.total_minutes)}</span>
+                    <span>{s.session_count} sessions</span>
+                    {s.streak_days > 0 && <span className="flex items-center gap-1"><Flame size={11} /> {s.streak_days}d streak</span>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => setPracticeSkillId(s.id)}
-                    className="text-xs px-3.5 py-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/85 transition-all"
+                    className="flex items-center gap-1"
+                    style={{
+                      fontFamily: 'var(--font-manrope), sans-serif',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase' as const,
+                      letterSpacing: '0.05em',
+                      padding: '6px 14px',
+                      borderRadius: '100px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#ffffff',
+                      background: 'linear-gradient(135deg, #6b5a35, #5a4a2a)',
+                      boxShadow: '0 4px 12px rgba(46, 52, 43, 0.15)',
+                    }}
                   >
-                    Practice
+                    <Play size={10} /> Practice
                   </button>
                   <button
                     type="button"
                     onClick={() => deleteMut.mutate(s.id)}
-                    className="text-xs px-3 py-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                    className="transition-all duration-200"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#adb4a8',
+                      padding: '6px',
+                      borderRadius: '100px',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = '#e8735c'; e.currentTarget.style.background = 'rgba(232, 115, 92, 0.08)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = '#adb4a8'; e.currentTarget.style.background = 'none' }}
                   >
-                    Delete
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </li>

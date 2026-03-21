@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useReducer } from 'react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import type { CreateInquiryInput, Inquiry } from '@/lib/api/inquiries'
 import {
   CROSS_DOMAIN_PAIR_CATALOG,
@@ -101,6 +99,30 @@ function formReducer(state: FormState, action: FormAction): FormState {
   }
 }
 
+// ── Shared styles ─────────────────────────────────────────────────────────────
+
+const microLabel: React.CSSProperties = {
+  fontFamily: 'var(--font-manrope), sans-serif',
+  fontSize: '0.6875rem',
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: '#767d72',
+}
+
+const inputStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-manrope), sans-serif',
+  fontSize: '0.875rem',
+  color: '#2e342b',
+  background: '#ffffff',
+  border: '1px solid rgba(173, 180, 168, 0.20)',
+  borderRadius: '4px',
+  padding: '10px 14px',
+  outline: 'none',
+  width: '100%',
+  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface InquiryFormProps {
@@ -133,7 +155,6 @@ export function InquiryForm({
 
   const [form, dispatch] = useReducer(formReducer, initForm(defaultStart, defaultEnd))
 
-  // Hydrate form when refine target changes
   useEffect(() => {
     if (refineTarget) {
       dispatch({ type: 'HYDRATE', from: refineTarget })
@@ -144,7 +165,6 @@ export function InquiryForm({
     e.preventDefault()
     const { question, primaryDomain, crossDomain, pairKey, start, end, asOf, contextText } = form
 
-    // Validation
     if (question.trim().length < 3) return alert('Enter a clear question (minimum 3 characters).')
     if (!primaryDomain && !crossDomain) return alert('Select a primary domain.')
     if (!start || !end) return alert('Select a valid timeframe.')
@@ -178,33 +198,74 @@ export function InquiryForm({
     onReset()
   }
 
-  const generateDisabled =
-    isSubmitting || (alphaEnabled && !readinessReady)
+  const generateDisabled = isSubmitting || (alphaEnabled && !readinessReady)
 
   return (
-    <div className="glass rounded-2xl p-6 space-y-5">
+    <div
+      className="p-5 sm:p-7 space-y-6"
+      style={{
+        background: '#ffffff',
+        borderRadius: '0 16px 16px 16px',
+        boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+      }}
+    >
+      {/* Card header */}
       <div>
-        <h3 className="font-semibold text-foreground">Inquiry Setup</h3>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h3
+          style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: '1.125rem',
+            fontWeight: 400,
+            color: '#4b6646',
+            letterSpacing: '-0.03em',
+          }}
+        >
+          Inquiry Setup
+        </h3>
+        <p
+          className="mt-1"
+          style={{
+            fontFamily: 'var(--font-manrope), sans-serif',
+            fontSize: '0.8125rem',
+            color: '#767d72',
+            lineHeight: 1.65,
+          }}
+        >
           Define scope first. Generate only when the question and domain lens are explicit.
         </p>
       </div>
 
+      {/* Status message */}
       {statusMessage?.text && (
-        <div className={`text-sm px-4 py-2.5 rounded-xl ${
-          statusMessage.tone === 'error' ? 'bg-destructive/10 text-destructive'
-            : statusMessage.tone === 'success' ? 'bg-green-50 text-green-800'
-            : statusMessage.tone === 'warning' ? 'bg-amber-50 text-amber-800'
-            : 'bg-white/40 text-foreground'
-        }`}>
+        <div
+          className="px-4 py-3"
+          style={{
+            borderRadius: '0 12px 12px 12px',
+            fontSize: '0.8125rem',
+            fontFamily: 'var(--font-manrope), sans-serif',
+            ...(statusMessage.tone === 'error' ? {
+              background: 'rgba(232, 115, 92, 0.08)',
+              color: '#8b4a3a',
+            } : statusMessage.tone === 'success' ? {
+              background: 'rgba(75, 102, 70, 0.08)',
+              color: '#3a5c35',
+            } : statusMessage.tone === 'warning' ? {
+              background: 'rgba(107, 90, 53, 0.08)',
+              color: '#6b5a35',
+            } : {
+              background: '#f1f5eb',
+              color: '#5a6157',
+            }),
+          }}
+        >
           {statusMessage.text}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+      <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
         {/* Question */}
         <div className="space-y-2">
-          <Label htmlFor="inq-question">Question</Label>
+          <label htmlFor="inq-question" style={microLabel}>Question</label>
           <textarea
             id="inq-question"
             rows={3}
@@ -213,22 +274,36 @@ export function InquiryForm({
             placeholder="What exactly am I trying to understand right now?"
             value={form.question}
             onChange={(e) => dispatch({ type: 'SET', field: 'question', value: e.target.value })}
-            className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
+            style={{
+              ...inputStyle,
+              resize: 'none',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#4b6646'
+              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(75, 102, 70, 0.15)'
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(173, 180, 168, 0.20)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
           />
-          <p className="text-xs text-muted-foreground text-right">{form.question.length}/500</p>
+          <p style={{ ...microLabel, fontWeight: 400, textAlign: 'right' as const }}>{form.question.length}/500</p>
         </div>
 
         {/* Domain + Timeframe preset */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="inq-domain">Primary domain</Label>
+            <label htmlFor="inq-domain" style={microLabel}>Primary domain</label>
             <select
               id="inq-domain"
               required={!form.crossDomain}
               disabled={form.crossDomain}
               value={form.primaryDomain}
               onChange={(e) => dispatch({ type: 'SET', field: 'primaryDomain', value: e.target.value })}
-              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50"
+              style={{
+                ...inputStyle,
+                ...(form.crossDomain ? { opacity: 0.5 } : {}),
+              }}
             >
               <option value="">Select domain…</option>
               {domains.map((d) => (
@@ -237,12 +312,12 @@ export function InquiryForm({
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="inq-preset">Timeframe</Label>
+            <label htmlFor="inq-preset" style={microLabel}>Timeframe</label>
             <select
               id="inq-preset"
               value={form.timeframePreset}
               onChange={(e) => dispatch({ type: 'SET_PRESET', preset: e.target.value as FormState['timeframePreset'] })}
-              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
+              style={inputStyle}
             >
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
@@ -253,9 +328,9 @@ export function InquiryForm({
         </div>
 
         {/* Date range */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="inq-start">Start date</Label>
+            <label htmlFor="inq-start" style={microLabel}>Start date</label>
             <Input
               id="inq-start"
               type="date"
@@ -268,7 +343,7 @@ export function InquiryForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="inq-end">End date</Label>
+            <label htmlFor="inq-end" style={microLabel}>End date</label>
             <Input
               id="inq-end"
               type="date"
@@ -284,14 +359,18 @@ export function InquiryForm({
 
         {/* As-of */}
         <div className="space-y-2">
-          <Label htmlFor="inq-asof">As of <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <label htmlFor="inq-asof" style={microLabel}>
+            As of <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(optional)</span>
+          </label>
           <Input
             id="inq-asof"
             type="datetime-local"
             value={form.asOf}
             onChange={(e) => dispatch({ type: 'SET', field: 'asOf', value: e.target.value })}
           />
-          <p className="text-xs text-muted-foreground">Locks replay to a deterministic cutoff time.</p>
+          <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
+            Locks replay to a deterministic cutoff time.
+          </p>
         </div>
 
         {/* Cross-domain */}
@@ -306,25 +385,31 @@ export function InquiryForm({
                   dispatch({ type: 'SET_PAIR', pairKey: crossDomainPairs[0].key, pairs: crossDomainPairs })
                 }
               }}
-              className="rounded-md border-white/40"
+              className="rounded"
+              style={{ accentColor: '#4b6646' }}
             />
-            <span className="text-sm">Enable explicit cross-domain mode</span>
+            <span style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', color: '#2e342b' }}>
+              Enable explicit cross-domain mode
+            </span>
           </label>
-          <p className="text-xs text-muted-foreground">
+          <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
             Cross-domain claims are generated only when selected domains are explicit and evidence-backed.
           </p>
         </div>
 
         {/* Pair selector */}
         {form.crossDomain && crossDomainPairs.length > 0 && (
-          <div className="space-y-2 pl-4 border-l-2 border-ring/20">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approved domain pair profile</p>
-            <Label htmlFor="inq-pair">Domain pair</Label>
+          <div
+            className="space-y-3 pl-5"
+            style={{ borderLeft: '2px solid rgba(75, 102, 70, 0.15)' }}
+          >
+            <p style={microLabel}>Approved domain pair profile</p>
+            <label htmlFor="inq-pair" style={microLabel}>Domain pair</label>
             <select
               id="inq-pair"
               value={form.pairKey}
               onChange={(e) => dispatch({ type: 'SET_PAIR', pairKey: e.target.value, pairs: crossDomainPairs })}
-              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
+              style={inputStyle}
             >
               <option value="">Select approved pair…</option>
               {crossDomainPairs.map((p) => (
@@ -333,7 +418,7 @@ export function InquiryForm({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-muted-foreground">
+            <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
               Cross-domain pair profiles activate only for approved 2-domain scopes.
             </p>
           </div>
@@ -344,7 +429,19 @@ export function InquiryForm({
           <button
             type="button"
             onClick={() => dispatch({ type: 'SET', field: 'showContext', value: !form.showContext })}
-            className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              fontSize: '0.8125rem',
+              color: '#767d72',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              textUnderlineOffset: '3px',
+              transition: 'color 0.2s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#4b6646' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#767d72' }}
           >
             {form.showContext ? 'Hide optional context' : 'Add optional context'}
           </button>
@@ -352,7 +449,9 @@ export function InquiryForm({
 
         {form.showContext && (
           <div className="space-y-2">
-            <Label htmlFor="inq-context">Context <span className="text-muted-foreground font-normal">(not evidence)</span></Label>
+            <label htmlFor="inq-context" style={microLabel}>
+              Context <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(not evidence)</span>
+            </label>
             <textarea
               id="inq-context"
               rows={3}
@@ -360,30 +459,82 @@ export function InquiryForm({
               placeholder="Optional framing context. This is not treated as factual evidence."
               value={form.contextText}
               onChange={(e) => dispatch({ type: 'SET', field: 'contextText', value: e.target.value })}
-              className="w-full rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring/30"
+              style={{ ...inputStyle, resize: 'none' }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#4b6646'
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(75, 102, 70, 0.15)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(173, 180, 168, 0.20)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
             />
-            <p className="text-xs text-muted-foreground">
+            <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
               User context is displayed separately and not promoted to system evidence.
             </p>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-2">
-          <Button type="submit" size="lg" disabled={generateDisabled}>
+        <div className="flex items-center gap-4 pt-2">
+          <button
+            type="submit"
+            disabled={generateDisabled}
+            className="btn-pill"
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              color: '#ffffff',
+              background: generateDisabled
+                ? '#adb4a8'
+                : 'linear-gradient(135deg, #4b6646, #3f5a3a)',
+              borderRadius: '100px',
+              padding: '12px 28px',
+              border: 'none',
+              cursor: generateDisabled ? 'not-allowed' : 'pointer',
+              boxShadow: generateDisabled ? 'none' : '0 4px 20px rgba(46, 52, 43, 0.18)',
+              transition: 'all 0.18s ease',
+            }}
+          >
             {isSubmitting
               ? refineTarget ? 'Refining…' : 'Generating…'
               : refineTarget ? 'Refine Brief' : 'Generate Brief'}
-          </Button>
+          </button>
           <button
             type="button"
             onClick={handleReset}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              fontWeight: 700,
+              fontSize: '0.6875rem',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.05em',
+              color: '#767d72',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'color 0.2s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#5a6157' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#767d72' }}
           >
             Reset
           </button>
           {refineTarget && (
-            <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
+            <span
+              className="px-3 py-1"
+              style={{
+                fontFamily: 'var(--font-manrope), sans-serif',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                textTransform: 'uppercase' as const,
+                letterSpacing: '0.05em',
+                color: '#6b5a35',
+                background: '#f5f0e4',
+                borderRadius: '100px',
+              }}
+            >
               Refining selected inquiry
             </span>
           )}

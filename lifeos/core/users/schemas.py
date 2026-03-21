@@ -44,18 +44,34 @@ class UserResponse(UserBase):
     is_active: bool
     preferences: Dict[str, Any] = {}
     role_codes: List[str] = []
+    onboarding_completed: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
 
+class OnboardingStatusResponse(BaseModel):
+    completed: bool = False
+    domains: List[str] = []
+    calendar_source: Optional[str] = None
+
+
+class OnboardingStepRequest(BaseModel):
+    step: str = Field(pattern=r"^(domains|calendar|complete)$")
+    data: Dict[str, Any] = {}
+
+
 def serialize_user(user: "User") -> "UserResponse":
     """Build a UserResponse with merged preferences."""
+    prefs = get_preferences(user)
+    onboarding_pref = prefs.get("onboarding_completed", {})
+    onboarding_done = onboarding_pref.get("v", False) if isinstance(onboarding_pref, dict) else False
     return UserResponse(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
         timezone=user.timezone,
         is_active=user.is_active,
-        preferences=get_preferences(user),
+        preferences=prefs,
         role_codes=user.role_codes,
+        onboarding_completed=onboarding_done,
     )

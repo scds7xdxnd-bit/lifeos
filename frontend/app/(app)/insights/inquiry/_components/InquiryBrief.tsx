@@ -181,12 +181,33 @@ export function InquiryBrief({
 
   if (!brief) {
     return (
-      <div className="glass rounded-2xl p-6">
+      <div
+        className="p-5 sm:p-7"
+        style={{
+          background: '#ffffff',
+          borderRadius: '0 16px 16px 16px',
+          boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+        }}
+      >
         <div>
-          <h3 className="font-semibold">Generated Brief</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Summary first, then evidence, then limits.</p>
+          <h3
+            style={{
+              fontFamily: 'var(--font-serif), Georgia, serif',
+              fontSize: '1.125rem',
+              fontWeight: 400,
+              color: '#4b6646',
+              letterSpacing: '-0.03em',
+            }}
+          >
+            Generated Brief
+          </h3>
+          <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72', marginTop: '4px' }}>
+            Summary first, then evidence, then limits.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground mt-4">No brief generated yet.</p>
+        <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72', marginTop: '16px' }}>
+          No brief generated yet.
+        </p>
       </div>
     )
   }
@@ -223,11 +244,30 @@ export function InquiryBrief({
   const timelineAllowed = timelineScopeAllowed(brief)
 
   return (
-    <div className="glass rounded-2xl p-6 space-y-5">
+    <div
+      className="p-5 sm:p-7 space-y-5"
+      style={{
+        background: '#ffffff',
+        borderRadius: '0 16px 16px 16px',
+        boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+      }}
+    >
       {/* Header */}
       <div>
-        <h3 className="font-semibold">Generated Brief</h3>
-        <p className="text-sm text-muted-foreground mt-0.5">Summary first, then evidence, then limits.</p>
+        <h3
+          style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: '1.125rem',
+            fontWeight: 400,
+            color: '#4b6646',
+            letterSpacing: '-0.03em',
+          }}
+        >
+          Generated Brief
+        </h3>
+        <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72', marginTop: '4px' }}>
+          Summary first, then evidence, then limits.
+        </p>
       </div>
 
       {/* Alert banner */}

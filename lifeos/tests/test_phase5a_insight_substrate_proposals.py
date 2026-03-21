@@ -337,7 +337,9 @@ def test_list_proposals_api_matches_golden_fixture(app, client, user_with_tokens
     assert item["created_at"] is not None
 
 
-def test_decide_proposal_api_requires_csrf(app, client, user_with_tokens):
+def test_decide_proposal_api_jwt_bypasses_session_csrf(app, client, user_with_tokens):
+    """JWT-authenticated requests skip session-based CSRF — the Bearer token is
+    itself unforgeable proof of authenticity."""
     previous = app.config.get("WTF_CSRF_ENABLED", True)
     app.config["WTF_CSRF_ENABLED"] = True
     with app.app_context():
@@ -354,8 +356,7 @@ def test_decide_proposal_api_requires_csrf(app, client, user_with_tokens):
             json={"action": "accepted"},
             headers=headers,
         )
-        assert resp.status_code == 403
-        assert resp.get_json()["error"] == "csrf_failed"
+        assert resp.status_code == 200
     finally:
         app.config["WTF_CSRF_ENABLED"] = previous
 

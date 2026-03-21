@@ -48,6 +48,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 8 Cross-Domain Inquiry Expansion**: Complete; deterministic pair-profile synthesis shipped with safety taxonomy, replay determinism, and per-pair observability gates.
 - **Phase 8.1 Inquiry Productization and Decision-Useful Briefs**: Complete; direct-answer shaping, deterministic evidence relevance ordering, answerability metadata, and concise limitation/refine guidance verified without expanding inference breadth.
 - **Phase 9 Timeline Intelligence Foundations**: Complete; deterministic temporal pattern interpretation shipped with replay-stable windowing, baseline/version metadata, and approved-pair persistence support without introducing causal or predictive claims.
+- **Phase 11 First-Run Onboarding**: In progress; first-run onboarding wizard (domain selection, calendar source, animated processing, calendar redirect) using UserPreference storage. No migration required.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -1476,11 +1477,60 @@ Phase 10 introduces a deterministic humanization layer that transforms canonical
 
 ---
 
-# 27. Private Alpha Product Cut (Constitutional Decision, Binding)
+# 27. Phase 11 First-Run Onboarding (Constitutional Decision, Binding)
+
+Phase 11 introduces a first-run onboarding wizard that activates once after a user's first login. It collects domain preferences, calendar source selection, and marks the user as onboarded — all stored via the existing `UserPreference` key-value system with zero migration cost.
+
+## 27.1 Phase objective
+- Provide a guided first-run experience that collects user intent (which domains to activate, which calendar source to connect) before exposing the full application surface.
+- Onboarding must only trigger once per user (first login) and redirect to the calendar view upon completion.
+
+## 27.2 Storage model
+- All onboarding state persisted via `UserPreference` (existing generic key-value JSON store).
+- Keys used:
+  - `onboarding_domains` → `{"selected": ["finance", "calendar", ...]}`
+  - `onboarding_calendar_source` → `{"provider": "google" | "apple" | "skip"}`
+  - `onboarding_completed` → `{"v": true}`
+- No new tables, no migration required.
+
+## 27.3 Backend surface
+- **Domain:** `lifeos/core/users/` (extends existing user module, not a new domain)
+- **Endpoints:**
+  - `GET /api/users/me/onboarding-status` — returns `{completed, domains, calendar_source}`
+  - `POST /api/users/me/onboarding` — accepts `{step, data}` where step is `domains|calendar|complete`
+- **Event:** `user.onboarding.completed` emitted when step=`complete` with `payload_version: 1`
+- **Schemas:** `OnboardingStatusResponse`, `OnboardingStepRequest` (Pydantic DTOs in `users/schemas.py`)
+- **Services:** `get_onboarding_status()`, `save_onboarding_step()` in `users/services.py`
+
+## 27.4 Frontend surface
+- **Route group:** `frontend/app/(onboarding)/` — separate layout, no sidebar
+- **Steps:**
+  1. Domain selection (multi-select cards for Finance, Health, Habits, Skills, Calendar, Projects, Relationships, Journal)
+  2. Calendar source (Google or Apple, with skip option)
+  3. Animated processing screen (deterministic, no real computation — visual transition only)
+  4. Redirect to `/calendar`
+- **Auth guard:** `(app)/layout.tsx` checks `user.onboarding_completed`; redirects to `/onboarding` if false
+- **Login redirect:** Post-login target changes from `/insights/data` to `/calendar`
+- **Design:** Follows Botanical Editorial — sage palette, Newsreader headlines, pill buttons, glassmorphism header, clipped-specimen cards for domain selection
+
+## 27.5 Boundaries
+- Onboarding does NOT initiate actual calendar sync (that is Phase 2 Calendar-First).
+- Domain selection records intent only — it does not enable/disable backend features.
+- The processing screen is purely visual (animated transition), not a real computation.
+- Onboarding state is read-only after completion; no re-onboarding flow in this phase.
+
+## 27.6 Docs and execution references
+- Governing design: `DESIGN.md` lines 296–309 (onboarding page spec)
+- UI binding: `lifeos/docs/ui_ux_constitution.md`
+- User preference system: `lifeos/core/users/preferences.py`
+
+---
+
+# 28. Private Alpha Product Cut (Constitutional Decision, Binding)
 
 Private alpha is a tightly scoped, invite-only, inquiry-first release for 10–30 users. It is not a broad feature release and it is not a general assistant launch.
 
-## 27.1 Product thesis
+## 28.1 Product thesis
 - LifeOS private alpha exists to test whether users repeatedly trust and return to structured, evidence-based inquiry about their own records when the product is:
   - calm,
   - readable,
@@ -1488,7 +1538,7 @@ Private alpha is a tightly scoped, invite-only, inquiry-first release for 10–3
   - non-chat.
 - The product is not positioned as an AI companion, coach, or general assistant.
 
-## 27.2 User-visible alpha surface
+## 28.2 User-visible alpha surface
 - Alpha is inquiry-first and humanized-by-default.
 - Primary user-visible surfaces:
   - invite and account access
@@ -1501,7 +1551,7 @@ Private alpha is a tightly scoped, invite-only, inquiry-first release for 10–3
   - explicit feedback submission
 - General-purpose domain CRUD surfaces are not part of the primary alpha experience.
 
-## 27.3 Domain scope
+## 28.3 Domain scope
 - Wave 1 (live in alpha): calendar, habits, projects, skills
 - Wave 2 (hidden / disabled by default): finance, journal
 - Later (not part of alpha): health, relationships
@@ -1509,7 +1559,7 @@ Private alpha is a tightly scoped, invite-only, inquiry-first release for 10–3
   - projects + calendar
   - projects + skills
 
-## 27.4 Required alpha features
+## 28.4 Required alpha features
 - Must-have for launch:
   - invite-only access
   - structured inquiry submission
@@ -1527,13 +1577,13 @@ Private alpha is a tightly scoped, invite-only, inquiry-first release for 10–3
   - recommendation or coaching behavior
   - predictive or causal surfaces
 
-## 27.5 Operational boundaries
+## 28.5 Operational boundaries
 - Deployment target is low-cost, high-reliability private alpha infrastructure, not public-scale architecture.
 - Invite-only is mandatory.
 - User cap is operationally small and intentionally enforced.
 - Feature failures must degrade to narrower inquiry behavior, not to free-form assistant behavior.
 
-## 27.6 Docs and execution reference
+## 28.6 Docs and execution reference
 - Execution brief: `lifeos/docs/tasks/private_alpha_architecture_cut.md`
 - UI binding remains governed by `lifeos/docs/ui_ux_constitution.md`.
 

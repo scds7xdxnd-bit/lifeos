@@ -116,11 +116,12 @@ def _collect_logged_events() -> Set[Tuple[str, str, int]]:
 
 
 def _event_catalog_files() -> list[Path]:
-    """Return event catalog files across domains and core auth."""
+    """Return event catalog files across domains and core modules."""
     events_files = list(LIFEOS_ROOT.glob("domains/*/events.py"))
-    auth_events = LIFEOS_ROOT / "core" / "auth" / "events.py"
-    if auth_events.exists():
-        events_files.append(auth_events)
+    for core_module in ("auth", "users"):
+        core_events = LIFEOS_ROOT / "core" / core_module / "events.py"
+        if core_events.exists():
+            events_files.append(core_events)
     return events_files
 
 
