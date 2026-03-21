@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-20 (v2.22 — Section 14 rewritten for Next.js frontend + responsive landing page architecture)_
+_Last updated: 2026-03-21 (v2.23 — CI/CD auto-deploy to Fly.io, CSRF bypass for JWT requests, CORS origin fix, legacy workflow cleanup)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -127,11 +127,14 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
   - Environment config: `.env.ci` (committed, no secrets) ✅
   - Codecov Integration: Workflows updated (requires `CODECOV_TOKEN` secret) ✅
   - Kubernetes Manifests: `deploy/k8s/staging/` and `deploy/k8s/production/` ✅
-- **Pending (User Actions Required)**:
-  - Configure staging/production secrets in GitHub (requires admin access)
-  - Set up GitHub environment protection rules (requires admin access)
-- Add `CODECOV_TOKEN` secret to GitHub
-  - Test pipelines end-to-end (push PR to trigger)
+- **Auto-Deploy (2026-03-21)**:
+  - `lifeos-main.yml` deploys backend to Fly.io automatically on push to `main` via `superfly/flyctl-actions` ✅
+  - Post-deploy health check smoke test against `/health` (5 retries, 10s interval) ✅
+  - Requires `FLY_API_TOKEN` secret in GitHub (configured) ✅
+  - Frontend (Next.js) auto-deploys to Vercel on merge to `main` (Vercel Git integration) ✅
+- **Removed Legacy Workflows (2026-03-21)**:
+  - `ci.yml` deleted — was deprecated, superseded by `lifeos-pr.yml` + `lifeos-main.yml`
+  - `deploy.yml` deleted — was a stub with no real deploy logic
 
 ## 🆕 Session Lifecycle Scaffold (Phase 3b½ — structure-only; login issue quarantined)
 - **Scope**: Add interface-only session lifecycle skeleton (session vs user vs future device identity), admin reset contract, and event shapes without changing current auth behavior.
@@ -149,6 +152,11 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - Active: Private alpha cut implementation with Phase 10 humanization as a launch gate.
 - Deferred: public signup, broad domain exposure, recommendation layer, causal explanation layer, predictive / forecasting foundations, and Phase 3c-2 transport scaling (trigger-based).
 - Forbidden in current window: omniscient assistant behavior, assistant-chat UX, runtime ML decisioning, autonomous action, hidden personalization, semantic drift, public-scale complexity, causal overreach, and predictive modeling.
+
+## ✅ Auth & CSRF Hardening (2026-03-21)
+- **CSRF bypass for JWT requests**: `@csrf_protected` decorator skips session-based CSRF validation when a valid `Authorization: Bearer` header is present. JWT-authenticated requests are inherently CSRF-safe (the `Authorization` header cannot be set by cross-origin form submissions; it requires JavaScript, which is bound by CORS). Session-only requests still require session-based CSRF validation.
+- **Frontend credentials mode**: API client uses `credentials: 'omit'` to prevent sending session cookies alongside JWT tokens (avoids mixed-auth 403 from `_reject_mixed_auth()` guard).
+- **CORS origin**: `CORS_ORIGINS` in production includes `https://lifeos-wine.vercel.app` (Vercel frontend), `https://lifeos-black-pond-2352.fly.dev` (Fly.io backend), and localhost dev origins.
 
 ## ✅ Phase 3b API Hardening (Complete — prior milestone)
 - `/api/v1` namespace added without breaking legacy routes.

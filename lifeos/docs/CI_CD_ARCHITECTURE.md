@@ -1,6 +1,6 @@
 # LifeOS CI/CD Architecture Specification
 
-_Last updated: 2025-12-07_
+_Last updated: 2026-03-21_
 _Owner: Architect_
 _Implementer: DevOps Team_
 
@@ -13,7 +13,7 @@ This document defines the CI/CD architecture for the LifeOS monorepo-style proje
 **Key Principles:**
 - CI/CD **runs** migrations but never **creates** them (DB team owns Alembic)
 - Fast feedback on PRs (< 10 min target)
-- Production deploys require manual approval
+- Backend auto-deploys to Fly.io on push to `main`; release tags require manual approval
 - All CI jobs call Makefile targets for consistency
 
 ---
@@ -90,14 +90,19 @@ This document defines the CI/CD architecture for the LifeOS monorepo-style proje
 | `integration_tests` | pytest -m integration | ✅ Yes | 15 min |
 | `build` | Docker image build | ✅ Yes | 10 min |
 | `push` | Push to container registry | ✅ Yes | 2 min |
-| `deploy_staging` | Deploy to staging environment | ✅ Yes | 10 min |
-| `smoke_test` | Health check + basic API test | ✅ Yes | 3 min |
+| `deploy_fly` | Deploy to Fly.io (main branch only) | ✅ Yes | 15 min |
+| `smoke_test` | Health check against `/health` (5 retries) | ✅ Yes | 5 min |
 
 **Quality Gates:**
 - All stages must pass
 - Coverage report published
 - Container image scanned for vulnerabilities
-- Staging deployment healthy
+- Fly.io deployment healthy (health check passes)
+
+**Deployment:**
+- Uses `superfly/flyctl-actions` with `FLY_API_TOKEN` secret
+- Runs `flyctl deploy --remote-only` (builds on Fly's Depot builder)
+- Post-deploy smoke test curls `/health` endpoint with retry loop
 
 ---
 
@@ -168,8 +173,8 @@ This document defines the CI/CD architecture for the LifeOS monorepo-style proje
 |-------------|-------------|----------|--------|-------------|
 | Local Dev | `.env` (gitignored) | SQLite | Disabled | — |
 | CI/Test | `.env.ci` (committed) | SQLite/:memory: | Mock | Yes |
-| Staging | `.env.staging` (secrets) | PostgreSQL | Full | Yes (main push) |
-| Production | `.env.prod` (secrets) | PostgreSQL | Full | No (manual) |
+| Production (Backend) | `fly.toml` + Fly secrets | PostgreSQL | Full | Yes (main push → Fly.io) |
+| Production (Frontend) | Vercel env vars | — | — | Yes (main push → Vercel) |
 
 ---
 
@@ -182,10 +187,10 @@ finance_app_clean/
 ├── .github/
 │   └── workflows/
 │       ├── lifeos-pr.yml              # PR/branch pipeline
-│       ├── lifeos-main.yml            # Main/develop pipeline
+│       ├── lifeos-main.yml            # Main pipeline + Fly.io auto-deploy
 │       ├── lifeos-release.yml         # Release/tag pipeline
 │       ├── lifeos-nightly.yml         # Nightly scheduled pipeline
-│       └── _reusable-test.yml         # Reusable test workflow (DRY)
+│       └── neon_workflow.yml          # Neon DB branch per PR
 │
 ├── scripts/
 │   └── ci/
