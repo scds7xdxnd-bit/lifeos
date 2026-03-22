@@ -36,6 +36,10 @@ def _phase12_skills_goals_enabled() -> bool:
     return bool(current_app.config.get("ENABLE_PHASE12_SKILLS_GOALS", False))
 
 
+def _phase12_skills_goals_strict_enabled() -> bool:
+    return bool(current_app.config.get("ENABLE_PHASE12_SKILLS_GOALS_STRICT", False))
+
+
 def _phase12_skills_path_enabled() -> bool:
     return bool(current_app.config.get("ENABLE_PHASE12_SKILLS_PATH", False))
 
@@ -57,7 +61,11 @@ def create_skill_endpoint():
             400,
         )
     user_id = int(get_jwt_identity())
-    if _phase12_skills_goals_enabled() and (data.goal_type is None or data.goal_target_value is None):
+    if (
+        _phase12_skills_goals_enabled()
+        and _phase12_skills_goals_strict_enabled()
+        and (data.goal_type is None or data.goal_target_value is None)
+    ):
         return jsonify({"ok": False, "error": "goal_required"}), 400
     try:
         skill = create_skill(user_id=user_id, **data.model_dump())

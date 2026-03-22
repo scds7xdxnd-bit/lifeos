@@ -212,11 +212,22 @@ class TestSkillsAPI:
     def test_create_skill_requires_goal_when_phase12_goals_enabled(self, app, client, csrf_headers):
         """When goals flag is enabled, creating skill without goal fails."""
         app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        app.config["ENABLE_PHASE12_SKILLS_GOALS_STRICT"] = True
         payload = {"name": "No Goal Skill"}
         resp = client.post("/api/skills", json=payload, headers=csrf_headers)
         assert resp.status_code == 400
         data = resp.get_json()
         assert data["error"] == "goal_required"
+
+    def test_create_skill_allows_missing_goal_when_not_strict(self, app, client, csrf_headers):
+        """Goals rollout allows missing goal until strict mode is enabled."""
+        app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        app.config["ENABLE_PHASE12_SKILLS_GOALS_STRICT"] = False
+        payload = {"name": "Legacy Client Skill"}
+        resp = client.post("/api/skills", json=payload, headers=csrf_headers)
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data["ok"] is True
 
     def test_create_skill_with_goal_when_phase12_goals_enabled(self, app, client, csrf_headers):
         """When goals flag is enabled, creating skill with goal fields succeeds."""

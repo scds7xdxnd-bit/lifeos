@@ -125,6 +125,7 @@ export default function SkillsPage() {
     at_risk: cards.filter((c) => c.progress_state === 'at_risk').length,
     active: cards.length,
   }
+  const showMigrationBanner = hasOverviewPayload && cards.some((c) => c.requires_goal_setup)
 
   const skillNameById = new Map(skills.map((s) => [s.id, s.name]))
   for (const c of cards) {
@@ -259,6 +260,29 @@ export default function SkillsPage() {
           </article>
         ))}
       </section>
+
+      {showMigrationBanner && (
+        <aside
+          className="p-4"
+          role="status"
+          style={{
+            background: '#f5f0e4',
+            borderRadius: '0 14px 14px 14px',
+            color: '#6b5a35',
+          }}
+        >
+          <p style={microLabel}>Migration Notice</p>
+          <p
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+            }}
+          >
+            Existing skills were preserved with safe defaults. You can refine any goal endpoint from each skill path.
+          </p>
+        </aside>
+      )}
 
       {/* Create modal */}
       {showCreateModal && (

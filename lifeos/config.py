@@ -204,6 +204,11 @@ class BaseConfig:
         "true",
         "yes",
     )
+    ENABLE_PHASE12_SKILLS_GOALS_STRICT = os.environ.get("ENABLE_PHASE12_SKILLS_GOALS_STRICT", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     PHASE6_INQUIRY_MIGRATION_HEAD = os.environ.get(
         "PHASE6_INQUIRY_MIGRATION_HEAD",
         "20260314_private_alpha_feedback_linkage",
