@@ -68,6 +68,7 @@ export interface SkillPath {
   risk_reason: 'no_recent_sessions' | null
   goal: SkillGoalEndpoint | null
   steps: SkillPathStep[]
+  next_recommended_step?: SkillPathStep | null
 }
 
 export interface CreateSkillInput {
