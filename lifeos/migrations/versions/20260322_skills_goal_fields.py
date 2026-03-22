@@ -15,6 +15,7 @@ revision = "20260322_skills_goal_fields"
 down_revision = "20260322_habit_scheduled_time"
 branch_labels = None
 depends_on = None
+TWO_PHASE = True
 
 
 def upgrade():
