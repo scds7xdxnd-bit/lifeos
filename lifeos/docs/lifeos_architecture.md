@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-22 (v2.26 — Phase 12d Habit Studio UX refinement: modal create flow, frequency terminology, 12-hour preferred-time input, multilingual encouraging copy, rotating tips)_
+_Last updated: 2026-03-22 (v2.27 — Phase 12d docs alignment: scheduled_time migration id fix, mobile detail drawer status, native preferred-time input + localized preview)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -49,7 +49,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 8.1 Inquiry Productization and Decision-Useful Briefs**: Complete; direct-answer shaping, deterministic evidence relevance ordering, answerability metadata, and concise limitation/refine guidance verified without expanding inference breadth.
 - **Phase 9 Timeline Intelligence Foundations**: Complete; deterministic temporal pattern interpretation shipped with replay-stable windowing, baseline/version metadata, and approved-pair persistence support without introducing causal or predictive claims.
 - **Phase 11 First-Run Onboarding**: In progress; first-run onboarding wizard (domain selection, calendar source, animated processing, calendar redirect) using UserPreference storage. No migration required.
-- **Phase 12 Habit UX & Analytics**: In progress; Phase 12a–c complete (card UX fixes, streak engine, engagement layer). Phase 12d detailed and ready: HAB-022 (card polish), HAB-007 (master-detail), HAB-012 (time-aware cues), HAB-016 (ML prediction), HAB-018–020 (QA/CI/monitoring). Requires 1 remaining migration (`20260321_habit_scheduled_time`), 3 new frontend components, and ML model implementation.
+- **Phase 12 Habit UX & Analytics**: In progress; Phase 12a–c complete (card UX fixes, streak engine, engagement layer). Phase 12d detailed and ready: HAB-022 (card polish), HAB-007 (master-detail), HAB-012 (time-aware cues), HAB-016 (ML prediction), HAB-018–020 (QA/CI/monitoring). Uses migration `20260322_habit_scheduled_time` for precise habit cue timing, plus new frontend components and ML baseline implementation.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -1649,7 +1649,7 @@ The habits domain has a complete backend lifecycle (CRUD, logging, streaks, even
 - **Layout structure:** At `≥1024px`, the habits page becomes a two-panel layout:
   - **Left panel (60%):** Existing habit card list (scrollable)
   - **Right panel (40%):** Detail panel for the currently selected habit
-- **Selection model:** Clicking a habit card selects it (adds `selectedHabitId` state). On desktop, the detail panel shows; on mobile/tablet (<1024px), tapping a card still shows only the list (detail panel hidden). Future: mobile detail could be a drawer/sheet.
+- **Selection model:** Clicking a habit card selects it (adds `selectedHabitId` state). On desktop, the right detail panel updates in place. On mobile/tablet (<1024px), tapping a card opens a detail drawer/sheet for analytics and scheduled-time editing.
 - **Detail panel contents:** Streak chart (line chart of 30-day history from `/history?range=30d`), yearly heatmap (from `/heatmap`), stats summary (from `/stats`), habit description/notes.
 - **Components:**
   - `HabitDetailPanel` at `frontend/app/(app)/habits/_components/HabitDetailPanel.tsx` — the right panel container
@@ -1659,7 +1659,7 @@ The habits domain has a complete backend lifecycle (CRUD, logging, streaks, even
 - **Empty selection state:** When no habit is selected (or on initial load on desktop), the detail panel shows a placeholder: "Select a habit to see its analytics" with a leaf illustration or subtle icon.
 
 #### HAB-012: Time-aware cue messaging
-- **Migration 2 required:** `20260321_habit_scheduled_time.py` — adds `scheduled_time` (Time, nullable) to `habits_habit`
+- **Migration 2 required:** `20260322_habit_scheduled_time.py` — adds `scheduled_time` (Time, nullable) to `habits_habit`
 - **Backend:** Add `scheduled_time` to `HabitCreate`, `HabitUpdate`, `HabitSummaryResponse`, and `HabitDetailResponse` schemas. Expose in list endpoint payload.
 - **Frontend cue logic:** For habits with `scheduled_time` set:
   - Before scheduled time: show "Due in Xh Ym" in muted sage (`#5a6157`)
@@ -1673,7 +1673,7 @@ The habits domain has a complete backend lifecycle (CRUD, logging, streaks, even
 - **Create flow container:** Replace inline create form with a centered modal "Habit Studio" over the habits page.
 - **Layout:** Two-panel modal (`lg:grid-cols-5`) with form on the left (`3/5`) and live reflection panel on the right (`2/5`).
 - **Terminology:** Use **Frequency** instead of **Schedule** in the create flow labels and preview copy.
-- **Preferred time input:** Replace native `type="time"` input with explicit 12-hour controls (Hour, Minute, AM/PM). Serialize to 24-hour `scheduled_time` before POST/PATCH.
+- **Preferred time input:** Use a concise single-block native `type="time"` control in Habit Studio across desktop/mobile. Persist canonical `scheduled_time` to backend and render a localized, human-friendly preview in the reflection panel.
 - **Live reflection:** Right panel updates immediately from in-progress form state (name, frequency, preferred time, description).
 - **Encouraging copy model:** Base/near-ready/ready states are selected by readiness signals (action-focused name, frequency selected, time cue enabled, description context).
 - **Rotating guidance tip:** Bottom tip rotates every 5s with fade transition (same cadence pattern as auth testimonial rotation style).
@@ -1725,7 +1725,7 @@ The habits domain has a complete backend lifecycle (CRUD, logging, streaks, even
 - **Backfill:** After table creation, backfill from existing `habit_log` data using the streak calculation service.
 - **Depends on:** none (additive)
 
-### Migration 2: `20260321_habit_scheduled_time.py`
+### Migration 2: `20260322_habit_scheduled_time.py`
 **Alter table: `habits_habit`**
 - ADD COLUMN `scheduled_time` (Time, nullable) — precise scheduled time for cue messaging
 - Existing `time_of_day` (varchar) retained for backward compatibility
@@ -1772,7 +1772,7 @@ All under existing blueprint prefix `/api/habits`. JWT auth required.
   - `HabitHeatmap.tsx` — yearly calendar heatmap (GitHub-style, sage-green fills)
   - `HabitStreakChart.tsx` — 30-day history line/bar visualization
 - **HAB-012:** Time-aware cue messaging — relative time display below dot row, client-side computation from `scheduled_time` field
-- **HAB-023:** Habit Studio modal create flow — frequency-first terminology, 12-hour preferred-time controls (AM/PM), multilingual encouraging live copy, rotating guidance tip, blue-aligned reflection panel
+- **HAB-023:** Habit Studio modal create flow — frequency-first terminology, concise native preferred-time input with localized preview, multilingual encouraging live copy, rotating guidance tip, blue-aligned reflection panel
 
 ## 29.7 ML surface (Phase 12d)
 - **Location:** `lifeos/domains/habits/ml/habit_prediction.py` (replace existing stub)
@@ -1806,7 +1806,7 @@ Phase 12d execution order:
 - Milestone celebrations are client-side only (no server-rendered notifications in this phase).
 - Master-detail layout does NOT introduce a new route; it's a layout change within `/habits`.
 - Analytics endpoints serve the UI; they do NOT power external dashboards or exports.
-- Habit Studio 12-hour controls are a presentation-layer UX decision; backend `scheduled_time` remains 24-hour time semantics.
+- Habit Studio preferred-time input remains a presentation-layer UX decision; backend `scheduled_time` remains canonical 24-hour time semantics.
 
 ## 29.10 Docs and execution references
 - Ticket board: `lifeos_habit_improvements.xlsx` (20 tickets, HAB-001 through HAB-020)
