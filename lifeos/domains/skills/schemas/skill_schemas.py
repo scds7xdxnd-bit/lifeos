@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -72,3 +72,24 @@ class SkillSummaryResponse(BaseModel):
     sessions_last_7: int
     sessions_last_30: int
     recent_sessions: List[PracticeSessionResponse]
+
+
+class SkillGoalEndpointResponse(BaseModel):
+    goal_type: Literal["hours", "sessions", "milestones", "benchmark", "deadline"]
+    target_value: float
+    current_value: float
+    progress_ratio: float = Field(ge=0.0, le=1.0)
+    deadline: Optional[datetime] = None
+
+
+class SkillOverviewCardResponse(BaseModel):
+    skill_id: int
+    name: str
+    category: Optional[str]
+    total_minutes: int
+    session_count: int
+    progress_state: Literal["on_track", "at_risk", "completed"]
+    goal: Optional[SkillGoalEndpointResponse] = None
+    primary_action: Literal["continue_practice"]
+    requires_goal_setup: bool
+    risk_reason: Optional[Literal["no_recent_sessions"]] = None

@@ -43,11 +43,11 @@ Source: [phase12d_habits_manual_qa_matrix.json](phase12d_habits_manual_qa_matrix
 ## Post-Matrix Update (HAB-023)
 - Habit creation now opens as a centered Habit Studio modal with split form/reflection layout.
 - Create-form terminology uses Frequency (not Schedule) in the modal.
-- Preferred time input now uses 12-hour controls (hour, minute, AM/PM) and serializes to backend `scheduled_time`.
+- Preferred time input now uses a concise native time control and serializes canonical `scheduled_time` to backend.
 - Reflection/tip copy is localized across English, Korean, and Chinese with rotating encouragement every ~5s.
 - Modal close affordances are backdrop click, Escape key, and Cancel button (top-right close icon removed).
 
 ### Additional QA Follow-up
 1. Verify modal keyboard flow: tab order, Escape close, and focus return to trigger.
-2. Verify 12-hour time selection serializes correctly for edge times (12:00 AM, 12:00 PM).
+2. Verify time selection serializes correctly for edge values (00:00, 12:00, 23:59) and remains stable across locales.
 3. Re-run viewport checks for modal overflow/truncation at 375px, 414px, and 768px.

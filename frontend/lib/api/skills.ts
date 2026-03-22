@@ -27,6 +27,30 @@ export interface PracticeSession {
   practiced_at: string
 }
 
+export type SkillGoalType = 'hours' | 'sessions' | 'milestones' | 'benchmark' | 'deadline'
+export type SkillProgressState = 'on_track' | 'at_risk' | 'completed'
+
+export interface SkillGoalEndpoint {
+  goal_type: SkillGoalType
+  target_value: number
+  current_value: number
+  progress_ratio: number
+  deadline: string | null
+}
+
+export interface SkillOverviewCard {
+  skill_id: number
+  name: string
+  category: string | null
+  total_minutes: number
+  session_count: number
+  progress_state: SkillProgressState
+  goal: SkillGoalEndpoint | null
+  primary_action: 'continue_practice'
+  requires_goal_setup: boolean
+  risk_reason: 'no_recent_sessions' | null
+}
+
 export interface CreateSkillInput {
   name: string
   category?: string | null
@@ -46,9 +70,12 @@ export interface LogPracticeInput {
 
 interface SkillListResponse { ok: boolean; skills: Skill[] }
 interface SkillResponse { ok: boolean; skill: Skill }
+interface SkillOverviewResponse { ok: boolean; skills: SkillOverviewCard[] }
 
 export const skillsApi = {
   list: () => apiGet<SkillListResponse>('/api/skills'),
+
+  overview: () => apiGet<SkillOverviewResponse>('/api/skills/overview'),
 
   get: (id: number) => apiGet<SkillResponse>(`/api/skills/${id}`),
 
