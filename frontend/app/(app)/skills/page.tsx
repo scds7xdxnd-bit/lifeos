@@ -51,6 +51,15 @@ export default function SkillsPage() {
   const [description, setDescription] = useState('')
   const [goalType, setGoalType] = useState<'sessions' | 'hours' | 'milestones'>('sessions')
   const [goalTarget, setGoalTarget] = useState('12')
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [strictGoalRollout, setStrictGoalRollout] = useState(false)
+
+  const [goalSkillId, setGoalSkillId] = useState<number | null>(null)
+  const [goalSkillName, setGoalSkillName] = useState('')
+  const [goalEditType, setGoalEditType] = useState<'sessions' | 'hours' | 'milestones'>('sessions')
+  const [goalEditTarget, setGoalEditTarget] = useState('12')
+  const [goalEditDeadline, setGoalEditDeadline] = useState('')
+  const [goalEditError, setGoalEditError] = useState<string | null>(null)
 
   const [practiceSkillId, setPracticeSkillId] = useState<number | null>(null)
   const [practiceStepId, setPracticeStepId] = useState<string>('')
@@ -88,6 +97,51 @@ export default function SkillsPage() {
       setDescription('')
       setGoalType('sessions')
       setGoalTarget('12')
+      setCreateError(null)
+    },
+    onError: (error: Error) => {
+      if (error.message.includes('goal_required')) {
+        setStrictGoalRollout(true)
+        setCreateStep(2)
+        setCreateError('Goal endpoint is required in this rollout. Set a goal to continue.')
+        return
+      }
+      setCreateError('Unable to create skill. Please review inputs and try again.')
+    },
+  })
+
+  const updateGoalMut = useMutation({
+    mutationFn: ({
+      skillId,
+      goal_type,
+      goal_target_value,
+      goal_deadline,
+    }: {
+      skillId: number
+      goal_type: 'sessions' | 'hours' | 'milestones'
+      goal_target_value: number
+      goal_deadline?: string | null
+    }) =>
+      skillsApi.update(skillId, {
+        goal_type,
+        goal_target_value,
+        goal_deadline: goal_deadline || null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['skills'] })
+      qc.invalidateQueries({ queryKey: ['skills', 'overview'] })
+      if (goalSkillId !== null) {
+        qc.invalidateQueries({ queryKey: ['skills', 'path', goalSkillId] })
+      }
+      setGoalSkillId(null)
+      setGoalSkillName('')
+      setGoalEditType('sessions')
+      setGoalEditTarget('12')
+      setGoalEditDeadline('')
+      setGoalEditError(null)
+    },
+    onError: () => {
+      setGoalEditError('Unable to update goal. Please try again.')
     },
   })
 
@@ -164,14 +218,60 @@ export default function SkillsPage() {
     e.preventDefault()
     if (!name.trim()) return
     const targetValue = parseInt(goalTarget)
-    if (!targetValue || targetValue <= 0) return
+    if (strictGoalRollout && (!targetValue || targetValue <= 0)) {
+      setCreateStep(2)
+      setCreateError('Goal endpoint is required in this rollout. Set a goal to continue.')
+      return
+    }
+    setCreateError(null)
 
+    const payload: CreateSkillInput = {
+      name: name.trim(),
+      category: category.trim() || undefined,
+      description: description.trim() || undefined,
+    }
+
+    if (createStep === 2 && targetValue > 0) {
+      payload.goal_type = goalType
+      payload.goal_target_value = targetValue
+    }
+
+    createMut.mutate(payload)
+  }
+
+  function handleCreateWithoutGoal() {
+    if (!name.trim()) return
+    setCreateError(null)
     createMut.mutate({
       name: name.trim(),
       category: category.trim() || undefined,
       description: description.trim() || undefined,
-      goal_type: goalType,
+    })
+  }
+
+  function openGoalModal(card: SkillOverviewCard) {
+    setGoalSkillId(card.skill_id)
+    setGoalSkillName(card.name)
+    setGoalEditType((card.goal?.goal_type as 'sessions' | 'hours' | 'milestones') ?? 'sessions')
+    setGoalEditTarget(String(card.goal?.target_value ?? 12))
+    setGoalEditDeadline(card.goal?.deadline?.slice(0, 10) ?? '')
+    setGoalEditError(null)
+  }
+
+  function handleGoalSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!goalSkillId) return
+    const targetValue = parseInt(goalEditTarget)
+    if (!targetValue || targetValue <= 0) {
+      setGoalEditError('Target value must be greater than zero.')
+      return
+    }
+    setGoalEditError(null)
+    updateGoalMut.mutate({
+      skillId: goalSkillId,
+      goal_type: goalEditType,
       goal_target_value: targetValue,
+      goal_deadline: goalEditDeadline || null,
     })
   }
 
@@ -245,6 +345,7 @@ export default function SkillsPage() {
         </div>
         <button
           onClick={() => {
+            setStrictGoalRollout(false)
             setCreateStep(1)
             setShowCreateModal(true)
           }}
@@ -365,6 +466,23 @@ export default function SkillsPage() {
               </button>
             </div>
 
+            {strictGoalRollout && (
+              <div
+                className="p-3"
+                role="status"
+                style={{
+                  background: '#f5f0e4',
+                  borderRadius: '0 10px 10px 10px',
+                  color: '#6b5a35',
+                }}
+              >
+                <p style={microLabel}>Rollout Gate</p>
+                <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem' }}>
+                  Goals are required for new skills in this rollout. Pick a goal type and target value before creating.
+                </p>
+              </div>
+            )}
+
             {createStep === 1 && (
               <>
                 <div className="space-y-2">
@@ -383,6 +501,7 @@ export default function SkillsPage() {
                   type="button"
                   onClick={() => {
                     if (!name.trim()) return
+                    setCreateError(null)
                     setCreateStep(2)
                   }}
                   style={{
@@ -400,6 +519,34 @@ export default function SkillsPage() {
                 >
                   Continue
                 </button>
+
+                {!strictGoalRollout && (
+                  <button
+                    type="button"
+                    onClick={handleCreateWithoutGoal}
+                    disabled={createMut.isPending}
+                    style={{
+                      fontFamily: 'var(--font-manrope), sans-serif',
+                      fontWeight: 700,
+                      fontSize: '0.8125rem',
+                      textTransform: 'uppercase' as const,
+                      letterSpacing: '0.05em',
+                      color: '#767d72',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '8px 4px',
+                    }}
+                  >
+                    {createMut.isPending ? t.creating : 'Create Without Goal'}
+                  </button>
+                )}
+
+                {createError && (
+                  <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#8b4a3a' }}>
+                    {createError}
+                  </p>
+                )}
               </>
             )}
 
@@ -431,6 +578,12 @@ export default function SkillsPage() {
                     />
                   </div>
                 </div>
+
+                {createError && (
+                  <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#8b4a3a' }}>
+                    {createError}
+                  </p>
+                )}
 
                 <div className="flex gap-3">
                   <button
@@ -473,6 +626,134 @@ export default function SkillsPage() {
                 </div>
               </>
             )}
+          </form>
+        </div>
+      )}
+
+      {/* Goal setup/edit modal */}
+      {goalSkillId && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center p-4"
+          style={{
+            background: 'rgba(26, 31, 26, 0.35)',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          <form
+            onSubmit={handleGoalSubmit}
+            className="w-full max-w-xl p-6 space-y-5"
+            style={{
+              background: '#ffffff',
+              borderRadius: '0 16px 16px 16px',
+              boxShadow: '0 30px 60px rgba(46, 52, 43, 0.08)',
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p style={microLabel}>Goal Endpoint</p>
+                <h2
+                  style={{
+                    fontFamily: 'var(--font-serif), Georgia, serif',
+                    fontSize: '1.2rem',
+                    color: '#6b5a35',
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  {goalSkillName}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGoalSkillId(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#767d72' }}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="goal-edit-type" style={microLabel}>Goal Type</label>
+                <select
+                  id="goal-edit-type"
+                  value={goalEditType}
+                  onChange={(e) => setGoalEditType(e.target.value as 'sessions' | 'hours' | 'milestones')}
+                  style={inputStyle}
+                >
+                  <option value="sessions">Sessions</option>
+                  <option value="hours">Hours</option>
+                  <option value="milestones">Milestones</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="goal-edit-target" style={microLabel}>Target Value</label>
+                <Input
+                  id="goal-edit-target"
+                  type="number"
+                  min="1"
+                  required
+                  value={goalEditTarget}
+                  onChange={(e) => setGoalEditTarget(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="goal-edit-deadline" style={microLabel}>Deadline (Optional)</label>
+              <Input
+                id="goal-edit-deadline"
+                type="date"
+                value={goalEditDeadline}
+                onChange={(e) => setGoalEditDeadline(e.target.value)}
+              />
+            </div>
+
+            {goalEditError && (
+              <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#8b4a3a' }}>
+                {goalEditError}
+              </p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={updateGoalMut.isPending}
+                style={{
+                  fontFamily: 'var(--font-manrope), sans-serif',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #6b5a35, #5a4a2a)',
+                  borderRadius: '100px',
+                  padding: '12px 28px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 20px rgba(46, 52, 43, 0.18)',
+                }}
+              >
+                {updateGoalMut.isPending ? 'Saving...' : 'Save Goal'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setGoalSkillId(null)}
+                style={{
+                  fontFamily: 'var(--font-manrope), sans-serif',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  textTransform: 'uppercase' as const,
+                  letterSpacing: '0.05em',
+                  color: '#767d72',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '12px 20px',
+                  borderRadius: '100px',
+                }}
+              >
+                {t.cancel}
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -725,6 +1006,25 @@ export default function SkillsPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => openGoalModal(card)}
+                    style={{
+                      fontFamily: 'var(--font-manrope), sans-serif',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase' as const,
+                      letterSpacing: '0.05em',
+                      padding: '6px 14px',
+                      borderRadius: '100px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: card.requires_goal_setup ? '#8b4a3a' : '#465642',
+                      background: card.requires_goal_setup ? '#fce8e4' : '#d6e8ce',
+                    }}
+                  >
+                    {card.requires_goal_setup ? 'Set Goal' : 'Edit Goal'}
+                  </button>
                   <button
                     type="button"
                     onClick={() => openPracticeModal(card.skill_id)}
