@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from sqlalchemy import func
 
@@ -230,6 +230,70 @@ def list_skills_with_aggregates(user_id: int, limit: int = 50, offset: int = 0) 
             }
         )
     return payload
+
+
+def list_skill_overview_cards(user_id: int, limit: int = 50, offset: int = 0) -> List[dict]:
+    records = list_skills_with_aggregates(user_id=user_id, limit=limit, offset=offset)
+    cards: List[dict] = []
+    for record in records:
+        skill: Skill = record["skill"]
+        totals = record.get("totals", {})
+        sessions_last_7 = int(totals.get("sessions_last_7") or 0)
+        sessions_last_30 = int(totals.get("sessions_last_30") or 0)
+        goal = _derive_goal_endpoint(skill)
+        progress_state, risk_reason = _derive_progress_state(
+            goal=goal, sessions_last_7=sessions_last_7, sessions_last_30=sessions_last_30
+        )
+        cards.append(
+            {
+                "skill_id": skill.id,
+                "name": skill.name,
+                "category": skill.category,
+                "total_minutes": int(totals.get("total_minutes") or 0),
+                "session_count": int(totals.get("session_count") or 0),
+                "progress_state": progress_state,
+                "goal": goal,
+                "primary_action": "continue_practice",
+                "requires_goal_setup": goal is None,
+                "risk_reason": risk_reason,
+            }
+        )
+    return cards
+
+
+def _derive_goal_endpoint(skill: Skill) -> Optional[dict]:
+    target = skill.target_level
+    current = skill.current_level
+    if target is None or target <= 0:
+        return None
+
+    current_value = current if current is not None else 0
+    progress_ratio = min(max(current_value / target, 0.0), 1.0)
+    return {
+        "goal_type": "milestones",
+        "target_value": target,
+        "current_value": current_value,
+        "progress_ratio": progress_ratio,
+        "deadline": None,
+    }
+
+
+def _derive_progress_state(
+    *,
+    goal: Optional[dict],
+    sessions_last_7: int,
+    sessions_last_30: int,
+) -> tuple[Literal["on_track", "at_risk", "completed"], Optional[str]]:
+    if goal:
+        if float(goal.get("progress_ratio") or 0.0) >= 1.0:
+            return "completed", None
+        if sessions_last_7 == 0:
+            return "at_risk", "no_recent_sessions"
+        return "on_track", None
+
+    if sessions_last_30 == 0:
+        return "at_risk", "no_recent_sessions"
+    return "on_track", None
 
 
 def _aggregate_sessions(user_id: int, skill_ids: List[int]) -> Dict[int, dict]:

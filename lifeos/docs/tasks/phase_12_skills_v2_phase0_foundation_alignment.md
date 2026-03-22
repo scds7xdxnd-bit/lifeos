@@ -47,7 +47,7 @@ Out of Scope:
 - [x] Feature flags added to runtime config.
 - [x] Goal endpoint taxonomy documented.
 - [x] Status semantics documented.
-- [ ] Backend API shape for Skills v2 overview agreed.
+- [x] Backend API shape for Skills v2 overview agreed (`GET /api/skills/overview`, flag-gated by `ENABLE_PHASE12_SKILLS_GOALS`).
 - [ ] Frontend card spec and modal flow approved.
 - [ ] QA acceptance matrix drafted for Skills v2 Phase 1.
 

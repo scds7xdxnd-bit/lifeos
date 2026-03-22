@@ -73,6 +73,60 @@ class TestSkillsAPI:
         assert data["ok"] is True
         assert len(data["skills"]) == 2
 
+    def test_list_skills_overview_feature_disabled(self, client, auth_headers):
+        """Overview endpoint is hidden when Phase 12 goals flag is disabled."""
+        resp = client.get("/api/skills/overview", headers=auth_headers)
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["ok"] is False
+        assert data["error"] == "not_found"
+
+    def test_list_skills_overview_enabled(self, app, client, test_user, auth_headers):
+        """Overview endpoint returns deterministic progress state payloads."""
+        app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        with app.app_context():
+            completed = create_skill(
+                test_user.id,
+                name="Completed Skill",
+                target_level=3,
+                current_level=3,
+            )
+            at_risk = create_skill(
+                test_user.id,
+                name="At Risk Skill",
+                target_level=5,
+                current_level=2,
+            )
+            log_practice_session(
+                test_user.id,
+                completed.id,
+                duration_minutes=45,
+                practiced_at=datetime.utcnow() - timedelta(days=1),
+            )
+            log_practice_session(
+                test_user.id,
+                at_risk.id,
+                duration_minutes=20,
+                practiced_at=datetime.utcnow() - timedelta(days=14),
+            )
+
+        resp = client.get("/api/skills/overview", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert len(data["skills"]) == 2
+
+        by_name = {item["name"]: item for item in data["skills"]}
+        completed_card = by_name["Completed Skill"]
+        assert completed_card["progress_state"] == "completed"
+        assert completed_card["primary_action"] == "continue_practice"
+        assert completed_card["goal"]["goal_type"] == "milestones"
+        assert completed_card["requires_goal_setup"] is False
+
+        at_risk_card = by_name["At Risk Skill"]
+        assert at_risk_card["progress_state"] == "at_risk"
+        assert at_risk_card["risk_reason"] == "no_recent_sessions"
+
     def test_create_skill_success(self, client, csrf_headers):
         """Create a skill successfully."""
         payload = {

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from pydantic import ValidationError
 
@@ -12,6 +12,7 @@ from lifeos.domains.skills.schemas.skill_schemas import (
     PracticeSessionCreate,
     PracticeSessionUpdate,
     SkillCreate,
+    SkillOverviewCardResponse,
     SkillUpdate,
 )
 from lifeos.domains.skills.services.skill_service import (
@@ -19,6 +20,7 @@ from lifeos.domains.skills.services.skill_service import (
     delete_practice_session,
     delete_skill,
     get_skill_summary,
+    list_skill_overview_cards,
     list_skills_with_aggregates,
     log_practice_session,
     update_practice_session,
@@ -26,6 +28,14 @@ from lifeos.domains.skills.services.skill_service import (
 )
 
 skill_api_bp = Blueprint("skill_api", __name__)
+
+
+def _phase12_skills_goals_enabled() -> bool:
+    return bool(current_app.config.get("ENABLE_PHASE12_SKILLS_GOALS", False))
+
+
+def _feature_disabled_response():
+    return jsonify({"ok": False, "error": "not_found"}), 404
 
 
 @skill_api_bp.post("")
@@ -57,6 +67,18 @@ def list_skills_endpoint():
     user_id = int(get_jwt_identity())
     records = list_skills_with_aggregates(user_id=user_id)
     payload = [map_skill_summary(rec).model_dump() for rec in records]
+    return jsonify({"ok": True, "skills": payload})
+
+
+@skill_api_bp.get("/overview")
+@jwt_required()
+def list_skills_overview_endpoint():
+    if not _phase12_skills_goals_enabled():
+        return _feature_disabled_response()
+
+    user_id = int(get_jwt_identity())
+    cards = list_skill_overview_cards(user_id=user_id)
+    payload = [SkillOverviewCardResponse.model_validate(card).model_dump() for card in cards]
     return jsonify({"ok": True, "skills": payload})
 
 
