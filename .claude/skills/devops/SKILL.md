@@ -55,6 +55,7 @@ phase5b-runner, prometheus, grafana, statsd-exporter, cadvisor, alertmanager
 - Feature flags: `ENABLE_PHASE{N}_{FEATURE_NAME}` env vars
 - Secrets: never commit `.env` files. Use `.env.example` as template.
 - Monitoring: every new service must export Prometheus metrics
+- Codecov patch coverage must measure runtime application code. Keep `codecov.yml` ignores for `lifeos/tests/**`, `lifeos/scripts/**`, and `scripts/**` unless explicitly running dedicated test/script coverage jobs.
 
 ### Git Workflow
 - **Never push directly to `main`.** All changes must go through a feature branch and pull request.
