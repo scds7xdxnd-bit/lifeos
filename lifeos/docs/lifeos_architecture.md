@@ -50,7 +50,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 9 Timeline Intelligence Foundations**: Complete; deterministic temporal pattern interpretation shipped with replay-stable windowing, baseline/version metadata, and approved-pair persistence support without introducing causal or predictive claims.
 - **Phase 11 First-Run Onboarding**: In progress; first-run onboarding wizard (domain selection, calendar source, animated processing, calendar redirect) using UserPreference storage. No migration required.
 - **Phase 12 Habit UX & Analytics**: In progress; Phase 12a–c complete (card UX fixes, streak engine, engagement layer). Phase 12d detailed and ready: HAB-022 (card polish), HAB-007 (master-detail), HAB-012 (time-aware cues), HAB-016 (ML prediction), HAB-018–020 (QA/CI/monitoring). Uses migration `20260322_habit_scheduled_time` for precise habit cue timing, plus new frontend components and ML baseline implementation.
-- **Phase 12 Skills Training v2 (Phase 0)**: Started; foundation alignment in progress with rollout feature flags (`ENABLE_PHASE12_SKILLS_GOALS`, `ENABLE_PHASE12_SKILLS_PATH`, `ENABLE_PHASE12_SKILLS_FORECAST`) and contract freeze for goal endpoint + progress semantics.
+- **Phase 12 Skills Training v2 (Phase 2)**: In progress; overview cards now support deterministic progress states with legacy fallback, and path/action flow rollout has started behind `ENABLE_PHASE12_SKILLS_GOALS` and `ENABLE_PHASE12_SKILLS_PATH`.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring

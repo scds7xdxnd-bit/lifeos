@@ -38,6 +38,7 @@ def map_session_response(session: PracticeSession) -> PracticeSessionResponse:
         skill_id=session.skill_id,
         duration_minutes=session.duration_minutes,
         intensity=session.intensity,
+        step_id=session.step_id,
         notes=session.notes,
         practiced_at=session.practiced_at,
     )

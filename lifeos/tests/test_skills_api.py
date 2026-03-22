@@ -1,6 +1,7 @@
 """Tests for Skills domain API endpoints."""
 
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from flask_jwt_extended import create_access_token
@@ -115,6 +116,8 @@ class TestSkillsAPI:
         data = resp.get_json()
         assert data["ok"] is True
         assert len(data["skills"]) == 2
+        assert data["summary"]["active"] == 2
+        assert "groups" in data
 
         by_name = {item["name"]: item for item in data["skills"]}
         completed_card = by_name["Completed Skill"]
@@ -126,6 +129,57 @@ class TestSkillsAPI:
         at_risk_card = by_name["At Risk Skill"]
         assert at_risk_card["progress_state"] == "at_risk"
         assert at_risk_card["risk_reason"] == "no_recent_sessions"
+
+    def test_get_skill_path_feature_disabled(self, app, client, test_user, auth_headers):
+        """Path endpoint is hidden when Phase 12 path flag is disabled."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Path Hidden Skill")
+
+        resp = client.get(f"/api/skills/{skill.id}/path", headers=auth_headers)
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["ok"] is False
+        assert data["error"] == "not_found"
+
+    def test_get_skill_path_enabled(self, app, client, test_user, auth_headers):
+        """Path endpoint returns deterministic training steps when enabled."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Path Ready Skill",
+                target_level=4,
+                current_level=1,
+            )
+            log_practice_session(
+                test_user.id,
+                skill.id,
+                duration_minutes=25,
+                practiced_at=datetime.utcnow() - timedelta(days=15),
+            )
+
+        resp = client.get(f"/api/skills/{skill.id}/path", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        path = data["path"]
+        assert path["skill_id"] == skill.id
+        assert path["progress_state"] == "at_risk"
+        assert path["risk_reason"] == "no_recent_sessions"
+        assert len(path["steps"]) >= 2
+        assert path["steps"][0]["action"] == "continue_practice"
+        assert path["next_recommended_step"] is not None
+        assert path["next_recommended_step"]["action"] in {"continue_practice", "setup_goal", "review_goal"}
+
+    def test_get_skill_path_not_found_when_enabled(self, app, client, auth_headers):
+        """Path endpoint returns not_found when feature is enabled but skill does not exist."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
+
+        resp = client.get("/api/skills/99999/path", headers=auth_headers)
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["ok"] is False
+        assert data["error"] == "not_found"
 
     def test_create_skill_success(self, client, csrf_headers):
         """Create a skill successfully."""
@@ -168,6 +222,39 @@ class TestSkillsAPI:
         data = resp.get_json()
         assert data["error"] == "duplicate"
 
+    def test_create_skill_requires_goal_when_phase12_goals_enabled(self, app, client, csrf_headers):
+        """When goals flag is enabled, creating skill without goal fails."""
+        app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        app.config["ENABLE_PHASE12_SKILLS_GOALS_STRICT"] = True
+        payload = {"name": "No Goal Skill"}
+        resp = client.post("/api/skills", json=payload, headers=csrf_headers)
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data["error"] == "goal_required"
+
+    def test_create_skill_allows_missing_goal_when_not_strict(self, app, client, csrf_headers):
+        """Goals rollout allows missing goal until strict mode is enabled."""
+        app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        app.config["ENABLE_PHASE12_SKILLS_GOALS_STRICT"] = False
+        payload = {"name": "Legacy Client Skill"}
+        resp = client.post("/api/skills", json=payload, headers=csrf_headers)
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data["ok"] is True
+
+    def test_create_skill_with_goal_when_phase12_goals_enabled(self, app, client, csrf_headers):
+        """When goals flag is enabled, creating skill with goal fields succeeds."""
+        app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        payload = {
+            "name": "Goal Ready Skill",
+            "goal_type": "sessions",
+            "goal_target_value": 12,
+        }
+        resp = client.post("/api/skills", json=payload, headers=csrf_headers)
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data["ok"] is True
+
     def test_create_skill_unauthorized(self, client):
         """Creating skill without auth fails."""
         payload = {"name": "Kubernetes"}
@@ -176,6 +263,7 @@ class TestSkillsAPI:
 
     def test_get_skill_detail(self, app, client, test_user, auth_headers):
         """Get detailed skill information."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
         with app.app_context():
             skill = create_skill(test_user.id, name="GraphQL", category="API")
             skill_id = skill.id
@@ -185,6 +273,24 @@ class TestSkillsAPI:
         data = resp.get_json()
         assert data["ok"] is True
         assert data["skill"]["name"] == "GraphQL"
+        assert "goal" in data
+        assert "path" in data
+        assert "current_step" in data
+        assert "history" in data
+
+    def test_get_skill_detail_when_path_disabled_returns_null_path_fields(self, app, client, test_user, auth_headers):
+        """Detail endpoint preserves shape and returns null path fields when path flag is disabled."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = False
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Detail No Path")
+
+        resp = client.get(f"/api/skills/{skill.id}", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["goal"] is None
+        assert data["path"] is None
+        assert data["current_step"] is None
 
     def test_get_skill_not_found(self, client, auth_headers):
         """Get non-existent skill returns 404."""
@@ -211,6 +317,17 @@ class TestSkillsAPI:
         resp = client.patch("/api/skills/99999", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
 
+    def test_update_skill_validation_error(self, app, client, test_user, csrf_headers):
+        """Invalid payload for update returns validation_error."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Validation Skill")
+
+        payload = {"goal_target_value": 0}
+        resp = client.patch(f"/api/skills/{skill.id}", json=payload, headers=csrf_headers)
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data["error"] == "validation_error"
+
     def test_delete_skill(self, app, client, test_user, csrf_headers):
         """Delete an existing skill."""
         with app.app_context():
@@ -236,6 +353,7 @@ class TestPracticeSessionAPI:
 
     def test_log_practice_success(self, app, client, test_user, csrf_headers):
         """Log a practice session successfully."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
         with app.app_context():
             skill = create_skill(test_user.id, name="Angular")
             skill_id = skill.id
@@ -250,6 +368,68 @@ class TestPracticeSessionAPI:
         data = resp.get_json()
         assert data["ok"] is True
         assert data["session"]["duration_minutes"] == 60
+        assert "next_recommended_step" in data
+
+    def test_log_practice_with_step_id(self, app, client, test_user, csrf_headers):
+        """Practice logging supports optional step_id."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Typed Step Skill")
+            skill_id = skill.id
+
+        payload = {
+            "duration_minutes": 30,
+            "step_id": 2,
+            "notes": "Worked on step 2",
+        }
+        resp = client.post(f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["session"]["step_id"] == 2
+
+    def test_log_practice_with_path_disabled_returns_null_next_step(self, app, client, test_user, csrf_headers):
+        """When path feature is disabled, practice response returns explicit null next step."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = False
+        with app.app_context():
+            skill = create_skill(test_user.id, name="No Path Next Step")
+
+        payload = {"duration_minutes": 30}
+        resp = client.post(f"/api/skills/{skill.id}/practice", json=payload, headers=csrf_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["next_recommended_step"] is None
+
+    def test_log_practice_uses_resolver_when_path_missing_recommended_step(self, app, client, test_user, csrf_headers):
+        """Practice endpoint falls back to resolver when path payload omits next_recommended_step."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Resolver Fallback Skill")
+
+        payload = {"duration_minutes": 30}
+        mocked_path = {
+            "skill_id": skill.id,
+            "progress_state": "on_track",
+            "risk_reason": None,
+            "goal": None,
+            "steps": [
+                {
+                    "step_id": "continue_practice",
+                    "label": "Continue Practice",
+                    "status": "ready",
+                    "action": "continue_practice",
+                }
+            ],
+            "next_recommended_step": None,
+        }
+        with patch("lifeos.domains.skills.controllers.skill_api.get_skill_path", return_value=mocked_path):
+            resp = client.post(f"/api/skills/{skill.id}/practice", json=payload, headers=csrf_headers)
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["next_recommended_step"] is not None
+        assert data["next_recommended_step"]["step_id"] == "continue_practice"
 
     def test_log_practice_with_timestamp(self, app, client, test_user, csrf_headers):
         """Log practice session with custom timestamp."""
@@ -299,6 +479,18 @@ class TestPracticeSessionAPI:
         payload = {"duration_minutes": 60}
         resp = client.patch("/api/skills/practice/99999", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
+
+    def test_update_practice_validation_error(self, app, client, test_user, csrf_headers):
+        """Invalid payload for practice update returns validation_error."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Update Practice Validation")
+            session = log_practice_session(test_user.id, skill.id, duration_minutes=20)
+
+        payload = {"duration_minutes": 0}
+        resp = client.patch(f"/api/skills/practice/{session.id}", json=payload, headers=csrf_headers)
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data["error"] == "validation_error"
 
     def test_delete_practice_session(self, app, client, test_user, csrf_headers):
         """Delete a practice session."""

@@ -16,9 +16,12 @@ from lifeos.domains.skills.services.skill_service import (
     create_skill,
     delete_practice_session,
     delete_skill,
+    get_skill_path,
     get_skill_summary,
+    list_skill_overview_cards,
     list_skills_with_aggregates,
     log_practice_session,
+    resolve_next_recommended_step,
     update_practice_session,
     update_skill,
 )
@@ -341,6 +344,102 @@ class TestSkillProgress:
             assert summary is not None
             assert summary["totals"].get("total_minutes", 0) == 0
             assert summary["totals"].get("session_count", 0) == 0
+
+
+class TestSkillPhase12Derivations:
+    """Covers deterministic path and overview derivations for Phase 12."""
+
+    def test_overview_cards_no_goal_is_at_risk_and_requires_setup(self, app, test_user):
+        with app.app_context():
+            create_skill(test_user.id, name="No Goal Skill")
+            cards = list_skill_overview_cards(user_id=test_user.id)
+
+            assert len(cards) == 1
+            card = cards[0]
+            assert card["goal"] is None
+            assert card["requires_goal_setup"] is True
+            assert card["progress_state"] == "at_risk"
+            assert card["risk_reason"] == "no_recent_sessions"
+
+    def test_overview_cards_hours_goal_can_complete(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Hours Goal Skill",
+                goal_type="hours",
+                goal_target_value=1,
+            )
+            log_practice_session(test_user.id, skill.id, duration_minutes=60)
+
+            cards = list_skill_overview_cards(user_id=test_user.id)
+            card = next(c for c in cards if c["skill_id"] == skill.id)
+            assert card["goal"] is not None
+            assert card["goal"]["goal_type"] == "hours"
+            assert card["progress_state"] == "completed"
+            assert card["requires_goal_setup"] is False
+
+    def test_get_skill_path_without_goal_includes_define_goal_step(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Path No Goal")
+            payload = get_skill_path(user_id=test_user.id, skill_id=skill.id)
+
+            assert payload is not None
+            step_ids = {step["step_id"] for step in payload["steps"]}
+            assert "define_goal" in step_ids
+
+    def test_get_skill_path_completed_goal_includes_raise_target(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Path Completed Goal",
+                goal_type="sessions",
+                goal_target_value=1,
+            )
+            log_practice_session(test_user.id, skill.id, duration_minutes=20)
+
+            payload = get_skill_path(user_id=test_user.id, skill_id=skill.id)
+            assert payload is not None
+            step_ids = {step["step_id"] for step in payload["steps"]}
+            assert "raise_target" in step_ids
+            assert payload["progress_state"] == "completed"
+
+    def test_get_skill_path_on_track_goal_includes_review_progress(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Path On Track Goal",
+                goal_type="sessions",
+                goal_target_value=5,
+            )
+            log_practice_session(test_user.id, skill.id, duration_minutes=15)
+
+            payload = get_skill_path(user_id=test_user.id, skill_id=skill.id)
+            assert payload is not None
+            step_ids = {step["step_id"] for step in payload["steps"]}
+            assert "review_progress" in step_ids
+            assert "recover_consistency" not in step_ids
+            assert payload["progress_state"] == "on_track"
+
+    def test_resolve_next_recommended_step_fallback_order(self):
+        assert resolve_next_recommended_step([]) is None
+
+        ready_first = resolve_next_recommended_step(
+            [
+                {"step_id": "alpha", "status": "ready"},
+                {"step_id": "beta", "status": "blocked"},
+            ]
+        )
+        assert ready_first is not None
+        assert ready_first["step_id"] == "alpha"
+
+        first_when_no_ready = resolve_next_recommended_step(
+            [
+                {"step_id": "blocked-1", "status": "blocked"},
+                {"step_id": "blocked-2", "status": "blocked"},
+            ]
+        )
+        assert first_when_no_ready is not None
+        assert first_when_no_ready["step_id"] == "blocked-1"
 
 
 # ============== Event Emission Tests ==============
