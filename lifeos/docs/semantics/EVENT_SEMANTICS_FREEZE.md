@@ -48,6 +48,8 @@ Format:
 - habits.habit.logged: A habit occurrence was logged. asserted_by=user, certainty=confirmed
 - habits.habit.deleted: A habit definition was deleted. asserted_by=user, certainty=confirmed
 - habits.habit.inferred: A habit occurrence was inferred from a calendar event. asserted_by=system, certainty=needs_review
+- habits.stat.recomputed: Materialized habit statistics were recalculated after a log change. asserted_by=system, certainty=confirmed (Phase 12)
+- habits.habit.streak_milestone: A habit streak crossed a milestone threshold (7/30/100 days). asserted_by=system, certainty=confirmed (Phase 12)
 
 ## Health
 - health.biometric.logged: A biometric record was logged. asserted_by=user, certainty=confirmed

@@ -1,5 +1,5 @@
 # LifeOS Architecture Constitution
-_Last updated: 2026-03-21 (v2.23 — CI/CD auto-deploy to Fly.io, CSRF bypass for JWT requests, CORS origin fix, legacy workflow cleanup)_
+_Last updated: 2026-03-22 (v2.26 — Phase 12d Habit Studio UX refinement: modal create flow, frequency terminology, 12-hour preferred-time input, multilingual encouraging copy, rotating tips)_
 
 This file is normative. It defines boundaries, foldering, events, naming, migrations, and integration rules. All implementation teams (backend, frontend, ML, DevOps, QA, DB) must align with it.
 
@@ -49,6 +49,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Phase 8.1 Inquiry Productization and Decision-Useful Briefs**: Complete; direct-answer shaping, deterministic evidence relevance ordering, answerability metadata, and concise limitation/refine guidance verified without expanding inference breadth.
 - **Phase 9 Timeline Intelligence Foundations**: Complete; deterministic temporal pattern interpretation shipped with replay-stable windowing, baseline/version metadata, and approved-pair persistence support without introducing causal or predictive claims.
 - **Phase 11 First-Run Onboarding**: In progress; first-run onboarding wizard (domain selection, calendar source, animated processing, calendar redirect) using UserPreference storage. No migration required.
+- **Phase 12 Habit UX & Analytics**: In progress; Phase 12a–c complete (card UX fixes, streak engine, engagement layer). Phase 12d detailed and ready: HAB-022 (card polish), HAB-007 (master-detail), HAB-012 (time-aware cues), HAB-016 (ML prediction), HAB-018–020 (QA/CI/monitoring). Requires 1 remaining migration (`20260321_habit_scheduled_time`), 3 new frontend components, and ML model implementation.
 
 ## ✅ Deployed & Running
 - **Backend**: Flask app in production at `lifeos/` with Gunicorn + Prometheus monitoring
@@ -358,6 +359,8 @@ Planned (approved, not yet in repo; Phase 10 humanization):
     - deactivated payload: {habit_id, user_id, deactivated_at}
     - deleted payload: {habit_id, user_id, deleted_at}
   - `habits.habit.logged` → {log_id, habit_id, user_id, logged_date, value?, note?}
+  - `habits.stat.recomputed` → {habit_id, user_id, current_streak, longest_streak, completion_rate_30d, total_logs, payload_version} _(Phase 12)_
+  - `habits.habit.streak_milestone` → {habit_id, user_id, streak_length, milestone_type (7|30|100), achieved_at, payload_version} _(Phase 12)_
   - `health.biometric.logged` → {biometric_id, user_id, date, weight?, body_fat_pct?, resting_hr?, energy_level?, stress_level?}
   - `health.workout.logged` → {workout_id, user_id, date, workout_type, duration_minutes, intensity, calories_est?}
   - `health.nutrition.logged` → {nutrition_id, user_id, date, meal_type, calories_est?, quality_score?}
@@ -486,9 +489,17 @@ Planned (approved, not yet in repo; Phase 10 humanization):
 - `finance_receivable_tracker`, `finance_receivable_manual_entry` (AR tracking)
 - `finance_loan_group`, `finance_loan_group_link` (loan aggregation)
 
-**Habits (2 tables):**
-- `habit` (habit definitions with schedule_type, target_count, is_active)
+**Habits (3 tables):**
+- `habit` (habit definitions with schedule_type, target_count, is_active, scheduled_time)
+  - Phase 12 addition: `scheduled_time` (time, nullable) — precise time for time-aware cues; coexists with existing `time_of_day` (varchar)
 - `habit_log` (daily habit recordings)
+- `habit_stat` (materialized statistics, Phase 12)
+  - id (PK), habit_id (FK → habits_habit.id, unique, indexed), user_id (FK → user.id, indexed)
+  - current_streak (integer, default 0), longest_streak (integer, default 0)
+  - completion_rate_30d (float, nullable, 0.0–1.0), total_logs (integer, default 0)
+  - last_logged_at (date, nullable), updated_at (timestamp, auto-update)
+  - Recomputed on every log create/delete via service layer; serves frontend detail panel and ML feature extraction
+  - Index: `(user_id)` for dashboard queries
 
 **Health (3 tables):**
 - `health_biometric` (weight, body_fat_pct, resting_hr; energy_level, stress_level as derivations)
@@ -1586,6 +1597,222 @@ Private alpha is a tightly scoped, invite-only, inquiry-first release for 10–3
 ## 28.6 Docs and execution reference
 - Execution brief: `lifeos/docs/tasks/private_alpha_architecture_cut.md`
 - UI binding remains governed by `lifeos/docs/ui_ux_constitution.md`.
+
+---
+
+# 29. Phase 12 — Habit UX & Analytics (Planned)
+
+_20 tickets (HAB-001 through HAB-020) across 4 sub-phases. Extends the habits domain with streak visualization, materialized analytics, engagement feedback loops, desktop master-detail layout, and ML prediction foundation._
+
+## 29.1 Motivation
+The habits domain has a complete backend lifecycle (CRUD, logging, streaks, events) but the frontend surfaces raw data with minimal psychological engagement. Habit apps succeed through cue→action→reward loops. This phase adds the reward layer (streaks, animations, milestones), the cue layer (time-aware nudges), and the analytical infrastructure to power future intelligence.
+
+## 29.2 Sub-phases
+
+### Phase 12a — Quick Wins (HAB-002, HAB-003, HAB-008, HAB-009)
+**Scope:** Frontend-only. No backend/DB changes.
+- **HAB-002**: Fix timestamp display — replace raw GMT strings with relative time (`Today`, `Yesterday`, `3 days ago`, `Mar 18`)
+- **HAB-003**: Redesign LOG button as primary CTA — filled olive/navy, min 44px touch target, hover/press animation
+- **HAB-008**: Standardize spacing to 8px grid (8, 16, 24, 32, 48, 64px increments)
+- **HAB-009**: Reduce "Your Habits" section header weight — subordinate to habit names in visual hierarchy
+
+### Phase 12b — Core Features (HAB-014, HAB-015, HAB-017, HAB-001, HAB-004)
+**Scope:** DB migration + backend streak engine + QA + frontend streak display.
+- **HAB-014**: Migration `20260321_habit_stat_table.py` — new `habit_stat` table (see ERD §3)
+- **HAB-015**: Streak calculation service — timezone-aware day boundary, gap detection, configurable grace period, recalculates on log insert/delete
+- **HAB-017**: Streak accuracy test suite — timezone, DST, backdated, concurrent, grace period edge cases
+- **HAB-001**: Streak counter on habit card — prominent number with flame icon, persists across sessions
+- **HAB-004**: DONE badge + LOG button state conflict — LOG transforms to "Undo" when completed today; backend supports log deletion for undo
+
+### Phase 12c — Engagement Layer (HAB-005, HAB-006, HAB-010, HAB-011, HAB-013)
+**Scope:** Analytics API endpoints + frontend engagement features.
+- **HAB-013**: Analytics API endpoints:
+  - `GET /api/habits/<id>/stats` → {current_streak, longest_streak, completion_rate_30d, total_logs}
+  - `GET /api/habits/<id>/history?range=7d|30d|90d` → [{date, logged, value?}, ...]
+  - `GET /api/habits/<id>/heatmap?year=2026` → [{date, logged}, ...] (365 entries)
+  - All endpoints: JWT auth, user-scoped, response time < 200ms
+- **HAB-005**: 7-day completion dot row — horizontal dots (Mon–Sun or rolling 7), filled=completed, empty=missed
+- **HAB-006**: Completion rate percentage — `X% this month` computed from habit_stat; ML team stores as training feature
+- **HAB-010**: Logging micro-animation — checkmark (200–400ms), streak counter increment animation, milestone celebrations (7/30/100-day confetti)
+- **HAB-011**: Empty state redesign — illustration, motivational copy, primary CTA, optional starter habit suggestions
+
+### Phase 12d — Desktop & Intelligence (HAB-007, HAB-012, HAB-016, HAB-018, HAB-019, HAB-020, HAB-022, HAB-023)
+**Scope:** Desktop layout, time-aware cues, ML foundation, UX polish, QA, DevOps.
+
+#### HAB-022: Card UX Polish (Frontend-only)
+- **Log button icon:** Add `Check` (lucide-react) icon to the left of "LOG" text; add `Undo2` icon to the left of "Undo" text
+- **Completed card dimming:** Completed-today cards get `opacity: 0.65` on the card body EXCEPT the streak badge (streak badge stays full opacity via `opacity: 1` override). Achieves "done, move on" visual hierarchy.
+- **Log button hover suppression:** When `completed_today === true` (Undo state), remove `translateY`/`scale`/`boxShadow` hover effects — the button should feel inert, not inviting.
+- **Delete confirmation dialog:** When the user clicks the delete button (trash icon) on a habit card, show a confirmation dialog (`AlertDialog` from shadcn/ui) with: habit name in the message body, destructive-styled "Delete" button, neutral "Cancel" button. Do NOT delete without confirmation. Dialog copy: "This will permanently delete **{habit name}** and all its logs. This cannot be undone."
+
+#### HAB-007: Master-detail split layout (desktop)
+- **Layout structure:** At `≥1024px`, the habits page becomes a two-panel layout:
+  - **Left panel (60%):** Existing habit card list (scrollable)
+  - **Right panel (40%):** Detail panel for the currently selected habit
+- **Selection model:** Clicking a habit card selects it (adds `selectedHabitId` state). On desktop, the detail panel shows; on mobile/tablet (<1024px), tapping a card still shows only the list (detail panel hidden). Future: mobile detail could be a drawer/sheet.
+- **Detail panel contents:** Streak chart (line chart of 30-day history from `/history?range=30d`), yearly heatmap (from `/heatmap`), stats summary (from `/stats`), habit description/notes.
+- **Components:**
+  - `HabitDetailPanel` at `frontend/app/(app)/habits/_components/HabitDetailPanel.tsx` — the right panel container
+  - `HabitHeatmap` at `frontend/app/(app)/habits/_components/HabitHeatmap.tsx` — yearly calendar heatmap (GitHub-style, sage palette)
+  - `HabitStreakChart` at `frontend/app/(app)/habits/_components/HabitStreakChart.tsx` — 30-day line/bar chart
+- **Responsive collapse:** Below 1024px, only the card list renders. The detail panel is conditionally rendered via CSS (`hidden lg:block`) or a media query check.
+- **Empty selection state:** When no habit is selected (or on initial load on desktop), the detail panel shows a placeholder: "Select a habit to see its analytics" with a leaf illustration or subtle icon.
+
+#### HAB-012: Time-aware cue messaging
+- **Migration 2 required:** `20260321_habit_scheduled_time.py` — adds `scheduled_time` (Time, nullable) to `habits_habit`
+- **Backend:** Add `scheduled_time` to `HabitCreate`, `HabitUpdate`, `HabitSummaryResponse`, and `HabitDetailResponse` schemas. Expose in list endpoint payload.
+- **Frontend cue logic:** For habits with `scheduled_time` set:
+  - Before scheduled time: show "Due in Xh Ym" in muted sage (`#5a6157`)
+  - Within 30 minutes: show "Due soon" in amber (`#b8860b`)
+  - After scheduled time (not logged): show "Overdue by Xh" in earthy coral (`#e8735c`)
+  - Already logged today: no cue shown (the card is already dimmed)
+- **Cue placement:** Below the 7-day dot row, same row as completion rate
+- **Time computation is client-side only.** The server stores `scheduled_time`; the frontend computes relative time using the user's local clock.
+
+#### HAB-023: Habit Studio create-flow refinement (Frontend-only)
+- **Create flow container:** Replace inline create form with a centered modal "Habit Studio" over the habits page.
+- **Layout:** Two-panel modal (`lg:grid-cols-5`) with form on the left (`3/5`) and live reflection panel on the right (`2/5`).
+- **Terminology:** Use **Frequency** instead of **Schedule** in the create flow labels and preview copy.
+- **Preferred time input:** Replace native `type="time"` input with explicit 12-hour controls (Hour, Minute, AM/PM). Serialize to 24-hour `scheduled_time` before POST/PATCH.
+- **Live reflection:** Right panel updates immediately from in-progress form state (name, frequency, preferred time, description).
+- **Encouraging copy model:** Base/near-ready/ready states are selected by readiness signals (action-focused name, frequency selected, time cue enabled, description context).
+- **Rotating guidance tip:** Bottom tip rotates every 5s with fade transition (same cadence pattern as auth testimonial rotation style).
+- **Visual language:** Modal and reflection panel align to habits blue accents (`#3a5272` / `#2e4460`), while preserving Botanical Editorial typography and clipped corners.
+- **Localization:** All Habit Studio reflection/encouragement copy and labels are localized for English, Korean, and Chinese.
+- **Dismiss behavior:** Modal closes via backdrop click, `Esc`, and Cancel button. No dedicated top-right close icon.
+
+#### HAB-016: Habit completion prediction model (foundation)
+- **Location:** `lifeos/domains/habits/ml/habit_prediction.py` (replace existing stub)
+- **Features:** `day_of_week` (0–6), `streak_length` (int), `completion_rate_7d` (float 0–1), `hours_since_last_log` (float)
+- **Model:** Logistic regression (scikit-learn `LogisticRegression`) — simplest baseline, deterministic, versioned
+- **Training:** Offline CLI script `lifeos/scripts/train_habit_model.py` reads from `habit_stat` + `habit_log`, trains per-user model, serializes to versioned artifact
+- **Evaluation:** AUC > 0.7 on held-out test set (80/20 split)
+- **Output:** `P(completion_today)` float 0.0–1.0, stored in a new `habit_prediction` column on `habit_stat` (nullable float). NOT surfaced to users in this phase.
+- **Determinism rule:** `model_version` string stored alongside prediction. Same features + same model_version → same prediction.
+- **No migration for prediction storage in this phase.** Store in-memory only during batch run; persist to `habit_stat.predicted_completion` in Phase 13 when the column is added.
+
+#### HAB-018: Cross-device responsive testing (QA)
+- **Breakpoints to verify:** 375px (mobile S), 414px (mobile L), 768px (tablet), 1024px (breakpoint boundary), 1440px (desktop)
+- **Checkpoints:** Touch target ≥44px, animation frame budget <16ms, no horizontal scroll, text legible without zoom, master-detail collapse at 1023px
+- **Automation:** Playwright viewport matrix test in `lifeos/tests/e2e/` (if e2e infra exists) or manual QA checklist
+
+#### HAB-019: CI/CD for analytics pipeline (DevOps)
+- **Migration CI:** Add analytics migration check to PR pipeline — verify `alembic heads` returns single head, `alembic upgrade head` succeeds on test DB
+- **API integration tests:** Add habit analytics endpoints to integration test suite — verify `/stats`, `/history`, `/heatmap` return correct shapes and user-scoped data
+- **ML validation gate:** Add model training smoke test to CI — train on fixture data, assert AUC > 0.6 (relaxed for CI fixture data), assert output shape
+
+#### HAB-020: Performance monitoring (DevOps)
+- **APM:** Add timing middleware or decorator to analytics endpoints (`/stats`, `/history`, `/heatmap`)
+- **Alerting:** p95 > 200ms triggers warning; p95 > 500ms triggers alert
+- **Slow query log:** Log queries exceeding 100ms in analytics endpoints at WARNING level
+
+## 29.3 DB changes
+
+### Migration 1: `20260321_habit_stat_table.py`
+**New table: `habit_stat`**
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | Integer | PK, autoincrement |
+| habit_id | Integer | FK → habits_habit.id, UNIQUE, NOT NULL, ON DELETE CASCADE |
+| user_id | Integer | FK → user.id, NOT NULL, indexed |
+| current_streak | Integer | NOT NULL, default 0 |
+| longest_streak | Integer | NOT NULL, default 0 |
+| completion_rate_30d | Float | nullable, 0.0–1.0 |
+| total_logs | Integer | NOT NULL, default 0 |
+| last_logged_at | Date | nullable |
+| updated_at | DateTime | NOT NULL, default utcnow, onupdate utcnow |
+
+- **Backfill:** After table creation, backfill from existing `habit_log` data using the streak calculation service.
+- **Depends on:** none (additive)
+
+### Migration 2: `20260321_habit_scheduled_time.py`
+**Alter table: `habits_habit`**
+- ADD COLUMN `scheduled_time` (Time, nullable) — precise scheduled time for cue messaging
+- Existing `time_of_day` (varchar) retained for backward compatibility
+- **Depends on:** none (additive)
+
+## 29.4 New events
+| Event | Payload | Version | Trigger |
+|-------|---------|---------|---------|
+| `habits.stat.recomputed` | {habit_id, user_id, current_streak, longest_streak, completion_rate_30d, total_logs} | v1 | After log create/delete when stat row is recalculated |
+| `habits.habit.streak_milestone` | {habit_id, user_id, streak_length, milestone_type (7\|30\|100), achieved_at} | v1 | When streak crosses a milestone threshold |
+
+- `habits.habit.streak_milestone` feeds `habits_rules.py` in the insights engine for milestone notifications.
+
+## 29.5 New API endpoints (Phase 12c)
+All under existing blueprint prefix `/api/habits`. JWT auth required.
+| Method | Path | Response | Notes |
+|--------|------|----------|-------|
+| GET | `/<id>/stats` | `HabitStatsResponse` | Reads from `habit_stat` table |
+| GET | `/<id>/history` | `HabitHistoryResponse` | Query params: `range` (7d\|30d\|90d), paginated |
+| GET | `/<id>/heatmap` | `HabitHeatmapResponse` | Query params: `year` (int), returns 365 entries |
+
+## 29.6 Frontend surface
+
+### Phase 12a (frontend-only)
+- **Location:** `frontend/app/(app)/habits/page.tsx`
+- **Changes:** Timestamp formatting utility, LOG button redesign, 8px grid spacing, section header hierarchy
+
+### Phase 12b–c (new components)
+- **Location:** `frontend/app/(app)/habits/` + `frontend/components/habits/`
+- **New components:**
+  - `StreakBadge` — flame icon + streak count with animation
+  - `CompletionDots` — 7-day dot row
+  - `CompletionRate` — percentage display
+  - `LogAnimation` — micro-animation on log action
+  - `HabitEmptyState` — motivational empty state
+  - `HabitDetailPanel` — right panel for master-detail (Phase 12d)
+  - `HabitHeatmap` — yearly heatmap visualization (Phase 12d)
+
+### Phase 12d (layout + polish)
+- **HAB-022 (frontend-only):** Log button icon (Check/Undo2), completed card dimming (opacity 0.65 except streak), hover suppression on Undo button, delete confirmation AlertDialog
+- **HAB-007:** Master-detail: `frontend/app/(app)/habits/page.tsx` restructured with split layout (60/40 at ≥1024px, single column below)
+- **New components** (all under `frontend/app/(app)/habits/_components/`):
+  - `HabitDetailPanel.tsx` — right panel container, consumes `/stats`, `/history`, `/heatmap` via React Query
+  - `HabitHeatmap.tsx` — yearly calendar heatmap (GitHub-style, sage-green fills)
+  - `HabitStreakChart.tsx` — 30-day history line/bar visualization
+- **HAB-012:** Time-aware cue messaging — relative time display below dot row, client-side computation from `scheduled_time` field
+- **HAB-023:** Habit Studio modal create flow — frequency-first terminology, 12-hour preferred-time controls (AM/PM), multilingual encouraging live copy, rotating guidance tip, blue-aligned reflection panel
+
+## 29.7 ML surface (Phase 12d)
+- **Location:** `lifeos/domains/habits/ml/habit_prediction.py` (replace existing stub)
+- **Features:** day_of_week, streak_length, completion_rate_7d, hours_since_last_log
+- **Model:** Logistic regression or lightweight gradient boosting
+- **Training:** Offline batch from `habit_stat` + `habit_log`
+- **Evaluation:** AUC > 0.7 on held-out test set
+- **Output:** Probability of completion today (0.0–1.0), stored but not surfaced to users in this phase
+- **Determinism rule:** Model is versioned; same features + same model version → same prediction
+
+## 29.8 Dependencies
+```
+Phase 12a → (no deps, ship immediately) ✅ DONE
+Phase 12b → HAB-014 (DB) → HAB-015 (service) → HAB-017 (QA) → HAB-001 (FE+BE) → HAB-004 (FE+BE) ✅ DONE
+Phase 12c → HAB-013 (API) depends on HAB-014; HAB-010 depends on HAB-001 + HAB-003 ✅ DONE
+Phase 12d execution order:
+  HAB-022 (FE polish) → no deps, ship first
+  HAB-012 (time cues) → depends on Migration 2 (DB) → then BE schema update → then FE cue display
+  HAB-007 (master-detail) → depends on HAB-005 + HAB-006 (✅ done) + HAB-013 (✅ done); ship after HAB-022
+  HAB-023 (Habit Studio refinement) → FE-only; depends on HAB-007 + HAB-012 baseline interactions
+  HAB-016 (ML) → depends on HAB-014 (✅ done) + HAB-013 (✅ done); can run in parallel with HAB-007
+  HAB-018 (QA) → depends on HAB-007 + HAB-012 completion; final verification
+  HAB-019 (CI/CD) → can start in parallel with HAB-007
+  HAB-020 (monitoring) → can start in parallel with HAB-007
+```
+
+## 29.9 Boundaries
+- Streak calculation is deterministic: facts from logs only, no inference or prediction.
+- ML prediction (HAB-016) outputs are stored but NOT surfaced to users in this phase. No predictive claims in the UI.
+- `scheduled_time` is user-set only; no AI-suggested scheduling.
+- Milestone celebrations are client-side only (no server-rendered notifications in this phase).
+- Master-detail layout does NOT introduce a new route; it's a layout change within `/habits`.
+- Analytics endpoints serve the UI; they do NOT power external dashboards or exports.
+- Habit Studio 12-hour controls are a presentation-layer UX decision; backend `scheduled_time` remains 24-hour time semantics.
+
+## 29.10 Docs and execution references
+- Ticket board: `lifeos_habit_improvements.xlsx` (20 tickets, HAB-001 through HAB-020)
+- UI binding: `lifeos/docs/ui_ux_constitution.md` §5 Habits contract
+- Design: `DESIGN.md` (Botanical Editorial tokens)
+- Semantic contract: `lifeos/docs/semantics/DOMAIN_SEMANTIC_CONTRACTS.md` §Habits
 
 ---
 

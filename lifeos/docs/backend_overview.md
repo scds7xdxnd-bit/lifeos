@@ -27,7 +27,7 @@ Backend does not own:
 - Finance: accounts, journal entries/lines, transactions, schedules/forecasts, receivables/loans, trial balance.
 - Journal: personal entries with mood/tags and signals for insights.
 - Projects: projects, tasks, task logs, lifecycle events.
-- Habits: habit definitions, logs, streaks, metrics.
+- Habits: habit definitions, logs, streaks, materialized analytics (completion rates, stats), time-aware scheduling.
 - Health: biometrics, workouts, nutrition logs.
 - Relationships: people, interactions, reconnect cues.
 - Skills: skills, practice sessions, metrics.
@@ -100,7 +100,7 @@ Client -> API route -> Auth (JWT/session + roles) -> Controller -> Service -> OR
 - Finance: Account, AccountCategory, JournalEntry, JournalEntryLine, Transaction, TrialBalance, MoneyScheduleRow, Receivable, Loan.
 - Journal: JournalEntry (text, mood, tags).
 - Projects: Project, ProjectTask, ProjectTaskLog.
-- Habits: Habit, HabitLog, HabitStreak, HabitMetric.
+- Habits: Habit, HabitLog, HabitStat (materialized analytics — streak, completion rate, totals).
 - Health: Biometrics, Workout, NutritionLog.
 - Relationships: Person, Interaction, ReconnectCue.
 - Skills: Skill, PracticeSession, SkillMetric.

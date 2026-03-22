@@ -13,11 +13,18 @@ import { Waitlist } from './sections/Waitlist';
 import { Footer } from './sections/Footer';
 
 export default function LandingPage() {
-  const [lang, setLang] = useLang();
+  const [lang, setLang, isHydrated] = useLang();
   const t = translations[lang];
 
   return (
-    <div style={{ background: colors.background, overflowX: 'hidden' }}>
+    <div
+      style={{
+        background: colors.background,
+        overflowX: 'hidden',
+        opacity: isHydrated ? 1 : 0.985,
+        transition: 'opacity 140ms ease',
+      }}
+    >
       <NavBar t={t.nav} lang={lang} setLang={setLang} />
       {/* key={lang} forces full remount on language switch so framer-motion
           animations (whileInView once:true) re-trigger for new content */}

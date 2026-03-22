@@ -573,6 +573,22 @@ def _domain_metric_labels(
     }
 
 
+# --- HAB-020: Habits analytics endpoint metrics ---
+
+HABITS_ANALYTICS_LATENCY_SECONDS = Histogram(
+    "lifeos_habits_analytics_latency_seconds",
+    "Habits analytics endpoint latency in seconds",
+    ["endpoint"],
+    buckets=(0.01, 0.025, 0.05, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0),
+)
+
+HABITS_STAT_RECOMPUTE_LATENCY_SECONDS = Histogram(
+    "lifeos_habits_stat_recompute_latency_seconds",
+    "HabitStat recomputation latency in seconds",
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5),
+)
+
+
 # Pre-register a default label set so histograms appear even without traffic.
 HTTP_REQUEST_LATENCY_SECONDS.labels(method="GET", route="unknown", status_code="200")
 EVENT_DISPATCH_LATENCY_SECONDS.observe(0)
@@ -1444,3 +1460,20 @@ def record_inquiry_feedback_submission(
         deduped=deduped_label,
         **domain_labels,
     ).inc()
+
+
+# --- HAB-020: Habits analytics metric recorders ---
+
+
+def record_habits_analytics_latency(endpoint: str, duration_seconds: float) -> None:
+    """Record latency for a habits analytics endpoint."""
+    if duration_seconds is None:
+        return
+    HABITS_ANALYTICS_LATENCY_SECONDS.labels(endpoint=endpoint).observe(max(0.0, duration_seconds))
+
+
+def record_habits_stat_recompute_latency(duration_seconds: float) -> None:
+    """Record latency for habit stat recomputation."""
+    if duration_seconds is None:
+        return
+    HABITS_STAT_RECOMPUTE_LATENCY_SECONDS.observe(max(0.0, duration_seconds))

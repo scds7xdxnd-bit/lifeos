@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -24,6 +24,7 @@ class Habit(db.Model):
     schedule_type: Mapped[str] = mapped_column(db.String(32), nullable=False, default="daily")
     target_count: Mapped[int | None] = mapped_column(nullable=True)
     time_of_day: Mapped[str | None] = mapped_column(db.String(32))
+    scheduled_time: Mapped[time | None] = mapped_column(db.Time)
     difficulty: Mapped[str | None] = mapped_column(db.String(32))
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
@@ -34,6 +35,34 @@ class Habit(db.Model):
         back_populates="habit",
         cascade="all, delete-orphan",
     )
+    stat: Mapped["HabitStat | None"] = relationship(
+        "HabitStat",
+        back_populates="habit",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+class HabitStat(db.Model):
+    """Materialized habit statistics — recomputed on every log create/delete."""
+
+    __tablename__ = "habits_habit_stat"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    habit_id: Mapped[int] = mapped_column(
+        db.ForeignKey("habits_habit.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
+    current_streak: Mapped[int] = mapped_column(default=0, nullable=False)
+    longest_streak: Mapped[int] = mapped_column(default=0, nullable=False)
+    completion_rate_30d: Mapped[float | None] = mapped_column(db.Float)
+    total_logs: Mapped[int] = mapped_column(default=0, nullable=False)
+    last_logged_at: Mapped[date | None] = mapped_column(db.Date)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    habit: Mapped[Habit] = relationship("Habit", back_populates="stat")
 
 
 class HabitLog(db.Model):

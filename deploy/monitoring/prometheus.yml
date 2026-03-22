@@ -10,6 +10,7 @@ rule_files:
   - 'rules.yml'
   - 'phase3b-alerts.yml'
   - 'phase6-inquiry-alerts.yml'
+  - 'phase12d-habits-alerts.yml'
 
 scrape_configs:
   # Prometheus self-monitoring

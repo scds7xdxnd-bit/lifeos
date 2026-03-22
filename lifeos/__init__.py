@@ -14,7 +14,7 @@ from flask_login import current_user
 from sqlalchemy import text
 from sqlalchemy.engine import processors
 
-from lifeos.config import config_by_name
+from lifeos.config import _build_dev_cors_origins, config_by_name
 from lifeos.core.auth.csrf import generate_csrf_token, get_session_id
 from lifeos.core.events.event_bus import event_bus
 from lifeos.core.insights.engine import insights_engine
@@ -62,6 +62,8 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     )
     config_cls = config_by_name.get(env_name, config_by_name["development"])
     app.config.from_object(config_cls)
+    if env_name in {"development", "local-dev"}:
+        app.config["CORS_ORIGINS"] = _build_dev_cors_origins()
 
     # Ensure instance folders exist (uploads, migrations)
     instance_root.mkdir(parents=True, exist_ok=True)

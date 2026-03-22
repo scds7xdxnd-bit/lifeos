@@ -183,3 +183,29 @@
 .float-a { animation: floatA 4.6s ease-in-out infinite; }
 .float-b { animation: floatB 5.4s ease-in-out infinite 1s; }
 .float-c { animation: floatC 4.0s ease-in-out infinite 1.8s; }
+
+/* HAB-005: pulsing ring for today's unfilled dot */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* HAB-010: checkmark pop on log */
+@keyframes check-pop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.check-pop { animation: check-pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* HAB-010: milestone celebration burst */
+@keyframes celebrate-ring {
+  0%   { transform: scale(0.5); opacity: 0.8; box-shadow: 0 0 0 0 rgba(75,102,70,0.4); }
+  60%  { transform: scale(1); opacity: 0.4; box-shadow: 0 0 0 12px rgba(75,102,70,0); }
+  100% { transform: scale(1); opacity: 0; box-shadow: 0 0 0 20px rgba(75,102,70,0); }
+}
+.celebrate-ring {
+  position: absolute; inset: -4px; border-radius: 0 12px 12px 12px;
+  pointer-events: none; animation: celebrate-ring 1.5s ease-out forwards;
+  border: 2px solid #4b6646;
+}

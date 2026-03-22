@@ -318,6 +318,18 @@ EVENT_SEMANTIC_CONTRACTS: dict[str, EventSemanticContract] = {
         asserted_by="system",
         certainty="needs_review",
     ),
+    "habits.stat.recomputed": EventSemanticContract(
+        event_type="habits.stat.recomputed",
+        meaning="Materialized habit statistics were recomputed after a log change.",
+        asserted_by="system",
+        certainty="confirmed",
+    ),
+    "habits.habit.streak_milestone": EventSemanticContract(
+        event_type="habits.habit.streak_milestone",
+        meaning="A habit streak crossed a configured milestone threshold.",
+        asserted_by="system",
+        certainty="confirmed",
+    ),
     # Health
     "health.biometric.logged": EventSemanticContract(
         event_type="health.biometric.logged",

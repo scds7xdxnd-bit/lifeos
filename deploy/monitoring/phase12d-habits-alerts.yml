@@ -1,0 +1,65 @@
+groups:
+  - name: lifeos_phase12d_habits_analytics
+    rules:
+      # -------------------------
+      # Metrics presence
+      # -------------------------
+      - alert: HabitsAnalyticsMetricsMissing
+        expr: |
+          absent(lifeos_habits_analytics_latency_seconds_bucket)
+          or absent(lifeos_habits_stat_recompute_latency_seconds_bucket)
+        for: 5m
+        labels:
+          severity: warning
+          phase: "12d"
+        annotations:
+          summary: "Habits analytics metrics missing"
+          description: "Habits analytics latency metrics are not being scraped."
+
+      # -------------------------
+      # Analytics endpoint latency — warning at p95 > 200ms
+      # -------------------------
+      - alert: HabitsAnalyticsLatencyWarning
+        expr: |
+          histogram_quantile(0.95,
+            rate(lifeos_habits_analytics_latency_seconds_bucket[5m])
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          phase: "12d"
+        annotations:
+          summary: "Habits analytics p95 latency > 200ms"
+          description: "Habits analytics endpoints p95 latency is {{ $value | humanizeDuration }}, exceeding 200ms warning threshold."
+
+      # -------------------------
+      # Analytics endpoint latency — critical at p95 > 500ms
+      # -------------------------
+      - alert: HabitsAnalyticsLatencyCritical
+        expr: |
+          histogram_quantile(0.95,
+            rate(lifeos_habits_analytics_latency_seconds_bucket[5m])
+          ) > 0.5
+        for: 3m
+        labels:
+          severity: critical
+          phase: "12d"
+        annotations:
+          summary: "Habits analytics p95 latency > 500ms"
+          description: "Habits analytics endpoints p95 latency is {{ $value | humanizeDuration }}, exceeding 500ms critical threshold."
+
+      # -------------------------
+      # Stat recompute latency — warning at p95 > 100ms
+      # -------------------------
+      - alert: HabitsStatRecomputeLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(lifeos_habits_stat_recompute_latency_seconds_bucket[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          phase: "12d"
+        annotations:
+          summary: "Habit stat recompute p95 > 100ms"
+          description: "HabitStat recomputation p95 latency is {{ $value | humanizeDuration }}, may indicate slow queries."

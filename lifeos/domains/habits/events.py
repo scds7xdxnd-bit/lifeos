@@ -8,6 +8,8 @@ HABITS_HABIT_DEACTIVATED = "habits.habit.deactivated"
 HABITS_HABIT_LOGGED = "habits.habit.logged"
 HABITS_HABIT_DELETED = "habits.habit.deleted"
 HABITS_HABIT_INFERRED = "habits.habit.inferred"
+HABITS_STAT_RECOMPUTED = "habits.stat.recomputed"
+HABITS_HABIT_STREAK_MILESTONE = "habits.habit.streak_milestone"
 
 EVENT_CATALOG = {
     HABITS_HABIT_CREATED: {
@@ -72,6 +74,27 @@ EVENT_CATALOG = {
             "is_false_negative": "bool?",
         },
     },
+    HABITS_STAT_RECOMPUTED: {
+        "version": "v1",
+        "payload": {
+            "habit_id": "int",
+            "user_id": "int",
+            "current_streak": "int",
+            "longest_streak": "int",
+            "completion_rate_30d": "float?",
+            "total_logs": "int",
+        },
+    },
+    HABITS_HABIT_STREAK_MILESTONE: {
+        "version": "v1",
+        "payload": {
+            "habit_id": "int",
+            "user_id": "int",
+            "streak_length": "int",
+            "milestone_type": "int",
+            "achieved_at": "datetime",
+        },
+    },
 }
 
 __all__ = [
@@ -82,4 +105,6 @@ __all__ = [
     "HABITS_HABIT_LOGGED",
     "HABITS_HABIT_DELETED",
     "HABITS_HABIT_INFERRED",
+    "HABITS_STAT_RECOMPUTED",
+    "HABITS_HABIT_STREAK_MILESTONE",
 ]
