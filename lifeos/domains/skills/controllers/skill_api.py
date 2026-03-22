@@ -25,6 +25,7 @@ from lifeos.domains.skills.services.skill_service import (
     list_skill_overview_cards,
     list_skills_with_aggregates,
     log_practice_session,
+    resolve_next_recommended_step,
     update_practice_session,
     update_skill,
 )
@@ -116,7 +117,27 @@ def get_skill_detail(skill_id: int):
     summary = get_skill_summary(user_id, skill_id)
     if not summary:
         return jsonify({"ok": False, "error": "not_found"}), 404
-    return jsonify({"ok": True, "skill": map_skill_summary(summary).model_dump()})
+
+    skill_payload = map_skill_summary(summary).model_dump()
+    path_payload = get_skill_path(user_id=user_id, skill_id=skill_id) if _phase12_skills_path_enabled() else None
+    goal_payload = path_payload.get("goal") if path_payload else None
+    path_steps = path_payload.get("steps") if path_payload else None
+    current_step = path_payload.get("next_recommended_step") if path_payload else None
+
+    history_payload = {
+        "recent_sessions_count": len(skill_payload.get("recent_sessions") or []),
+        "last_practiced_at": skill_payload.get("last_practiced_at"),
+    }
+    return jsonify(
+        {
+            "ok": True,
+            "skill": skill_payload,
+            "goal": goal_payload,
+            "path": path_steps,
+            "current_step": current_step,
+            "history": history_payload,
+        }
+    )
 
 
 @skill_api_bp.get("/<int:skill_id>/path")
@@ -186,7 +207,16 @@ def log_practice_endpoint(skill_id: int):
         if code == "not_found":
             return jsonify({"ok": False, "error": "not_found"}), 404
         return jsonify({"ok": False, "error": "validation_error"}), 400
-    return jsonify({"ok": True, "session": map_session_response(session).model_dump()})
+    next_step = None
+    path_payload = get_skill_path(user_id=user_id, skill_id=skill_id) if _phase12_skills_path_enabled() else None
+    if path_payload:
+        next_step = path_payload.get("next_recommended_step") or resolve_next_recommended_step(
+            path_payload.get("steps") or []
+        )
+
+    return jsonify(
+        {"ok": True, "session": map_session_response(session).model_dump(), "next_recommended_step": next_step}
+    )
 
 
 @skill_api_bp.patch("/practice/<int:session_id>")

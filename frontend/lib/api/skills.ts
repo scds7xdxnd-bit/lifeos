@@ -23,6 +23,7 @@ export interface PracticeSession {
   skill_id: number
   duration_minutes: number
   intensity: number | null
+  step_id: number | null
   notes: string | null
   practiced_at: string
 }
@@ -85,6 +86,7 @@ export interface CreateSkillInput {
 export interface LogPracticeInput {
   duration_minutes: number
   intensity?: number | null
+  step_id?: number | null
   notes?: string | null
   practiced_at?: string | null
 }
@@ -130,7 +132,10 @@ export const skillsApi = {
     apiFetch<{ ok: boolean }>(`/api/skills/${id}`, { method: 'DELETE' }),
 
   logPractice: (skillId: number, data: LogPracticeInput) =>
-    apiPost<{ ok: boolean; session: PracticeSession }>(`/api/skills/${skillId}/practice`, data),
+    apiPost<{ ok: boolean; session: PracticeSession; next_recommended_step?: SkillPathStep | null }>(
+      `/api/skills/${skillId}/practice`,
+      data,
+    ),
 
   deleteSession: (sessionId: number) =>
     apiFetch<{ ok: boolean }>(`/api/skills/practice/${sessionId}`, { method: 'DELETE' }),

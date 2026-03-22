@@ -167,6 +167,8 @@ class TestSkillsAPI:
         assert path["risk_reason"] == "no_recent_sessions"
         assert len(path["steps"]) >= 2
         assert path["steps"][0]["action"] == "continue_practice"
+        assert path["next_recommended_step"] is not None
+        assert path["next_recommended_step"]["action"] in {"continue_practice", "setup_goal", "review_goal"}
 
     def test_create_skill_success(self, client, csrf_headers):
         """Create a skill successfully."""
@@ -250,6 +252,7 @@ class TestSkillsAPI:
 
     def test_get_skill_detail(self, app, client, test_user, auth_headers):
         """Get detailed skill information."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
         with app.app_context():
             skill = create_skill(test_user.id, name="GraphQL", category="API")
             skill_id = skill.id
@@ -259,6 +262,10 @@ class TestSkillsAPI:
         data = resp.get_json()
         assert data["ok"] is True
         assert data["skill"]["name"] == "GraphQL"
+        assert "goal" in data
+        assert "path" in data
+        assert "current_step" in data
+        assert "history" in data
 
     def test_get_skill_not_found(self, client, auth_headers):
         """Get non-existent skill returns 404."""
@@ -310,6 +317,7 @@ class TestPracticeSessionAPI:
 
     def test_log_practice_success(self, app, client, test_user, csrf_headers):
         """Log a practice session successfully."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
         with app.app_context():
             skill = create_skill(test_user.id, name="Angular")
             skill_id = skill.id
@@ -324,6 +332,24 @@ class TestPracticeSessionAPI:
         data = resp.get_json()
         assert data["ok"] is True
         assert data["session"]["duration_minutes"] == 60
+        assert "next_recommended_step" in data
+
+    def test_log_practice_with_step_id(self, app, client, test_user, csrf_headers):
+        """Practice logging supports optional step_id."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Typed Step Skill")
+            skill_id = skill.id
+
+        payload = {
+            "duration_minutes": 30,
+            "step_id": 2,
+            "notes": "Worked on step 2",
+        }
+        resp = client.post(f"/api/skills/{skill_id}/practice", json=payload, headers=csrf_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["session"]["step_id"] == 2
 
     def test_log_practice_with_timestamp(self, app, client, test_user, csrf_headers):
         """Log practice session with custom timestamp."""

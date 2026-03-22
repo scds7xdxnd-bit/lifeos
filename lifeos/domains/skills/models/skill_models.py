@@ -60,6 +60,7 @@ class PracticeSession(db.Model):
     skill_id: Mapped[int] = mapped_column(db.ForeignKey("skill.id", ondelete="CASCADE"), index=True, nullable=False)
     duration_minutes: Mapped[int] = mapped_column(default=0)
     intensity: Mapped[int | None] = mapped_column()
+    step_id: Mapped[int | None] = mapped_column(index=True, nullable=True)
     notes: Mapped[str | None] = mapped_column(db.Text)
     practiced_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)

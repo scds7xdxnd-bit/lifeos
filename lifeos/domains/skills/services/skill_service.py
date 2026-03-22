@@ -133,6 +133,7 @@ def log_practice_session(
     *,
     duration_minutes: int,
     intensity: Optional[int] = None,
+    step_id: Optional[int] = None,
     notes: Optional[str] = None,
     practiced_at: Optional[datetime] = None,
 ) -> PracticeSession:
@@ -146,6 +147,7 @@ def log_practice_session(
         skill_id=skill_id,
         duration_minutes=duration_minutes,
         intensity=intensity,
+        step_id=step_id,
         notes=(notes or "").strip() or None,
         practiced_at=practiced_at or datetime.utcnow(),
     )
@@ -171,7 +173,7 @@ def update_practice_session(user_id: int, session_id: int, **fields) -> Optional
     session = PracticeSession.query.filter_by(id=session_id, user_id=user_id).first()
     if not session:
         return None
-    for key in ("duration_minutes", "intensity", "notes", "practiced_at"):
+    for key in ("duration_minutes", "intensity", "step_id", "notes", "practiced_at"):
         if key in fields:
             setattr(session, key, fields[key])
     db.session.commit()
@@ -334,13 +336,28 @@ def get_skill_path(user_id: int, skill_id: int) -> Optional[dict]:
             }
         )
 
+    next_recommended_step = resolve_next_recommended_step(path_steps)
+
     return {
         "skill_id": skill.id,
         "progress_state": progress_state,
         "risk_reason": risk_reason,
         "goal": goal,
         "steps": path_steps,
+        "next_recommended_step": next_recommended_step,
     }
+
+
+def resolve_next_recommended_step(steps: List[dict]) -> Optional[dict]:
+    if not steps:
+        return None
+    for step in steps:
+        if step.get("status") == "recommended":
+            return step
+    for step in steps:
+        if step.get("status") == "ready":
+            return step
+    return steps[0]
 
 
 def _derive_goal_endpoint(skill: Skill, *, totals: Optional[dict] = None) -> Optional[dict]:

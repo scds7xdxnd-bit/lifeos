@@ -37,6 +37,7 @@ class SkillUpdate(BaseModel):
 class PracticeSessionCreate(BaseModel):
     duration_minutes: int = Field(gt=0)
     intensity: Optional[int] = Field(default=None, ge=1, le=10)
+    step_id: Optional[int] = Field(default=None, ge=1)
     notes: Optional[str] = Field(default=None, max_length=4096)
     practiced_at: Optional[datetime] = None
 
@@ -44,6 +45,7 @@ class PracticeSessionCreate(BaseModel):
 class PracticeSessionUpdate(BaseModel):
     duration_minutes: Optional[int] = Field(default=None, gt=0)
     intensity: Optional[int] = Field(default=None, ge=1, le=10)
+    step_id: Optional[int] = Field(default=None, ge=1)
     notes: Optional[str] = Field(default=None, max_length=4096)
     practiced_at: Optional[datetime] = None
 
@@ -53,6 +55,7 @@ class PracticeSessionResponse(BaseModel):
     skill_id: int
     duration_minutes: int
     intensity: Optional[int]
+    step_id: Optional[int]
     notes: Optional[str]
     practiced_at: datetime
 
@@ -114,3 +117,4 @@ class SkillPathResponse(BaseModel):
     risk_reason: Optional[Literal["no_recent_sessions"]] = None
     goal: Optional[SkillGoalEndpointResponse] = None
     steps: List[SkillPathStepResponse]
+    next_recommended_step: Optional[SkillPathStepResponse] = None
