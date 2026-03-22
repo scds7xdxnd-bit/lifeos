@@ -1,6 +1,7 @@
 """Tests for Skills domain API endpoints."""
 
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from flask_jwt_extended import create_access_token
@@ -170,6 +171,16 @@ class TestSkillsAPI:
         assert path["next_recommended_step"] is not None
         assert path["next_recommended_step"]["action"] in {"continue_practice", "setup_goal", "review_goal"}
 
+    def test_get_skill_path_not_found_when_enabled(self, app, client, auth_headers):
+        """Path endpoint returns not_found when feature is enabled but skill does not exist."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
+
+        resp = client.get("/api/skills/99999/path", headers=auth_headers)
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["ok"] is False
+        assert data["error"] == "not_found"
+
     def test_create_skill_success(self, client, csrf_headers):
         """Create a skill successfully."""
         payload = {
@@ -267,6 +278,20 @@ class TestSkillsAPI:
         assert "current_step" in data
         assert "history" in data
 
+    def test_get_skill_detail_when_path_disabled_returns_null_path_fields(self, app, client, test_user, auth_headers):
+        """Detail endpoint preserves shape and returns null path fields when path flag is disabled."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = False
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Detail No Path")
+
+        resp = client.get(f"/api/skills/{skill.id}", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["goal"] is None
+        assert data["path"] is None
+        assert data["current_step"] is None
+
     def test_get_skill_not_found(self, client, auth_headers):
         """Get non-existent skill returns 404."""
         resp = client.get("/api/skills/99999", headers=auth_headers)
@@ -291,6 +316,17 @@ class TestSkillsAPI:
         payload = {"description": "Updated"}
         resp = client.patch("/api/skills/99999", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
+
+    def test_update_skill_validation_error(self, app, client, test_user, csrf_headers):
+        """Invalid payload for update returns validation_error."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Validation Skill")
+
+        payload = {"goal_target_value": 0}
+        resp = client.patch(f"/api/skills/{skill.id}", json=payload, headers=csrf_headers)
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data["error"] == "validation_error"
 
     def test_delete_skill(self, app, client, test_user, csrf_headers):
         """Delete an existing skill."""
@@ -351,6 +387,50 @@ class TestPracticeSessionAPI:
         assert data["ok"] is True
         assert data["session"]["step_id"] == 2
 
+    def test_log_practice_with_path_disabled_returns_null_next_step(self, app, client, test_user, csrf_headers):
+        """When path feature is disabled, practice response returns explicit null next step."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = False
+        with app.app_context():
+            skill = create_skill(test_user.id, name="No Path Next Step")
+
+        payload = {"duration_minutes": 30}
+        resp = client.post(f"/api/skills/{skill.id}/practice", json=payload, headers=csrf_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["next_recommended_step"] is None
+
+    def test_log_practice_uses_resolver_when_path_missing_recommended_step(self, app, client, test_user, csrf_headers):
+        """Practice endpoint falls back to resolver when path payload omits next_recommended_step."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Resolver Fallback Skill")
+
+        payload = {"duration_minutes": 30}
+        mocked_path = {
+            "skill_id": skill.id,
+            "progress_state": "on_track",
+            "risk_reason": None,
+            "goal": None,
+            "steps": [
+                {
+                    "step_id": "continue_practice",
+                    "label": "Continue Practice",
+                    "status": "ready",
+                    "action": "continue_practice",
+                }
+            ],
+            "next_recommended_step": None,
+        }
+        with patch("lifeos.domains.skills.controllers.skill_api.get_skill_path", return_value=mocked_path):
+            resp = client.post(f"/api/skills/{skill.id}/practice", json=payload, headers=csrf_headers)
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["next_recommended_step"] is not None
+        assert data["next_recommended_step"]["step_id"] == "continue_practice"
+
     def test_log_practice_with_timestamp(self, app, client, test_user, csrf_headers):
         """Log practice session with custom timestamp."""
         with app.app_context():
@@ -399,6 +479,18 @@ class TestPracticeSessionAPI:
         payload = {"duration_minutes": 60}
         resp = client.patch("/api/skills/practice/99999", json=payload, headers=csrf_headers)
         assert resp.status_code == 404
+
+    def test_update_practice_validation_error(self, app, client, test_user, csrf_headers):
+        """Invalid payload for practice update returns validation_error."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Update Practice Validation")
+            session = log_practice_session(test_user.id, skill.id, duration_minutes=20)
+
+        payload = {"duration_minutes": 0}
+        resp = client.patch(f"/api/skills/practice/{session.id}", json=payload, headers=csrf_headers)
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data["error"] == "validation_error"
 
     def test_delete_practice_session(self, app, client, test_user, csrf_headers):
         """Delete a practice session."""
