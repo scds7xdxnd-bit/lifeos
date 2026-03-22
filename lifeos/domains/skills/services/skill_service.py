@@ -24,6 +24,9 @@ def create_skill(
     name: str,
     category: Optional[str] = None,
     difficulty: Optional[str] = None,
+    goal_type: Optional[str] = None,
+    goal_target_value: Optional[int] = None,
+    goal_deadline: Optional[datetime] = None,
     target_level: Optional[int] = None,
     current_level: Optional[int] = None,
     description: Optional[str] = None,
@@ -42,6 +45,9 @@ def create_skill(
         name=name_norm,
         category=(category or "").strip() or None,
         difficulty=(difficulty or "").strip() or None,
+        goal_type=(goal_type or "").strip() or None,
+        goal_target_value=goal_target_value,
+        goal_deadline=goal_deadline,
         target_level=target_level,
         current_level=current_level,
         description=(description or "").strip() or None,
@@ -78,6 +84,9 @@ def update_skill(user_id: int, skill_id: int, **fields) -> Optional[Skill]:
         "name",
         "category",
         "difficulty",
+        "goal_type",
+        "goal_target_value",
+        "goal_deadline",
         "target_level",
         "current_level",
         "description",
@@ -240,7 +249,7 @@ def list_skill_overview_cards(user_id: int, limit: int = 50, offset: int = 0) ->
         totals = record.get("totals", {})
         sessions_last_7 = int(totals.get("sessions_last_7") or 0)
         sessions_last_30 = int(totals.get("sessions_last_30") or 0)
-        goal = _derive_goal_endpoint(skill)
+        goal = _derive_goal_endpoint(skill, totals=totals)
         progress_state, risk_reason = _derive_progress_state(
             goal=goal, sessions_last_7=sessions_last_7, sessions_last_30=sessions_last_30
         )
@@ -261,20 +270,114 @@ def list_skill_overview_cards(user_id: int, limit: int = 50, offset: int = 0) ->
     return cards
 
 
-def _derive_goal_endpoint(skill: Skill) -> Optional[dict]:
-    target = skill.target_level
-    current = skill.current_level
-    if target is None or target <= 0:
+def get_skill_path(user_id: int, skill_id: int) -> Optional[dict]:
+    summary = get_skill_summary(user_id=user_id, skill_id=skill_id, recent_limit=10)
+    if not summary:
         return None
 
-    current_value = current if current is not None else 0
-    progress_ratio = min(max(current_value / target, 0.0), 1.0)
+    skill: Skill = summary["skill"]
+    totals = summary.get("totals", {})
+    sessions_last_7 = int(totals.get("sessions_last_7") or 0)
+    sessions_last_30 = int(totals.get("sessions_last_30") or 0)
+    goal = _derive_goal_endpoint(skill, totals=totals)
+    progress_state, risk_reason = _derive_progress_state(
+        goal=goal,
+        sessions_last_7=sessions_last_7,
+        sessions_last_30=sessions_last_30,
+    )
+
+    path_steps: List[dict] = []
+    path_steps.append(
+        {
+            "step_id": "continue_practice",
+            "label": "Continue Practice",
+            "status": "ready",
+            "action": "continue_practice",
+        }
+    )
+
+    if goal is None:
+        path_steps.append(
+            {
+                "step_id": "define_goal",
+                "label": "Define Goal Endpoint",
+                "status": "ready",
+                "action": "setup_goal",
+            }
+        )
+    elif progress_state == "completed":
+        path_steps.append(
+            {
+                "step_id": "raise_target",
+                "label": "Set a New Target",
+                "status": "ready",
+                "action": "setup_goal",
+            }
+        )
+    else:
+        path_steps.append(
+            {
+                "step_id": "review_progress",
+                "label": "Review Goal Progress",
+                "status": "ready",
+                "action": "review_goal",
+            }
+        )
+
+    if progress_state == "at_risk":
+        path_steps.append(
+            {
+                "step_id": "recover_consistency",
+                "label": "Recover Consistency This Week",
+                "status": "recommended",
+                "action": "continue_practice",
+            }
+        )
+
     return {
-        "goal_type": "milestones",
-        "target_value": target,
+        "skill_id": skill.id,
+        "progress_state": progress_state,
+        "risk_reason": risk_reason,
+        "goal": goal,
+        "steps": path_steps,
+    }
+
+
+def _derive_goal_endpoint(skill: Skill, *, totals: Optional[dict] = None) -> Optional[dict]:
+    goal_type = (skill.goal_type or "").strip().lower()
+    target_value = skill.goal_target_value
+
+    if not goal_type or target_value is None or target_value <= 0:
+        # Backward-compatible fallback to legacy levels.
+        target = skill.target_level
+        current = skill.current_level
+        if target is None or target <= 0:
+            return None
+        current_value = current if current is not None else 0
+        progress_ratio = min(max(current_value / target, 0.0), 1.0)
+        return {
+            "goal_type": "milestones",
+            "target_value": target,
+            "current_value": current_value,
+            "progress_ratio": progress_ratio,
+            "deadline": None,
+        }
+
+    aggregates = totals or {}
+    if goal_type == "hours":
+        current_value = float(aggregates.get("total_minutes") or 0) / 60.0
+    elif goal_type == "sessions":
+        current_value = float(aggregates.get("session_count") or 0)
+    else:
+        current_value = float(skill.current_level or 0)
+
+    progress_ratio = min(max(current_value / float(target_value), 0.0), 1.0)
+    return {
+        "goal_type": goal_type,
+        "target_value": float(target_value),
         "current_value": current_value,
         "progress_ratio": progress_ratio,
-        "deadline": None,
+        "deadline": skill.goal_deadline,
     }
 
 

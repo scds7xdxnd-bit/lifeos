@@ -12,6 +12,9 @@ class SkillCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     category: Optional[str] = Field(default=None, max_length=128)
     difficulty: Optional[str] = Field(default=None, max_length=32)
+    goal_type: Optional[Literal["hours", "sessions", "milestones", "benchmark", "deadline"]] = None
+    goal_target_value: Optional[int] = Field(default=None, gt=0)
+    goal_deadline: Optional[datetime] = None
     target_level: Optional[int] = Field(default=None, ge=0)
     current_level: Optional[int] = Field(default=None, ge=0)
     description: Optional[str] = Field(default=None, max_length=4096)
@@ -22,6 +25,9 @@ class SkillUpdate(BaseModel):
     name: Optional[str] = Field(default=None, max_length=255)
     category: Optional[str] = Field(default=None, max_length=128)
     difficulty: Optional[str] = Field(default=None, max_length=32)
+    goal_type: Optional[Literal["hours", "sessions", "milestones", "benchmark", "deadline"]] = None
+    goal_target_value: Optional[int] = Field(default=None, gt=0)
+    goal_deadline: Optional[datetime] = None
     target_level: Optional[int] = Field(default=None, ge=0)
     current_level: Optional[int] = Field(default=None, ge=0)
     description: Optional[str] = Field(default=None, max_length=4096)
@@ -93,3 +99,18 @@ class SkillOverviewCardResponse(BaseModel):
     primary_action: Literal["continue_practice"]
     requires_goal_setup: bool
     risk_reason: Optional[Literal["no_recent_sessions"]] = None
+
+
+class SkillPathStepResponse(BaseModel):
+    step_id: str
+    label: str
+    status: Literal["ready", "recommended", "blocked", "completed"]
+    action: Literal["continue_practice", "setup_goal", "review_goal"]
+
+
+class SkillPathResponse(BaseModel):
+    skill_id: int
+    progress_state: Literal["on_track", "at_risk", "completed"]
+    risk_reason: Optional[Literal["no_recent_sessions"]] = None
+    goal: Optional[SkillGoalEndpointResponse] = None
+    steps: List[SkillPathStepResponse]

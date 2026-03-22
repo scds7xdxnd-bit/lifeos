@@ -115,6 +115,8 @@ class TestSkillsAPI:
         data = resp.get_json()
         assert data["ok"] is True
         assert len(data["skills"]) == 2
+        assert data["summary"]["active"] == 2
+        assert "groups" in data
 
         by_name = {item["name"]: item for item in data["skills"]}
         completed_card = by_name["Completed Skill"]
@@ -126,6 +128,45 @@ class TestSkillsAPI:
         at_risk_card = by_name["At Risk Skill"]
         assert at_risk_card["progress_state"] == "at_risk"
         assert at_risk_card["risk_reason"] == "no_recent_sessions"
+
+    def test_get_skill_path_feature_disabled(self, app, client, test_user, auth_headers):
+        """Path endpoint is hidden when Phase 12 path flag is disabled."""
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Path Hidden Skill")
+
+        resp = client.get(f"/api/skills/{skill.id}/path", headers=auth_headers)
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["ok"] is False
+        assert data["error"] == "not_found"
+
+    def test_get_skill_path_enabled(self, app, client, test_user, auth_headers):
+        """Path endpoint returns deterministic training steps when enabled."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Path Ready Skill",
+                target_level=4,
+                current_level=1,
+            )
+            log_practice_session(
+                test_user.id,
+                skill.id,
+                duration_minutes=25,
+                practiced_at=datetime.utcnow() - timedelta(days=15),
+            )
+
+        resp = client.get(f"/api/skills/{skill.id}/path", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        path = data["path"]
+        assert path["skill_id"] == skill.id
+        assert path["progress_state"] == "at_risk"
+        assert path["risk_reason"] == "no_recent_sessions"
+        assert len(path["steps"]) >= 2
+        assert path["steps"][0]["action"] == "continue_practice"
 
     def test_create_skill_success(self, client, csrf_headers):
         """Create a skill successfully."""
@@ -167,6 +208,28 @@ class TestSkillsAPI:
         assert resp.status_code == 409
         data = resp.get_json()
         assert data["error"] == "duplicate"
+
+    def test_create_skill_requires_goal_when_phase12_goals_enabled(self, app, client, csrf_headers):
+        """When goals flag is enabled, creating skill without goal fails."""
+        app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        payload = {"name": "No Goal Skill"}
+        resp = client.post("/api/skills", json=payload, headers=csrf_headers)
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data["error"] == "goal_required"
+
+    def test_create_skill_with_goal_when_phase12_goals_enabled(self, app, client, csrf_headers):
+        """When goals flag is enabled, creating skill with goal fields succeeds."""
+        app.config["ENABLE_PHASE12_SKILLS_GOALS"] = True
+        payload = {
+            "name": "Goal Ready Skill",
+            "goal_type": "sessions",
+            "goal_target_value": 12,
+        }
+        resp = client.post("/api/skills", json=payload, headers=csrf_headers)
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data["ok"] is True
 
     def test_create_skill_unauthorized(self, client):
         """Creating skill without auth fails."""

@@ -48,8 +48,8 @@ Out of Scope:
 - [x] Goal endpoint taxonomy documented.
 - [x] Status semantics documented.
 - [x] Backend API shape for Skills v2 overview agreed (`GET /api/skills/overview`, flag-gated by `ENABLE_PHASE12_SKILLS_GOALS`).
-- [ ] Frontend card spec and modal flow approved.
-- [ ] QA acceptance matrix drafted for Skills v2 Phase 1.
+- [x] Frontend card spec and modal flow approved (overview-first render with legacy fallback).
+- [x] QA acceptance matrix drafted for Skills v2 Phase 1 (`lifeos/docs/tasks/phase_12_skills_v2_phase2_path_and_action_flow.md`).
 
 ## Phase 1 Handoff Criteria
 Proceed to Phase 1 only when:

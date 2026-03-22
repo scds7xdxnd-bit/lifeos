@@ -51,10 +51,31 @@ export interface SkillOverviewCard {
   risk_reason: 'no_recent_sessions' | null
 }
 
+export type SkillPathStepStatus = 'ready' | 'recommended' | 'blocked' | 'completed'
+export type SkillPathStepAction = 'continue_practice' | 'setup_goal' | 'review_goal'
+
+export interface SkillPathStep {
+  step_id: string
+  label: string
+  status: SkillPathStepStatus
+  action: SkillPathStepAction
+}
+
+export interface SkillPath {
+  skill_id: number
+  progress_state: SkillProgressState
+  risk_reason: 'no_recent_sessions' | null
+  goal: SkillGoalEndpoint | null
+  steps: SkillPathStep[]
+}
+
 export interface CreateSkillInput {
   name: string
   category?: string | null
   difficulty?: string | null
+  goal_type?: SkillGoalType | null
+  goal_target_value?: number | null
+  goal_deadline?: string | null
   target_level?: number | null
   current_level?: number | null
   description?: string | null
@@ -70,7 +91,22 @@ export interface LogPracticeInput {
 
 interface SkillListResponse { ok: boolean; skills: Skill[] }
 interface SkillResponse { ok: boolean; skill: Skill }
-interface SkillOverviewResponse { ok: boolean; skills: SkillOverviewCard[] }
+interface SkillOverviewResponse {
+  ok: boolean
+  summary?: {
+    total_hours: number
+    total_sessions: number
+    at_risk: number
+    active: number
+  }
+  groups?: {
+    at_risk: SkillOverviewCard[]
+    on_track: SkillOverviewCard[]
+    completed: SkillOverviewCard[]
+  }
+  skills: SkillOverviewCard[]
+}
+interface SkillPathResponse { ok: boolean; path: SkillPath }
 
 export const skillsApi = {
   list: () => apiGet<SkillListResponse>('/api/skills'),
@@ -78,6 +114,8 @@ export const skillsApi = {
   overview: () => apiGet<SkillOverviewResponse>('/api/skills/overview'),
 
   get: (id: number) => apiGet<SkillResponse>(`/api/skills/${id}`),
+
+  path: (id: number) => apiGet<SkillPathResponse>(`/api/skills/${id}/path`),
 
   create: (data: CreateSkillInput) =>
     apiPost<SkillResponse>('/api/skills', data),
