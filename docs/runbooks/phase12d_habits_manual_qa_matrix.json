@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-03-22T02:12:31.452Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "results": [
+    {
+      "viewport": "375x812",
+      "status": "ok",
+      "reason": "",
+      "horizontalScroll": false,
+      "hasLogButton": true,
+      "minLogButtonHeight": 44,
+      "minPrimaryActionHeight": 44,
+      "detailPanelVisible": false,
+      "consoleErrors": [],
+      "http422": []
+    },
+    {
+      "viewport": "414x896",
+      "status": "ok",
+      "reason": "",
+      "horizontalScroll": false,
+      "hasLogButton": true,
+      "minLogButtonHeight": 44,
+      "minPrimaryActionHeight": 44,
+      "detailPanelVisible": false,
+      "consoleErrors": [],
+      "http422": []
+    },
+    {
+      "viewport": "768x1024",
+      "status": "ok",
+      "reason": "",
+      "horizontalScroll": false,
+      "hasLogButton": true,
+      "minLogButtonHeight": 44,
+      "minPrimaryActionHeight": 44,
+      "detailPanelVisible": false,
+      "consoleErrors": [],
+      "http422": []
+    },
+    {
+      "viewport": "1024x768",
+      "status": "ok",
+      "reason": "",
+      "horizontalScroll": false,
+      "hasLogButton": true,
+      "minLogButtonHeight": 44,
+      "minPrimaryActionHeight": 44,
+      "detailPanelVisible": true,
+      "consoleErrors": [],
+      "http422": []
+    },
+    {
+      "viewport": "1440x900",
+      "status": "ok",
+      "reason": "",
+      "horizontalScroll": false,
+      "hasLogButton": true,
+      "minLogButtonHeight": 44,
+      "minPrimaryActionHeight": 44,
+      "detailPanelVisible": true,
+      "consoleErrors": [],
+      "http422": []
+    }
+  ]
+}

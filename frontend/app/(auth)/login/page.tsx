@@ -14,7 +14,7 @@ type View = 'login' | 'register'
 export default function LoginPage() {
   const router = useRouter()
   const { login, register } = useAuth()
-  const [lang, setLang] = useLang()
+  const [lang, setLang, isHydrated] = useLang()
   const t = getAppTranslations(lang).login
 
   const [view, setView] = useState<View>('login')
@@ -43,7 +43,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '420px', position: 'relative', padding: '0 4px' }}>
+    <div
+      style={{
+        width: '100%',
+        maxWidth: '420px',
+        position: 'relative',
+        padding: '0 4px',
+        opacity: isHydrated ? 1 : 0.985,
+        transition: 'opacity 140ms ease',
+      }}
+    >
       <div style={{ position: 'absolute', top: '-8px', right: '4px', zIndex: 10 }}>
         <LanguageMenu lang={lang} setLang={setLang} iconOnly />
       </div>
@@ -343,6 +352,7 @@ export default function LoginPage() {
           {view === 'login' ? (
             <>
               {t.noAccount}
+              {' '}
               <button
                 type="button"
                 onClick={() => { setView('register'); setError(null) }}
@@ -365,6 +375,7 @@ export default function LoginPage() {
           ) : (
             <>
               {t.haveAccount}
+              {' '}
               <button
                 type="button"
                 onClick={() => { setView('login'); setError(null) }}

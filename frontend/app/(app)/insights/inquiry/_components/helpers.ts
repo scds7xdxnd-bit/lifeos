@@ -229,7 +229,8 @@ export function parseApiError(body: Record<string, unknown>, status?: number): s
   const alphaErrors: Record<string, string> = {
     alpha_domain_not_visible: 'That domain is not visible in private alpha.',
     alpha_pair_not_enabled: 'That cross-domain pair is not enabled in private alpha.',
-    alpha_readiness_not_met: 'This inquiry scope is currently unavailable.',
+    alpha_readiness_not_met:
+      'This inquiry scope is not yet available in private alpha. Try adjusting the timeframe or choosing a different domain.',
     alpha_history_disabled: 'Inquiry history is disabled for this private alpha configuration.',
     alpha_pair_required: 'Select one approved cross-domain pair.',
   }

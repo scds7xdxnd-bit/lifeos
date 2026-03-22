@@ -286,7 +286,12 @@ class DevelopmentConfig(BaseConfig):
     JWT_COOKIE_SECURE = False
     ENABLE_PHASE6_FOCUSED_INQUIRY = True
     ENABLE_PHASE8_CROSS_DOMAIN_PAIR_PROFILES = True
-    CORS_ORIGINS = _build_dev_cors_origins()
+    CORS_ORIGINS = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
 
 
 class TestingConfig(BaseConfig):

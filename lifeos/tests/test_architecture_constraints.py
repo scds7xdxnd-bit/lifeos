@@ -192,6 +192,7 @@ def test_controller_model_boundary_is_explicitly_allowlisted():
         "lifeos/domains/finance/controllers/journal_api.py",
         "lifeos/domains/finance/controllers/pages.py",
         "lifeos/domains/finance/controllers/receivable_api.py",
+        "lifeos/domains/habits/controllers/habit_api.py",
         "lifeos/domains/habits/controllers/habit_pages.py",
         "lifeos/domains/health/controllers/health_pages.py",
         "lifeos/domains/projects/controllers/project_api.py",

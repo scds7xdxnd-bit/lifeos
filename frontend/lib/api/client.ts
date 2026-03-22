@@ -1,30 +1,12 @@
+import { resolveApiUrl } from '@/lib/api/resolveApiUrl'
+
 const STORAGE_KEY = 'lifeos_tokens'
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 interface StoredTokens {
   access_token: string
   csrf_token: string
-}
-
-function resolveApiUrl(): string {
-  if (typeof window === 'undefined') return RAW_API_URL
-
-  if (!RAW_API_URL) {
-    return `${window.location.protocol}//${window.location.hostname}:5001`
-  }
-
-  try {
-    const parsed = new URL(RAW_API_URL)
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
-      const port = parsed.port || '5001'
-      return `${parsed.protocol}//${window.location.hostname}:${port}`
-    }
-    return RAW_API_URL
-  } catch {
-    return RAW_API_URL
-  }
 }
 
 function getTokens(): StoredTokens | null {

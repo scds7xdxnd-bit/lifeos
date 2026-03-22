@@ -9,3 +9,6 @@ ignore:
   - "**/*.md"
   - "docs/**"
   - "lifeos/docs/**"
+  - "lifeos/tests/**"
+  - "lifeos/scripts/**"
+  - "scripts/**"

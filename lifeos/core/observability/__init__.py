@@ -3,6 +3,8 @@
 from lifeos.core.observability.metrics import (
     record_contract_violation,
     record_event_dispatch_latency_seconds,
+    record_habits_analytics_latency,
+    record_habits_stat_recompute_latency,
     record_http_request_latency_seconds,
     record_inquiry_blocked_claims,
     record_inquiry_created,
@@ -73,6 +75,8 @@ __all__ = [
     "record_read_cache_hit",
     "record_read_cache_miss",
     "record_replay_determinism_failure",
+    "record_habits_analytics_latency",
+    "record_habits_stat_recompute_latency",
     "set_private_alpha_user_state",
     "record_timeline_blocked_claims",
     "record_timeline_generated",

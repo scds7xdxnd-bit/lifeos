@@ -20,9 +20,10 @@ Canonical source for domain purpose and semantic boundaries.
 - Must not infer: No inference about causality or intent beyond recorded fields.
 
 ### Habits
-- Purpose: Track repeated behaviors and their logs.
-- Asserts: User-logged or inferred habit occurrences.
-- Must not infer: No assumptions about streaks beyond recorded logs.
+- Purpose: Track repeated behaviors, their logs, and deterministic completion analytics.
+- Asserts: User-logged or inferred habit occurrences; materialized statistics (streaks, completion rates) derived deterministically from recorded logs.
+- Must not infer: No assumptions about streaks beyond recorded logs. Streak milestones are computed facts, not predictions. ML prediction outputs (Phase 12d) are stored features only — never surfaced as assertions to users.
+- Phase 12 additions: `habit_stat` materialized table, `scheduled_time` for cue messaging, `habits.stat.recomputed` and `habits.habit.streak_milestone` events.
 
 ### Health
 - Purpose: Record biometrics, workouts, and nutrition logs.

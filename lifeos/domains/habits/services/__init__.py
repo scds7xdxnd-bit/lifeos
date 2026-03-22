@@ -15,6 +15,10 @@ from lifeos.domains.habits.events import (
     HABITS_HABIT_UPDATED,
 )
 from lifeos.domains.habits.models.habit_models import Habit, HabitLog
+from lifeos.domains.habits.services.stat_service import (
+    compute_streaks,
+    recompute_habit_stat,
+)
 from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
 
@@ -28,6 +32,7 @@ def create_habit(
     schedule_type: str | None = None,
     target_count: int | None = None,
     time_of_day: str | None = None,
+    scheduled_time=None,
     difficulty: str | None = None,
     cadence: str | None = None,
     target: int | None = None,
@@ -47,6 +52,7 @@ def create_habit(
         schedule_type=schedule_type or cadence or "daily",
         target_count=target_count if target_count is not None else target,
         time_of_day=(time_of_day or "").strip() or None,
+        scheduled_time=scheduled_time,
         difficulty=(difficulty or "").strip() or None,
     )
     db.session.add(habit)
@@ -81,6 +87,7 @@ def update_habit(user_id: int, habit_id: int, **fields) -> Optional[Habit]:
         "schedule_type",
         "target_count",
         "time_of_day",
+        "scheduled_time",
         "difficulty",
         "is_active",
     )
@@ -178,6 +185,7 @@ def log_habit_completion(
         },
         user_id=user_id,
     )
+    recompute_habit_stat(user_id, habit_id)
     db.session.commit()
     return log
 
@@ -197,6 +205,8 @@ def update_habit_log(user_id: int, log_id: int, **fields) -> Optional[HabitLog]:
     for key in ("logged_date", "value", "note"):
         if key in fields:
             setattr(log, key, fields[key])
+    if "logged_date" in fields:
+        recompute_habit_stat(user_id, log.habit_id)
     db.session.commit()
     return log
 
@@ -205,7 +215,10 @@ def delete_habit_log(user_id: int, log_id: int) -> bool:
     log = HabitLog.query.filter_by(id=log_id, user_id=user_id).first()
     if not log:
         return False
+    habit_id = log.habit_id
     db.session.delete(log)
+    db.session.flush()
+    recompute_habit_stat(user_id, habit_id)
     db.session.commit()
     return True
 
@@ -307,36 +320,40 @@ def list_habits(user_id: int) -> List[dict]:
     today = date.today()
     today_logs = {log.habit_id: log for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()}
 
+    # HAB-005: batch-fetch logs for the last 7 days (today - 6 through today)
+    habit_ids = [h.id for h in habits] or [0]
+    week_start = today - timedelta(days=6)
+    recent_logs = (
+        HabitLog.query.filter(HabitLog.user_id == user_id)
+        .filter(HabitLog.habit_id.in_(habit_ids))
+        .filter(HabitLog.logged_date >= week_start, HabitLog.logged_date <= today)
+        .all()
+    )
+    # Build a set of (habit_id, date) for O(1) lookup
+    logged_set: set[tuple[int, date]] = {(lg.habit_id, lg.logged_date) for lg in recent_logs}
+    # Generate the 7-day window once
+    week_dates = [week_start + timedelta(days=i) for i in range(7)]
+
     payload = []
     for habit in habits:
         s = stats_by_id.get(habit.id, {"count": 0, "last_logged_date": None})
+        today_log = today_logs.get(habit.id)
+        last_7_days = [{"date": d.isoformat(), "logged": (habit.id, d) in logged_set} for d in week_dates]
         payload.append(
             {
                 "habit": habit,
                 "count": s["count"],
                 "last_logged_date": s["last_logged_date"],
                 "completed_today": habit.id in today_logs,
+                "current_streak": habit.stat.current_streak if habit.stat else 0,
+                "completion_rate_30d": habit.stat.completion_rate_30d if habit.stat else None,
+                "today_log_id": today_log.id if today_log else None,
+                "last_7_days": last_7_days,
             }
         )
     return payload
 
 
 def _streaks(logs: List[HabitLog]) -> Tuple[int, int]:
-    if not logs:
-        return 0, 0
-    best = 0
-    current = 0
-    expected = logs[0].logged_date
-    for log in logs:
-        if log.logged_date == expected:
-            current += 1
-            expected = expected - timedelta(days=1)
-        elif (expected - log.logged_date).days == 1:
-            current += 1
-            expected = log.logged_date - timedelta(days=1)
-        else:
-            best = max(best, current)
-            current = 1
-            expected = log.logged_date - timedelta(days=1)
-    best = max(best, current)
-    return current, best
+    """Delegate to canonical compute_streaks in stat_service."""
+    return compute_streaks(logs)

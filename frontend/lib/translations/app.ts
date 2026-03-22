@@ -136,6 +136,32 @@ export interface HabitsPageTranslations {
   log: string
   logged: string
   done: string
+  today: string
+  yesterday: string
+  daysAgo: string
+  dayStreak: string
+  undo: string
+  thisMonth: string
+  emptyTitle: string
+  emptyBody: string
+  emptyAction: string
+  deleteTitle: string
+  deleteBody: string
+  deleteConfirm: string
+  deleteCancel: string
+  detailTitle: string
+  currentStreak: string
+  longestStreak: string
+  completionRate: string
+  totalLogs: string
+  last30Days: string
+  yearlyHeatmap: string
+  selectHabit: string
+  days: string
+  noData: string
+  dueIn: string
+  dueSoon: string
+  overdue: string
 }
 
 export interface SkillsPageTranslations {
@@ -229,9 +255,9 @@ const en: AppTranslations = {
     pleaseWait: 'Please wait\u2026',
     continue: 'Continue',
     createAccount: 'Create Account',
-    noAccount: 'No account? ',
+    noAccount: 'No account?',
     register: 'Register',
-    haveAccount: 'Have an account? ',
+    haveAccount: 'Have an account?',
     signIn: 'Sign in',
   },
   onboarding: {
@@ -347,6 +373,32 @@ const en: AppTranslations = {
     log: 'Log',
     logged: 'logged',
     done: 'Done',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    daysAgo: 'days ago',
+    dayStreak: 'day streak',
+    undo: 'Undo',
+    thisMonth: 'this month',
+    emptyTitle: 'Start building your rhythm',
+    emptyBody: 'Small, consistent actions compound into meaningful change. Create your first habit and let the streaks tell the story.',
+    emptyAction: 'Create Your First Habit',
+    deleteTitle: 'Delete habit?',
+    deleteBody: 'This will permanently delete {name} and all its logs. This cannot be undone.',
+    deleteConfirm: 'Delete',
+    deleteCancel: 'Cancel',
+    detailTitle: 'Habit Detail',
+    currentStreak: 'Current Streak',
+    longestStreak: 'Longest Streak',
+    completionRate: 'Completion Rate',
+    totalLogs: 'Total Logs',
+    last30Days: 'Last 30 Days',
+    yearlyHeatmap: 'Yearly Heatmap',
+    selectHabit: 'Select a habit to see its analytics',
+    days: 'days',
+    noData: 'No data yet',
+    dueIn: 'Due in {time}',
+    dueSoon: 'Due soon',
+    overdue: 'Overdue by {time}',
   },
   skills: {
     eyebrow: 'Mastery',
@@ -423,9 +475,9 @@ const ko: AppTranslations = {
     pleaseWait: '\uc7a0\uc2dc\ub9cc\uc694\u2026',
     continue: '\uacc4\uc18d',
     createAccount: '\uacc4\uc815 \ub9cc\ub4e4\uae30',
-    noAccount: '\uacc4\uc815\uc774 \uc5c6\uc73c\uc2e0\uac00\uc694? ',
+    noAccount: '\uacc4\uc815\uc774 \uc5c6\uc73c\uc2e0\uac00\uc694?',
     register: '\uac00\uc785\ud558\uae30',
-    haveAccount: '\uc774\ubbf8 \uacc4\uc815\uc774 \uc788\uc73c\uc2e0\uac00\uc694? ',
+    haveAccount: '\uc774\ubbf8 \uacc4\uc815\uc774 \uc788\uc73c\uc2e0\uac00\uc694?',
     signIn: '\ub85c\uadf8\uc778',
   },
   onboarding: {
@@ -541,6 +593,32 @@ const ko: AppTranslations = {
     log: '\uae30\ub85d',
     logged: '\uae30\ub85d\ub428',
     done: '\uc644\ub8cc',
+    today: '\uc624\ub298',
+    yesterday: '\uc5b4\uc81c',
+    daysAgo: '\uc77c \uc804',
+    dayStreak: '\uc77c \uc5f0\uc18d',
+    undo: '\ucde8\uc18c',
+    thisMonth: '\uc774\ubc88 \ub2ec',
+    emptyTitle: '\ub9ac\ub4ec\uc744 \ub9cc\ub4e4\uc5b4 \ubcf4\uc138\uc694',
+    emptyBody: '\uc791\uace0 \uafb8\uc900\ud55c \ud589\ub3d9\uc774 \uc758\ubbf8 \uc788\ub294 \ubcc0\ud654\ub97c \ub9cc\ub4ed\ub2c8\ub2e4. \uccab \uc2b5\uad00\uc744 \ub9cc\ub4e4\uace0 \uc5f0\uc18d \uae30\ub85d\uc744 \uc2dc\uc791\ud558\uc138\uc694.',
+    emptyAction: '\uccab \uc2b5\uad00 \ub9cc\ub4e4\uae30',
+    deleteTitle: '\uc2b5\uad00\uc744 \uc0ad\uc81c\ud560\uae4c\uc694?',
+    deleteBody: '{name}\uacfc(\uc640) \ubaa8\ub4e0 \uae30\ub85d\uc774 \uc601\uad6c\uc801\uc73c\ub85c \uc0ad\uc81c\ub429\ub2c8\ub2e4. \uc774 \uc791\uc5c5\uc740 \ucde8\uc18c\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.',
+    deleteConfirm: '\uc0ad\uc81c',
+    deleteCancel: '\ucde8\uc18c',
+    detailTitle: '\uc2b5\uad00 \uc0c1\uc138',
+    currentStreak: '\ud604\uc7ac \uc5f0\uc18d',
+    longestStreak: '\ucd5c\uc7a5 \uc5f0\uc18d',
+    completionRate: '\uc644\ub8cc\uc728',
+    totalLogs: '\ucd1d \uae30\ub85d',
+    last30Days: '\ucd5c\uadfc 30\uc77c',
+    yearlyHeatmap: '\uc5f0\uac04 \ud788\ud2b8\ub9f5',
+    selectHabit: '\uc2b5\uad00\uc744 \uc120\ud0dd\ud558\uba74 \ubd84\uc11d\uc744 \ubcfc \uc218 \uc788\uc2b5\ub2c8\ub2e4',
+    days: '\uc77c',
+    noData: '\ub370\uc774\ud130 \uc5c6\uc74c',
+    dueIn: '{time} 후 예정',
+    dueSoon: '곧 예정',
+    overdue: '{time} 지남',
   },
   skills: {
     eyebrow: '\ub9c8\uc2a4\ud130\ub9ac',
@@ -735,6 +813,32 @@ const zh: AppTranslations = {
     log: '\u8bb0\u5f55',
     logged: '\u5df2\u8bb0\u5f55',
     done: '\u5b8c\u6210',
+    today: '\u4eca\u5929',
+    yesterday: '\u6628\u5929',
+    daysAgo: '\u5929\u524d',
+    dayStreak: '\u5929\u8fde\u7eed',
+    undo: '\u64a4\u9500',
+    thisMonth: '\u672c\u6708',
+    emptyTitle: '\u5f00\u59cb\u57f9\u517b\u4f60\u7684\u8282\u594f',
+    emptyBody: '\u5fae\u5c0f\u800c\u6301\u7eed\u7684\u884c\u52a8\u4f1a\u79ef\u7d2f\u6210\u6709\u610f\u4e49\u7684\u6539\u53d8\u3002\u521b\u5efa\u4f60\u7684\u7b2c\u4e00\u4e2a\u4e60\u60ef\uff0c\u8ba9\u8fde\u7eed\u8bb0\u5f55\u8bb2\u8ff0\u6545\u4e8b\u3002',
+    emptyAction: '\u521b\u5efa\u7b2c\u4e00\u4e2a\u4e60\u60ef',
+    deleteTitle: '\u5220\u9664\u4e60\u60ef\uff1f',
+    deleteBody: '\u8fd9\u5c06\u6c38\u4e45\u5220\u9664 {name} \u53ca\u5176\u6240\u6709\u8bb0\u5f55\u3002\u6b64\u64cd\u4f5c\u65e0\u6cd5\u64a4\u9500\u3002',
+    deleteConfirm: '\u5220\u9664',
+    deleteCancel: '\u53d6\u6d88',
+    detailTitle: '\u4e60\u60ef\u8be6\u60c5',
+    currentStreak: '\u5f53\u524d\u8fde\u7eed',
+    longestStreak: '\u6700\u957f\u8fde\u7eed',
+    completionRate: '\u5b8c\u6210\u7387',
+    totalLogs: '\u603b\u8bb0\u5f55',
+    last30Days: '\u8fd1 30 \u5929',
+    yearlyHeatmap: '\u5e74\u5ea6\u70ed\u529b\u56fe',
+    selectHabit: '\u9009\u62e9\u4e00\u4e2a\u4e60\u60ef\u67e5\u770b\u5206\u6790',
+    days: '\u5929',
+    noData: '\u6682\u65e0\u6570\u636e',
+    dueIn: '{time} 后到期',
+    dueSoon: '即将到期',
+    overdue: '已逾期 {time}',
   },
   skills: {
     eyebrow: '\u7cbe\u8fdb',
