@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   skillsApi,
@@ -53,6 +53,8 @@ export default function SkillsPage() {
   const [goalTarget, setGoalTarget] = useState('12')
 
   const [practiceSkillId, setPracticeSkillId] = useState<number | null>(null)
+  const [practiceStepId, setPracticeStepId] = useState<string>('')
+  const [nextActionHint, setNextActionHint] = useState<string | null>(null)
   const [duration, setDuration] = useState('30')
   const [practiceNotes, setPracticeNotes] = useState('')
 
@@ -64,6 +66,13 @@ export default function SkillsPage() {
   const { data: overviewData, isLoading: isOverviewLoading } = useQuery({
     queryKey: ['skills', 'overview'],
     queryFn: () => skillsApi.overview(),
+    retry: false,
+  })
+
+  const { data: practicePathData } = useQuery({
+    queryKey: ['skills', 'path', practiceSkillId],
+    queryFn: () => skillsApi.path(practiceSkillId as number),
+    enabled: practiceSkillId !== null,
     retry: false,
   })
 
@@ -83,12 +92,19 @@ export default function SkillsPage() {
   })
 
   const practiceMut = useMutation({
-    mutationFn: ({ skillId, mins, notes }: { skillId: number; mins: number; notes: string }) =>
-      skillsApi.logPractice(skillId, { duration_minutes: mins, notes: notes || undefined }),
-    onSuccess: () => {
+    mutationFn: ({ skillId, mins, notes, stepId }: { skillId: number; mins: number; notes: string; stepId?: number }) =>
+      skillsApi.logPractice(skillId, {
+        duration_minutes: mins,
+        step_id: stepId,
+        notes: notes || undefined,
+      }),
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ['skills'] })
       qc.invalidateQueries({ queryKey: ['skills', 'overview'] })
-      setPracticeSkillId(null)
+      if (practiceSkillId !== null) {
+        qc.invalidateQueries({ queryKey: ['skills', 'path', practiceSkillId] })
+      }
+      setNextActionHint(result.next_recommended_step?.label ?? null)
       setDuration('30')
       setPracticeNotes('')
     },
@@ -163,7 +179,30 @@ export default function SkillsPage() {
     e.preventDefault()
     const mins = parseInt(duration)
     if (!practiceSkillId || !mins || mins <= 0) return
-    practiceMut.mutate({ skillId: practiceSkillId, mins, notes: practiceNotes.trim() })
+    const parsedStepId = parseInt(practiceStepId)
+    practiceMut.mutate({
+      skillId: practiceSkillId,
+      mins,
+      notes: practiceNotes.trim(),
+      stepId: Number.isFinite(parsedStepId) ? parsedStepId : undefined,
+    })
+  }
+
+  useEffect(() => {
+    if (!practicePathData?.path?.next_recommended_step) return
+    const recommended = practicePathData.path.next_recommended_step
+    const recommendedIndex = practicePathData.path.steps.findIndex((step) => step.step_id === recommended.step_id)
+    if (recommendedIndex >= 0) {
+      setPracticeStepId(String(recommendedIndex + 1))
+    }
+  }, [practicePathData])
+
+  function openPracticeModal(skillId: number) {
+    setPracticeSkillId(skillId)
+    setPracticeStepId('')
+    setPracticeNotes('')
+    setDuration('30')
+    setNextActionHint(null)
   }
 
   return (
@@ -489,6 +528,43 @@ export default function SkillsPage() {
               </div>
             </div>
 
+            {(practicePathData?.path?.steps?.length ?? 0) > 0 && (
+              <div className="space-y-2">
+                <label htmlFor="pr-step" style={microLabel}>Step</label>
+                <select
+                  id="pr-step"
+                  value={practiceStepId}
+                  onChange={(e) => setPracticeStepId(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">Auto-select recommended step</option>
+                  {practicePathData?.path?.steps?.map((step, index) => {
+                    const value = String(index + 1)
+                    return (
+                      <option key={step.step_id} value={value}>
+                        {step.label}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+            )}
+
+            {nextActionHint && (
+              <div
+                className="p-3"
+                role="status"
+                style={{
+                  background: '#e8f0e3',
+                  borderRadius: '0 10px 10px 10px',
+                  color: '#3a5c35',
+                }}
+              >
+                <p style={microLabel}>Next Recommended Action</p>
+                <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem' }}>{nextActionHint}</p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -651,7 +727,7 @@ export default function SkillsPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setPracticeSkillId(card.skill_id)}
+                    onClick={() => openPracticeModal(card.skill_id)}
                     className="flex items-center gap-1"
                     style={{
                       fontFamily: 'var(--font-manrope), sans-serif',
