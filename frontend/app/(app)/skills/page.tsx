@@ -199,7 +199,17 @@ export default function SkillsPage() {
   const forecastQueries = useQueries({
     queries: cards.map((card) => ({
       queryKey: ['skills', 'forecast', card.skill_id],
-      queryFn: () => skillsApi.forecast(card.skill_id),
+      queryFn: async () => {
+        try {
+          return await skillsApi.forecast(card.skill_id)
+        } catch (error) {
+          const message = error instanceof Error ? error.message : ''
+          if (message === 'not_found' || message.includes('API error 404')) {
+            return null
+          }
+          throw error
+        }
+      },
       retry: false,
       staleTime: 60_000,
     })),

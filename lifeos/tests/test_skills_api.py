@@ -244,6 +244,18 @@ class TestSkillsAPI:
         assert data["ok"] is True
         assert data["forecast"]["horizon_days"] == 90
 
+    def test_get_skill_forecast_horizon_min_clamped(self, app, client, test_user, auth_headers):
+        """Forecast horizon clamps explicit zero requests to minimum range."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Forecast Min Clamp Skill")
+
+        resp = client.get(f"/api/skills/{skill.id}/forecast?horizon_days=0", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["forecast"]["horizon_days"] == 1
+
     def test_create_skill_success(self, client, csrf_headers):
         """Create a skill successfully."""
         payload = {

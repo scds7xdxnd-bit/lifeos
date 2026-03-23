@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from math import ceil
 from typing import Dict, List, Literal, Optional
 
 from sqlalchemy import func
@@ -353,7 +354,9 @@ def get_skill_forecast(user_id: int, skill_id: int, *, horizon_days: int = 7) ->
     if not summary:
         return None
 
-    horizon_days = min(max(int(horizon_days or 7), 1), 90)
+    if horizon_days is None:
+        horizon_days = 7
+    horizon_days = min(max(int(horizon_days), 1), 90)
 
     skill: Skill = summary["skill"]
     totals = summary.get("totals", {})
@@ -361,18 +364,22 @@ def get_skill_forecast(user_id: int, skill_id: int, *, horizon_days: int = 7) ->
 
     now = datetime.utcnow()
     fourteen_days = now - timedelta(days=14)
-    recent_14 = (
-        PracticeSession.query.filter_by(skill_id=skill.id, user_id=user_id)
+    aggregate_row = (
+        db.session.query(
+            func.sum(PracticeSession.duration_minutes).label("total_minutes"),
+            func.count(PracticeSession.id).label("session_count"),
+        )
+        .filter(PracticeSession.skill_id == skill.id, PracticeSession.user_id == user_id)
         .filter(PracticeSession.practiced_at >= fourteen_days)
-        .all()
+        .one()
     )
 
-    total_minutes_last_14 = int(sum((session.duration_minutes or 0) for session in recent_14))
-    sessions_last_14 = int(len(recent_14))
+    total_minutes_last_14 = int(aggregate_row.total_minutes or 0)
+    sessions_last_14 = int(aggregate_row.session_count or 0)
     avg_daily_minutes_last_14 = float(total_minutes_last_14) / 14.0
 
     projected_minutes = int(round(avg_daily_minutes_last_14 * float(horizon_days)))
-    projected_sessions = int(round((float(sessions_last_14) / 14.0) * float(horizon_days)))
+    projected_sessions = int(ceil((float(sessions_last_14) / 14.0) * float(horizon_days)))
 
     forecast_state: Literal["on_track", "at_risk", "completed", "insufficient_data"] = "on_track"
     risk_reason: Optional[str] = None
