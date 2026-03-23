@@ -46,14 +46,28 @@ Safely roll out the Skills forecast surface behind `ENABLE_PHASE12_SKILLS_FORECA
 
 ## Quick Verification Commands
 ```bash
-# Validate effective config + health
-bash scripts/ops/phase12_skills_forecast_rollout_check.sh
+# Required variables for reproducible execution:
+# - BASE_URL (target service base URL)
+# - PYTHON_BIN (python command/path used for local config validation)
+# Optional for runtime endpoint verification:
+# - SKILLS_JWT (Bearer token)
+# - SKILL_ID (known skill ID for forecast endpoint check)
 
-# Override expected values if needed
-EXPECT_SKILLS_FORECAST=true bash scripts/ops/phase12_skills_forecast_rollout_check.sh
+# Validate health + local effective config flags
+BASE_URL="http://127.0.0.1:5001" PYTHON_BIN=python3 \
+   bash scripts/ops/phase12_skills_forecast_rollout_check.sh
+
+# Validate expected forecast-enabled configuration
+BASE_URL="http://127.0.0.1:5001" PYTHON_BIN=python3 EXPECT_SKILLS_FORECAST=true \
+   bash scripts/ops/phase12_skills_forecast_rollout_check.sh
+
+# Optional: verify running service behavior with auth + known skill id
+BASE_URL="http://127.0.0.1:5001" PYTHON_BIN=python3 EXPECT_SKILLS_FORECAST=true \
+SKILLS_JWT="<bearer-token>" SKILL_ID="<skill-id>" \
+   bash scripts/ops/phase12_skills_forecast_rollout_check.sh
 ```
 
 ## Release Notes Template
 - Enabled deterministic Skills forecast panel behind feature flag.
 - Added advisory forecast reason copy only (no autonomous coaching behavior).
-- Forecast can be disabled instantly via `ENABLE_PHASE12_SKILLS_FORECAST=false`.
+- Forecast can be disabled via `ENABLE_PHASE12_SKILLS_FORECAST=false` and a backend restart.
