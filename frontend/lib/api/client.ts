@@ -54,7 +54,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error((data as { message?: string }).message ?? `API error ${res.status}`)
+    throw new Error((data as { message?: string; error?: string }).message ?? (data as { error?: string }).error ?? `API error ${res.status}`)
   }
 
   return data as T
