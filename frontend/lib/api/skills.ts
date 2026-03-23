@@ -71,6 +71,31 @@ export interface SkillPath {
   next_recommended_step?: SkillPathStep | null
 }
 
+export type SkillForecastState = 'on_track' | 'at_risk' | 'completed' | 'insufficient_data'
+export type SkillForecastRiskReason = 'no_recent_sessions' | 'no_goal_configured' | 'insufficient_history' | null
+
+export interface SkillForecastBaseline {
+  avg_daily_minutes_last_14: number
+  sessions_last_14: number
+  total_minutes_last_14: number
+}
+
+export interface SkillForecastProjection {
+  projected_minutes_next_window: number
+  projected_sessions_next_window: number
+  projected_goal_progress_ratio: number | null
+}
+
+export interface SkillForecast {
+  skill_id: number
+  horizon_days: number
+  forecast_state: SkillForecastState
+  risk_reason: SkillForecastRiskReason
+  goal: SkillGoalEndpoint | null
+  baseline: SkillForecastBaseline
+  projection: SkillForecastProjection
+}
+
 export interface CreateSkillInput {
   name: string
   category?: string | null
@@ -110,6 +135,7 @@ interface SkillOverviewResponse {
   skills: SkillOverviewCard[]
 }
 interface SkillPathResponse { ok: boolean; path: SkillPath }
+interface SkillForecastResponse { ok: boolean; forecast: SkillForecast }
 
 export const skillsApi = {
   list: () => apiGet<SkillListResponse>('/api/skills'),
@@ -119,6 +145,9 @@ export const skillsApi = {
   get: (id: number) => apiGet<SkillResponse>(`/api/skills/${id}`),
 
   path: (id: number) => apiGet<SkillPathResponse>(`/api/skills/${id}/path`),
+
+  forecast: (id: number, horizonDays = 7) =>
+    apiGet<SkillForecastResponse>(`/api/skills/${id}/forecast?horizon_days=${horizonDays}`),
 
   create: (data: CreateSkillInput) =>
     apiPost<SkillResponse>('/api/skills', data),

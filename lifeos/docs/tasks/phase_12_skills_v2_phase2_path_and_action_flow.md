@@ -1,6 +1,6 @@
 # Phase 12 Skills v2 — Phase 2 Path and Action Flow
 
-Status: In Progress
+Status: Complete
 Owner: Backend + Frontend + QA
 Target Window: 2026-03-22 to 2026-03-30
 Related Constitution: lifeos/docs/ui_ux_constitution.md §5 (Skills)
@@ -14,11 +14,12 @@ Add deterministic path guidance on each skill while preserving one dominant card
 - Keep goals and path behind feature flags (`ENABLE_PHASE12_SKILLS_GOALS`, `ENABLE_PHASE12_SKILLS_PATH`).
 - Wire frontend skills page to prefer overview contract and gracefully fallback to legacy list.
 - Keep dominant card action as Continue Practice.
+- Add minimal additive schema support required by this flow (goal fields on `skill`, optional `step_id` on `skill_practice_session`).
 
 Out of Scope:
 - Forecast/recommendation engine (`ENABLE_PHASE12_SKILLS_FORECAST`).
 - New non-deterministic scoring logic.
-- New database schema changes.
+- Large or unrelated database schema redesigns beyond the additive fields above.
 
 ## Backend Deliverables
 1. `GET /api/skills/overview` (Phase 1 carry-forward, goals-flag gated).
@@ -56,3 +57,6 @@ Out of Scope:
 - Backend tests for overview + path flags pass.
 - Frontend renders correctly with overview success and fallback modes.
 - No breaking change to existing `/api/skills` consumers.
+
+## Follow-up Phase
+- Phase 3 forecast/guidance work is tracked in `lifeos/docs/tasks/phase_12_skills_v2_phase3_forecast_guidance.md`.

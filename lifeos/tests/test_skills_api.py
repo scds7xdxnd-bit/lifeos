@@ -76,6 +76,7 @@ class TestSkillsAPI:
 
     def test_list_skills_overview_feature_disabled(self, client, auth_headers):
         """Overview endpoint is hidden when Phase 12 goals flag is disabled."""
+        client.application.config["ENABLE_PHASE12_SKILLS_GOALS"] = False
         resp = client.get("/api/skills/overview", headers=auth_headers)
         assert resp.status_code == 404
         data = resp.get_json()
@@ -132,6 +133,7 @@ class TestSkillsAPI:
 
     def test_get_skill_path_feature_disabled(self, app, client, test_user, auth_headers):
         """Path endpoint is hidden when Phase 12 path flag is disabled."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = False
         with app.app_context():
             skill = create_skill(test_user.id, name="Path Hidden Skill")
 
@@ -180,6 +182,91 @@ class TestSkillsAPI:
         data = resp.get_json()
         assert data["ok"] is False
         assert data["error"] == "not_found"
+
+    def test_get_skill_forecast_feature_disabled(self, app, client, test_user, auth_headers):
+        """Forecast endpoint is hidden when Phase 12 forecast flag is disabled."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = False
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Forecast Hidden Skill")
+
+        resp = client.get(f"/api/skills/{skill.id}/forecast", headers=auth_headers)
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["ok"] is False
+        assert data["error"] == "not_found"
+
+    def test_get_skill_forecast_not_found_when_enabled(self, app, client, auth_headers):
+        """Forecast endpoint returns not_found when flag is enabled but skill does not exist."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True
+
+        resp = client.get("/api/skills/99999/forecast", headers=auth_headers)
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["ok"] is False
+        assert data["error"] == "not_found"
+
+    def test_get_skill_forecast_enabled_payload(self, app, client, test_user, auth_headers):
+        """Forecast endpoint returns deterministic baseline and projection payload."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Forecast Ready Skill",
+                goal_type="sessions",
+                goal_target_value=8,
+            )
+            now = datetime.utcnow()
+            log_practice_session(test_user.id, skill.id, duration_minutes=30, practiced_at=now - timedelta(days=2))
+            log_practice_session(test_user.id, skill.id, duration_minutes=25, practiced_at=now - timedelta(days=5))
+
+        resp = client.get(f"/api/skills/{skill.id}/forecast?horizon_days=7", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        forecast = data["forecast"]
+        assert forecast["skill_id"] == skill.id
+        assert forecast["horizon_days"] == 7
+        assert forecast["goal"] is not None
+        assert forecast["baseline"]["sessions_last_14"] >= 2
+        assert forecast["projection"]["projected_minutes_next_window"] >= 0
+        assert forecast["projection"]["projected_sessions_next_window"] >= 0
+        assert forecast["forecast_state"] in {"on_track", "at_risk", "completed", "insufficient_data"}
+
+    def test_get_skill_forecast_horizon_clamped(self, app, client, test_user, auth_headers):
+        """Forecast horizon is clamped to a safe max range."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Forecast Clamp Skill")
+
+        resp = client.get(f"/api/skills/{skill.id}/forecast?horizon_days=999", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["forecast"]["horizon_days"] == 90
+
+    def test_get_skill_forecast_horizon_min_clamped(self, app, client, test_user, auth_headers):
+        """Forecast horizon clamps explicit zero requests to minimum range."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Forecast Min Clamp Skill")
+
+        resp = client.get(f"/api/skills/{skill.id}/forecast?horizon_days=0", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["forecast"]["horizon_days"] == 1
+
+    def test_get_skill_forecast_invalid_horizon_defaults_to_7(self, app, client, test_user, auth_headers):
+        """Invalid horizon query should resolve through typed arg parsing and default to 7."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Forecast Invalid Horizon Skill")
+
+        resp = client.get(f"/api/skills/{skill.id}/forecast?horizon_days=abc", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["forecast"]["horizon_days"] == 7
 
     def test_create_skill_success(self, client, csrf_headers):
         """Create a skill successfully."""
@@ -275,8 +362,12 @@ class TestSkillsAPI:
         assert data["skill"]["name"] == "GraphQL"
         assert "goal" in data
         assert "path" in data
+        assert "path_steps" in data
         assert "current_step" in data
         assert "history" in data
+        assert isinstance(data["path"], dict)
+        assert "steps" in data["path"]
+        assert data["path_steps"] == data["path"]["steps"]
 
     def test_get_skill_detail_when_path_disabled_returns_null_path_fields(self, app, client, test_user, auth_headers):
         """Detail endpoint preserves shape and returns null path fields when path flag is disabled."""
@@ -290,6 +381,7 @@ class TestSkillsAPI:
         assert data["ok"] is True
         assert data["goal"] is None
         assert data["path"] is None
+        assert data["path_steps"] is None
         assert data["current_step"] is None
 
     def test_get_skill_not_found(self, client, auth_headers):

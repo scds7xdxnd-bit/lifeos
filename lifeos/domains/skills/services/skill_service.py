@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from math import ceil
 from typing import Dict, List, Literal, Optional
 
 from sqlalchemy import func
@@ -345,6 +346,89 @@ def get_skill_path(user_id: int, skill_id: int) -> Optional[dict]:
         "goal": goal,
         "steps": path_steps,
         "next_recommended_step": next_recommended_step,
+    }
+
+
+def get_skill_forecast(user_id: int, skill_id: int, *, horizon_days: int = 7) -> Optional[dict]:
+    summary = get_skill_summary(user_id=user_id, skill_id=skill_id, recent_limit=10)
+    if not summary:
+        return None
+
+    if horizon_days is None:
+        horizon_days = 7
+    horizon_days = min(max(int(horizon_days), 1), 90)
+
+    skill: Skill = summary["skill"]
+    totals = summary.get("totals", {})
+    goal = _derive_goal_endpoint(skill, totals=totals)
+
+    now = datetime.utcnow()
+    fourteen_days = now - timedelta(days=14)
+    aggregate_row = (
+        db.session.query(
+            func.sum(PracticeSession.duration_minutes).label("total_minutes"),
+            func.count(PracticeSession.id).label("session_count"),
+        )
+        .filter(PracticeSession.skill_id == skill.id, PracticeSession.user_id == user_id)
+        .filter(PracticeSession.practiced_at >= fourteen_days)
+        .one()
+    )
+
+    total_minutes_last_14 = int(aggregate_row.total_minutes or 0)
+    sessions_last_14 = int(aggregate_row.session_count or 0)
+    avg_daily_minutes_last_14 = float(total_minutes_last_14) / 14.0
+
+    projected_minutes = int(round(avg_daily_minutes_last_14 * float(horizon_days)))
+    projected_sessions = int(ceil((float(sessions_last_14) / 14.0) * float(horizon_days)))
+
+    forecast_state: Literal["on_track", "at_risk", "completed", "insufficient_data"] = "on_track"
+    risk_reason: Optional[str] = None
+
+    projected_goal_progress_ratio: Optional[float] = None
+    if goal is None:
+        forecast_state = "at_risk"
+        risk_reason = "no_goal_configured"
+    elif float(goal.get("progress_ratio") or 0.0) >= 1.0:
+        forecast_state = "completed"
+    else:
+        goal_type = str(goal.get("goal_type") or "")
+        current_value = float(goal.get("current_value") or 0.0)
+        target_value = float(goal.get("target_value") or 0.0)
+
+        projected_value = current_value
+        if goal_type == "hours":
+            projected_value += float(projected_minutes) / 60.0
+        elif goal_type == "sessions":
+            projected_value += float(projected_sessions)
+
+        if target_value > 0:
+            projected_goal_progress_ratio = min(max(projected_value / target_value, 0.0), 1.0)
+
+        if sessions_last_14 == 0:
+            forecast_state = "at_risk"
+            risk_reason = "no_recent_sessions"
+        elif sessions_last_14 < 2:
+            forecast_state = "insufficient_data"
+            risk_reason = "insufficient_history"
+        else:
+            forecast_state = "on_track"
+
+    return {
+        "skill_id": skill.id,
+        "horizon_days": horizon_days,
+        "forecast_state": forecast_state,
+        "risk_reason": risk_reason,
+        "goal": goal,
+        "baseline": {
+            "avg_daily_minutes_last_14": round(avg_daily_minutes_last_14, 2),
+            "sessions_last_14": sessions_last_14,
+            "total_minutes_last_14": total_minutes_last_14,
+        },
+        "projection": {
+            "projected_minutes_next_window": projected_minutes,
+            "projected_sessions_next_window": projected_sessions,
+            "projected_goal_progress_ratio": projected_goal_progress_ratio,
+        },
     }
 
 
