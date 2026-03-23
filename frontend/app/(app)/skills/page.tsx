@@ -254,6 +254,12 @@ export default function SkillsPage() {
       return { label: 'At Risk', reason: 'Recent patterns suggest this goal needs extra consistency.' }
     }
     if (forecast.forecast_state === 'insufficient_data') {
+      if (forecast.risk_reason === 'non_projectable_goal_type') {
+        return {
+          label: 'Insufficient Data',
+          reason: 'This goal type is qualitative, so we show activity guidance without numeric projection.',
+        }
+      }
       return { label: 'Insufficient Data', reason: 'A little more activity history is needed for stable guidance.' }
     }
     return { label: 'On Track', reason: 'Recent consistency suggests your current pace is sustainable.' }

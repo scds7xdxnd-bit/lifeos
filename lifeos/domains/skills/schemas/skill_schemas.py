@@ -136,7 +136,9 @@ class SkillForecastResponse(BaseModel):
     skill_id: int
     horizon_days: int = Field(ge=1, le=90)
     forecast_state: Literal["on_track", "at_risk", "completed", "insufficient_data"]
-    risk_reason: Optional[Literal["no_recent_sessions", "no_goal_configured", "insufficient_history"]] = None
+    risk_reason: Optional[
+        Literal["no_recent_sessions", "no_goal_configured", "insufficient_history", "non_projectable_goal_type"]
+    ] = None
     goal: Optional[SkillGoalEndpointResponse] = None
     baseline: SkillForecastBaselineResponse
     projection: SkillForecastProjectionResponse

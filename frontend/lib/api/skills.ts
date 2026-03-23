@@ -72,7 +72,12 @@ export interface SkillPath {
 }
 
 export type SkillForecastState = 'on_track' | 'at_risk' | 'completed' | 'insufficient_data'
-export type SkillForecastRiskReason = 'no_recent_sessions' | 'no_goal_configured' | 'insufficient_history' | null
+export type SkillForecastRiskReason =
+  | 'no_recent_sessions'
+  | 'no_goal_configured'
+  | 'insufficient_history'
+  | 'non_projectable_goal_type'
+  | null
 
 export interface SkillForecastBaseline {
   avg_daily_minutes_last_14: number
