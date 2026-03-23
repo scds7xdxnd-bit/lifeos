@@ -16,6 +16,7 @@ from lifeos.domains.skills.services.skill_service import (
     create_skill,
     delete_practice_session,
     delete_skill,
+    get_skill_forecast,
     get_skill_path,
     get_skill_summary,
     list_skill_overview_cards,
@@ -440,6 +441,91 @@ class TestSkillPhase12Derivations:
         )
         assert first_when_no_ready is not None
         assert first_when_no_ready["step_id"] == "blocked-1"
+
+
+class TestSkillForecastService:
+    """Covers deterministic forecast branches for Phase 3."""
+
+    def test_get_skill_forecast_not_found(self, app, test_user):
+        with app.app_context():
+            payload = get_skill_forecast(user_id=test_user.id, skill_id=99999)
+            assert payload is None
+
+    def test_get_skill_forecast_no_goal_configured_is_at_risk(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Forecast No Goal")
+            payload = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=7)
+
+            assert payload is not None
+            assert payload["forecast_state"] == "at_risk"
+            assert payload["risk_reason"] == "no_goal_configured"
+            assert payload["goal"] is None
+
+    def test_get_skill_forecast_completed_goal_state(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Forecast Completed",
+                goal_type="sessions",
+                goal_target_value=1,
+            )
+            log_practice_session(test_user.id, skill.id, duration_minutes=20)
+            payload = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=7)
+
+            assert payload is not None
+            assert payload["forecast_state"] == "completed"
+            assert payload["risk_reason"] is None
+
+    def test_get_skill_forecast_insufficient_history(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Forecast Sparse",
+                goal_type="sessions",
+                goal_target_value=5,
+            )
+            log_practice_session(test_user.id, skill.id, duration_minutes=30)
+            payload = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=7)
+
+            assert payload is not None
+            assert payload["forecast_state"] == "insufficient_data"
+            assert payload["risk_reason"] == "insufficient_history"
+            # ceil-based session projection should not round 0.5 down to 0.
+            assert payload["projection"]["projected_sessions_next_window"] == 1
+
+    def test_get_skill_forecast_on_track_with_hours_goal(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Forecast Hours",
+                goal_type="hours",
+                goal_target_value=10,
+            )
+            now = datetime.utcnow()
+            log_practice_session(test_user.id, skill.id, duration_minutes=60, practiced_at=now - timedelta(days=2))
+            log_practice_session(test_user.id, skill.id, duration_minutes=60, practiced_at=now - timedelta(days=4))
+            payload = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=14)
+
+            assert payload is not None
+            assert payload["forecast_state"] == "on_track"
+            assert payload["risk_reason"] is None
+            assert payload["projection"]["projected_goal_progress_ratio"] is not None
+
+    def test_get_skill_forecast_horizon_none_and_clamped(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Forecast Clamp")
+
+            defaulted = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=None)
+            assert defaulted is not None
+            assert defaulted["horizon_days"] == 7
+
+            clamped_min = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=0)
+            assert clamped_min is not None
+            assert clamped_min["horizon_days"] == 1
+
+            clamped_max = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=1000)
+            assert clamped_max is not None
+            assert clamped_max["horizon_days"] == 90
 
 
 # ============== Event Emission Tests ==============
