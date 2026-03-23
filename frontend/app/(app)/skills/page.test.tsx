@@ -1,11 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { InputHTMLAttributes } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SkillsPage from './page'
 import { skillsApi } from '@/lib/api/skills'
 
 vi.mock('@/components/ui/input', () => ({
-  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+  Input: (props: InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
 }))
 
 vi.mock('@/lib/api/skills', () => ({
