@@ -118,3 +118,25 @@ class SkillPathResponse(BaseModel):
     goal: Optional[SkillGoalEndpointResponse] = None
     steps: List[SkillPathStepResponse]
     next_recommended_step: Optional[SkillPathStepResponse] = None
+
+
+class SkillForecastBaselineResponse(BaseModel):
+    avg_daily_minutes_last_14: float
+    sessions_last_14: int
+    total_minutes_last_14: int
+
+
+class SkillForecastProjectionResponse(BaseModel):
+    projected_minutes_next_window: int
+    projected_sessions_next_window: int
+    projected_goal_progress_ratio: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+
+
+class SkillForecastResponse(BaseModel):
+    skill_id: int
+    horizon_days: int = Field(ge=1, le=90)
+    forecast_state: Literal["on_track", "at_risk", "completed", "insufficient_data"]
+    risk_reason: Optional[Literal["no_recent_sessions", "no_goal_configured", "insufficient_history"]] = None
+    goal: Optional[SkillGoalEndpointResponse] = None
+    baseline: SkillForecastBaselineResponse
+    projection: SkillForecastProjectionResponse

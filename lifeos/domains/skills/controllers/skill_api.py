@@ -12,6 +12,7 @@ from lifeos.domains.skills.schemas.skill_schemas import (
     PracticeSessionCreate,
     PracticeSessionUpdate,
     SkillCreate,
+    SkillForecastResponse,
     SkillOverviewCardResponse,
     SkillPathResponse,
     SkillUpdate,
@@ -20,6 +21,7 @@ from lifeos.domains.skills.services.skill_service import (
     create_skill,
     delete_practice_session,
     delete_skill,
+    get_skill_forecast,
     get_skill_path,
     get_skill_summary,
     list_skill_overview_cards,
@@ -43,6 +45,10 @@ def _phase12_skills_goals_strict_enabled() -> bool:
 
 def _phase12_skills_path_enabled() -> bool:
     return bool(current_app.config.get("ENABLE_PHASE12_SKILLS_PATH", False))
+
+
+def _phase12_skills_forecast_enabled() -> bool:
+    return bool(current_app.config.get("ENABLE_PHASE12_SKILLS_FORECAST", False))
 
 
 def _feature_disabled_response():
@@ -152,6 +158,20 @@ def get_skill_path_endpoint(skill_id: int):
     if not path_payload:
         return jsonify({"ok": False, "error": "not_found"}), 404
     return jsonify({"ok": True, "path": SkillPathResponse.model_validate(path_payload).model_dump()})
+
+
+@skill_api_bp.get("/<int:skill_id>/forecast")
+@jwt_required()
+def get_skill_forecast_endpoint(skill_id: int):
+    if not _phase12_skills_forecast_enabled():
+        return _feature_disabled_response()
+
+    user_id = int(get_jwt_identity())
+    horizon_days = request.args.get("horizon_days", default=7, type=int)
+    payload = get_skill_forecast(user_id=user_id, skill_id=skill_id, horizon_days=horizon_days)
+    if not payload:
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    return jsonify({"ok": True, "forecast": SkillForecastResponse.model_validate(payload).model_dump()})
 
 
 @skill_api_bp.patch("/<int:skill_id>")
