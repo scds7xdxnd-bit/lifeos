@@ -1015,6 +1015,28 @@ export default function HabitsPage() {
                         >
                           <Undo2 size={12} /> {t.undo}
                         </button>
+                      ) : h.completed_today ? (
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-manrope), sans-serif',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase' as const,
+                            letterSpacing: '0.05em',
+                            minHeight: '44px',
+                            padding: '0 20px',
+                            borderRadius: '100px',
+                            border: '1.5px solid rgba(75, 102, 70, 0.25)',
+                            color: '#4b6646',
+                            background: 'rgba(75, 102, 70, 0.08)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                          aria-live="polite"
+                        >
+                          <CheckCircle2 size={12} /> {t.done}
+                        </span>
                       ) : (
                         <button
                           type="button"

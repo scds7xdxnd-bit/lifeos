@@ -1,8 +1,6 @@
 """Tests for Habits domain services: habits, logs, streaks, and metrics."""
 
 from datetime import date, timedelta
-from unittest.mock import patch
-
 import pytest
 
 pytestmark = pytest.mark.integration
