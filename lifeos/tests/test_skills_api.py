@@ -76,6 +76,7 @@ class TestSkillsAPI:
 
     def test_list_skills_overview_feature_disabled(self, client, auth_headers):
         """Overview endpoint is hidden when Phase 12 goals flag is disabled."""
+        client.application.config["ENABLE_PHASE12_SKILLS_GOALS"] = False
         resp = client.get("/api/skills/overview", headers=auth_headers)
         assert resp.status_code == 404
         data = resp.get_json()
@@ -132,6 +133,7 @@ class TestSkillsAPI:
 
     def test_get_skill_path_feature_disabled(self, app, client, test_user, auth_headers):
         """Path endpoint is hidden when Phase 12 path flag is disabled."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = False
         with app.app_context():
             skill = create_skill(test_user.id, name="Path Hidden Skill")
 
@@ -275,8 +277,12 @@ class TestSkillsAPI:
         assert data["skill"]["name"] == "GraphQL"
         assert "goal" in data
         assert "path" in data
+        assert "path_steps" in data
         assert "current_step" in data
         assert "history" in data
+        assert isinstance(data["path"], dict)
+        assert "steps" in data["path"]
+        assert data["path_steps"] == data["path"]["steps"]
 
     def test_get_skill_detail_when_path_disabled_returns_null_path_fields(self, app, client, test_user, auth_headers):
         """Detail endpoint preserves shape and returns null path fields when path flag is disabled."""
@@ -290,6 +296,7 @@ class TestSkillsAPI:
         assert data["ok"] is True
         assert data["goal"] is None
         assert data["path"] is None
+        assert data["path_steps"] is None
         assert data["current_step"] is None
 
     def test_get_skill_not_found(self, client, auth_headers):

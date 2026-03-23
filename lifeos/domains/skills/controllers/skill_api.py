@@ -133,7 +133,8 @@ def get_skill_detail(skill_id: int):
             "ok": True,
             "skill": skill_payload,
             "goal": goal_payload,
-            "path": path_steps,
+            "path": path_payload,
+            "path_steps": path_steps,
             "current_step": current_step,
             "history": history_payload,
         }
