@@ -210,4 +210,91 @@ describe('SkillsPage create flow rollout behavior', () => {
     expect(await screen.findByText(/forecast \(7d\)/i)).toBeInTheDocument()
     expect(await screen.findByText(/recent activity is low, so your goal trajectory may slip this week\./i)).toBeInTheDocument()
   })
+
+  it('renders qualitative-goal forecast reason copy for non-projectable goal types', async () => {
+    vi.mocked(skillsApi.list).mockResolvedValue({
+      ok: true,
+      skills: [
+        {
+          id: 1,
+          name: 'Piano',
+          category: 'Music',
+          difficulty: null,
+          target_level: null,
+          current_level: null,
+          description: null,
+          tags: [],
+          total_minutes: 60,
+          session_count: 2,
+          last_practiced_at: null,
+          streak_days: 1,
+          sessions_last_7: 2,
+          sessions_last_30: 2,
+          recent_sessions: [],
+        },
+      ],
+    })
+
+    vi.mocked(skillsApi.overview).mockResolvedValue({
+      ok: true,
+      summary: { total_hours: 1, total_sessions: 2, at_risk: 0, active: 1 },
+      groups: {
+        at_risk: [],
+        on_track: [
+          {
+            skill_id: 1,
+            name: 'Piano',
+            category: 'Music',
+            total_minutes: 60,
+            session_count: 2,
+            progress_state: 'on_track',
+            goal: null,
+            primary_action: 'continue_practice',
+            requires_goal_setup: true,
+            risk_reason: null,
+          },
+        ],
+        completed: [],
+      },
+      skills: [
+        {
+          skill_id: 1,
+          name: 'Piano',
+          category: 'Music',
+          total_minutes: 60,
+          session_count: 2,
+          progress_state: 'on_track',
+          goal: null,
+          primary_action: 'continue_practice',
+          requires_goal_setup: true,
+          risk_reason: null,
+        },
+      ],
+    })
+
+    vi.mocked(skillsApi.forecast).mockResolvedValue({
+      ok: true,
+      forecast: {
+        skill_id: 1,
+        horizon_days: 7,
+        forecast_state: 'insufficient_data',
+        risk_reason: 'non_projectable_goal_type',
+        goal: null,
+        baseline: {
+          avg_daily_minutes_last_14: 2,
+          sessions_last_14: 2,
+          total_minutes_last_14: 30,
+        },
+        projection: {
+          projected_minutes_next_window: 15,
+          projected_sessions_next_window: 1,
+          projected_goal_progress_ratio: null,
+        },
+      },
+    })
+
+    renderPage()
+
+    expect(await screen.findByText(/this goal type is qualitative, so we show activity guidance without numeric projection\./i)).toBeInTheDocument()
+  })
 })

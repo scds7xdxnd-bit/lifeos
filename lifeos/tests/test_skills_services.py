@@ -511,6 +511,25 @@ class TestSkillForecastService:
             assert payload["risk_reason"] is None
             assert payload["projection"]["projected_goal_progress_ratio"] is not None
 
+    def test_get_skill_forecast_non_projectable_goal_type(self, app, test_user):
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Forecast Benchmark",
+                goal_type="benchmark",
+                goal_target_value=10,
+                current_level=2,
+            )
+            now = datetime.utcnow()
+            log_practice_session(test_user.id, skill.id, duration_minutes=30, practiced_at=now - timedelta(days=1))
+            log_practice_session(test_user.id, skill.id, duration_minutes=20, practiced_at=now - timedelta(days=4))
+            payload = get_skill_forecast(user_id=test_user.id, skill_id=skill.id, horizon_days=7)
+
+            assert payload is not None
+            assert payload["forecast_state"] == "insufficient_data"
+            assert payload["risk_reason"] == "non_projectable_goal_type"
+            assert payload["projection"]["projected_goal_progress_ratio"] is None
+
     def test_get_skill_forecast_horizon_none_and_clamped(self, app, test_user):
         with app.app_context():
             skill = create_skill(test_user.id, name="Forecast Clamp")

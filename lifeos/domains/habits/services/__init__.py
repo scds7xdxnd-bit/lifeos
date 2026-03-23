@@ -7,6 +7,8 @@ from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import func
 
+from lifeos.core.timeline.semantics import resolve_timezone_token, timezone_info
+from lifeos.core.users.models import User
 from lifeos.domains.habits.events import (
     HABITS_HABIT_CREATED,
     HABITS_HABIT_DEACTIVATED,
@@ -21,6 +23,12 @@ from lifeos.domains.habits.services.stat_service import (
 )
 from lifeos.extensions import db
 from lifeos.lifeos_platform.outbox import enqueue as enqueue_outbox
+
+
+def _user_local_today(user_id: int) -> date:
+    user = db.session.get(User, user_id)
+    timezone_token = resolve_timezone_token(user.timezone if user and user.timezone else None)
+    return datetime.now(timezone_info(timezone_token)).date()
 
 
 def create_habit(
@@ -164,10 +172,12 @@ def log_habit_completion(
     if not allow_inactive and not habit.is_active:
         raise ValueError("inactive")
 
+    effective_logged_date = logged_date or _user_local_today(user_id)
+
     log = HabitLog(
         user_id=user_id,
         habit_id=habit_id,
-        logged_date=logged_date or date.today(),
+        logged_date=effective_logged_date,
         value=value,
         note=(note or "").strip() or None,
     )
@@ -249,7 +259,7 @@ def get_habit_history(user_id: int, habit_id: int, start: date, end: date) -> Li
 
 
 def compute_habit_stats(user_id: int, habit_id: int, window_days: int = 30) -> dict:
-    end_date = date.today()
+    end_date = _user_local_today(user_id)
     start_date = end_date - timedelta(days=max(window_days, 1))
     logs = (
         HabitLog.query.filter_by(user_id=user_id, habit_id=habit_id)
@@ -317,7 +327,7 @@ def list_habits(user_id: int) -> List[dict]:
         }
         for row in log_counts
     }
-    today = date.today()
+    today = _user_local_today(user_id)
     today_logs = {log.habit_id: log for log in HabitLog.query.filter_by(user_id=user_id, logged_date=today).all()}
 
     # HAB-005: batch-fetch logs for the last 7 days (today - 6 through today)

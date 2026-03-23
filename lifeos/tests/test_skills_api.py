@@ -232,6 +232,28 @@ class TestSkillsAPI:
         assert forecast["projection"]["projected_sessions_next_window"] >= 0
         assert forecast["forecast_state"] in {"on_track", "at_risk", "completed", "insufficient_data"}
 
+    def test_get_skill_forecast_non_projectable_goal_reason(self, app, client, test_user, auth_headers):
+        """Forecast endpoint emits explicit reason for non-projectable goal types."""
+        app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True
+        with app.app_context():
+            skill = create_skill(
+                test_user.id,
+                name="Forecast Benchmark API",
+                goal_type="benchmark",
+                goal_target_value=10,
+                current_level=1,
+            )
+            now = datetime.utcnow()
+            log_practice_session(test_user.id, skill.id, duration_minutes=20, practiced_at=now - timedelta(days=2))
+            log_practice_session(test_user.id, skill.id, duration_minutes=25, practiced_at=now - timedelta(days=5))
+
+        resp = client.get(f"/api/skills/{skill.id}/forecast?horizon_days=7", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["forecast"]["forecast_state"] == "insufficient_data"
+        assert data["forecast"]["risk_reason"] == "non_projectable_goal_type"
+
     def test_get_skill_forecast_horizon_clamped(self, app, client, test_user, auth_headers):
         """Forecast horizon is clamped to a safe max range."""
         app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = True

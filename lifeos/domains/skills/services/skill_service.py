@@ -396,21 +396,23 @@ def get_skill_forecast(user_id: int, skill_id: int, *, horizon_days: int = 7) ->
         target_value = float(goal.get("target_value") or 0.0)
 
         projected_value = current_value
-        if goal_type == "hours":
-            projected_value += float(projected_minutes) / 60.0
-        elif goal_type == "sessions":
-            projected_value += float(projected_sessions)
-
-        if target_value > 0:
-            projected_goal_progress_ratio = min(max(projected_value / target_value, 0.0), 1.0)
-
         if sessions_last_14 == 0:
             forecast_state = "at_risk"
             risk_reason = "no_recent_sessions"
         elif sessions_last_14 < 2:
             forecast_state = "insufficient_data"
             risk_reason = "insufficient_history"
+        elif goal_type not in {"hours", "sessions"}:
+            forecast_state = "insufficient_data"
+            risk_reason = "non_projectable_goal_type"
         else:
+            if goal_type == "hours":
+                projected_value += float(projected_minutes) / 60.0
+            elif goal_type == "sessions":
+                projected_value += float(projected_sessions)
+
+            if target_value > 0:
+                projected_goal_progress_ratio = min(max(projected_value / target_value, 0.0), 1.0)
             forecast_state = "on_track"
 
     return {
