@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query'
 import {
   skillsApi,
   type CreateSkillInput,
+  type SkillForecast,
   type SkillOverviewCard,
 } from '@/lib/api/skills'
 import { useLang } from '@/lib/useLang'
@@ -195,6 +196,23 @@ export default function SkillsPage() {
   }
   const showMigrationBanner = hasOverviewPayload && cards.some((c) => c.requires_goal_setup)
 
+  const forecastQueries = useQueries({
+    queries: cards.map((card) => ({
+      queryKey: ['skills', 'forecast', card.skill_id],
+      queryFn: () => skillsApi.forecast(card.skill_id),
+      retry: false,
+      staleTime: 60_000,
+    })),
+  })
+
+  const forecastBySkillId = new Map<number, SkillForecast>()
+  cards.forEach((card, index) => {
+    const forecast = forecastQueries[index]?.data?.forecast
+    if (forecast) {
+      forecastBySkillId.set(card.skill_id, forecast)
+    }
+  })
+
   const skillNameById = new Map(skills.map((s) => [s.id, s.name]))
   for (const c of cards) {
     if (!skillNameById.has(c.skill_id)) {
@@ -210,6 +228,25 @@ export default function SkillsPage() {
       return { label: 'At Risk', bg: '#fce8e4', fg: '#8b4a3a' }
     }
     return { label: 'On Track', bg: '#e8f0e3', fg: '#3a5c35' }
+  }
+
+  function forecastCopy(forecast: SkillForecast): { label: string; reason: string } {
+    if (forecast.forecast_state === 'completed') {
+      return { label: 'Completed', reason: 'Your current trajectory already satisfies this goal window.' }
+    }
+    if (forecast.forecast_state === 'at_risk') {
+      if (forecast.risk_reason === 'no_goal_configured') {
+        return { label: 'At Risk', reason: 'No goal is configured yet, so guidance is limited until one is set.' }
+      }
+      if (forecast.risk_reason === 'no_recent_sessions') {
+        return { label: 'At Risk', reason: 'Recent activity is low, so your goal trajectory may slip this week.' }
+      }
+      return { label: 'At Risk', reason: 'Recent patterns suggest this goal needs extra consistency.' }
+    }
+    if (forecast.forecast_state === 'insufficient_data') {
+      return { label: 'Insufficient Data', reason: 'A little more activity history is needed for stable guidance.' }
+    }
+    return { label: 'On Track', reason: 'Recent consistency suggests your current pace is sustainable.' }
   }
 
   function handleCreate(e: React.FormEvent) {
@@ -927,6 +964,7 @@ export default function SkillsPage() {
             {cards.map((card) => {
               const chip = stateChip(card)
               const progressRatio = Math.max(0, Math.min(1, card.goal?.progress_ratio ?? 0))
+              const forecast = forecastBySkillId.get(card.skill_id)
               return (
               <li
                 key={card.skill_id}
@@ -1005,6 +1043,56 @@ export default function SkillsPage() {
                           }}
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {forecast && (
+                    <div
+                      className="mt-3 p-3"
+                      style={{
+                        background: '#f5f0e4',
+                        borderRadius: '0 10px 10px 10px',
+                      }}
+                    >
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <p style={microLabel}>Forecast ({forecast.horizon_days}d)</p>
+                        <span
+                          className="px-2 py-0.5"
+                          style={{
+                            background: '#e8f0e3',
+                            color: '#3a5c35',
+                            borderRadius: '100px',
+                            fontFamily: 'var(--font-manrope), sans-serif',
+                            fontSize: '0.625rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          {forecastCopy(forecast).label}
+                        </span>
+                      </div>
+                      <p
+                        style={{
+                          fontFamily: 'var(--font-manrope), sans-serif',
+                          fontSize: '0.75rem',
+                          color: '#6b5a35',
+                        }}
+                      >
+                        Projected {fmtMinutes(forecast.projection.projected_minutes_next_window)} and{' '}
+                        {forecast.projection.projected_sessions_next_window} sessions.
+                      </p>
+                      <p
+                        style={{
+                          marginTop: '6px',
+                          fontFamily: 'var(--font-manrope), sans-serif',
+                          fontSize: '0.75rem',
+                          color: '#5a6157',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {forecastCopy(forecast).reason}
+                      </p>
                     </div>
                   )}
                 </div>

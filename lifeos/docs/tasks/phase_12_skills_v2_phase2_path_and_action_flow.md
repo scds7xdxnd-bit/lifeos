@@ -1,6 +1,6 @@
 # Phase 12 Skills v2 — Phase 2 Path and Action Flow
 
-Status: In Progress
+Status: Complete
 Owner: Backend + Frontend + QA
 Target Window: 2026-03-22 to 2026-03-30
 Related Constitution: lifeos/docs/ui_ux_constitution.md §5 (Skills)
@@ -57,3 +57,6 @@ Out of Scope:
 - Backend tests for overview + path flags pass.
 - Frontend renders correctly with overview success and fallback modes.
 - No breaking change to existing `/api/skills` consumers.
+
+## Follow-up Phase
+- Phase 3 forecast/guidance work is tracked in `lifeos/docs/tasks/phase_12_skills_v2_phase3_forecast_guidance.md`.
