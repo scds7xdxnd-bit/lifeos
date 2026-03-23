@@ -127,12 +127,10 @@ export default function SkillsPage() {
         goal_target_value,
         goal_deadline: goal_deadline || null,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['skills'] })
       qc.invalidateQueries({ queryKey: ['skills', 'overview'] })
-      if (goalSkillId !== null) {
-        qc.invalidateQueries({ queryKey: ['skills', 'path', goalSkillId] })
-      }
+      qc.invalidateQueries({ queryKey: ['skills', 'path', variables.skillId] })
       setGoalSkillId(null)
       setGoalSkillName('')
       setGoalEditType('sessions')
@@ -252,7 +250,12 @@ export default function SkillsPage() {
   function openGoalModal(card: SkillOverviewCard) {
     setGoalSkillId(card.skill_id)
     setGoalSkillName(card.name)
-    setGoalEditType((card.goal?.goal_type as 'sessions' | 'hours' | 'milestones') ?? 'sessions')
+    const rawGoalType = card.goal?.goal_type
+    const safeGoalType =
+      rawGoalType === 'sessions' || rawGoalType === 'hours' || rawGoalType === 'milestones'
+        ? rawGoalType
+        : 'sessions'
+    setGoalEditType(safeGoalType)
     setGoalEditTarget(String(card.goal?.target_value ?? 12))
     setGoalEditDeadline(card.goal?.deadline?.slice(0, 10) ?? '')
     setGoalEditError(null)
@@ -260,7 +263,7 @@ export default function SkillsPage() {
 
   function handleGoalSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!goalSkillId) return
+    if (goalSkillId === null) return
     const targetValue = parseInt(goalEditTarget)
     if (!targetValue || targetValue <= 0) {
       setGoalEditError('Target value must be greater than zero.')
@@ -631,7 +634,7 @@ export default function SkillsPage() {
       )}
 
       {/* Goal setup/edit modal */}
-      {goalSkillId && (
+      {goalSkillId !== null && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center p-4"
           style={{
