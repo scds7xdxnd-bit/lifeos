@@ -324,6 +324,7 @@ export default function HabitsPage() {
   const [mobileReflectionOpen, setMobileReflectionOpen] = useState(false)
   const [tipIdx, setTipIdx] = useState(0)
   const [tipFade, setTipFade] = useState(true)
+  const [reduceMotion, setReduceMotion] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Habit | null>(null)
   const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null)
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false)
@@ -375,6 +376,15 @@ export default function HabitsPage() {
   useEffect(() => {
     const media = window.matchMedia('(max-width: 1023px)')
     const apply = () => setIsCompactViewport(media.matches)
+    apply()
+    media.addEventListener('change', apply)
+    return () => media.removeEventListener('change', apply)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const apply = () => setReduceMotion(media.matches)
     apply()
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)
@@ -816,7 +826,7 @@ export default function HabitsPage() {
 
         {habits.length > 0 && (
           <ul style={{ display: 'flex', flexDirection: 'column', gap: '16px', listStyle: 'none', margin: 0, padding: 0 }}>
-            {habits.map((h: Habit) => (
+            {habits.map((h: Habit, habitIndex) => (
               <li
                 key={h.id}
                 onClick={() => {
@@ -841,10 +851,13 @@ export default function HabitsPage() {
                     ? '2.5px solid #4b6646'
                     : '2.5px solid transparent',
                   cursor: 'pointer',
+                  opacity: reduceMotion ? 1 : 0,
+                  animation: reduceMotion ? undefined : 'habitCardReveal 260ms ease-out forwards',
+                  animationDelay: reduceMotion ? undefined : `${habitIndex * 35}ms`,
                 }}
               >
                 {/* HAB-010 — Milestone celebration ring */}
-                {celebrateId === h.id && <div className="celebrate-ring" />}
+                {celebrateId === h.id && !reduceMotion && <div className="celebrate-ring" />}
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="flex items-center" style={{ gap: '8px' }}>
                     <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', fontWeight: 600, color: '#2e342b' }}>
@@ -946,7 +959,7 @@ export default function HabitsPage() {
                               border: isToday && !day.logged
                                 ? '1.5px solid #4b6646'
                                 : '1.5px solid transparent',
-                              animation: isToday && !day.logged ? 'dot-pulse 2s ease-in-out infinite' : 'none',
+                              animation: isToday && !day.logged && !reduceMotion ? 'dot-pulse 2s ease-in-out infinite' : 'none',
                               flexShrink: 0,
                             }}
                           />
@@ -981,7 +994,7 @@ export default function HabitsPage() {
                     <div className="flex items-center shrink-0" style={{ gap: '8px' }}>
                       {/* HAB-010 — Checkmark pop on successful log */}
                       {justLogged.has(h.id) && (
-                        <span className="check-pop" style={{ color: '#4b6646', display: 'flex' }}>
+                        <span className={reduceMotion ? undefined : 'check-pop'} style={{ color: '#4b6646', display: 'flex' }}>
                           <CheckCircle2 size={24} />
                         </span>
                       )}
@@ -1066,17 +1079,21 @@ export default function HabitsPage() {
                             gap: '6px',
                           }}
                           onMouseEnter={(e) => {
+                            if (reduceMotion) return
                             e.currentTarget.style.transform = 'translateY(-1px)'
                             e.currentTarget.style.boxShadow = '0 6px 16px rgba(58, 82, 114, 0.3)'
                           }}
                           onMouseLeave={(e) => {
+                            if (reduceMotion) return
                             e.currentTarget.style.transform = 'translateY(0)'
                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(58, 82, 114, 0.25)'
                           }}
                           onMouseDown={(e) => {
+                            if (reduceMotion) return
                             e.currentTarget.style.transform = 'scale(0.97)'
                           }}
                           onMouseUp={(e) => {
+                            if (reduceMotion) return
                             e.currentTarget.style.transform = 'translateY(-1px)'
                           }}
                         >
@@ -1258,6 +1275,7 @@ export default function HabitsPage() {
       <AlertDialog.Root open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
         <AlertDialog.Portal>
           <AlertDialog.Backdrop
+            onClick={() => setDeleteTarget(null)}
             style={{
               position: 'fixed',
               inset: 0,
@@ -1564,7 +1582,7 @@ export default function HabitsPage() {
                 }}
               >
                 <div
-                  className="float-a"
+                  className={reduceMotion ? undefined : 'float-a'}
                   style={{
                     position: 'absolute',
                     width: '120px',
@@ -1577,7 +1595,7 @@ export default function HabitsPage() {
                   }}
                 />
                 <div
-                  className="float-b"
+                  className={reduceMotion ? undefined : 'float-b'}
                   style={{
                     position: 'absolute',
                     width: '96px',
@@ -1760,8 +1778,8 @@ export default function HabitsPage() {
                           fontSize: '0.75rem',
                           color: '#3a5272',
                           lineHeight: 1.55,
-                          opacity: tipFade ? 1 : 0.2,
-                          transition: 'opacity 280ms ease',
+                          opacity: reduceMotion ? 1 : tipFade ? 1 : 0.2,
+                          transition: reduceMotion ? 'none' : 'opacity 280ms ease',
                         }}
                       >
                         {activeTip || affirmationTip}
@@ -1773,6 +1791,19 @@ export default function HabitsPage() {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes habitCardReveal {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   )
 }

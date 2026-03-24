@@ -55,6 +55,23 @@ def _feature_disabled_response():
     return jsonify({"ok": False, "error": "not_found"}), 404
 
 
+def _safe_minimal_path(skill_id: int) -> dict:
+    fallback_step = {
+        "step_id": "continue_practice",
+        "label": "Continue Practice",
+        "status": "ready",
+        "action": "continue_practice",
+    }
+    return {
+        "skill_id": skill_id,
+        "progress_state": "on_track",
+        "risk_reason": None,
+        "goal": None,
+        "steps": [fallback_step],
+        "next_recommended_step": fallback_step,
+    }
+
+
 @skill_api_bp.post("")
 @jwt_required()
 @csrf_protected
@@ -154,10 +171,26 @@ def get_skill_path_endpoint(skill_id: int):
         return _feature_disabled_response()
 
     user_id = int(get_jwt_identity())
-    path_payload = get_skill_path(user_id=user_id, skill_id=skill_id)
+    try:
+        path_payload = get_skill_path(user_id=user_id, skill_id=skill_id)
+    except Exception:
+        current_app.logger.exception(
+            "skills.path.compute_failed",
+            extra={"user_id": user_id, "skill_id": skill_id},
+        )
+        safe_payload = _safe_minimal_path(skill_id)
+        return jsonify({"ok": True, "path": SkillPathResponse.model_validate(safe_payload).model_dump()})
     if not path_payload:
         return jsonify({"ok": False, "error": "not_found"}), 404
-    return jsonify({"ok": True, "path": SkillPathResponse.model_validate(path_payload).model_dump()})
+    try:
+        validated = SkillPathResponse.model_validate(path_payload).model_dump()
+    except ValidationError:
+        current_app.logger.exception(
+            "skills.path.validate_failed",
+            extra={"user_id": user_id, "skill_id": skill_id},
+        )
+        validated = SkillPathResponse.model_validate(_safe_minimal_path(skill_id)).model_dump()
+    return jsonify({"ok": True, "path": validated})
 
 
 @skill_api_bp.get("/<int:skill_id>/forecast")
@@ -229,11 +262,19 @@ def log_practice_endpoint(skill_id: int):
             return jsonify({"ok": False, "error": "not_found"}), 404
         return jsonify({"ok": False, "error": "validation_error"}), 400
     next_step = None
-    path_payload = get_skill_path(user_id=user_id, skill_id=skill_id) if _phase12_skills_path_enabled() else None
-    if path_payload:
-        next_step = path_payload.get("next_recommended_step") or resolve_next_recommended_step(
-            path_payload.get("steps") or []
-        )
+    if _phase12_skills_path_enabled():
+        try:
+            path_payload = get_skill_path(user_id=user_id, skill_id=skill_id)
+            if path_payload:
+                next_step = path_payload.get("next_recommended_step") or resolve_next_recommended_step(
+                    path_payload.get("steps") or []
+                )
+        except Exception:
+            # Practice is already committed; do not fail the request if path derivation fails.
+            current_app.logger.exception(
+                "skills.practice.path_resolution_failed",
+                extra={"user_id": user_id, "skill_id": skill_id},
+            )
 
     return jsonify(
         {"ok": True, "session": map_session_response(session).model_dump(), "next_recommended_step": next_step}
