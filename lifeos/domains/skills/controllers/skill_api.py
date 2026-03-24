@@ -184,7 +184,7 @@ def get_skill_path_endpoint(skill_id: int):
         return jsonify({"ok": False, "error": "not_found"}), 404
     try:
         validated = SkillPathResponse.model_validate(path_payload).model_dump()
-    except Exception:
+    except ValidationError:
         current_app.logger.exception(
             "skills.path.validate_failed",
             extra={"user_id": user_id, "skill_id": skill_id},

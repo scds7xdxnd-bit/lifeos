@@ -199,6 +199,41 @@ class TestSkillsAPI:
         assert len(data["path"]["steps"]) == 1
         assert data["path"]["steps"][0]["step_id"] == "continue_practice"
 
+    def test_get_skill_path_degrades_gracefully_on_validation_error(self, app, client, test_user, auth_headers):
+        """Path endpoint should return a minimal safe path when schema validation fails."""
+        app.config["ENABLE_PHASE12_SKILLS_PATH"] = True
+        with app.app_context():
+            skill = create_skill(test_user.id, name="Path Degrade Validation Skill")
+
+        invalid_path_payload = {
+            "skill_id": skill.id,
+            "progress_state": "at_risk",
+            "risk_reason": "no_recent_sessions",
+            "goal": None,
+            "steps": [
+                {
+                    "step_id": "invalid_step_without_required_fields",
+                    "label": "Broken Step",
+                    "status": "ready",
+                    # missing required "action" to trigger schema validation fallback
+                }
+            ],
+            "next_recommended_step": None,
+        }
+
+        with patch(
+            "lifeos.domains.skills.controllers.skill_api.get_skill_path",
+            return_value=invalid_path_payload,
+        ):
+            resp = client.get(f"/api/skills/{skill.id}/path", headers=auth_headers)
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["path"]["skill_id"] == skill.id
+        assert len(data["path"]["steps"]) == 1
+        assert data["path"]["steps"][0]["step_id"] == "continue_practice"
+
     def test_get_skill_forecast_feature_disabled(self, app, client, test_user, auth_headers):
         """Forecast endpoint is hidden when Phase 12 forecast flag is disabled."""
         app.config["ENABLE_PHASE12_SKILLS_FORECAST"] = False
