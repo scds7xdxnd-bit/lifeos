@@ -15,7 +15,7 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLang } from '@/lib/useLang'
 import { getAppTranslations } from '@/lib/translations/app'
 import { LanguageMenu } from '@/components/common/LanguageMenu'
@@ -43,6 +43,9 @@ export function AppHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false)
   const [lang, setLang] = useLang()
+  const desktopMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileToggleRef = useRef<HTMLButtonElement | null>(null)
   const t = getAppTranslations(lang).header
 
   const PRIMARY_LINKS = PRIMARY_LINK_KEYS.map((l) => ({ ...l, label: t[l.key] }))
@@ -60,6 +63,29 @@ export function AppHeader() {
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
   }
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node
+
+      if (desktopMenuOpen && desktopMenuRef.current && !desktopMenuRef.current.contains(target)) {
+        setDesktopMenuOpen(false)
+      }
+
+      if (mobileMenuOpen) {
+        const clickedMobileMenu = !!mobileMenuRef.current?.contains(target)
+        const clickedMobileToggle = !!mobileToggleRef.current?.contains(target)
+        if (!clickedMobileMenu && !clickedMobileToggle) {
+          setMobileMenuOpen(false)
+        }
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [desktopMenuOpen, mobileMenuOpen])
 
   return (
     <>
@@ -159,7 +185,7 @@ export function AppHeader() {
           {/* Right side: user area (desktop) + mobile menu toggle */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Desktop user area */}
-            <div className="hidden lg:flex items-center gap-3 relative">
+            <div className="hidden lg:flex items-center gap-3 relative" ref={desktopMenuRef}>
               {user && (
                 <div className="flex items-center gap-2">
                   <div
@@ -243,6 +269,7 @@ export function AppHeader() {
 
             {/* Mobile menu toggle */}
             <button
+              ref={mobileToggleRef}
               className="lg:hidden flex items-center justify-center"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
@@ -265,6 +292,7 @@ export function AppHeader() {
         {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
           <div
+            ref={mobileMenuRef}
             className="lg:hidden"
             style={{
               background: 'rgba(248, 250, 242, 0.95)',
