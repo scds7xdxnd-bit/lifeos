@@ -56,6 +56,6 @@ From integration tests:
   - `GET /auth/me` with session cookie + Authorization header -> `403` (`mixed_auth_forbidden`)
 
 Test run:
-- `11 passed`:
+- All targeted tests passed:
   - `lifeos/tests/test_session_cookie_auth_scope.py`
   - `lifeos/tests/test_csrf_determinism.py`

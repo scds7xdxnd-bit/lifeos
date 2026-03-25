@@ -291,6 +291,24 @@ def test_update_habit_partial(app, client, user_with_tokens):
     assert detail["description"] == "New"  # Updated
 
 
+def test_update_habit_scheduled_time(app, client, user_with_tokens):
+    """Should allow updating scheduled_time without causing server errors."""
+    csrf_token = _prime_csrf(client)
+    headers = _auth_headers(user_with_tokens["tokens"]["access_token"], csrf_token)
+
+    payload = {"name": "Morning Run"}
+    resp = client.post("/api/habits", json=payload, headers=headers)
+    habit_id = resp.get_json()["habit_id"]
+
+    resp = client.patch(f"/api/habits/{habit_id}", json={"scheduled_time": "08:30:00"}, headers=headers)
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+
+    detail_resp = client.get(f"/api/habits/{habit_id}", headers=headers)
+    assert detail_resp.status_code == 200
+    assert detail_resp.get_json()["habit"]["scheduled_time"] == "08:30:00"
+
+
 def test_update_habit_not_found(app, client, user_with_tokens):
     """Should return 404 for non-existent habit update."""
     csrf_token = _prime_csrf(client)

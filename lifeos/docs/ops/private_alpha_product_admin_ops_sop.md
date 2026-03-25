@@ -54,13 +54,19 @@ Output columns: `id`, `email`, `status`, `created` (ISO 8601), `expires` (ISO 86
 3. Admin Ops checks capacity:
    - `PYTHONPATH=. python3 scripts/ops/private_alpha_invite_admin.py status --cohort-target <target>`
 4. Admin Ops issues invite token:
-   - `PYTHONPATH=. python3 scripts/ops/private_alpha_invite_admin.py issue --email <email> --cohort-target <target> --issued-by-user-id <admin_user_id>`
+   - `PYTHONPATH=. python3 scripts/ops/private_alpha_invite_admin.py issue --email <email> --cohort-target <target> --issued-by-user-id <admin_user_id> --invite-flow both`
 5. Store only last 6 chars of token in ledger (`token_tail`) for reconciliation.
 6. Send user message with:
-   - invite link `/invite?token=...`
+   - Next.js app link `/login?token=...&email=...`
+   - Legacy Flask link `/invite?token=...` (only if using legacy Flask auth UI)
    - supported scope statement
    - support contact path
 7. Update ledger `status=sent` and timestamp.
+
+Invite URL output modes:
+- `--invite-flow next`: print only Next.js login link
+- `--invite-flow flask`: print only legacy Flask invite link
+- `--invite-flow both` (default): print primary `invite_url` (Next) plus `invite_url_next` and `invite_url_flask`
 
 ### 3.5 Reissue procedure
 Use only for `invite_expired`, `invite_invalid` (copy/paste), or mail-delivery failure.
@@ -90,6 +96,26 @@ Steps:
   - `issue_allowed = cohort_target - accepted_users - pending_invites`
 - If `issue_allowed <= 0`, stop invite issuance.
 - If `lifeos:private_alpha_active_user_cap_utilization:ratio >= 0.85`, require explicit Product Ops + DevOps sign-off before any additional invite.
+
+### 3.8 Daily Google Sheet automation (optional but recommended)
+Use this to auto-refresh invite status (`pending|accepted|revoked|expired`) to a shared Google Sheet.
+
+1. Create a Google Cloud service account and enable Google Sheets API.
+2. Share the target Sheet with the service-account email as Editor.
+3. Add repository secrets:
+   - `DATABASE_URL` (production DB)
+   - `GOOGLE_SERVICE_ACCOUNT_JSON` (full JSON, single-line)
+   - `PRIVATE_ALPHA_SHEET_ID`
+   - `PRIVATE_ALPHA_SHEET_WORKSHEET` (optional, defaults to `invites`)
+4. Workflow runs daily at `01:00 UTC` via:
+   - `.github/workflows/private-alpha-invite-sheet-sync.yml`
+5. Manual trigger available from Actions tab (`workflow_dispatch`).
+
+Local/manual run:
+- `PYTHONPATH=. DATABASE_URL=<...> GOOGLE_SERVICE_ACCOUNT_JSON='<json>' python scripts/ops/private_alpha_invite_sheet_sync.py --sheet-id <sheet_id> --worksheet invites`
+
+Sheet columns written by the sync job:
+- `invite_id`, `invited_email`, `status`, `created_at`, `expires_at`, `accepted_at`, `revoked_at`, `issued_by_user_id`, `accepted_by_user_id`, `token_hash_tail`, `updated_sync_utc`
 
 ## 4. User support path (visible and operational)
 Primary user-visible path:
@@ -178,3 +204,4 @@ No-go triggers for all phases:
 - Launch checklist: `lifeos/docs/ops/private_alpha_manual_qa_checklist.md`
 - Launch runbook: `lifeos/docs/ops/private_alpha_launch_ops.md`
 - Invite admin helper: `scripts/ops/private_alpha_invite_admin.py`
+- Invite Google Sheet sync helper: `scripts/ops/private_alpha_invite_sheet_sync.py`

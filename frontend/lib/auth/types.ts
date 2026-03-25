@@ -27,8 +27,9 @@ export interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (data: RegisterInput) => Promise<void>
+  register: (data: RegisterInput) => Promise<boolean>
   logout: () => Promise<void>
+  refreshUser: () => Promise<void>
   getAccessToken: () => string | null
   getCsrfToken: () => string | null
 }

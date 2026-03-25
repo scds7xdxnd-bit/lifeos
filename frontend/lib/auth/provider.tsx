@@ -38,9 +38,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const refreshUser = useCallback(async () => {
+    const tokens = getStored()
+    if (!tokens?.access_token) {
+      setUser(null)
+      return
+    }
+
+    const res = await fetch(`${resolveApiUrl()}/auth/me`, {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+      credentials: 'include',
+    })
+
+    if (!res.ok) {
+      clearStored()
+      setUser(null)
+      return
+    }
+
+    const data = (await res.json()) as { user: User }
+    setUser(data.user)
+  }, [])
+
   useEffect(() => {
     const tokens = getStored()
-    if (!tokens) {
+    if (!tokens?.access_token) {
+      if (tokens?.csrf_token) {
+        setIsLoading(false)
+        return
+      }
       // Prime CSRF token from bootstrap endpoint for unauthenticated requests
       fetch(`${resolveApiUrl()}/api/bootstrap`, {
         credentials: 'include',
@@ -59,14 +85,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .finally(() => setIsLoading(false))
       return
     }
-    fetch(`${resolveApiUrl()}/auth/me`, {
-      headers: { Authorization: `Bearer ${tokens.access_token}` },
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data: { user: User }) => setUser(data.user))
-      .catch(() => clearStored())
+    refreshUser()
+      .catch(() => {
+        clearStored()
+        setUser(null)
+      })
       .finally(() => setIsLoading(false))
-  }, [])
+  }, [refreshUser])
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${resolveApiUrl()}/auth/login`, {
@@ -85,12 +110,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user as User)
   }, [])
 
-  const register = useCallback(async (input: RegisterInput) => {
+  const register = useCallback(async (input: RegisterInput): Promise<boolean> => {
     const res = await fetch(`${resolveApiUrl()}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
-      credentials: 'include',  // Enable cross-origin cookies for CSRF validation
+      credentials: 'include', // Enable cross-origin cookies for CSRF validation
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.message ?? 'Registration failed')
@@ -101,7 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         csrf_token: data.csrf_token,
       })
       setUser(data.user as User)
+      return true
     }
+    return false
   }, [])
 
   const logout = useCallback(async () => {
@@ -130,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         logout,
+        refreshUser,
         getAccessToken: () => getStored()?.access_token ?? null,
         getCsrfToken: () => getStored()?.csrf_token ?? null,
       }}

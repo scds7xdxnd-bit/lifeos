@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/context'
 import { LeafCluster } from '@/components/landing/assets/Botanicals'
@@ -12,29 +12,71 @@ import { LanguageMenu } from '@/components/common/LanguageMenu'
 type View = 'login' | 'register'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
+  )
+}
+
+function LoginPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login, register } = useAuth()
   const [lang, setLang, isHydrated] = useLang()
   const t = getAppTranslations(lang).login
 
+  const inviteTokenFromUrl = (searchParams.get('token') || searchParams.get('invite_token') || '').trim()
+  const inviteEmailFromUrl = (searchParams.get('email') || '').trim().toLowerCase()
+  const hasInviteToken = inviteTokenFromUrl.length > 0
+  const isInvitePrefilled = hasInviteToken && inviteEmailFromUrl.length > 0
+
   const [view, setView] = useState<View>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [inviteToken, setInviteToken] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!hasInviteToken) return
+    setView('register')
+    if (inviteEmailFromUrl) {
+      setEmail(inviteEmailFromUrl)
+    }
+    setInviteToken(inviteTokenFromUrl)
+    setError(null)
+  }, [hasInviteToken, inviteEmailFromUrl, inviteTokenFromUrl])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setIsSubmitting(true)
     try {
+      let didAuthenticate = false
       if (view === 'login') {
         await login(email, password)
+        didAuthenticate = true
       } else {
-        await register({ email, password, invite_token: inviteToken || undefined })
+        const finalEmail = isInvitePrefilled ? inviteEmailFromUrl : email
+        const finalInviteToken = isInvitePrefilled ? inviteTokenFromUrl : inviteToken
+        if (isInvitePrefilled && password !== confirmPassword) {
+          throw new Error(t.passwordMismatch)
+        }
+        didAuthenticate = await register({ email: finalEmail, password, invite_token: finalInviteToken || undefined })
       }
-      router.push('/calendar')
+      if (view === 'register' && !didAuthenticate) {
+        setView('login')
+        setPassword('')
+        setConfirmPassword('')
+        setInviteToken('')
+        setError(t.finishSetupSignIn)
+      } else if (hasInviteToken && view === 'register') {
+        router.push('/onboarding')
+      } else {
+        router.push('/calendar')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -164,7 +206,7 @@ export default function LoginPage() {
               marginBottom: '8px',
             }}
           >
-            {view === 'login' ? t.welcomeBack : t.joinAlpha}
+            {view === 'login' ? t.welcomeBack : isInvitePrefilled ? t.acceptInvite : t.joinAlpha}
           </h2>
           <p
             style={{
@@ -174,12 +216,12 @@ export default function LoginPage() {
               lineHeight: 1.5,
             }}
           >
-            {view === 'login' ? t.signInSub : t.registerSub}
+            {view === 'login' ? t.signInSub : isInvitePrefilled ? t.acceptInviteSub : t.registerSub}
           </p>
         </div>
 
         {/* Register mode badge */}
-        {view === 'register' && (
+        {view === 'register' && !isInvitePrefilled && (
           <div
             style={{
               display: 'inline-flex',
@@ -228,7 +270,7 @@ export default function LoginPage() {
                 color: '#767d72',
               }}
             >
-              {t.email}
+              {isInvitePrefilled && view === 'register' ? t.invitedEmail : t.email}
             </label>
             <input
               id="email"
@@ -239,6 +281,12 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="auth-input"
+              readOnly={isInvitePrefilled && view === 'register'}
+              style={
+                isInvitePrefilled && view === 'register'
+                  ? { background: '#f1f5eb', color: '#5a6157' }
+                  : undefined
+              }
             />
           </div>
 
@@ -268,7 +316,35 @@ export default function LoginPage() {
             />
           </div>
 
-          {view === 'register' && (
+          {isInvitePrefilled && view === 'register' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label
+                htmlFor="confirm_password"
+                style={{
+                  fontFamily: "var(--font-manrope), 'Manrope', sans-serif",
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  color: '#767d72',
+                }}
+              >
+                {t.confirmPassword}
+              </label>
+              <input
+                id="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                required
+                placeholder={t.confirmPasswordPlaceholder}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="auth-input"
+              />
+            </div>
+          )}
+
+          {view === 'register' && !isInvitePrefilled && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label
                 htmlFor="invite_token"
@@ -334,69 +410,73 @@ export default function LoginPage() {
               ? t.pleaseWait
               : view === 'login'
               ? t.continue
+              : isInvitePrefilled
+              ? t.finishSetup
               : t.createAccount}
           </button>
         </form>
 
         {/* Toggle */}
-        <p
-          style={{
-            fontFamily: "var(--font-manrope), 'Manrope', sans-serif",
-            fontSize: '0.82rem',
-            color: '#5a6157',
-            textAlign: 'center',
-            marginTop: '24px',
-            marginBottom: 0,
-          }}
-        >
-          {view === 'login' ? (
-            <>
-              {t.noAccount}
-              {' '}
-              <button
-                type="button"
-                onClick={() => { setView('register'); setError(null) }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  fontFamily: 'inherit',
-                  fontSize: 'inherit',
-                  fontWeight: 600,
-                  color: '#4b6646',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px',
-                }}
-              >
-                {t.register}
-              </button>
-            </>
-          ) : (
-            <>
-              {t.haveAccount}
-              {' '}
-              <button
-                type="button"
-                onClick={() => { setView('login'); setError(null) }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  fontFamily: 'inherit',
-                  fontSize: 'inherit',
-                  fontWeight: 600,
-                  color: '#4b6646',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px',
-                }}
-              >
-                {t.signIn}
-              </button>
-            </>
-          )}
-        </p>
+        {!hasInviteToken && (
+          <p
+            style={{
+              fontFamily: "var(--font-manrope), 'Manrope', sans-serif",
+              fontSize: '0.82rem',
+              color: '#5a6157',
+              textAlign: 'center',
+              marginTop: '24px',
+              marginBottom: 0,
+            }}
+          >
+            {view === 'login' ? (
+              <>
+                {t.noAccount}
+                {' '}
+                <button
+                  type="button"
+                  onClick={() => { setView('register'); setError(null) }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    fontWeight: 600,
+                    color: '#4b6646',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '3px',
+                  }}
+                >
+                  {t.register}
+                </button>
+              </>
+            ) : (
+              <>
+                {t.haveAccount}
+                {' '}
+                <button
+                  type="button"
+                  onClick={() => { setView('login'); setError(null) }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    fontWeight: 600,
+                    color: '#4b6646',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '3px',
+                  }}
+                >
+                  {t.signIn}
+                </button>
+              </>
+            )}
+          </p>
+        )}
       </div>
     </div>
   )

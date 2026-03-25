@@ -263,6 +263,11 @@ class BaseConfig:
         "yes",
     )
     ALPHA_SUPPORT_CONTACT = os.environ.get("ALPHA_SUPPORT_CONTACT", "").strip()
+    AUTO_LOGIN_ON_REGISTER = os.environ.get("AUTO_LOGIN_ON_REGISTER", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     ENABLE_TIMELINE_INGESTION = os.environ.get("ENABLE_TIMELINE_INGESTION", "true").lower() in (
         "1",

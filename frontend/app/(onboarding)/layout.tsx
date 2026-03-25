@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -13,6 +13,12 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       router.replace('/login')
     }
   }, [isLoading, isAuthenticated, router])
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user?.onboarding_completed) {
+      router.replace('/calendar')
+    }
+  }, [isLoading, isAuthenticated, user, router])
 
   if (isLoading) {
     return (
@@ -34,6 +40,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
   }
 
   if (!isAuthenticated) return null
+  if (user?.onboarding_completed) return null
 
   return (
     <div

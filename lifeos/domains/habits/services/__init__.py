@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import func
@@ -52,17 +52,16 @@ def create_habit(
     if existing:
         raise ValueError("duplicate")
 
-    habit = Habit(
-        user_id=user_id,
-        name=name_norm,
-        description=(description or "").strip() or None,
-        domain_link=(domain_link or "").strip() or None,
-        schedule_type=schedule_type or cadence or "daily",
-        target_count=target_count if target_count is not None else target,
-        time_of_day=(time_of_day or "").strip() or None,
-        scheduled_time=scheduled_time,
-        difficulty=(difficulty or "").strip() or None,
-    )
+    habit = Habit()
+    habit.user_id = user_id
+    habit.name = name_norm
+    habit.description = (description or "").strip() or None
+    habit.domain_link = (domain_link or "").strip() or None
+    habit.schedule_type = schedule_type or cadence or "daily"
+    habit.target_count = target_count if target_count is not None else target
+    habit.time_of_day = (time_of_day or "").strip() or None
+    habit.scheduled_time = scheduled_time
+    habit.difficulty = (difficulty or "").strip() or None
     db.session.add(habit)
     db.session.flush()
     enqueue_outbox(
@@ -100,13 +99,19 @@ def update_habit(user_id: int, habit_id: int, **fields) -> Optional[Habit]:
         "is_active",
     )
     changed: Dict[str, object] = {}
+
+    def _json_safe(value: object) -> object:
+        if isinstance(value, (datetime, date, time)):
+            return value.isoformat()
+        return value
+
     for key in allowed:
         if key in fields:
             val = fields[key]
             if isinstance(val, str):
                 val = val.strip()
             setattr(habit, key, val)
-            changed[key] = val
+            changed[key] = _json_safe(val)
     enqueue_outbox(
         HABITS_HABIT_UPDATED,
         {
@@ -174,13 +179,12 @@ def log_habit_completion(
 
     effective_logged_date = logged_date or _user_local_today(user_id)
 
-    log = HabitLog(
-        user_id=user_id,
-        habit_id=habit_id,
-        logged_date=effective_logged_date,
-        value=value,
-        note=(note or "").strip() or None,
-    )
+    log = HabitLog()
+    log.user_id = user_id
+    log.habit_id = habit_id
+    log.logged_date = effective_logged_date
+    log.value = value
+    log.note = (note or "").strip() or None
     db.session.add(log)
     db.session.flush()
     enqueue_outbox(
@@ -312,7 +316,7 @@ def list_habits(user_id: int) -> List[dict]:
     log_counts = (
         db.session.query(
             HabitLog.habit_id,
-            func.count(HabitLog.id).label("count"),
+            func.count(HabitLog.id).label("log_count"),
             func.max(HabitLog.logged_date).label("last_logged_date"),
         )
         .filter(HabitLog.user_id == user_id)
@@ -322,7 +326,7 @@ def list_habits(user_id: int) -> List[dict]:
     )
     stats_by_id = {
         row.habit_id: {
-            "count": int(row.count or 0),
+            "count": int(row._mapping.get("log_count") or 0),
             "last_logged_date": row.last_logged_date,
         }
         for row in log_counts

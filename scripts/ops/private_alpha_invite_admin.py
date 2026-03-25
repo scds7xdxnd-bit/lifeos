@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import sys
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 from sqlalchemy import or_
 
@@ -145,7 +146,20 @@ def _cmd_issue(args: argparse.Namespace) -> int:
     base_url = args.base_url.rstrip("/")
     print(f"invite_id={invite.id}")
     print(f"invite_token={raw_token}")
-    print(f"invite_url={base_url}/invite?token={raw_token}")
+    next_query = urlencode({"token": raw_token, "email": invite.invited_email})
+    flask_query = urlencode({"token": raw_token})
+    next_url = f"{base_url}/login?{next_query}"
+    flask_url = f"{base_url}/invite?{flask_query}"
+
+    if args.invite_flow == "next":
+        print(f"invite_url={next_url}")
+    elif args.invite_flow == "flask":
+        print(f"invite_url={flask_url}")
+    else:
+        print(f"invite_url={next_url}")
+        print(f"invite_url_next={next_url}")
+        print(f"invite_url_flask={flask_url}")
+
     print(f"token_tail={raw_token[-6:]}")
     return 0
 
@@ -196,6 +210,12 @@ def _build_parser() -> argparse.ArgumentParser:
     issue.add_argument("--expires-days", type=int, default=7, help="Invite expiry days; 0 disables expiry.")
     issue.add_argument("--cohort-target", type=int, required=True, help="Current cohort target cap.")
     issue.add_argument("--base-url", default="http://127.0.0.1:8000", help="App base URL for invite link output.")
+    issue.add_argument(
+        "--invite-flow",
+        choices=("next", "flask", "both"),
+        default="both",
+        help="Invite URL format: next=/login?token&email, flask=/invite?token, both=print both variants.",
+    )
     issue.set_defaults(func=_cmd_issue)
 
     revoke = sub.add_parser("revoke", help="Revoke an invite token.")
