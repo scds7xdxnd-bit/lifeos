@@ -1,27 +1,26 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+interface InvitePageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
 
-export default function InviteRedirectPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+function _asString(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return (value[0] || '').trim()
+  return (value || '').trim()
+}
 
-  useEffect(() => {
-    const token = (searchParams.get('token') || '').trim()
-    const email = (searchParams.get('email') || '').trim().toLowerCase()
+export default async function InviteRedirectPage({ searchParams }: InvitePageProps) {
+  const params = await searchParams
+  const token = _asString(params.token)
+  const email = _asString(params.email).toLowerCase()
 
-    if (!token) {
-      router.replace('/login')
-      return
-    }
+  if (!token) {
+    redirect('/login')
+  }
 
-    const next = email
-      ? `/login?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
-      : `/login?token=${encodeURIComponent(token)}`
+  const next = email
+    ? `/login?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
+    : `/login?token=${encodeURIComponent(token)}`
 
-    router.replace(next)
-  }, [router, searchParams])
-
-  return null
+  redirect(next)
 }

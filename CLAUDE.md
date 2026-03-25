@@ -18,9 +18,8 @@ LifeOS is a full-stack intelligent life-management platform. It rejects cold pro
 finance_app_clean/
 ├── CLAUDE.md                  # This file — project-level AI context
 ├── DESIGN.md                  # Visual design system (Botanical Editorial)
-├── docs/                      # Root-level architecture & decision records
-│   ├── architecture.md        # → symlink to lifeos/docs/lifeos_architecture.md
-│   ├── decisions/             # Architecture Decision Records (ADRs)
+├── docs/                      # Root-level architecture index and runbooks
+│   ├── architecture.md        # index pointing to lifeos/docs/lifeos_architecture.md
 │   └── runbooks/              # Operational runbooks
 │
 ├── .claude/
@@ -34,9 +33,6 @@ finance_app_clean/
 │       ├── devops/            # CI/CD & infrastructure role
 │       └── qa/                # Testing & quality role
 │
-├── tools/
-│   └── prompts/               # Reusable prompt templates
-│
 ├── lifeos/                    # Backend source (Flask)
 │   ├── CLAUDE.md              # Backend-specific AI context
 │   ├── domains/               # 8 domain modules (write models)
@@ -45,7 +41,7 @@ finance_app_clean/
 │   ├── readmodels/            # Read models (projections)
 │   ├── migrations/            # Alembic migrations (single home)
 │   ├── docs/                  # Detailed architecture docs
-│   ├── tests/                 # 539+ tests (unit/integration/ml)
+│   ├── tests/                 # Test suite (unit/integration/ml)
 │   └── scripts/               # CLI tools
 │
 ├── frontend/                  # Frontend source (Next.js)
@@ -79,7 +75,7 @@ finance_app_clean/
 - **Feature flags:** `ENABLE_PHASE{N}_{FEATURE_NAME}`
 
 ### Architecture Patterns
-- **Domain modules:** `lifeos/domains/{domain}/` — each with models/, controllers/, services/, schemas/, events.py, tasks/
+- **Domain modules:** `lifeos/domains/{domain}/` — each with models/, controllers/, services/, schemas/, events.py, and optional tasks/
 - **Core layer:** `lifeos/core/` — auth, events, insights, interpreter, timeline, observability
 - **Platform layer:** `lifeos/lifeos_platform/` — outbox, worker, broker, clients
 - **Read models:** `lifeos/readmodels/` — projections, runners, registry

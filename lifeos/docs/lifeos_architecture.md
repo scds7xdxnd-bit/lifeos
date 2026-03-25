@@ -14,7 +14,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Platform Outbox**: Durable message persistence, user-scoped indexes, status workflow (pending→sending→sent/failed/dead)
 - **Worker Runtime**: Outbox dispatcher with skip-locked semantics, exponential backoff, retry limits, dead-letter handling
 - **Migrations**: Single Alembic home (`lifeos/migrations/versions/`) with additive migrations (head: `20251224_insight_feed_indexes`)
-- **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage at 85%; smoke endpoints `/health` and `/api/v1/ping` live. Latest runs: PR workflow reported 24 passed / 10 xfailed / 497 errors (needs investigation on selective job), main workflow reported 515 passed / 6 deselected / 10 xfailed (green).
+- **CI/CD**: PR + main pipelines green; Codecov wired (requires `CODECOV_TOKEN` secret); PR-first/branch protection required; coverage threshold enforced in CI; smoke endpoints `/health` and `/api/v1/ping` live.
 - **Core Models**: User, UserPreference, Role, Permission, PasswordResetToken, SessionToken, JWTBlocklist, InsightRecord, EventRecord
 - **Finance Domain**: Accounts (with type/subtype/normalized search), journal entries/lines, transactions, trial balance, money schedules, receivables, loans (models + controllers + services + events + ML ranker)
 - **Habits Domain**: Habits, logs, streaks, metrics (complete lifecycle)
@@ -30,7 +30,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - **Inference Telemetry**: In-memory telemetry for insight/inference events (counts, latency, FP/FN flags per domain/model_version); admin-only debug endpoint in non-prod (`GET /admin/debug/insight-telemetry`) exposes bounded snapshots
 - **Event Catalog Completeness**: All domains updated to include inference events with payload_version/model_version and optional `is_false_positive`/`is_false_negative`; guardrail tests enforce catalog coverage
 - **Health Endpoints**: `/health` and `/api/v1/ping` for CI/CD smoketests
-- **Testing**: 539 tests passing, 10 xfailed, 38 warnings, 85% coverage; all tests carry markers (integration/unit/ml).
+- **Testing**: Test suite passing with documented marker discipline (`integration`, `unit`, `ml`) and CI coverage gates.
 - **Documentation Governance**: UI/UX Constitution is binding (`lifeos/docs/ui_ux_constitution.md`); Tasks Hub at `lifeos/docs/tasks/` with `archive/` for completed cross-team handoffs; semantics canon published under `lifeos/docs/semantics/`.
 - **Phase 2.5 Semantic Contract Freeze**: Complete; canonical references in `lifeos/docs/semantics/` are binding for Phase 3a and beyond.
 - **Phase 3a Cross-Domain Intelligence Hardening**: Complete; replay determinism, confidence routing, and governance tests enforced. Telemetry checks require admin `AUTH_TOKEN`.
@@ -121,7 +121,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 
 ## ✅ CI/CD Infrastructure (Complete)
 - **CI/CD Pipeline Design**: Complete specification → `lifeos/docs/CI_CD_ARCHITECTURE.md` ✅
-- **Implementation Status**: Delivered by DevOps team → `lifeos/docs/CI_CD_UPDATE.md` ✅
+- **Implementation Status**: Delivered by DevOps team → `lifeos/docs/archive/CI_CD_UPDATE.md` ✅
 - **Operational Runbook**: `lifeos/docs/CI_CD_RUNBOOK.md` ✅
 - **Implemented Components**:
   - GitHub Actions Workflows: `lifeos-pr.yml`, `lifeos-main.yml`, `lifeos-release.yml`, `lifeos-nightly.yml` ✅
@@ -166,7 +166,7 @@ This file is normative. It defines boundaries, foldering, events, naming, migrat
 - Auth endpoints: `/api/v1/auth/login`, `/api/v1/auth/refresh` return access/refresh tokens, CSRF token, and user payload; Bearer + CSRF supported.
 - Insights feed: `/api/v1/insights/feed` with validated filters (domain, severity, date range, status) and consistent pagination metadata; user-scoped and includes source event metadata.
 - Client-friendly responses: finance account search, trial balance, and journal list return HTTP 200 with empty payloads/metadata on invalid/empty queries rather than 400; pagination metadata always present.
-- Tests: suite green (539 passed, 10 xfailed, 38 warnings); xfails track known gaps outside these changes.
+- Tests: suite green; expected xfails track known gaps outside these changes.
 
 ## ⚠️ Partially Implemented / Planned
 - **Session Lifecycle Scaffold**: Interface-only `core/auth/session_*`, `device.py`, `constants.py`, `admin_controllers.py`, and session event contracts. Only minimal `admin_reset` path + optional DB reset script may be implemented now; broader behavior deferred to Phase 3c.
@@ -185,7 +185,7 @@ LifeOS is a multi-domain, event-aware system for a single tenant (the user). Con
 ---
 
 # 2. Domain Boundaries (authoritative)
-**8 fully-defined domains, each with controllers, services, models, events, and tasks:**
+**8 fully-defined domains, each with controllers, services, models, events, and domain-specific background jobs where applicable:**
 
 - **Core**: auth (register, login, password-reset, username-reminder, session lifecycle scaffold + admin reset contract), users/prefs, roles/permissions, events, insights, **interpreter** (calendar classification), utils, app factory, extensions, worker runtime, outbox platform.
 - **Calendar** _(NEW)_: calendar events (title, description, start/end time, location, recurrence), external sync (Google/Apple), event interpretations, tagging, UI views. Primary input surface for life activity capture.
@@ -224,7 +224,7 @@ lifeos/
 │   ├── users/                      # User models/preferences/services
 │   └── utils/                      # Decorators, pagination, strings, time, validation
 ├── domains/                        # Domain modules
-│   ├── calendar/                   # Controllers, models, services, schemas, events, tasks, ml
+│   ├── calendar/                   # Controllers, models, services, schemas, events, ml
 │   ├── finance/
 │   ├── habits/
 │   ├── health/
@@ -303,8 +303,8 @@ lifeos/
 deploy/
 ├── Dockerfile
 ├── gunicorn.conf.py
-├── entrypoint.sh
 ├── scripts/
+│   ├── entrypoint.sh
 │   └── deploy.sh
 ├── monitoring/
 │   └── prometheus.yml
@@ -335,7 +335,7 @@ Planned (approved, not yet in repo; Phase 10 humanization):
 ---
 
 # 4. Event System & Catalog (implemented)
-- Bus: `lifeos/core/events/event_bus.py` (in-memory today; planned to move to outbox+broker under `lifeos/platform`).
+- Bus: `lifeos/core/events/event_bus.py` (in-memory today; planned to move to outbox+broker under `lifeos/lifeos_platform`).
 - Persistence: `event_record` remains an audit log.
 - Catalog (per-domain `events.py`, mirrored here):
   - `auth.user.registered` → {user_id, email, full_name?, timezone?}

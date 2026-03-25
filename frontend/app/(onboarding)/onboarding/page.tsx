@@ -22,6 +22,7 @@ import { onboardingApi } from '@/lib/api/onboarding'
 import { useLang } from '@/lib/useLang'
 import { getAppTranslations } from '@/lib/translations/app'
 import { LanguageMenu } from '@/components/common/LanguageMenu'
+import { useAuth } from '@/lib/auth/context'
 
 /* ── Domain definitions (top 4 user-voted) ── */
 interface Domain {
@@ -185,6 +186,7 @@ export default function OnboardingPage() {
   const [lang, setLang] = useLang()
   const t = getAppTranslations(lang).onboarding
   const router = useRouter()
+  const { refreshUser } = useAuth()
   const [step, setStep] = useState<Step>('domains')
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set())
   const [calendarProvider, setCalendarProvider] = useState<'google' | 'apple' | 'skip' | null>(null)
@@ -262,10 +264,11 @@ export default function OnboardingPage() {
     if (step !== 'processing') return
     const timer = setTimeout(async () => {
       await completeMutation.mutateAsync()
+      await refreshUser()
       router.push('/calendar')
     }, 5000)
     return () => clearTimeout(timer)
-  }, [step, completeMutation, router])
+  }, [step, completeMutation, refreshUser, router])
 
   /* ── Step progress indicator ── */
   const stepIndex = step === 'domains' ? 0 : step === 'calendar' ? 1 : 2

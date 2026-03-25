@@ -22,7 +22,7 @@ This is the normative constitution. All implementation teams must align with it.
 
 ## Decision Records
 
-Architecture Decision Records (ADRs) are stored in `docs/decisions/`. Each ADR captures the context, decision, and consequences of a significant architectural choice.
+Architecture Decision Records (ADRs) are not yet split into a dedicated root ADR directory. Architecture decisions currently live in the constitution and related docs under `lifeos/docs/`.
 
 ## Runbooks
 

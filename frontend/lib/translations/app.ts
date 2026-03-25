@@ -24,6 +24,7 @@ export interface LoginTranslations {
   continue: string
   createAccount: string
   finishSetup: string
+  finishSetupSignIn: string
   passwordMismatch: string
   noAccount: string
   register: string
@@ -90,6 +91,17 @@ export interface CalendarPageTranslations {
   eyebrow: string
   title: string
   subtitle: string
+  today: string
+  month: string
+  week: string
+  day: string
+  weekdaySun: string
+  weekdayMon: string
+  weekdayTue: string
+  weekdayWed: string
+  weekdayThu: string
+  weekdayFri: string
+  weekdaySat: string
   addEvent: string
   cancel: string
   newEvent: string
@@ -394,6 +406,7 @@ const en: AppTranslations = {
     continue: 'Continue',
     createAccount: 'Create Account',
     finishSetup: 'Set Password & Continue',
+    finishSetupSignIn: 'Password set. Please sign in to continue.',
     passwordMismatch: 'Passwords do not match.',
     noAccount: 'No account?',
     register: 'Register',
@@ -463,6 +476,17 @@ const en: AppTranslations = {
     eyebrow: 'Timeline',
     title: 'Calendar',
     subtitle: 'Manage calendar events for inquiry analysis.',
+    today: 'Today',
+    month: 'Month',
+    week: 'Week',
+    day: 'Day',
+    weekdaySun: 'Sun',
+    weekdayMon: 'Mon',
+    weekdayTue: 'Tue',
+    weekdayWed: 'Wed',
+    weekdayThu: 'Thu',
+    weekdayFri: 'Fri',
+    weekdaySat: 'Sat',
     addEvent: 'Add Event',
     cancel: 'Cancel',
     newEvent: 'New Event',
@@ -747,6 +771,7 @@ const ko: AppTranslations = {
     continue: '\uacc4\uc18d',
     createAccount: '\uacc4\uc815 \ub9cc\ub4e4\uae30',
     finishSetup: '\ube44\ubc00\ubc88\ud638 \uc124\uc815\ud558\uace0 \uacc4\uc18d',
+    finishSetupSignIn: '\ube44\ubc00\ubc88\ud638\uac00 \uc124\uc815\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uacc4\uc18d\ud558\ub824\uba74 \ub85c\uadf8\uc778\ud558\uc138\uc694.',
     passwordMismatch: '\ube44\ubc00\ubc88\ud638\uac00 \uc77c\uce58\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.',
     noAccount: '\uacc4\uc815\uc774 \uc5c6\uc73c\uc2e0\uac00\uc694?',
     register: '\uac00\uc785\ud558\uae30',
@@ -816,6 +841,17 @@ const ko: AppTranslations = {
     eyebrow: '\ud0c0\uc784\ub77c\uc778',
     title: '\uce98\ub9b0\ub354',
     subtitle: '\uc9c8\uc758 \ubd84\uc11d\uc744 \uc704\ud55c \uce98\ub9b0\ub354 \uc774\ubca4\ud2b8\ub97c \uad00\ub9ac\ud558\uc138\uc694.',
+    today: '\uc624\ub298',
+    month: '\uc6d4',
+    week: '\uc8fc',
+    day: '\uc77c',
+    weekdaySun: '\uc77c',
+    weekdayMon: '\uc6d4',
+    weekdayTue: '\ud654',
+    weekdayWed: '\uc218',
+    weekdayThu: '\ubaa9',
+    weekdayFri: '\uae08',
+    weekdaySat: '\ud1a0',
     addEvent: '\uc774\ubca4\ud2b8 \ucd94\uac00',
     cancel: '\ucde8\uc18c',
     newEvent: '\uc0c8 \uc774\ubca4\ud2b8',
@@ -1100,6 +1136,7 @@ const zh: AppTranslations = {
     continue: '\u7ee7\u7eed',
     createAccount: '\u521b\u5efa\u8d26\u6237',
     finishSetup: '\u8bbe\u7f6e\u5bc6\u7801\u5e76\u7ee7\u7eed',
+    finishSetupSignIn: '\u5bc6\u7801\u5df2\u8bbe\u7f6e\u5b8c\u6210\uff0c\u8bf7\u767b\u5f55\u540e\u7ee7\u7eed\u3002',
     passwordMismatch: '\u4e24\u6b21\u8f93\u5165\u7684\u5bc6\u7801\u4e0d\u4e00\u81f4\u3002',
     noAccount: '\u6ca1\u6709\u8d26\u6237\uff1f',
     register: '\u7acb\u5373\u6ce8\u518c',
@@ -1169,6 +1206,17 @@ const zh: AppTranslations = {
     eyebrow: '\u65f6\u95f4\u7ebf',
     title: '\u65e5\u5386',
     subtitle: '\u7ba1\u7406\u65e5\u5386\u4e8b\u4ef6\uff0c\u7528\u4e8e\u95ee\u8be2\u5206\u6790',
+    today: '\u4eca\u5929',
+    month: '\u6708',
+    week: '\u5468',
+    day: '\u65e5',
+    weekdaySun: '\u65e5',
+    weekdayMon: '\u4e00',
+    weekdayTue: '\u4e8c',
+    weekdayWed: '\u4e09',
+    weekdayThu: '\u56db',
+    weekdayFri: '\u4e94',
+    weekdaySat: '\u516d',
     addEvent: '\u6dfb\u52a0\u4e8b\u4ef6',
     cancel: '\u53d6\u6d88',
     newEvent: '\u65b0\u5efa\u4e8b\u4ef6',

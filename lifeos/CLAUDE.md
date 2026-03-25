@@ -12,7 +12,7 @@ lifeos/
 ├── readmodels/        # Read model projections and runners
 ├── migrations/        # Alembic migrations (single home — all versions here)
 ├── docs/              # Architecture docs, semantic contracts, runbooks
-├── tests/             # 539+ tests with markers (unit/integration/ml)
+├── tests/             # Test suite with markers (unit/integration/ml)
 ├── templates/         # Jinja2 legacy templates
 ├── static/            # CSS/JS static assets
 └── scripts/           # CLI tools (sync, runners)
@@ -27,7 +27,7 @@ controllers/   → Flask blueprints, routes, auth decorators
 services/      → Business logic (ORM queries inline, no repo layer)
 schemas/       → Pydantic request/response DTOs
 events.py      → Domain events with payload_version
-tasks/         → Background task definitions
+tasks/         → Optional background task definitions (present where needed)
 ```
 
 ## Key Rules

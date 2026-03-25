@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/context'
@@ -12,6 +12,14 @@ import { LanguageMenu } from '@/components/common/LanguageMenu'
 type View = 'login' | 'register'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
+  )
+}
+
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login, register } = useAuth()
@@ -46,17 +54,25 @@ export default function LoginPage() {
     setError(null)
     setIsSubmitting(true)
     try {
+      let didAuthenticate = false
       if (view === 'login') {
         await login(email, password)
+        didAuthenticate = true
       } else {
         const finalEmail = isInvitePrefilled ? inviteEmailFromUrl : email
         const finalInviteToken = isInvitePrefilled ? inviteTokenFromUrl : inviteToken
         if (isInvitePrefilled && password !== confirmPassword) {
           throw new Error(t.passwordMismatch)
         }
-        await register({ email: finalEmail, password, invite_token: finalInviteToken || undefined })
+        didAuthenticate = await register({ email: finalEmail, password, invite_token: finalInviteToken || undefined })
       }
-      if (hasInviteToken && view === 'register') {
+      if (view === 'register' && !didAuthenticate) {
+        setView('login')
+        setPassword('')
+        setConfirmPassword('')
+        setInviteToken('')
+        setError(t.finishSetupSignIn)
+      } else if (hasInviteToken && view === 'register') {
         router.push('/onboarding')
       } else {
         router.push('/calendar')

@@ -54,13 +54,19 @@ Output columns: `id`, `email`, `status`, `created` (ISO 8601), `expires` (ISO 86
 3. Admin Ops checks capacity:
    - `PYTHONPATH=. python3 scripts/ops/private_alpha_invite_admin.py status --cohort-target <target>`
 4. Admin Ops issues invite token:
-   - `PYTHONPATH=. python3 scripts/ops/private_alpha_invite_admin.py issue --email <email> --cohort-target <target> --issued-by-user-id <admin_user_id>`
+   - `PYTHONPATH=. python3 scripts/ops/private_alpha_invite_admin.py issue --email <email> --cohort-target <target> --issued-by-user-id <admin_user_id> --invite-flow both`
 5. Store only last 6 chars of token in ledger (`token_tail`) for reconciliation.
 6. Send user message with:
-   - invite link `/login?token=...&email=...`
+   - Next.js app link `/login?token=...&email=...`
+   - Legacy Flask link `/invite?token=...` (only if using legacy Flask auth UI)
    - supported scope statement
    - support contact path
 7. Update ledger `status=sent` and timestamp.
+
+Invite URL output modes:
+- `--invite-flow next`: print only Next.js login link
+- `--invite-flow flask`: print only legacy Flask invite link
+- `--invite-flow both` (default): print primary `invite_url` (Next) plus `invite_url_next` and `invite_url_flask`
 
 ### 3.5 Reissue procedure
 Use only for `invite_expired`, `invite_invalid` (copy/paste), or mail-delivery failure.
