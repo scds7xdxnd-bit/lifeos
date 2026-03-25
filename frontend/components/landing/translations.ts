@@ -125,11 +125,11 @@ export const translations: Record<Lang, Translations> = {
       sub: 'Every aspect of your existence, meticulously organized yet infinitely alive.',
       items: [
         { title: 'Finance', body: 'Accounts, transactions, and forecasts \u2014 your complete financial narrative, not just numbers.', stat: 'Full Ledger' },
-        { title: 'Journal', body: 'A sanctuary for thoughts, reflections, mood, and the signals between the lines.', stat: 'Mood Integrated' },
         { title: 'Health', body: 'Biometrics, workouts, and nutrition \u2014 your body\u2019s story, tracked and understood.', stat: 'HealthSync Live' },
-        { title: 'Relationships', body: 'Map connections, track interactions, and nurture the bonds that matter most.', stat: 'Network Ready' },
+        { title: 'Habits', body: 'Build repeatable routines, track consistency, and turn intention into measurable momentum.', stat: 'Streak Intelligence' },
+        { title: 'Skills', body: 'Practice deliberately, monitor growth curves, and compound mastery over time.', stat: 'Progress Mapping' },
       ],
-      comingSoon: 'Calendar, Projects, Habits, Skills \u2014 and more domains coming soon.',
+      comingSoon: 'LifeOS unifies these four domains into one intelligent operating layer, revealing patterns no standalone app can surface.',
     },
     inquiryBento: {
       headline: 'Inquiry-First Intelligence',
@@ -241,11 +241,11 @@ export const translations: Record<Lang, Translations> = {
       sub: '\u4f60\u5b58\u5728\u7684\u6bcf\u4e00\u4e2a\u65b9\u9762\uff0c\u90fd\u88ab\u7cbe\u5fc3\u7ec4\u7ec7\uff0c\u5374\u53c8\u65e0\u9650\u9c9c\u6d3b\u3002',
       items: [
         { title: '\u8d22\u52a1', body: '\u8d26\u6237\u3001\u4ea4\u6613\u548c\u9884\u6d4b\u2014\u2014\u4f60\u5b8c\u6574\u7684\u8d22\u52a1\u53d9\u4e8b\uff0c\u4e0d\u53ea\u662f\u6570\u5b57\u3002', stat: '\u5b8c\u6574\u8d26\u672c' },
-        { title: '\u65e5\u8bb0', body: '\u601d\u60f3\u3001\u53cd\u601d\u3001\u60c5\u7eea\u548c\u5b57\u91cc\u884c\u95f4\u4fe1\u53f7\u7684\u5e87\u62a4\u6240\u3002', stat: '\u60c5\u7eea\u6574\u5408' },
         { title: '\u5065\u5eb7', body: '\u751f\u7269\u6307\u6807\u3001\u8fd0\u52a8\u548c\u8425\u517b\u2014\u2014\u4f60\u8eab\u4f53\u7684\u6545\u4e8b\uff0c\u88ab\u8ffd\u8e2a\u548c\u7406\u89e3\u3002', stat: '\u5065\u5eb7\u540c\u6b65' },
-        { title: '\u5173\u7cfb', body: '\u6620\u5c04\u8fde\u63a5\uff0c\u8ffd\u8e2a\u4e92\u52a8\uff0c\u5475\u62a4\u6700\u91cd\u8981\u7684\u7ebd\u5e26\u3002', stat: '\u793e\u4ea4\u56fe\u8c31' },
+        { title: '\u4e60\u60ef', body: '\u5efa\u7acb\u53ef\u590d\u7528\u7684\u884c\u4e3a\u56de\u8def\uff0c\u8ddf\u8e2a\u7a33\u5b9a\u6027\uff0c\u8ba9\u610f\u5411\u53d8\u6210\u53ef\u7d2f\u79ef\u7684\u52a8\u80fd\u3002', stat: '\u8fde\u7eed\u6027\u667a\u80fd' },
+        { title: '\u6280\u80fd', body: '\u8fdb\u884c\u523b\u610f\u7ec3\u4e60\uff0c\u89c2\u5bdf\u6210\u957f\u66f2\u7ebf\uff0c\u8ba9\u80fd\u529b\u968f\u65f6\u95f4\u590d\u5229\u3002', stat: '\u8fdb\u6b65\u6620\u5c04' },
       ],
-      comingSoon: '\u65e5\u5386\u3001\u9879\u76ee\u3001\u4e60\u60ef\u3001\u6280\u80fd\u2014\u2014\u66f4\u591a\u9886\u57df\u5373\u5c06\u63a8\u51fa\u3002',
+      comingSoon: 'LifeOS \u5c06\u8fd9\u56db\u5927\u9886\u57df\u878d\u4e3a\u540c\u4e00\u5957\u667a\u80fd\u7cfb\u7edf\uff0c\u8ba9\u4f60\u770b\u89c1\u5355\u4e00\u5de5\u5177\u6c38\u8fdc\u770b\u4e0d\u89c1\u7684\u5173\u8054\u3002',
     },
     inquiryBento: {
       headline: '\u8be2\u95ee\u4f18\u5148\u7684\u667a\u80fd',
@@ -357,11 +357,11 @@ export const translations: Record<Lang, Translations> = {
       sub: '존재의 모든 측면을, 세심하게 정리하면서도 무한히 생생하게.',
       items: [
         { title: '재정', body: '계좌, 거래, 예측 — 숫자가 아닌 완전한 재정 내러티브.', stat: '전체 원장' },
-        { title: '저널', body: '생각, 성찰, 기분, 그리고 행간의 신호를 위한 성역.', stat: '기분 통합' },
         { title: '건강', body: '생체지표, 운동, 영양 — 추적하고 이해하는 몸의 이야기.', stat: 'HealthSync 라이브' },
-        { title: '관계', body: '연결을 매핑하고, 상호작용을 추적하고, 중요한 유대를 가꾸세요.', stat: '네트워크 준비' },
+        { title: '습관', body: '반복 가능한 루틴을 만들고 일관성을 추적해, 의도를 측정 가능한 추진력으로 바꾸세요.', stat: '스트릭 인텔리전스' },
+        { title: '스킬', body: '의도적으로 연습하고 성장 곡선을 추적해, 시간이 갈수록 실력을 복리처럼 쌓으세요.', stat: '성장 매핑' },
       ],
-      comingSoon: '캘린더, 프로젝트, 습관, 스킬 — 더 많은 도메인이 곧 추가됩니다.',
+      comingSoon: 'LifeOS는 이 네 도메인을 하나의 지능형 운영 레이어로 통합해, 단일 앱으로는 보이지 않는 패턴을 드러냅니다.',
     },
     inquiryBento: {
       headline: '질의 우선 인텔리전스',

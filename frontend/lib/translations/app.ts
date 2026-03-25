@@ -6,18 +6,25 @@ export interface LoginTranslations {
   backToHome: string
   welcomeBack: string
   joinAlpha: string
+  acceptInvite: string
   signInSub: string
   registerSub: string
+  acceptInviteSub: string
   limitedSpots: string
   email: string
+  invitedEmail: string
   password: string
+  confirmPassword: string
   inviteToken: string
   emailPlaceholder: string
   passwordPlaceholder: string
+  confirmPasswordPlaceholder: string
   invitePlaceholder: string
   pleaseWait: string
   continue: string
   createAccount: string
+  finishSetup: string
+  passwordMismatch: string
   noAccount: string
   register: string
   haveAccount: string
@@ -369,18 +376,25 @@ const en: AppTranslations = {
     backToHome: 'Back to home',
     welcomeBack: 'Welcome back',
     joinAlpha: 'Join the alpha',
+    acceptInvite: 'Accept your invite',
     signInSub: 'Sign in to your archive.',
     registerSub: 'Private alpha \u2014 invite token required.',
+    acceptInviteSub: 'Set your password to activate your account and continue to onboarding.',
     limitedSpots: 'Limited spots',
     email: 'Email',
+    invitedEmail: 'Invited email',
     password: 'Password',
+    confirmPassword: 'Confirm password',
     inviteToken: 'Invite token',
     emailPlaceholder: 'you@example.com',
     passwordPlaceholder: 'Enter password',
+    confirmPasswordPlaceholder: 'Confirm password',
     invitePlaceholder: 'Paste your invite token',
     pleaseWait: 'Please wait\u2026',
     continue: 'Continue',
     createAccount: 'Create Account',
+    finishSetup: 'Set Password & Continue',
+    passwordMismatch: 'Passwords do not match.',
     noAccount: 'No account?',
     register: 'Register',
     haveAccount: 'Have an account?',
@@ -715,18 +729,25 @@ const ko: AppTranslations = {
     backToHome: '\ud648\uc73c\ub85c \ub3cc\uc544\uac00\uae30',
     welcomeBack: '\ub2e4\uc2dc \uc624\uc168\uad70\uc694',
     joinAlpha: '\uc54c\ud30c\uc5d0 \ud569\ub958\ud558\uae30',
+    acceptInvite: '\ucd08\ub300 \uc218\ub77d\ud558\uae30',
     signInSub: '\uc544\uce74\uc774\ube0c\uc5d0 \ub85c\uadf8\uc778\ud558\uc138\uc694.',
     registerSub: '\ud504\ub77c\uc774\ube57 \uc54c\ud30c \u2014 \ucd08\ub300 \ud1a0\ud070\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.',
+    acceptInviteSub: '\ube44\ubc00\ubc88\ud638\ub97c \uc124\uc815\ud558\uba74 \uacc4\uc815\uc774 \ud65c\uc131\ud654\ub418\uace0 \uc628\ubcf4\ub529\uc73c\ub85c \uc9c4\ud589\ub429\ub2c8\ub2e4.',
     limitedSpots: '\uc778\uc6d0 \uc81c\ud55c',
     email: '\uc774\uba54\uc77c',
+    invitedEmail: '\ucd08\ub300\ub41c \uc774\uba54\uc77c',
     password: '\ube44\ubc00\ubc88\ud638',
+    confirmPassword: '\ube44\ubc00\ubc88\ud638 \ud655\uc778',
     inviteToken: '\ucd08\ub300 \ud1a0\ud070',
     emailPlaceholder: 'you@example.com',
     passwordPlaceholder: '\ube44\ubc00\ubc88\ud638 \uc785\ub825',
+    confirmPasswordPlaceholder: '\ube44\ubc00\ubc88\ud638 \ub2e4\uc2dc \uc785\ub825',
     invitePlaceholder: '\ucd08\ub300 \ud1a0\ud070 \ubd99\uc5ec\ub123\uae30',
     pleaseWait: '\uc7a0\uc2dc\ub9cc\uc694\u2026',
     continue: '\uacc4\uc18d',
     createAccount: '\uacc4\uc815 \ub9cc\ub4e4\uae30',
+    finishSetup: '\ube44\ubc00\ubc88\ud638 \uc124\uc815\ud558\uace0 \uacc4\uc18d',
+    passwordMismatch: '\ube44\ubc00\ubc88\ud638\uac00 \uc77c\uce58\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.',
     noAccount: '\uacc4\uc815\uc774 \uc5c6\uc73c\uc2e0\uac00\uc694?',
     register: '\uac00\uc785\ud558\uae30',
     haveAccount: '\uc774\ubbf8 \uacc4\uc815\uc774 \uc788\uc73c\uc2e0\uac00\uc694?',
@@ -1061,18 +1082,25 @@ const zh: AppTranslations = {
     backToHome: '\u8fd4\u56de\u9996\u9875',
     welcomeBack: '\u6b22\u8fce\u56de\u6765',
     joinAlpha: '\u52a0\u5165\u5185\u6d4b',
+    acceptInvite: '\u63a5\u53d7\u9080\u8bf7',
     signInSub: '\u767b\u5f55\u60a8\u7684\u6863\u6848\u5e93',
     registerSub: '\u5185\u6d4b\u9636\u6bb5 - \u9700\u8981\u9080\u8bf7\u7801',
+    acceptInviteSub: '\u8bbe\u7f6e\u5bc6\u7801\u4ee5\u6fc0\u6d3b\u60a8\u7684\u8d26\u6237\uff0c\u7136\u540e\u76f4\u63a5\u8fdb\u5165\u65b0\u624b\u5f15\u5bfc\u3002',
     limitedSpots: '\u540d\u989d\u6709\u9650',
     email: '\u90ae\u7bb1',
+    invitedEmail: '\u53d7\u9080\u90ae\u7bb1',
     password: '\u5bc6\u7801',
+    confirmPassword: '\u786e\u8ba4\u5bc6\u7801',
     inviteToken: '\u9080\u8bf7\u7801',
     emailPlaceholder: 'you@example.com',
     passwordPlaceholder: '\u8bf7\u8f93\u5165\u5bc6\u7801',
+    confirmPasswordPlaceholder: '\u518d\u6b21\u8f93\u5165\u5bc6\u7801',
     invitePlaceholder: '\u7c98\u8d34\u60a8\u7684\u9080\u8bf7\u7801',
     pleaseWait: '\u8bf7\u7a0d\u5019\u2026',
     continue: '\u7ee7\u7eed',
     createAccount: '\u521b\u5efa\u8d26\u6237',
+    finishSetup: '\u8bbe\u7f6e\u5bc6\u7801\u5e76\u7ee7\u7eed',
+    passwordMismatch: '\u4e24\u6b21\u8f93\u5165\u7684\u5bc6\u7801\u4e0d\u4e00\u81f4\u3002',
     noAccount: '\u6ca1\u6709\u8d26\u6237\uff1f',
     register: '\u7acb\u5373\u6ce8\u518c',
     haveAccount: '\u5df2\u6709\u8d26\u6237\uff1f',

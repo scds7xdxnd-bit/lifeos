@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import sys
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 from sqlalchemy import or_
 
@@ -145,7 +146,8 @@ def _cmd_issue(args: argparse.Namespace) -> int:
     base_url = args.base_url.rstrip("/")
     print(f"invite_id={invite.id}")
     print(f"invite_token={raw_token}")
-    print(f"invite_url={base_url}/invite?token={raw_token}")
+    invite_query = urlencode({"token": raw_token, "email": invite.invited_email})
+    print(f"invite_url={base_url}/login?{invite_query}")
     print(f"token_tail={raw_token[-6:]}")
     return 0
 

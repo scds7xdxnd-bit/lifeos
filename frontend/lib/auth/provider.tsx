@@ -40,7 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const tokens = getStored()
-    if (!tokens) {
+    if (!tokens?.access_token) {
+      if (tokens?.csrf_token) {
+        setIsLoading(false)
+        return
+      }
       // Prime CSRF token from bootstrap endpoint for unauthenticated requests
       fetch(`${resolveApiUrl()}/api/bootstrap`, {
         credentials: 'include',
