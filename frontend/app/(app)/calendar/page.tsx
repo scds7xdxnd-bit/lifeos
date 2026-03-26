@@ -7,11 +7,37 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { calendarApi, type CalendarEvent, type CreateEventInput } from '@/lib/api/calendar'
 import { getAppTranslations } from '@/lib/translations/app'
 import { useLang } from '@/lib/useLang'
+import {
+  type Meridiem,
+  type DayEventSegment,
+  type DayTimelineBlock,
+  DEFAULT_EVENT_COLOR,
+  getEventColorHex,
+  hexToRgba,
+  darkenHex,
+  getCalendarLocale,
+  toDateKey,
+  startOfMonth,
+  buildMonthGrid,
+  buildWeekGrid,
+  buildYearMonths,
+  parseIsoToDateParts,
+  combineDateAndTimeToIso,
+  formatSummaryRange,
+  shiftIsoByDays,
+  startOfDayLocal,
+  addDaysLocal,
+  resolveEventInterval,
+  formatHourLabel24,
+  TIME_SLOT_OPTIONS,
+  toSlotIndex,
+  buildNearbySlots,
+  parseTypedTime,
+} from './calendar-utils'
 
-type ViewMode = 'month' | 'week' | 'day'
+type ViewMode = 'year' | 'month' | 'week' | 'day'
 type ModalMode = 'create' | 'edit' | null
 type EditorAnchor = { top: number; left: number }
-type Meridiem = 'AM' | 'PM'
 type ActiveTimeSuggestions = 'start' | 'end' | null
 
 type CalendarQueryData = {
@@ -21,175 +47,6 @@ type CalendarQueryData = {
 
 const QUERY_KEY = ['calendar-events'] as const
 const EDITOR_WIDTH = 340
-
-function fmtDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-  } catch {
-    return iso
-  }
-}
-
-function fmtTime(iso: string) {
-  try {
-    return new Date(iso).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
-  } catch {
-    return ''
-  }
-}
-
-function toDateKey(date: Date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-}
-
-function startOfWeek(date: Date) {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  d.setDate(d.getDate() - d.getDay())
-  return d
-}
-
-function buildMonthGrid(date: Date) {
-  const first = startOfMonth(date)
-  const firstWeekday = first.getDay()
-  const cursor = new Date(first)
-  cursor.setDate(first.getDate() - firstWeekday)
-
-  const cells: Date[] = []
-  for (let i = 0; i < 42; i += 1) {
-    cells.push(new Date(cursor))
-    cursor.setDate(cursor.getDate() + 1)
-  }
-  return cells
-}
-
-function buildWeekGrid(date: Date) {
-  const cursor = startOfWeek(date)
-  const cells: Date[] = []
-  for (let i = 0; i < 7; i += 1) {
-    cells.push(new Date(cursor))
-    cursor.setDate(cursor.getDate() + 1)
-  }
-  return cells
-}
-
-function formatDateInputValue(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function parseIsoToDateParts(iso?: string | null) {
-  if (!iso) {
-    return {
-      date: '',
-      hour: '9',
-      minute: '00',
-      meridiem: 'AM' as Meridiem,
-    }
-  }
-
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) {
-    return {
-      date: '',
-      hour: '9',
-      minute: '00',
-      meridiem: 'AM' as Meridiem,
-    }
-  }
-
-  const hour24 = date.getHours()
-  const meridiem: Meridiem = hour24 >= 12 ? 'PM' : 'AM'
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
-
-  return {
-    date: formatDateInputValue(date),
-    hour: String(hour12),
-    minute: String(date.getMinutes()).padStart(2, '0'),
-    meridiem,
-  }
-}
-
-function combineDateAndTimeToIso(dateValue: string, hour: string, minute: string, meridiem: Meridiem) {
-  if (!dateValue) return undefined
-
-  let numericHour = Number.parseInt(hour, 10)
-  const numericMinute = Number.parseInt(minute, 10)
-
-  if (Number.isNaN(numericHour) || numericHour < 1 || numericHour > 12) numericHour = 12
-  if (Number.isNaN(numericMinute) || numericMinute < 0 || numericMinute > 59) return undefined
-
-  let hour24 = numericHour % 12
-  if (meridiem === 'PM') hour24 += 12
-
-  const [year, month, day] = dateValue.split('-').map((p) => Number.parseInt(p, 10))
-  if (!year || !month || !day) return undefined
-
-  const local = new Date(year, month - 1, day, hour24, numericMinute, 0, 0)
-  if (Number.isNaN(local.getTime())) return undefined
-  return local.toISOString()
-}
-
-function formatSummaryDate(date: Date, lang: string) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  if (lang === 'ko' || lang === 'zh') {
-    return `${y}/${m}/${d}`
-  }
-  return `${d}/${m}/${y}`
-}
-
-function formatSummaryTime(date: Date) {
-  const hour24 = date.getHours()
-  const meridiem = hour24 >= 12 ? 'PM' : 'AM'
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${hour12}:${minute} ${meridiem}`
-}
-
-function formatSummaryRange(startIso: string | undefined, endIso: string | undefined, lang: string) {
-  if (!startIso) return 'Set start date and time'
-
-  const start = new Date(startIso)
-  if (Number.isNaN(start.getTime())) return 'Set start date and time'
-
-  const startDate = formatSummaryDate(start, lang)
-  const startTime = formatSummaryTime(start)
-
-  if (!endIso) return `${startDate} ${startTime}`
-
-  const end = new Date(endIso)
-  if (Number.isNaN(end.getTime())) return `${startDate} ${startTime}`
-  const endTime = formatSummaryTime(end)
-
-  if (start.toDateString() === end.toDateString()) {
-    return `${startDate} ${startTime} - ${endTime}`
-  }
-
-  const endDate = formatSummaryDate(end, lang)
-  return `${startDate} ${startTime} - (${endDate}) ${endTime}`
-}
-
-function shiftIsoByDays(iso: string, days: number) {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return iso
-  date.setDate(date.getDate() + days)
-  return date.toISOString()
-}
 
 const microLabel: React.CSSProperties = {
   fontFamily: 'var(--font-manrope), sans-serif',
@@ -221,41 +78,6 @@ const selectStyle: React.CSSProperties = {
   backgroundImage: 'none',
 }
 
-const TIME_SLOT_OPTIONS = Array.from({ length: 48 }, (_, idx) => {
-  const totalMinutes = idx * 30
-  const hour24 = Math.floor(totalMinutes / 60)
-  const minute = totalMinutes % 60
-  const meridiem: Meridiem = hour24 >= 12 ? 'PM' : 'AM'
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
-  return {
-    value: `${String(hour12)}:${String(minute).padStart(2, '0')}:${meridiem}`,
-    label: `${hour12}:${String(minute).padStart(2, '0')} ${meridiem}`,
-    hour: String(hour12),
-    minute: String(minute).padStart(2, '0'),
-    meridiem,
-  }
-})
-
-function clamp(n: number, min: number, max: number) {
-  return Math.min(Math.max(n, min), max)
-}
-
-function toSlotIndex(hour: string, minute: string, meridiem: Meridiem) {
-  let h = Number.parseInt(hour, 10)
-  const m = Number.parseInt(minute, 10)
-  if (Number.isNaN(h) || h < 1 || h > 12) h = 12
-  const safeMinute = Number.isNaN(m) ? 0 : clamp(Math.round(m / 30) * 30, 0, 30)
-  let hour24 = h % 12
-  if (meridiem === 'PM') hour24 += 12
-  return clamp(hour24 * 2 + (safeMinute >= 30 ? 1 : 0), 0, TIME_SLOT_OPTIONS.length - 1)
-}
-
-function buildNearbySlots(baseIndex: number, startOffset = 0) {
-  const start = clamp(baseIndex + startOffset, 0, TIME_SLOT_OPTIONS.length - 1)
-  const end = clamp(baseIndex + 6, 0, TIME_SLOT_OPTIONS.length - 1)
-  return TIME_SLOT_OPTIONS.slice(start, end + 1)
-}
-
 const appleDateStyle: React.CSSProperties = {
   ...inputStyle,
   border: 'none',
@@ -278,8 +100,10 @@ const appleTimeStyle: React.CSSProperties = {
 export default function CalendarPage() {
   const [lang] = useLang()
   const t = getAppTranslations(lang).calendar
+  const calendarLocale = getCalendarLocale(lang)
   const qc = useQueryClient()
   const viewLabels: Record<ViewMode, string> = {
+    year: t.year,
     month: t.month,
     week: t.week,
     day: t.day,
@@ -313,6 +137,7 @@ export default function CalendarPage() {
   const [endTimeDraft, setEndTimeDraft] = useState('9:00 AM')
   const [formLocation, setFormLocation] = useState('')
   const [formAllDay, setFormAllDay] = useState(false)
+  const [formColor, setFormColor] = useState(DEFAULT_EVENT_COLOR)
   const editorRef = useRef<HTMLElement | null>(null)
   const timeDetailsRef = useRef<HTMLDivElement | null>(null)
 
@@ -341,6 +166,7 @@ export default function CalendarPage() {
       end_time?: string
       location?: string
       all_day: boolean
+      color?: string
     }) =>
       calendarApi.update(input.id, {
         title: input.title,
@@ -348,6 +174,7 @@ export default function CalendarPage() {
         end_time: input.end_time,
         location: input.location,
         all_day: input.all_day,
+        color: input.color,
       }),
     onMutate: async (input) => {
       await qc.cancelQueries({ queryKey: QUERY_KEY })
@@ -365,6 +192,7 @@ export default function CalendarPage() {
                   end_time: input.end_time ?? null,
                   location: input.location ?? null,
                   all_day: input.all_day,
+                  color: input.color ?? null,
                 }
               : ev,
           ),
@@ -452,55 +280,174 @@ export default function CalendarPage() {
         end_time: nextEnd,
         location: formLocation || null,
         all_day: formAllDay,
+        color: formColor,
       }
     })
-  }, [events, modalMode, editingEventId, formTitle, draftStartIso, formEndDate, draftEndIso, formLocation, formAllDay])
+  }, [events, modalMode, editingEventId, formTitle, draftStartIso, formEndDate, draftEndIso, formLocation, formAllDay, formColor])
 
   const selectedKey = toDateKey(selectedDate)
   const todayKey = toDateKey(new Date())
 
-  const eventsByDay = useMemo(() => {
-    const grouped = new Map<string, CalendarEvent[]>()
+  const daySegmentsByKey = useMemo(() => {
+    const grouped = new Map<string, DayEventSegment[]>()
 
-    for (const ev of displayedEvents) {
-      const key = toDateKey(new Date(ev.start_time))
-      const bucket = grouped.get(key)
-      if (bucket) {
-        bucket.push(ev)
-      } else {
-        grouped.set(key, [ev])
+    for (const event of displayedEvents) {
+      const interval = resolveEventInterval(event)
+      if (!interval) continue
+
+      const spanStart = startOfDayLocal(interval.start)
+      const spanEndInclusive = new Date(interval.end.getTime() - 1)
+      const spanEnd = startOfDayLocal(spanEndInclusive)
+
+      for (let cursor = new Date(spanStart); cursor.getTime() <= spanEnd.getTime(); cursor = addDaysLocal(cursor, 1)) {
+        const dayKey = toDateKey(cursor)
+        const dayStart = startOfDayLocal(cursor)
+        const dayEnd = addDaysLocal(dayStart, 1)
+        const segmentStart = new Date(Math.max(interval.start.getTime(), dayStart.getTime()))
+        const segmentEnd = new Date(Math.min(interval.end.getTime(), dayEnd.getTime()))
+
+        const segment: DayEventSegment = {
+          event,
+          segmentStart,
+          segmentEnd,
+          isAllDay: Boolean(event.all_day),
+          continuesBefore: interval.start.getTime() < dayStart.getTime(),
+          continuesAfter: interval.end.getTime() > dayEnd.getTime(),
+        }
+
+        const bucket = grouped.get(dayKey)
+        if (bucket) {
+          bucket.push(segment)
+        } else {
+          grouped.set(dayKey, [segment])
+        }
       }
     }
 
     for (const [key, value] of grouped.entries()) {
       grouped.set(
         key,
-        [...value].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()),
+        [...value].sort((a, b) => {
+          if (a.isAllDay !== b.isAllDay) return a.isAllDay ? -1 : 1
+          return a.segmentStart.getTime() - b.segmentStart.getTime()
+        }),
       )
     }
 
     return grouped
   }, [displayedEvents])
 
-  const selectedDayEvents = eventsByDay.get(selectedKey) ?? []
+  const selectedDaySegments = daySegmentsByKey.get(selectedKey) ?? []
+  const selectedDayAllDaySegments = selectedDaySegments.filter((segment) => segment.isAllDay)
+
+  const selectedDayTimelineBlocks = useMemo(() => {
+    const dayStart = startOfDayLocal(selectedDate)
+    const dayEnd = addDaysLocal(dayStart, 1)
+    const dayStartMs = dayStart.getTime()
+    const dayEndMs = dayEnd.getTime()
+
+    const raw: DayTimelineBlock[] = []
+    for (const event of displayedEvents) {
+      if (event.all_day) continue
+
+      const interval = resolveEventInterval(event)
+      if (!interval) continue
+      if (interval.end.getTime() <= dayStartMs || interval.start.getTime() >= dayEndMs) continue
+
+      const clippedStartMs = Math.max(interval.start.getTime(), dayStartMs)
+      const clippedEndMs = Math.min(interval.end.getTime(), dayEndMs)
+      const startMinute = Math.max(0, Math.floor((clippedStartMs - dayStartMs) / 60000))
+      const endMinute = Math.min(1440, Math.ceil((clippedEndMs - dayStartMs) / 60000))
+      const safeEndMinute = Math.max(endMinute, Math.min(1440, startMinute + 30))
+
+      raw.push({
+        event,
+        startMinute,
+        endMinute: safeEndMinute,
+        startsBeforeDay: interval.start.getTime() < dayStartMs,
+        endsAfterDay: interval.end.getTime() > dayEndMs,
+        column: 0,
+        columnCount: 1,
+      })
+    }
+
+    const sorted = [...raw].sort((a, b) => {
+      if (a.startMinute !== b.startMinute) return a.startMinute - b.startMinute
+      return (a.endMinute - a.startMinute) - (b.endMinute - b.startMinute)
+    })
+
+    const positioned: DayTimelineBlock[] = []
+    let cluster: DayTimelineBlock[] = []
+    let clusterEndMinute = -1
+
+    const flushCluster = () => {
+      if (cluster.length === 0) return
+
+      const columnsEnd: number[] = []
+      let clusterColumnCount = 1
+
+      for (const item of cluster) {
+        let column = 0
+        while (column < columnsEnd.length && columnsEnd[column] > item.startMinute) {
+          column += 1
+        }
+        columnsEnd[column] = item.endMinute
+        item.column = column
+        clusterColumnCount = Math.max(clusterColumnCount, column + 1)
+      }
+
+      for (const item of cluster) {
+        positioned.push({ ...item, columnCount: clusterColumnCount })
+      }
+
+      cluster = []
+      clusterEndMinute = -1
+    }
+
+    for (const item of sorted) {
+      if (cluster.length === 0) {
+        cluster.push(item)
+        clusterEndMinute = item.endMinute
+        continue
+      }
+
+      if (item.startMinute < clusterEndMinute) {
+        cluster.push(item)
+        clusterEndMinute = Math.max(clusterEndMinute, item.endMinute)
+        continue
+      }
+
+      flushCluster()
+      cluster.push(item)
+      clusterEndMinute = item.endMinute
+    }
+
+    flushCluster()
+    return positioned
+  }, [displayedEvents, selectedDate])
   const monthCells = useMemo(() => buildMonthGrid(monthAnchor), [monthAnchor])
+  const yearMonths = useMemo(() => buildYearMonths(monthAnchor), [monthAnchor])
   const weekCells = useMemo(() => buildWeekGrid(selectedDate), [selectedDate])
 
   const rangeLabel = useMemo(() => {
+    if (viewMode === 'year') {
+      return monthAnchor.toLocaleDateString(calendarLocale, { year: 'numeric' })
+    }
+
     if (viewMode === 'month') {
-      return monthAnchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+      return monthAnchor.toLocaleDateString(calendarLocale, { month: 'long', year: 'numeric' })
     }
 
     if (viewMode === 'week') {
       const start = weekCells[0]
       const end = weekCells[6]
-      const left = start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-      const right = end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+      const left = start.toLocaleDateString(calendarLocale, { month: 'short', day: 'numeric' })
+      const right = end.toLocaleDateString(calendarLocale, { month: 'short', day: 'numeric', year: 'numeric' })
       return `${left} - ${right}`
     }
 
-    return selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-  }, [viewMode, monthAnchor, selectedDate, weekCells])
+    return selectedDate.toLocaleDateString(calendarLocale, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  }, [viewMode, monthAnchor, selectedDate, weekCells, calendarLocale])
 
   const startSlotValue = `${formStartHour}:${formStartMinute}:${formStartMeridiem}`
   const endSlotValue = `${formEndHour}:${formEndMinute}:${formEndMeridiem}`
@@ -556,24 +503,6 @@ export default function CalendarPage() {
     setFormEndMeridiem((meridiem as Meridiem) ?? 'AM')
     const label = TIME_SLOT_OPTIONS.find((slot) => slot.value === value)?.label ?? `${hour}:${minute} ${meridiem}`
     setEndTimeDraft(label)
-  }
-
-  function parseTypedTime(value: string): { hour: string; minute: string; meridiem: Meridiem } | null {
-    const raw = value.trim().toUpperCase().replace(/\s+/g, ' ')
-    const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?\s*(AM|PM)$/)
-    if (!match) return null
-
-    const parsedHour = Number.parseInt(match[1], 10)
-    const parsedMinute = Number.parseInt(match[2] ?? '0', 10)
-    const parsedMeridiem = match[3] as Meridiem
-    if (Number.isNaN(parsedHour) || parsedHour < 1 || parsedHour > 12) return null
-    if (Number.isNaN(parsedMinute) || parsedMinute < 0 || parsedMinute > 59) return null
-
-    return {
-      hour: String(parsedHour),
-      minute: String(parsedMinute).padStart(2, '0'),
-      meridiem: parsedMeridiem,
-    }
   }
 
   function commitStartTimeDraft() {
@@ -640,6 +569,7 @@ export default function CalendarPage() {
     setFormEndMeridiem('AM')
     setFormLocation('')
     setFormAllDay(false)
+    setFormColor(DEFAULT_EVENT_COLOR)
   }
 
   function closeModal() {
@@ -730,6 +660,7 @@ export default function CalendarPage() {
     setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
     setFormLocation('')
     setFormAllDay(false)
+    setFormColor(DEFAULT_EVENT_COLOR)
     setShowTimeDetails(false)
     setHasInteractedWithForm(false)
     setModalMode('create')
@@ -762,6 +693,7 @@ export default function CalendarPage() {
     setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
     setFormLocation('')
     setFormAllDay(false)
+    setFormColor(DEFAULT_EVENT_COLOR)
     setShowTimeDetails(false)
     setHasInteractedWithForm(false)
     setModalMode('create')
@@ -785,12 +717,19 @@ export default function CalendarPage() {
     setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
     setFormLocation(ev.location ?? '')
     setFormAllDay(ev.all_day)
+    setFormColor(getEventColorHex(ev.color))
     setShowTimeDetails(false)
     setHasInteractedWithForm(false)
     setModalMode('edit')
   }
 
   function shiftRange(delta: number) {
+    if (viewMode === 'year') {
+      setMonthAnchor((prev) => new Date(prev.getFullYear() + delta, prev.getMonth(), 1))
+      setSelectedDate((prev) => new Date(prev.getFullYear() + delta, prev.getMonth(), prev.getDate()))
+      return
+    }
+
     if (viewMode === 'month') {
       setMonthAnchor((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
       return
@@ -822,9 +761,84 @@ export default function CalendarPage() {
 
   function selectDay(day: Date) {
     setSelectedDate(day)
-    if (viewMode === 'month') {
+    if (viewMode === 'month' || viewMode === 'year') {
       setMonthAnchor(startOfMonth(day))
     }
+  }
+
+  function renderYearMiniMonth(monthStart: Date) {
+    const monthCellsLocal = buildMonthGrid(monthStart)
+    const monthLabel = monthStart.toLocaleDateString(calendarLocale, { month: 'long' })
+    const monthIndex = monthStart.getMonth()
+
+    return (
+      <div key={`year-month-${monthStart.getFullYear()}-${monthIndex}`}>
+        <h3
+          style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: '1rem',
+            fontWeight: 600,
+            color: '#4b6646',
+            letterSpacing: '-0.02em',
+            marginBottom: '8px',
+          }}
+        >
+          {monthLabel}
+        </h3>
+
+        <div className="grid grid-cols-7">
+          {weekdayLabels.map((label) => (
+            <div
+              key={`year-weekday-${monthIndex}-${label}`}
+              style={{
+                fontFamily: 'var(--font-manrope), sans-serif',
+                fontSize: '0.66rem',
+                fontWeight: 600,
+                color: '#8f958c',
+                textAlign: 'center',
+                lineHeight: 1,
+                paddingBottom: '2px',
+              }}
+            >
+              {label.slice(0, 1)}
+            </div>
+          ))}
+
+          {monthCellsLocal.map((day) => {
+            const dayKey = toDateKey(day)
+            const isToday = dayKey === todayKey
+            const isInMonth = day.getMonth() === monthIndex
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6
+
+            return (
+              <button
+                key={`year-day-${dayKey}`}
+                type="button"
+                onClick={() => selectDay(day)}
+                style={{
+                  fontFamily: 'var(--font-manrope), sans-serif',
+                  fontSize: '0.684rem',
+                  fontWeight: 600,
+                  color: isToday ? '#ffffff' : isInMonth ? (isWeekend ? '#6e7a68' : '#51574f') : '#8a9486',
+                  border: 'none',
+                  background: isToday ? '#4b6646' : 'transparent',
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '9999px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  margin: '0 auto',
+                  lineHeight: 1,
+                }}
+                aria-label={day.toLocaleDateString(calendarLocale, { weekday: 'long', month: 'long', day: 'numeric' })}
+              >
+                {day.getDate()}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
   }
 
   function moveEventToDate(eventId: number, targetDate: Date) {
@@ -852,6 +866,7 @@ export default function CalendarPage() {
       end_time: nextEnd,
       location: ev.location ?? undefined,
       all_day: ev.all_day,
+      color: ev.color ?? undefined,
     })
   }
 
@@ -893,6 +908,7 @@ export default function CalendarPage() {
       end_time: effectiveEndTime,
       location: formLocation.trim(),
       all_day: formAllDay,
+      color: formColor,
     }
 
     const timer = window.setTimeout(() => {
@@ -918,6 +934,7 @@ export default function CalendarPage() {
     formTitle,
     formLocation,
     formAllDay,
+    formColor,
     formEndDate,
     draftStartIso,
     draftEndIso,
@@ -945,61 +962,268 @@ export default function CalendarPage() {
     }
   }, [activeEventId, modalMode, pendingDeleteId])
 
-  function renderEventsPreview(dayKey: string, maxItems: number) {
-    const dayEvents = eventsByDay.get(dayKey) ?? []
-    if (dayEvents.length === 0) return null
+  function renderEventsPreview(day: Date, maxItems: number) {
+    const dayKey = toDateKey(day)
+    const daySegments = daySegmentsByKey.get(dayKey) ?? []
+    if (daySegments.length === 0) return null
+
+    const dayStart = startOfDayLocal(day)
+    const rowEndExclusive = addDaysLocal(dayStart, 7 - day.getDay())
+    const laneHeightPx = 17
+
+    const segmentsWithMeta = daySegments
+      .map((segment) => {
+        const ev = segment.event
+        const interval = resolveEventInterval(ev)
+        if (!interval) return null
+
+        const eventStartDay = startOfDayLocal(interval.start)
+        const eventEndDayExclusive = startOfDayLocal(interval.end)
+        const totalDays = Math.max(1, Math.round((eventEndDayExclusive.getTime() - eventStartDay.getTime()) / 86400000))
+        const isMultiDay = totalDays > 1 || segment.continuesBefore || segment.continuesAfter
+        const startsVisibleBar = !segment.continuesBefore || day.getDay() === 0
+        if (!startsVisibleBar) return null
+
+        const renderedEndMs = Math.min(interval.end.getTime(), rowEndExclusive.getTime())
+        const renderedEndInclusive = new Date(renderedEndMs - 1)
+        const renderedEndDay = startOfDayLocal(renderedEndInclusive)
+        const spanDays = Math.max(1, Math.round((renderedEndDay.getTime() - dayStart.getTime()) / 86400000) + 1)
+        const continuesToNextRow = interval.end.getTime() > rowEndExclusive.getTime()
+        const labelText = !segment.continuesBefore || day.getDay() === 0 ? ev.title : ''
+
+        const leftRounded = !segment.continuesBefore
+        const rightRounded = !continuesToNextRow
+        let chipRadius = '8px'
+        if (leftRounded && !rightRounded) chipRadius = '9999px 6px 6px 9999px'
+        else if (!leftRounded && rightRounded) chipRadius = '6px 9999px 9999px 6px'
+        else if (!leftRounded && !rightRounded) chipRadius = '6px'
+
+        return {
+          segment,
+          chipRadius,
+          labelText,
+          spanDays,
+          isMultiDay,
+        }
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+
+    const multiDaySegmentsForDay = daySegments
+      .filter((segment) => {
+        const interval = resolveEventInterval(segment.event)
+        if (!interval) return false
+        const eventStartDay = startOfDayLocal(interval.start)
+        const eventEndDayExclusive = startOfDayLocal(interval.end)
+        const totalDays = Math.max(1, Math.round((eventEndDayExclusive.getTime() - eventStartDay.getTime()) / 86400000))
+        return totalDays > 1 || segment.continuesBefore || segment.continuesAfter
+      })
+      .sort((a, b) => {
+        const aStart = new Date(a.event.start_time).getTime()
+        const bStart = new Date(b.event.start_time).getTime()
+        if (aStart !== bStart) return aStart - bStart
+        return a.event.id - b.event.id
+      })
+
+    const visibleMultiCoverage = multiDaySegmentsForDay.slice(0, maxItems)
+    const visibleMultiEventIds = new Set(visibleMultiCoverage.map((segment) => segment.event.id))
+    const shownMultiEntries = segmentsWithMeta.filter((entry) => entry.isMultiDay && visibleMultiEventIds.has(entry.segment.event.id))
+
+    const remainingSlots = Math.max(0, maxItems - visibleMultiCoverage.length)
+    const regularEntries = segmentsWithMeta.filter((entry) => !entry.isMultiDay)
+    const shownRegularEntries = regularEntries.slice(0, remainingSlots)
+
+    const totalRenderableSegments = multiDaySegmentsForDay.length + regularEntries.length
+    const shownCount = visibleMultiCoverage.length + shownRegularEntries.length
+    const hiddenCount = Math.max(0, totalRenderableSegments - shownCount)
+    const shownMultiLaneByEventId = new Map<number, number>()
+    visibleMultiCoverage.forEach((segment, idx) => {
+      shownMultiLaneByEventId.set(segment.event.id, idx)
+    })
 
     return (
-      <div className="mt-2 space-y-1">
-        {dayEvents.slice(0, maxItems).map((ev) => (
-          <button
-            key={`preview-${ev.id}`}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              setActiveEventId(ev.id)
-              selectDay(new Date(ev.start_time))
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation()
-              openEditModal(ev, e.currentTarget)
-            }}
-            draggable
-            onDragStart={(e) => {
-              e.stopPropagation()
-              setDraggingEventId(ev.id)
-              e.dataTransfer.effectAllowed = 'move'
-              e.dataTransfer.setData('text/calendar-event-id', String(ev.id))
-            }}
-            onDragEnd={() => {
-              setDraggingEventId(null)
-              setDragOverDateKey(null)
-            }}
-            className="transition-all duration-200 hover:-translate-y-px"
+      <div className="space-y-0.5" style={{ position: 'relative', zIndex: 1 }}>
+        {visibleMultiCoverage.length > 0 && (
+          <div
             style={{
-              fontFamily: 'var(--font-manrope), sans-serif',
-              fontSize: '0.625rem',
-              color: activeEventId === ev.id ? '#ffffff' : '#465642',
-              background: activeEventId === ev.id ? '#4b6646' : 'rgba(75, 102, 70, 0.10)',
-              borderRadius: '9999px',
-              padding: '2px 6px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'block',
-              width: '100%',
-              textAlign: 'left',
-              transition: 'all 180ms ease',
-              opacity: draggingEventId === ev.id ? 0.55 : 1,
+              position: 'relative',
+              height: `${visibleMultiCoverage.length * laneHeightPx}px`,
             }}
-            title={ev.title}
           >
-            {ev.title}
-          </button>
-        ))}
-        {dayEvents.length > maxItems && (
+            {shownMultiEntries.map(({ segment, chipRadius, labelText, spanDays }) => {
+              const ev = segment.event
+              const lane = shownMultiLaneByEventId.get(ev.id) ?? 0
+              const eventColor = getEventColorHex(ev.color)
+              const indicatorColor = darkenHex(eventColor, 0.22)
+
+              return (
+                <button
+                  key={`preview-${ev.id}-${dayKey}`}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setActiveEventId(ev.id)
+                    selectDay(day)
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation()
+                    openEditModal(ev, e.currentTarget)
+                  }}
+                  draggable
+                  onDragStart={(e) => {
+                    e.stopPropagation()
+                    setDraggingEventId(ev.id)
+                    e.dataTransfer.effectAllowed = 'move'
+                    e.dataTransfer.setData('text/calendar-event-id', String(ev.id))
+                  }}
+                  onDragEnd={() => {
+                    setDraggingEventId(null)
+                    setDragOverDateKey(null)
+                  }}
+                  className="transition-all duration-200 hover:-translate-y-px"
+                  style={{
+                    position: 'absolute',
+                    top: `${lane * laneHeightPx}px`,
+                    left: 0,
+                    fontFamily: 'var(--font-manrope), sans-serif',
+                    fontSize: '0.625rem',
+                    color: '#465642',
+                    background: activeEventId === ev.id ? hexToRgba(eventColor, 0.28) : hexToRgba(eventColor, 0.22),
+                    borderRadius: chipRadius,
+                    padding: '0 6px',
+                    height: '16px',
+                    lineHeight: '16px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: `calc(${spanDays * 100}% + ${Math.max(0, spanDays - 1)}px)`,
+                    textAlign: 'left',
+                    transition: 'all 180ms ease',
+                    opacity: draggingEventId === ev.id ? 0.55 : 1,
+                    zIndex: 2,
+                  }}
+                  title={ev.title}
+                >
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      width: '100%',
+                      minWidth: 0,
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: '5px',
+                        height: '5px',
+                        borderRadius: '9999px',
+                        background: indicatorColor,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      style={{
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {labelText || '\u00A0'}
+                    </span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {shownRegularEntries.map(({ segment, chipRadius, labelText, spanDays }) => {
+          const ev = segment.event
+          const indicatorColor = getEventColorHex(ev.color)
+
+          return (
+            <button
+              key={`preview-${ev.id}-${dayKey}`}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setActiveEventId(ev.id)
+                selectDay(day)
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                openEditModal(ev, e.currentTarget)
+              }}
+              draggable
+              onDragStart={(e) => {
+                e.stopPropagation()
+                setDraggingEventId(ev.id)
+                e.dataTransfer.effectAllowed = 'move'
+                e.dataTransfer.setData('text/calendar-event-id', String(ev.id))
+              }}
+              onDragEnd={() => {
+                setDraggingEventId(null)
+                setDragOverDateKey(null)
+              }}
+              className="transition-all duration-200 hover:-translate-y-px"
+              style={{
+                fontFamily: 'var(--font-manrope), sans-serif',
+                fontSize: '0.625rem',
+                color: '#465642',
+                background: activeEventId === ev.id ? hexToRgba(indicatorColor, 0.14) : 'transparent',
+                borderRadius: chipRadius,
+                border: '1px solid transparent',
+                boxSizing: 'border-box',
+                padding: '0 6px',
+                height: '16px',
+                lineHeight: '16px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                width: `calc(${spanDays * 100}% + ${Math.max(0, spanDays - 1)}px)`,
+                textAlign: 'left',
+                transition: 'all 180ms ease',
+                opacity: draggingEventId === ev.id ? 0.55 : 1,
+                position: 'relative',
+                zIndex: 1,
+              }}
+              title={ev.title}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: '5px',
+                  height: '5px',
+                  borderRadius: '9999px',
+                  background: indicatorColor,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {labelText || '\u00A0'}
+              </span>
+            </button>
+          )
+        })}
+
+        {hiddenCount > 0 && (
           <div
             style={{
               fontFamily: 'var(--font-manrope), sans-serif',
@@ -1008,7 +1232,7 @@ export default function CalendarPage() {
               paddingLeft: '2px',
             }}
           >
-            +{dayEvents.length - maxItems} more
+            +{hiddenCount} more
           </div>
         )}
       </div>
@@ -1020,6 +1244,16 @@ export default function CalendarPage() {
     const isCurrentMonth = day.getMonth() === monthAnchor.getMonth()
     const isToday = dayKey === todayKey
     const isDragTarget = dragOverDateKey === dayKey
+    const isWeekend = day.getDay() === 0 || day.getDay() === 6
+    const dayHeaderHeight = 22
+    const stackTopGap = compact ? 4 : 6
+    const verticalPadding = compact ? 12 : 16
+    const eventRowHeight = 16
+    const eventRowGap = 2
+    const moreLabelHeight = 12
+    const moreLabelGap = 2
+    const reservedStackHeight = eventRowHeight * 3 + eventRowGap * 2 + moreLabelGap + moreLabelHeight
+    const minCellHeight = verticalPadding + dayHeaderHeight + stackTopGap + reservedStackHeight
 
     return (
       <div
@@ -1057,40 +1291,46 @@ export default function CalendarPage() {
         }}
         className="text-left transition-all duration-200"
         style={{
-          minHeight: compact ? '92px' : '124px',
+          minHeight: `${minCellHeight}px`,
           border: 'none',
           cursor: 'pointer',
-          borderRadius: '0 12px 12px 12px',
-          background: isCurrentMonth ? '#f8faf2' : '#f1f5eb',
-          padding: compact ? '8px 9px' : '10px',
+          borderRadius: 0,
+          background: isCurrentMonth ? '#ffffff' : '#f7f9f5',
+          padding: compact ? '6px 7px' : '8px',
           boxShadow: isDragTarget ? '0 0 0 2px rgba(75, 102, 70, 0.35) inset' : 'none',
-          opacity: isCurrentMonth || viewMode !== 'month' ? 1 : 0.72,
+          opacity: isCurrentMonth || viewMode !== 'month' ? 1 : 0.82,
         }}
       >
-        <div className="flex items-center justify-between">
+        <div
+          className="flex items-center justify-between"
+          style={{
+            position: 'relative',
+            zIndex: 3,
+            minHeight: '22px',
+          }}
+        >
           <span
             style={{
               fontFamily: 'var(--font-manrope), sans-serif',
               fontWeight: isToday ? 700 : 600,
-              fontSize: '0.75rem',
-              color: isToday ? '#3f5a3a' : '#465642',
+              fontSize: '0.81rem',
+              color: isToday ? '#3f5a3a' : isCurrentMonth ? (isWeekend ? '#6e7a68' : '#465642') : '#8a9486',
+              border: isToday ? '1.5px solid #4b6646' : 'none',
+              borderRadius: '9999px',
+              minWidth: '22px',
+              height: '22px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: isToday ? '0 7px' : '0 4px',
+              lineHeight: 1,
             }}
           >
             {day.getDate()}
           </span>
-          {isToday && (
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '9999px',
-                background: '#4b6646',
-              }}
-            />
-          )}
         </div>
 
-        {renderEventsPreview(dayKey, compact ? 1 : 2)}
+        <div style={{ marginTop: compact ? '4px' : '6px' }}>{renderEventsPreview(day, 3)}</div>
       </div>
     )
   }
@@ -1143,76 +1383,8 @@ export default function CalendarPage() {
         }}
       >
         <div className="flex flex-col gap-3 sm:gap-4 mb-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => shiftRange(-1)}
-                className="rounded-full"
-                aria-label="Previous range"
-                style={{
-                  width: 34,
-                  height: 34,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: '#f1f5eb',
-                  color: '#465642',
-                }}
-              >
-                <ChevronLeft size={16} style={{ margin: '0 auto' }} />
-              </button>
-              <button
-                type="button"
-                onClick={() => shiftRange(1)}
-                className="rounded-full"
-                aria-label="Next range"
-                style={{
-                  width: 34,
-                  height: 34,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: '#f1f5eb',
-                  color: '#465642',
-                }}
-              >
-                <ChevronRight size={16} style={{ margin: '0 auto' }} />
-              </button>
-            </div>
-
-            <h2
-              style={{
-                fontFamily: 'var(--font-serif), Georgia, serif',
-                fontSize: '1.25rem',
-                fontWeight: 400,
-                color: '#4b6646',
-                letterSpacing: '-0.03em',
-              }}
-            >
-              {rangeLabel}
-            </h2>
-
-            <button
-              type="button"
-              onClick={jumpToToday}
-              className="btn-pill"
-              style={{
-                fontFamily: 'var(--font-manrope), sans-serif',
-                fontWeight: 700,
-                fontSize: '0.75rem',
-                color: '#465642',
-                background: '#d6e8ce',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: '100px',
-                cursor: 'pointer',
-              }}
-            >
-              {t.today}
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {(['month', 'week', 'day'] as ViewMode[]).map((mode) => (
+          <div className="flex items-center justify-center gap-2">
+            {(['day', 'week', 'month', 'year'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 type="button"
@@ -1236,10 +1408,83 @@ export default function CalendarPage() {
               </button>
             ))}
           </div>
+
+          <div className="flex items-start justify-between gap-3">
+            <h2
+              style={{
+                fontFamily: 'var(--font-serif), Georgia, serif',
+                fontSize: viewMode === 'year' ? '1.68rem' : '1.25rem',
+                fontWeight: viewMode === 'year' ? 700 : 500,
+                color: '#4b6646',
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+              }}
+            >
+              {rangeLabel}
+            </h2>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => shiftRange(-1)}
+                className="rounded-full"
+                aria-label="Previous range"
+                style={{
+                  width: 34,
+                  height: 34,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: '#f1f5eb',
+                  color: '#465642',
+                }}
+              >
+                <ChevronLeft size={16} style={{ margin: '0 auto' }} />
+              </button>
+
+              <button
+                type="button"
+                onClick={jumpToToday}
+                className="btn-pill"
+                style={{
+                  fontFamily: 'var(--font-manrope), sans-serif',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  color: '#465642',
+                  background: '#d6e8ce',
+                  border: 'none',
+                  padding: '8px 14px',
+                  borderRadius: '100px',
+                  cursor: 'pointer',
+                }}
+              >
+                {t.today}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => shiftRange(1)}
+                className="rounded-full"
+                aria-label="Next range"
+                style={{
+                  width: 34,
+                  height: 34,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: '#f1f5eb',
+                  color: '#465642',
+                }}
+              >
+                <ChevronRight size={16} style={{ margin: '0 auto' }} />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {viewMode !== 'day' && (
-          <div className="grid grid-cols-7 gap-1 mb-2">
+        {viewMode !== 'day' && viewMode !== 'year' && (
+          <div
+            className="grid grid-cols-7 gap-px mb-2 rounded-lg overflow-hidden"
+            style={{ background: '#dfe6da' }}
+          >
             {weekdayLabels.map((label) => (
               <div
                 key={label}
@@ -1248,6 +1493,7 @@ export default function CalendarPage() {
                   ...microLabel,
                   fontSize: '0.625rem',
                   padding: '8px 0',
+                  background: '#f7f9f5',
                 }}
               >
                 {label}
@@ -1256,9 +1502,26 @@ export default function CalendarPage() {
           </div>
         )}
 
-        {viewMode === 'month' && <div className="grid grid-cols-7 gap-1 sm:gap-2">{monthCells.map((day) => renderDayCell(day, true))}</div>}
+        {viewMode === 'year' && (
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-10 gap-y-8"
+            style={{ padding: '4px 2px' }}
+          >
+            {yearMonths.map((monthStart) => renderYearMiniMonth(monthStart))}
+          </div>
+        )}
 
-        {viewMode === 'week' && <div className="grid grid-cols-7 gap-1 sm:gap-2">{weekCells.map((day) => renderDayCell(day, false))}</div>}
+        {viewMode === 'month' && (
+          <div className="rounded-lg overflow-hidden" style={{ background: '#dfe6da' }}>
+            <div className="grid grid-cols-7 gap-px">{monthCells.map((day) => renderDayCell(day, true))}</div>
+          </div>
+        )}
+
+        {viewMode === 'week' && (
+          <div className="rounded-lg overflow-hidden" style={{ background: '#dfe6da' }}>
+            <div className="grid grid-cols-7 gap-px">{weekCells.map((day) => renderDayCell(day, false))}</div>
+          </div>
+        )}
 
         {viewMode === 'day' && (
           <div
@@ -1278,34 +1541,182 @@ export default function CalendarPage() {
                 marginBottom: '10px',
               }}
             >
-              {selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+              {selectedDate.toLocaleDateString(calendarLocale, { weekday: 'long', month: 'short', day: 'numeric' })}
             </h3>
-            {selectedDayEvents.length === 0 && (
-              <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.8125rem', color: '#767d72' }}>{t.noEvents}</p>
-            )}
-            {selectedDayEvents.length > 0 && (
-              <div className="space-y-2">
-                {selectedDayEvents.map((ev) => (
-                  <div
-                    key={`day-view-${ev.id}`}
-                    onClick={() => setActiveEventId(ev.id)}
-                    onDoubleClick={(e) => openEditModal(ev, e.currentTarget as HTMLElement)}
-                    style={{
-                      borderRadius: '9999px',
-                      background: 'rgba(75, 102, 70, 0.10)',
-                      padding: '8px 12px',
-                      fontFamily: 'var(--font-manrope), sans-serif',
-                      fontSize: '0.8125rem',
-                      color: '#465642',
-                      cursor: 'pointer',
-                    }}
-                    title={ev.title}
-                  >
-                    {ev.title}
-                  </div>
-                ))}
+
+            {selectedDayAllDaySegments.length > 0 && (
+              <div className="mb-3 space-y-1.5">
+                <p style={{ ...microLabel, marginBottom: '4px' }}>{t.allDay}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedDayAllDaySegments.map((segment) => {
+                    const ev = segment.event
+                    const eventColor = getEventColorHex(ev.color)
+                    const labelText = segment.continuesBefore ? '' : ev.title
+                    const isMultiDay = segment.continuesBefore || segment.continuesAfter
+
+                    let chipRadius = '9999px'
+                    if (isMultiDay && !segment.continuesBefore && segment.continuesAfter) {
+                      chipRadius = '9999px 6px 6px 9999px'
+                    } else if (isMultiDay && segment.continuesBefore && !segment.continuesAfter) {
+                      chipRadius = '6px 9999px 9999px 6px'
+                    } else if (isMultiDay && segment.continuesBefore && segment.continuesAfter) {
+                      chipRadius = '6px'
+                    }
+
+                    return (
+                      <button
+                        key={`day-all-day-${ev.id}-${selectedKey}`}
+                        type="button"
+                        onClick={() => setActiveEventId(ev.id)}
+                        onDoubleClick={(e) => openEditModal(ev, e.currentTarget)}
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation()
+                          setDraggingEventId(ev.id)
+                          e.dataTransfer.effectAllowed = 'move'
+                          e.dataTransfer.setData('text/calendar-event-id', String(ev.id))
+                        }}
+                        onDragEnd={() => {
+                          setDraggingEventId(null)
+                          setDragOverDateKey(null)
+                        }}
+                        style={{
+                          border: 'none',
+                          borderRadius: chipRadius,
+                          background: activeEventId === ev.id ? hexToRgba(eventColor, 0.28) : hexToRgba(eventColor, 0.22),
+                          color: '#465642',
+                          fontFamily: 'var(--font-manrope), sans-serif',
+                          fontSize: '0.75rem',
+                          padding: '4px 10px',
+                          minWidth: labelText ? undefined : '26px',
+                          cursor: 'pointer',
+                          opacity: draggingEventId === ev.id ? 0.55 : 1,
+                        }}
+                        title={ev.title}
+                      >
+                        {labelText || '\u00A0'}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
+
+            <div
+              style={{
+                borderRadius: '0 12px 12px 12px',
+                background: '#ffffff',
+                boxShadow: '0 8px 24px rgba(46, 52, 43, 0.06)',
+                overflow: 'hidden',
+              }}
+            >
+              <div className="grid" style={{ gridTemplateColumns: '56px 1fr' }}>
+                <div style={{ background: '#f7f9f5' }}>
+                  {Array.from({ length: 24 }, (_, hour) => (
+                    <div
+                      key={`hour-label-${hour}`}
+                      style={{
+                        height: '56px',
+                        padding: '6px 8px 0',
+                        fontFamily: 'var(--font-manrope), sans-serif',
+                        fontSize: '0.625rem',
+                        color: '#767d72',
+                        borderTop: hour === 0 ? 'none' : '1px solid rgba(173, 180, 168, 0.16)',
+                      }}
+                    >
+                      {formatHourLabel24(hour)}
+                    </div>
+                  ))}
+                </div>
+
+                <div
+                  className="relative"
+                  style={{
+                    height: `${24 * 56}px`,
+                    background: '#ffffff',
+                  }}
+                >
+                  {Array.from({ length: 24 }, (_, hour) => (
+                    <div
+                      key={`hour-line-${hour}`}
+                      style={{
+                        position: 'absolute',
+                        top: `${hour * 56}px`,
+                        left: 0,
+                        right: 0,
+                        borderTop: hour === 0 ? 'none' : '1px solid rgba(173, 180, 168, 0.16)',
+                      }}
+                    />
+                  ))}
+
+                  {selectedDayTimelineBlocks.map((block) => {
+                    const eventColor = getEventColorHex(block.event.color)
+                    const duration = block.endMinute - block.startMinute
+                    const topPx = (block.startMinute / 60) * 56
+                    const heightPx = Math.max((duration / 60) * 56, 24)
+                    const laneGap = 4
+                    const widthExpr = `calc((100% - ${(block.columnCount + 1) * laneGap}px) / ${block.columnCount})`
+                    const leftExpr = `calc(${laneGap}px + ${block.column} * (${widthExpr} + ${laneGap}px))`
+                    const labelPrefix = block.startsBeforeDay ? '... ' : ''
+                    const labelSuffix = block.endsAfterDay ? ' ...' : ''
+
+                    return (
+                      <button
+                        key={`timeline-${block.event.id}-${block.startMinute}`}
+                        type="button"
+                        onClick={() => setActiveEventId(block.event.id)}
+                        onDoubleClick={(e) => openEditModal(block.event, e.currentTarget)}
+                        style={{
+                          position: 'absolute',
+                          top: `${topPx}px`,
+                          left: leftExpr,
+                          width: widthExpr,
+                          minHeight: `${heightPx}px`,
+                          border: `1px solid ${hexToRgba(eventColor, 0.35)}`,
+                          borderRadius: '8px',
+                          background: activeEventId === block.event.id ? hexToRgba(eventColor, 0.26) : hexToRgba(eventColor, 0.20),
+                          color: '#2e342b',
+                          padding: '5px 6px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          overflow: 'hidden',
+                        }}
+                        title={block.event.title}
+                      >
+                        <span
+                          style={{
+                            display: 'block',
+                            fontFamily: 'var(--font-manrope), sans-serif',
+                            fontSize: '0.6875rem',
+                            fontWeight: 700,
+                            lineHeight: 1.25,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {`${labelPrefix}${block.event.title}${labelSuffix}`}
+                        </span>
+                      </button>
+                    )
+                  })}
+
+                  {selectedDayTimelineBlocks.length === 0 && selectedDayAllDaySegments.length === 0 && (
+                    <p
+                      style={{
+                        position: 'absolute',
+                        top: '10px',
+                        left: '12px',
+                        fontSize: '0.8125rem',
+                        color: '#767d72',
+                      }}
+                    >
+                      {t.noEvents}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </section>
@@ -1426,30 +1837,68 @@ export default function CalendarPage() {
                   padding: '10px 12px',
                 }}
               >
-                <input
-                  id="event-title"
-                  className="event-inline-title"
-                  required
-                  value={formTitle}
-                  onChange={(e) => {
-                    markInteracted()
-                    setFormTitle(e.target.value)
-                  }}
-                  placeholder={t.titlePlaceholder}
-                  style={{
-                    fontFamily: 'var(--font-manrope), sans-serif',
-                    fontSize: '0.92rem',
-                    lineHeight: 1.4,
-                    letterSpacing: '-0.005em',
-                    fontWeight: 500,
-                    color: '#2e342b',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    width: '100%',
-                    padding: 0,
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    id="event-title"
+                    className="event-inline-title"
+                    required
+                    value={formTitle}
+                    onChange={(e) => {
+                      markInteracted()
+                      setFormTitle(e.target.value)
+                    }}
+                    placeholder={t.titlePlaceholder}
+                    style={{
+                      fontFamily: 'var(--font-manrope), sans-serif',
+                      fontSize: '0.92rem',
+                      lineHeight: 1.4,
+                      letterSpacing: '-0.005em',
+                      fontWeight: 500,
+                      color: '#2e342b',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      padding: 0,
+                    }}
+                  />
+
+                  <label
+                    htmlFor="event-color"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '9999px',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(173, 180, 168, 0.28)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                    title="Event color"
+                  >
+                    <input
+                      id="event-color"
+                      type="color"
+                      value={formColor}
+                      onChange={(e) => {
+                        markInteracted()
+                        setFormColor(e.target.value)
+                      }}
+                      aria-label="Event color"
+                      style={{
+                        width: 24,
+                        height: 24,
+                        border: 'none',
+                        padding: 0,
+                        background: 'transparent',
+                        cursor: 'pointer',
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
 
               <div

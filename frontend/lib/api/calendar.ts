@@ -23,6 +23,7 @@ export interface CreateEventInput {
   end_time?: string | null
   all_day?: boolean
   location?: string | null
+  color?: string | null
   tags?: string[]
 }
 
@@ -33,6 +34,7 @@ export interface UpdateEventInput {
   end_time?: string | null
   all_day?: boolean
   location?: string | null
+  color?: string | null
   tags?: string[]
 }
 

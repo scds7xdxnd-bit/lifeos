@@ -1,8 +1,6 @@
 name: Private Alpha Invite Sheet Sync
 
 on:
-  schedule:
-    - cron: '0 1 * * *' # Daily at 01:00 UTC
   workflow_dispatch:
 
 env:

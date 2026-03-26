@@ -92,6 +92,7 @@ export interface CalendarPageTranslations {
   title: string
   subtitle: string
   today: string
+  year: string
   month: string
   week: string
   day: string
@@ -477,6 +478,7 @@ const en: AppTranslations = {
     title: 'Calendar',
     subtitle: 'Manage calendar events for inquiry analysis.',
     today: 'Today',
+    year: 'Year',
     month: 'Month',
     week: 'Week',
     day: 'Day',
@@ -842,6 +844,7 @@ const ko: AppTranslations = {
     title: '\uce98\ub9b0\ub354',
     subtitle: '\uc9c8\uc758 \ubd84\uc11d\uc744 \uc704\ud55c \uce98\ub9b0\ub354 \uc774\ubca4\ud2b8\ub97c \uad00\ub9ac\ud558\uc138\uc694.',
     today: '\uc624\ub298',
+    year: '\ub144',
     month: '\uc6d4',
     week: '\uc8fc',
     day: '\uc77c',
@@ -1207,6 +1210,7 @@ const zh: AppTranslations = {
     title: '\u65e5\u5386',
     subtitle: '\u7ba1\u7406\u65e5\u5386\u4e8b\u4ef6\uff0c\u7528\u4e8e\u95ee\u8be2\u5206\u6790',
     today: '\u4eca\u5929',
+    year: '\u5e74',
     month: '\u6708',
     week: '\u5468',
     day: '\u65e5',

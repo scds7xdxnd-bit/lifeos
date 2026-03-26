@@ -41,3 +41,10 @@ Always follow `DESIGN.md`. Non-negotiable rules:
 - Auth context must stay swappable (future Clerk migration planned).
 - API client lives in `lib/api/`. Use React Query for all server state.
 - Protected routes go in `(app)/` group, auth routes in `(auth)/`.
+
+## Calendar Route Notes
+- Calendar page lives at `app/(app)/calendar/page.tsx`.
+- Current UX includes a month grid with day selection, a Year view for high-level navigation, and event density dots.
+- Events are rendered with semantic color accents (by type/status) that must align with the Botanical Editorial design tokens.
+- The selected day surface shows a structured day view (not just an agenda list) with inline event editing powered by `calendarApi.update(...)`.
+- Event CRUD on this page is wired through `lib/api/calendar.ts`.
