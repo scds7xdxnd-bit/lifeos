@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { calendarApi, type CalendarEvent, type CreateEventInput } from '@/lib/api/calendar'
 import { getAppTranslations } from '@/lib/translations/app'
 import { useLang } from '@/lib/useLang'
+import DailyPlanPanel from './_planning/DailyPlanPanel'
 import {
   type Meridiem,
   type DayEventSegment,
@@ -462,10 +463,61 @@ export default function CalendarPage() {
     return buildNearbySlots(idx)
   }, [effectiveStartHour, effectiveStartMinute, effectiveStartMeridiem])
 
+  const parsedEndDraft = parseTypedTime(endTimeDraft)
+  const effectiveEndHour = parsedEndDraft?.hour ?? formEndHour
+  const effectiveEndMinute = parsedEndDraft?.minute ?? formEndMinute
+  const effectiveEndMeridiem = parsedEndDraft?.meridiem ?? formEndMeridiem
+
   const nearbyEndSlots = useMemo(() => {
-    const baseIdx = toSlotIndex(effectiveStartHour, effectiveStartMinute, effectiveStartMeridiem)
-    return buildNearbySlots(baseIdx, 1)
-  }, [effectiveStartHour, effectiveStartMinute, effectiveStartMeridiem])
+    const idx = toSlotIndex(effectiveEndHour, effectiveEndMinute, effectiveEndMeridiem)
+    return buildNearbySlots(idx)
+  }, [effectiveEndHour, effectiveEndMinute, effectiveEndMeridiem])
+
+  function shiftEndForNewStart(newDate: string, newHour: string, newMinute: string, newMeridiem: Meridiem) {
+    const oldStartIso = combineDateAndTimeToIso(formStartDate, formStartHour, formStartMinute, formStartMeridiem)
+    const newStartIso = combineDateAndTimeToIso(newDate, newHour, newMinute, newMeridiem)
+    const currentEndIso = combineDateAndTimeToIso(formEndDate || formStartDate, formEndHour, formEndMinute, formEndMeridiem)
+    if (!oldStartIso || !newStartIso || !currentEndIso) return
+
+    const newStartMs = new Date(newStartIso).getTime()
+    const currentEndMs = new Date(currentEndIso).getTime()
+
+    // Only shift end when new start exceeds current end
+    if (newStartMs <= currentEndMs) return
+
+    const oldStartMs = new Date(oldStartIso).getTime()
+    const gap = Math.max(currentEndMs - oldStartMs, 60 * 60000)
+    const newEnd = new Date(newStartMs + gap)
+    const endParts = parseIsoToDateParts(newEnd.toISOString())
+    setFormEndDate(endParts.date)
+    setFormEndHour(endParts.hour)
+    setFormEndMinute(endParts.minute)
+    setFormEndMeridiem(endParts.meridiem)
+    setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
+  }
+
+  function shiftStartForNewEnd(newDate: string, newHour: string, newMinute: string, newMeridiem: Meridiem) {
+    const currentStartIso = combineDateAndTimeToIso(formStartDate, formStartHour, formStartMinute, formStartMeridiem)
+    const oldEndIso = combineDateAndTimeToIso(formEndDate || formStartDate, formEndHour, formEndMinute, formEndMeridiem)
+    const newEndIso = combineDateAndTimeToIso(newDate, newHour, newMinute, newMeridiem)
+    if (!currentStartIso || !oldEndIso || !newEndIso) return
+
+    const newEndMs = new Date(newEndIso).getTime()
+    const currentStartMs = new Date(currentStartIso).getTime()
+
+    // Only shift start when new end goes before current start
+    if (newEndMs >= currentStartMs) return
+
+    const oldEndMs = new Date(oldEndIso).getTime()
+    const gap = Math.max(oldEndMs - currentStartMs, 60 * 60000)
+    const newStart = new Date(newEndMs - gap)
+    const startParts = parseIsoToDateParts(newStart.toISOString())
+    setFormStartDate(startParts.date)
+    setFormStartHour(startParts.hour)
+    setFormStartMinute(startParts.minute)
+    setFormStartMeridiem(startParts.meridiem)
+    setStartTimeDraft(`${startParts.hour}:${startParts.minute} ${startParts.meridiem}`)
+  }
 
   function applyStartSlot(value: string) {
     const [hour, minute, meridiem] = value.split(':')
@@ -474,30 +526,12 @@ export default function CalendarPage() {
     setFormStartMeridiem((meridiem as Meridiem) ?? 'AM')
     const label = TIME_SLOT_OPTIONS.find((slot) => slot.value === value)?.label ?? `${hour}:${minute} ${meridiem}`
     setStartTimeDraft(label)
-
-    const nextStartIso = combineDateAndTimeToIso(formStartDate, hour, minute, (meridiem as Meridiem) ?? 'AM')
-    const currentEndIso = combineDateAndTimeToIso(
-      formEndDate || formStartDate,
-      formEndHour,
-      formEndMinute,
-      formEndMeridiem,
-    )
-    if (!nextStartIso || !currentEndIso) return
-
-    if (new Date(nextStartIso).getTime() > new Date(currentEndIso).getTime()) {
-      const nextEnd = new Date(nextStartIso)
-      nextEnd.setMinutes(nextEnd.getMinutes() + 60)
-      const endParts = parseIsoToDateParts(nextEnd.toISOString())
-      setFormEndDate(endParts.date)
-      setFormEndHour(endParts.hour)
-      setFormEndMinute(endParts.minute)
-      setFormEndMeridiem(endParts.meridiem)
-      setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
-    }
+    shiftEndForNewStart(formStartDate, hour, minute, (meridiem as Meridiem) ?? 'AM')
   }
 
   function applyEndSlot(value: string) {
     const [hour, minute, meridiem] = value.split(':')
+    shiftStartForNewEnd(formEndDate || formStartDate, hour, minute, (meridiem as Meridiem) ?? 'AM')
     setFormEndHour(hour)
     setFormEndMinute(minute)
     setFormEndMeridiem((meridiem as Meridiem) ?? 'AM')
@@ -512,30 +546,11 @@ export default function CalendarPage() {
       return
     }
 
+    shiftEndForNewStart(formStartDate, parsed.hour, parsed.minute, parsed.meridiem)
     setFormStartHour(parsed.hour)
     setFormStartMinute(parsed.minute)
     setFormStartMeridiem(parsed.meridiem)
     setStartTimeDraft(`${parsed.hour}:${parsed.minute} ${parsed.meridiem}`)
-
-    const nextStartIso = combineDateAndTimeToIso(formStartDate, parsed.hour, parsed.minute, parsed.meridiem)
-    const currentEndIso = combineDateAndTimeToIso(
-      formEndDate || formStartDate,
-      formEndHour,
-      formEndMinute,
-      formEndMeridiem,
-    )
-    if (!nextStartIso || !currentEndIso) return
-
-    if (new Date(nextStartIso).getTime() > new Date(currentEndIso).getTime()) {
-      const nextEnd = new Date(nextStartIso)
-      nextEnd.setMinutes(nextEnd.getMinutes() + 60)
-      const endParts = parseIsoToDateParts(nextEnd.toISOString())
-      setFormEndDate(endParts.date)
-      setFormEndHour(endParts.hour)
-      setFormEndMinute(endParts.minute)
-      setFormEndMeridiem(endParts.meridiem)
-      setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
-    }
   }
 
   function commitEndTimeDraft() {
@@ -545,6 +560,7 @@ export default function CalendarPage() {
       return
     }
 
+    shiftStartForNewEnd(formEndDate || formStartDate, parsed.hour, parsed.minute, parsed.meridiem)
     setFormEndHour(parsed.hour)
     setFormEndMinute(parsed.minute)
     setFormEndMeridiem(parsed.meridiem)
@@ -573,6 +589,25 @@ export default function CalendarPage() {
   }
 
   function closeModal() {
+    // Flush any pending save so changes aren't lost by the debounce timer
+    if (modalMode === 'edit' && editingEventId && hasInteractedWithForm && formTitle.trim() && draftStartIso) {
+      const effectiveStart = editingEvent && !startFieldsChanged ? editingEvent.start_time : draftStartIso
+      const effectiveEnd = formEndDate
+        ? editingEvent && !endFieldsChanged
+          ? editingEvent.end_time ?? (draftEndIso ?? undefined)
+          : (draftEndIso ?? undefined)
+        : undefined
+
+      updateMut.mutate({
+        id: editingEventId,
+        title: formTitle.trim(),
+        start_time: effectiveStart,
+        end_time: effectiveEnd,
+        location: formLocation.trim(),
+        all_day: formAllDay,
+        color: formColor,
+      })
+    }
     setModalMode(null)
     resetForm()
   }
@@ -1524,6 +1559,7 @@ export default function CalendarPage() {
         )}
 
         {viewMode === 'day' && (
+          <>
           <div
             style={{
               borderRadius: '0 12px 12px 12px',
@@ -1718,6 +1754,9 @@ export default function CalendarPage() {
               </div>
             </div>
           </div>
+
+          <DailyPlanPanel selectedDate={selectedDate} t={t} />
+          </>
         )}
       </section>
 
@@ -1986,23 +2025,8 @@ export default function CalendarPage() {
                           onChange={(e) => {
                             markInteracted()
                             const nextDate = e.target.value
+                            shiftEndForNewStart(nextDate, formStartHour, formStartMinute, formStartMeridiem)
                             setFormStartDate(nextDate)
-                            setFormEndDate(nextDate)
-
-                            const nextStartIso = combineDateAndTimeToIso(nextDate, formStartHour, formStartMinute, formStartMeridiem)
-                            const currentEndIso = combineDateAndTimeToIso(nextDate, formEndHour, formEndMinute, formEndMeridiem)
-                            if (!nextStartIso || !currentEndIso) return
-
-                            if (new Date(nextStartIso).getTime() > new Date(currentEndIso).getTime()) {
-                              const nextEnd = new Date(nextStartIso)
-                              nextEnd.setMinutes(nextEnd.getMinutes() + 60)
-                              const endParts = parseIsoToDateParts(nextEnd.toISOString())
-                              setFormEndDate(endParts.date)
-                              setFormEndHour(endParts.hour)
-                              setFormEndMinute(endParts.minute)
-                              setFormEndMeridiem(endParts.meridiem)
-                              setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
-                            }
                           }}
                           style={appleDateStyle}
                         />
@@ -2017,29 +2041,10 @@ export default function CalendarPage() {
                               setStartTimeDraft(nextValue)
                               const parsed = parseTypedTime(nextValue)
                               if (parsed) {
+                                shiftEndForNewStart(formStartDate, parsed.hour, parsed.minute, parsed.meridiem)
                                 setFormStartHour(parsed.hour)
                                 setFormStartMinute(parsed.minute)
                                 setFormStartMeridiem(parsed.meridiem)
-
-                                const nextStartIso = combineDateAndTimeToIso(formStartDate, parsed.hour, parsed.minute, parsed.meridiem)
-                                const currentEndIso = combineDateAndTimeToIso(
-                                  formEndDate || formStartDate,
-                                  formEndHour,
-                                  formEndMinute,
-                                  formEndMeridiem,
-                                )
-                                if (!nextStartIso || !currentEndIso) return
-
-                                if (new Date(nextStartIso).getTime() > new Date(currentEndIso).getTime()) {
-                                  const nextEnd = new Date(nextStartIso)
-                                  nextEnd.setMinutes(nextEnd.getMinutes() + 60)
-                                  const endParts = parseIsoToDateParts(nextEnd.toISOString())
-                                  setFormEndDate(endParts.date)
-                                  setFormEndHour(endParts.hour)
-                                  setFormEndMinute(endParts.minute)
-                                  setFormEndMeridiem(endParts.meridiem)
-                                  setEndTimeDraft(`${endParts.hour}:${endParts.minute} ${endParts.meridiem}`)
-                                }
                               }
                             }}
                             onBlur={commitStartTimeDraft}
@@ -2131,6 +2136,7 @@ export default function CalendarPage() {
                               setEndTimeDraft(nextValue)
                               const parsed = parseTypedTime(nextValue)
                               if (parsed) {
+                                shiftStartForNewEnd(formEndDate || formStartDate, parsed.hour, parsed.minute, parsed.meridiem)
                                 setFormEndHour(parsed.hour)
                                 setFormEndMinute(parsed.minute)
                                 setFormEndMeridiem(parsed.meridiem)
@@ -2215,11 +2221,6 @@ export default function CalendarPage() {
                 <span style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', color: '#2e342b' }}>{t.allDay}</span>
               </label>
 
-              <div className="pt-1">
-                <p style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.75rem', color: '#767d72' }}>
-                  {createMut.isPending || updateMut.isPending ? 'Autosaving...' : 'Changes save automatically'}
-                </p>
-              </div>
             </form>
           </div>
         </aside>
