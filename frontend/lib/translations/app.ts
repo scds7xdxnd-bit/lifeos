@@ -117,6 +117,28 @@ export interface CalendarPageTranslations {
   saveEvent: string
   events: string
   noEvents: string
+  // Phase 13a — Daily Planning Panel
+  dailyPlan: string
+  calendarLoadLight: string
+  calendarLoadModerate: string
+  calendarLoadHeavy: string
+  habitsDue: string
+  skillPractice: string
+  streakAtRisk: string
+  streakKeepGoing: string
+  scheduledPending: string
+  completedNOf7: string
+  dueToday: string
+  noPracticeInDays: string
+  daysSincePractice: string
+  streakRecover: string
+  noSessionsThisWeek: string
+  keepMomentum: string
+  lightDayEncourage: string
+  busyDayEncourage: string
+  lightDayPractice: string
+  busyDayPractice: string
+  nothingPressing: string
 }
 
 export interface FinancesPageTranslations {
@@ -503,6 +525,27 @@ const en: AppTranslations = {
     saveEvent: 'Save Event',
     events: 'Events',
     noEvents: 'No events yet. Add your first event above.',
+    dailyPlan: 'Your Day',
+    calendarLoadLight: 'Light day',
+    calendarLoadModerate: 'Moderate day',
+    calendarLoadHeavy: 'Busy day',
+    habitsDue: 'Habits',
+    skillPractice: 'Practice',
+    streakAtRisk: '{streak}-day streak — keep it alive',
+    streakKeepGoing: '{streak}-day streak — you\'re on a roll',
+    scheduledPending: 'Planned for {time}, still open',
+    completedNOf7: '{n} of 7 days this week — one more today?',
+    dueToday: 'Ready when you are',
+    noPracticeInDays: 'It\'s been {n} days — your future self will thank you',
+    daysSincePractice: '{n} days since last session — pick it back up?',
+    streakRecover: 'A quick session today gets you back on track',
+    noSessionsThisWeek: 'No sessions yet this week — fresh start?',
+    keepMomentum: 'Keep the momentum going',
+    lightDayEncourage: 'Your calendar is open — great day for this',
+    busyDayEncourage: 'Busy day — even a small win counts',
+    lightDayPractice: 'Open schedule — perfect day to practice',
+    busyDayPractice: 'Packed schedule — even 10 minutes adds up',
+    nothingPressing: 'Nothing pressing today. Enjoy the space.',
   },
   finances: {
     eyebrow: 'Domain',
@@ -869,6 +912,27 @@ const ko: AppTranslations = {
     saveEvent: '\uc774\ubca4\ud2b8 \uc800\uc7a5',
     events: '\uc774\ubca4\ud2b8',
     noEvents: '\uc544\uc9c1 \uc774\ubca4\ud2b8\uac00 \uc5c6\uc2b5\ub2c8\ub2e4. \uc704\uc5d0\uc11c \uccab \uc774\ubca4\ud2b8\ub97c \ucd94\uac00\ud558\uc138\uc694.',
+    dailyPlan: '\uc624\ub298\uc758 \ud558\ub8e8',
+    calendarLoadLight: '\uc5ec\uc720\ub85c\uc6b4 \ud558\ub8e8',
+    calendarLoadModerate: '\ubcf4\ud1b5 \ud558\ub8e8',
+    calendarLoadHeavy: '\ubc14\uc05c \ud558\ub8e8',
+    habitsDue: '\uc2b5\uad00',
+    skillPractice: '\uc5f0\uc2b5',
+    streakAtRisk: '{streak}\uc77c \uc5f0\uc18d \u2014 \uacc4\uc18d \uc774\uc5b4\uac00\uc138\uc694',
+    streakKeepGoing: '{streak}\uc77c \uc5f0\uc18d \u2014 \uc798\ud558\uace0 \uc788\uc5b4\uc694',
+    scheduledPending: '{time}\uc5d0 \uacc4\ud68d\ub428, \uc544\uc9c1 \ubbf8\uc644\ub8cc',
+    completedNOf7: '\uc774\ubc88 \uc8fc {n}/7\uc77c \uc644\ub8cc \u2014 \uc624\ub298\ub3c4 \ud558\ub098 \ub354?',
+    dueToday: '\uc900\ube44\ub418\uba74 \uc2dc\uc791\ud558\uc138\uc694',
+    noPracticeInDays: '{n}\uc77c\uc774 \uc9c0\ub0ac\uc5b4\uc694 \u2014 \ubbf8\ub798\uc758 \ub098\uc5d0\uac8c \uc120\ubb3c\ud558\uc138\uc694',
+    daysSincePractice: '\ub9c8\uc9c0\ub9c9 \uc5f0\uc2b5 \ud6c4 {n}\uc77c \u2014 \ub2e4\uc2dc \uc2dc\uc791\ud574\ubcfc\uae4c\uc694?',
+    streakRecover: '\uc624\ub298 \uc9e7\uc740 \uc5f0\uc2b5\uc73c\ub85c \ub2e4\uc2dc \uada4\ub3c4\uc5d0 \uc624\ub974\uc138\uc694',
+    noSessionsThisWeek: '\uc774\ubc88 \uc8fc \uc544\uc9c1 \uc5f0\uc2b5 \uc5c6\uc74c \u2014 \uc0c8\ub85c\uc6b4 \uc2dc\uc791?',
+    keepMomentum: '\ud750\ub984\uc744 \uacc4\uc18d \uc774\uc5b4\uac00\uc138\uc694',
+    lightDayEncourage: '\uc77c\uc815\uc774 \uc5ec\uc720\ub85c\uc6cc\uc694 \u2014 \uc624\ub298 \ud558\uae30 \ub531 \uc88b\uc544\uc694',
+    busyDayEncourage: '\ubc14\uc05c \ud558\ub8e8 \u2014 \uc791\uc740 \uc131\uacfc\ub3c4 \uc18c\uc911\ud574\uc694',
+    lightDayPractice: '\uc5ec\uc720\ub85c\uc6b4 \uc77c\uc815 \u2014 \uc5f0\uc2b5\ud558\uae30 \uc88b\uc740 \ub0a0',
+    busyDayPractice: '\ube61\ube61\ud55c \ud558\ub8e8 \u2014 10\ubd84\ub9cc\uc774\ub77c\ub3c4 \ucfe0\uc694',
+    nothingPressing: '\uc624\ub298\uc740 \uc5ec\uc720\ub85c\uc6b4 \ud558\ub8e8\uc608\uc694. \ud3b8\ud788 \uc26c\uc138\uc694.',
   },
   finances: {
     eyebrow: '\ub3c4\uba54\uc778',
@@ -1235,6 +1299,27 @@ const zh: AppTranslations = {
     saveEvent: '\u4fdd\u5b58\u4e8b\u4ef6',
     events: '\u4e8b\u4ef6',
     noEvents: '\u6682\u65e0\u4e8b\u4ef6\uff0c\u5728\u4e0a\u65b9\u6dfb\u52a0\u60a8\u7684\u7b2c\u4e00\u4e2a\u4e8b\u4ef6',
+    dailyPlan: '\u4eca\u65e5\u8ba1\u5212',
+    calendarLoadLight: '\u8f7b\u677e\u7684\u4e00\u5929',
+    calendarLoadModerate: '\u9002\u4e2d\u7684\u4e00\u5929',
+    calendarLoadHeavy: '\u5fd9\u788c\u7684\u4e00\u5929',
+    habitsDue: '\u4e60\u60ef',
+    skillPractice: '\u7ec3\u4e60',
+    streakAtRisk: '\u5df2\u8fde\u7eed{streak}\u5929 \u2014 \u7ee7\u7eed\u4fdd\u6301',
+    streakKeepGoing: '\u5df2\u8fde\u7eed{streak}\u5929 \u2014 \u592a\u68d2\u4e86',
+    scheduledPending: '\u8ba1\u5212\u4e8e{time}\uff0c\u5c1a\u672a\u5b8c\u6210',
+    completedNOf7: '\u672c\u5468\u5b8c\u6210{n}/7\u5929 \u2014 \u4eca\u5929\u518d\u6765\u4e00\u6b21\uff1f',
+    dueToday: '\u51c6\u5907\u597d\u5c31\u5f00\u59cb\u5427',
+    noPracticeInDays: '\u5df2\u7ecf{n}\u5929\u4e86 \u2014 \u672a\u6765\u7684\u81ea\u5df1\u4f1a\u611f\u8c22\u4f60',
+    daysSincePractice: '\u4e0a\u6b21\u7ec3\u4e60\u5df2\u8fc7{n}\u5929 \u2014 \u91cd\u65b0\u5f00\u59cb\uff1f',
+    streakRecover: '\u4eca\u5929\u7ec3\u4e60\u4e00\u4e0b\uff0c\u91cd\u56de\u6b63\u8f68',
+    noSessionsThisWeek: '\u672c\u5468\u8fd8\u6ca1\u6709\u7ec3\u4e60 \u2014 \u65b0\u7684\u5f00\u59cb\uff1f',
+    keepMomentum: '\u4fdd\u6301\u52bf\u5934\uff0c\u7ee7\u7eed\u524d\u8fdb',
+    lightDayEncourage: '\u65e5\u7a0b\u5f88\u8f7b\u677e \u2014 \u4eca\u5929\u505a\u8fd9\u4e2a\u6b63\u5408\u9002',
+    busyDayEncourage: '\u5fd9\u788c\u7684\u4e00\u5929 \u2014 \u5c0f\u5c0f\u7684\u8fdb\u6b65\u4e5f\u5f88\u68d2',
+    lightDayPractice: '\u65e5\u7a0b\u5bbd\u677e \u2014 \u7ec3\u4e60\u7684\u597d\u65f6\u673a',
+    busyDayPractice: '\u65e5\u7a0b\u5f88\u6ee1 \u2014 10\u5206\u949f\u4e5f\u80fd\u79ef\u5c11\u6210\u591a',
+    nothingPressing: '\u4eca\u5929\u6ca1\u6709\u4ec0\u4e48\u7d27\u8feb\u7684\u4e8b\u3002\u4eab\u53d7\u8fd9\u4efd\u4ece\u5bb9\u5427\u3002',
   },
   finances: {
     eyebrow: '\u9886\u57df',
