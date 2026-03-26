@@ -44,6 +44,7 @@ Always follow `DESIGN.md`. Non-negotiable rules:
 
 ## Calendar Route Notes
 - Calendar page lives at `app/(app)/calendar/page.tsx`.
-- Current UX includes a month grid, day selection, event density dots, and same-day agenda list.
+- Current UX includes a month grid with day selection, a Year view for high-level navigation, and event density dots.
+- Events are rendered with semantic color accents (by type/status) that must align with the Botanical Editorial design tokens.
+- The selected day surface shows a structured day view (not just an agenda list) with inline event editing powered by `calendarApi.update(...)`.
 - Event CRUD on this page is wired through `lib/api/calendar.ts`.
-- Inline event editing is supported in agenda rows and uses `calendarApi.update(...)`.

@@ -38,12 +38,14 @@ npm run build
 Path: `/calendar`
 
 Current capabilities:
+- Year overview with month-level density and quick navigation
 - Month-grid calendar with previous/next navigation and Today jump
 - Per-day event density indicators on grid cells
-- Day selection with same-day agenda view
-- Create event flow (title, location, start/end, all-day)
-- Inline event edit flow in the agenda list
-- Delete event flow from agenda rows
+- Day selection with a time-ordered day timeline layout
+- Per-event color labels in month and day views
+- Create event flow (title, location, start/end, all-day, color)
+- Inline event edit flow directly in the day timeline
+- Delete event flow from day timeline events
 
 Calendar data integration:
 - API module: `lib/api/calendar.ts`
