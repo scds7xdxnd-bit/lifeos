@@ -24,6 +24,7 @@ import {
   buildYearMonths,
   parseIsoToDateParts,
   combineDateAndTimeToIso,
+  formatSummaryDate,
   formatSummaryRange,
   shiftIsoByDays,
   startOfDayLocal,
@@ -244,7 +245,18 @@ export default function CalendarPage() {
   )
   const draftStartIso = combineDateAndTimeToIso(formStartDate, formStartHour, formStartMinute, formStartMeridiem)
   const draftEndIso = combineDateAndTimeToIso(formEndDate, formEndHour, formEndMinute, formEndMeridiem)
-  const timeSummaryText = formatSummaryRange(draftStartIso, formEndDate ? draftEndIso : undefined, lang)
+  const timeSummaryText = formAllDay
+    ? (() => {
+        if (!draftStartIso) return 'Set date'
+        const start = new Date(draftStartIso)
+        if (Number.isNaN(start.getTime())) return 'Set date'
+        const startDate = formatSummaryDate(start, lang)
+        if (!formEndDate || !draftEndIso) return startDate
+        const end = new Date(draftEndIso)
+        if (Number.isNaN(end.getTime()) || start.toDateString() === end.toDateString()) return startDate
+        return `${startDate} - ${formatSummaryDate(end, lang)}`
+      })()
+    : formatSummaryRange(draftStartIso, formEndDate ? draftEndIso : undefined, lang)
 
   const editingStartParts = useMemo(() => (editingEvent ? parseIsoToDateParts(editingEvent.start_time) : null), [editingEvent])
   const editingEndParts = useMemo(() => (editingEvent ? parseIsoToDateParts(editingEvent.end_time) : null), [editingEvent])
@@ -2034,6 +2046,7 @@ export default function CalendarPage() {
                           <input
                             aria-label="Start time"
                             value={startTimeDraft}
+                            disabled={formAllDay}
                             onFocus={() => setActiveTimeSuggestions('start')}
                             onChange={(e) => {
                               markInteracted()
@@ -2055,7 +2068,7 @@ export default function CalendarPage() {
                               }
                             }}
                             placeholder="9:00 AM"
-                            style={appleTimeStyle}
+                            style={{ ...appleTimeStyle, opacity: formAllDay ? 0.4 : 1 }}
                           />
 
                           {activeTimeSuggestions === 'start' && (
@@ -2150,8 +2163,8 @@ export default function CalendarPage() {
                               }
                             }}
                             placeholder="10:00 AM"
-                            disabled={!formEndDate}
-                            style={{ ...appleTimeStyle, opacity: formEndDate ? 1 : 0.5 }}
+                            disabled={formAllDay || !formEndDate}
+                            style={{ ...appleTimeStyle, opacity: formAllDay ? 0.4 : formEndDate ? 1 : 0.5 }}
                           />
 
                           {activeTimeSuggestions === 'end' && formEndDate && (
@@ -2203,23 +2216,26 @@ export default function CalendarPage() {
                         </div>
                       </div>
                     </div>
+                    <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+                      <input
+                        type="checkbox"
+                        checked={formAllDay}
+                        onChange={(e) => {
+                          markInteracted()
+                          setFormAllDay(e.target.checked)
+                          if (e.target.checked) {
+                            setShowTimeDetails(false)
+                            setActiveTimeSuggestions(null)
+                          }
+                        }}
+                        className="rounded"
+                        style={{ accentColor: '#4b6646' }}
+                      />
+                      <span style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', color: '#2e342b' }}>{t.allDay}</span>
+                    </label>
                   </div>
                 </div>
               )}
-
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formAllDay}
-                  onChange={(e) => {
-                    markInteracted()
-                    setFormAllDay(e.target.checked)
-                  }}
-                  className="rounded"
-                  style={{ accentColor: '#4b6646' }}
-                />
-                <span style={{ fontFamily: 'var(--font-manrope), sans-serif', fontSize: '0.875rem', color: '#2e342b' }}>{t.allDay}</span>
-              </label>
 
             </form>
           </div>
