@@ -41,3 +41,9 @@ Always follow `DESIGN.md`. Non-negotiable rules:
 - Auth context must stay swappable (future Clerk migration planned).
 - API client lives in `lib/api/`. Use React Query for all server state.
 - Protected routes go in `(app)/` group, auth routes in `(auth)/`.
+
+## Calendar Route Notes
+- Calendar page lives at `app/(app)/calendar/page.tsx`.
+- Current UX includes a month grid, day selection, event density dots, and same-day agenda list.
+- Event CRUD on this page is wired through `lib/api/calendar.ts`.
+- Inline event editing is supported in agenda rows and uses `calendarApi.update(...)`.
