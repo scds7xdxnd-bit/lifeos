@@ -65,3 +65,9 @@ export const apiGet = <T>(path: string) => apiFetch<T>(path)
 
 export const apiPost = <T>(path: string, body: unknown) =>
   apiFetch<T>(path, { method: 'POST', body: JSON.stringify(body) })
+
+export const apiPatch = <T>(path: string, body: unknown) =>
+  apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
+
+export const apiDelete = <T>(path: string) =>
+  apiFetch<T>(path, { method: 'DELETE' })

@@ -1,3 +1,23 @@
+from lifeos.domains.health.services.calculator_service import (
+    calculate,
+    create_report,
+    delete_report,
+    get_health_profile,
+    get_latest_biometric,
+    get_latest_report,
+    get_report,
+    get_warnings,
+    list_reports,
+    save_health_profile,
+    update_report,
+)
+from lifeos.domains.health.services.food_library_service import (
+    create_food_item,
+    delete_food_item,
+    get_food_item,
+    list_food_items,
+    update_food_item,
+)
 from lifeos.domains.health.services.health_service import (
     create_biometric_entry,
     create_nutrition_log,
@@ -10,6 +30,22 @@ from lifeos.domains.health.services.health_service import (
 )
 
 __all__ = [
+    "calculate",
+    "create_report",
+    "delete_report",
+    "get_health_profile",
+    "get_latest_biometric",
+    "get_latest_report",
+    "get_report",
+    "get_warnings",
+    "list_reports",
+    "save_health_profile",
+    "update_report",
+    "create_food_item",
+    "delete_food_item",
+    "get_food_item",
+    "list_food_items",
+    "update_food_item",
     "create_biometric_entry",
     "list_biometrics",
     "create_workout",

@@ -1,7 +1,10 @@
 {
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0"
+    "@vercel/speed-insights": "^2.0.0",
+    "javascript-lp-solver": "^1.0.3",
+    "lucide-react": "^1.7.0",
+    "typescript": "^6.0.2"
   },
   "devDependencies": {
     "playwright": "^1.55.0"

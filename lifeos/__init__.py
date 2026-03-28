@@ -250,6 +250,8 @@ def _register_blueprints(app: Flask) -> None:
     )
     from lifeos.domains.habits.controllers.habit_api import habit_api_bp
     from lifeos.domains.habits.controllers.habit_pages import habit_pages_bp
+    from lifeos.domains.health.controllers.calculator_api import calculator_api_bp
+    from lifeos.domains.health.controllers.food_library_api import food_library_api_bp
     from lifeos.domains.health.controllers.health_api import health_api_bp
     from lifeos.domains.health.controllers.health_pages import health_pages_bp
     from lifeos.domains.journal.controllers.journal_api import journal_api_bp
@@ -282,6 +284,8 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(skill_api_bp, url_prefix="/api/skills")
     app.register_blueprint(skill_pages_bp, url_prefix="/skills")
     app.register_blueprint(health_api_bp, url_prefix="/api/health")
+    app.register_blueprint(food_library_api_bp, url_prefix="/api/health/food-library")
+    app.register_blueprint(calculator_api_bp, url_prefix="/api/v1/health/calculator")
     app.register_blueprint(health_pages_bp, url_prefix="/health")
     app.register_blueprint(journal_api_bp, url_prefix="/api/journal")
     app.register_blueprint(journal_pages_bp, url_prefix="/journal")

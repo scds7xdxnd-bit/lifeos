@@ -155,6 +155,236 @@ export interface HealthPageTranslations {
   subtitle: string
   comingSoonTitle: string
   comingSoonBody: string
+  logBiometric: string
+  logWorkout: string
+  logMeal: string
+  log: string
+  saving: string
+  save: string
+  cancel: string
+  date: string
+  weight: string
+  bodyFat: string
+  restingHr: string
+  energy: string
+  stress: string
+  notes: string
+  workoutType: string
+  duration: string
+  intensity: string
+  low: string
+  medium: string
+  high: string
+  estimatedCalories: string
+  mealType: string
+  breakfast: string
+  lunch: string
+  dinner: string
+  snack: string
+  other: string
+  items: string
+  itemsPlaceholder: string
+  qualityScore: string
+  biometrics: string
+  workouts: string
+  nutrition: string
+  emptyTitle: string
+  emptyBody: string
+  selectEntry: string
+  selectedEntry: string
+  thisWeek: string
+  todaysMeals: string
+  weightTrend: string
+  sessions: string
+  totalDuration: string
+  duplicateError: string
+  noData: string
+  // Optimizer view
+  optimizer: string
+  overview: string
+  foodLibrary: string
+  addFood: string
+  editFood: string
+  saveFood: string
+  foodName: string
+  costPer100g: string
+  caloriesPer100g: string
+  proteinPer100g: string
+  carbsPer100g: string
+  fatPer100g: string
+  fiberPer100g: string
+  duplicateFoodError: string
+  noFoodsYet: string
+  selectFoods: string
+  selectAll: string
+  deselectAll: string
+  objective: string
+  minimizeCost: string
+  maximizeCost: string
+  minimizeCalories: string
+  maximizeCalories: string
+  targetCost: string
+  targetCalories: string
+  targetValue: string
+  constraints: string
+  addConstraint: string
+  foodBounds: string
+  minBound: string
+  maxBound: string
+  solve: string
+  solving: string
+  optimalSolution: string
+  optimalCombination: string
+  noSolution: string
+  unboundedSolution: string
+  selectFoodsFirst: string
+  chooseObjective: string
+  adjustConstraints: string
+  food: string
+  quantity: string
+  cost: string
+  total: string
+  satisfied: string
+  slack: string
+  tight: string
+  protein: string
+  carbs: string
+  fat: string
+  fiber: string
+  budget: string
+  planNutrition: string
+  planNutritionSub: string
+  deleteConfirmFood: string
+  // Calculator view
+  calculator: string
+  planTargets: string
+  planTargetsSub: string
+  bodyMeasurements: string
+  weightKg: string
+  heightCm: string
+  age: string
+  genderLabel: string
+  male: string
+  female: string
+  bodyFatPct: string
+  activityLevel: string
+  sedentary: string
+  lightlyActive: string
+  moderatelyActive: string
+  veryActive: string
+  extraActive: string
+  goal: string
+  lose: string
+  maintain: string
+  gain: string
+  goalWeightKg: string
+  timelineMonths: string
+  calculate: string
+  calculating: string
+  yourDailyTargets: string
+  kcalPerDay: string
+  bmrBreakdown: string
+  method: string
+  katchMcardle: string
+  mifflinStJeor: string
+  leanBodyMass: string
+  bmr: string
+  activity: string
+  tdee: string
+  dailyAdjustment: string
+  macroTargets: string
+  daily: string
+  monthlyX30: string
+  deltaBreakdown: string
+  pastReports: string
+  latestReport: string
+  noReportsYet: string
+  autoFilled: string
+  lowIntakeWarning: string
+  highSurplusWarning: string
+  fromCalculator: string
+  timeHorizon: string
+  optimizingFor: string
+  months: string
+  calcPrompt: string
+  editReport: string
+  updateReport: string
+  updating: string
+  deleteReport: string
+  confirmDeleteReport: string
+  editingReport: string
+  calorieCalculator: string
+  macroCostOptimizer: string
+  reportEmptyTitle: string
+  reportEmptySubtitle: string
+  stepMeasurements: string
+  stepGoal: string
+  stepResults: string
+  yes: string
+  no: string
+  deltaBodyWeight: string
+  kcalPerKgAssumption: string
+  totalKcalDelta: string
+  dailyKcalAdjustment: string
+  yourWeekSoFar: string
+  itemsLabel: string
+  mealsUnit: string
+  qualityLabel: string
+  // Tooltip content
+  tooltipFormulaSelection: string
+  tooltipKatchMcArdle: string
+  tooltipMifflinStJeor: string
+  tooltipCalorieAssumptions: string
+  tooltipLoseKcalFact: string
+  tooltipGainKcalFact: string
+  tooltipDailyAdjustmentDesc: string
+  tooltipTimelineDesc: string
+  sedentaryDesc: string
+  lightlyActiveDesc: string
+  moderatelyActiveDesc: string
+  veryActiveDesc: string
+  extraActiveDesc: string
+  training: string
+  minUnit: string
+  // Constraint satisfaction display
+  cCalories: string
+  cStrict: string
+  cTolerance: string
+  cOnTarget: string
+  cWithin2: string
+  cOff: string
+  cAboveTarget: string
+  cBelowTarget: string
+  cMinJustMet: string
+  cAboveMin: string
+  cShortWithin2: string
+  cBelowMin: string
+  cAtLimit: string
+  cUnderLimit: string
+  cOverWithin2: string
+  cOverLimit: string
+  // Table column headers
+  qtyGrams: string
+  colKcal: string
+  noSolutionFound: string
+  unboundedTitle: string
+  // Food selector & bounds
+  noFoodsInLibrary: string
+  optional: string
+  // Empty states
+  awaitingObjective: string
+  chooseAnObjective: string
+  chooseAnObjectiveSub: string
+  noFoodsSelected: string
+  selectYourFoods: string
+  selectYourFoodsSub: string
+  // Constraint category labels (with units)
+  catCalories: string
+  catProtein: string
+  catCarbs: string
+  catFat: string
+  catFiber: string
+  catBudget: string
 }
 
 export interface HabitsPageTranslations {
@@ -560,6 +790,228 @@ const en: AppTranslations = {
     subtitle: 'Biometrics, workouts, and nutrition. A gentle record of how you feel.',
     comingSoonTitle: 'Health domain coming soon',
     comingSoonBody: 'Biometrics, workout logs, and nutrition tracking will appear here once the frontend integration is complete.',
+    logBiometric: 'Log Biometrics',
+    logWorkout: 'Log Workout',
+    logMeal: 'Log Meal',
+    log: 'Log',
+    saving: 'Saving\u2026',
+    save: 'Save Entry',
+    cancel: 'Cancel',
+    date: 'Date',
+    weight: 'Weight (kg)',
+    bodyFat: 'Body fat (%)',
+    restingHr: 'Resting heart rate',
+    energy: 'Energy',
+    stress: 'Stress',
+    notes: 'Notes',
+    workoutType: 'Type',
+    duration: 'Duration (min)',
+    intensity: 'Intensity',
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+    estimatedCalories: 'Estimated calories',
+    mealType: 'Meal',
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    snack: 'Snack',
+    other: 'Other',
+    items: 'What did you eat?',
+    itemsPlaceholder: 'e.g., grilled chicken, brown rice, broccoli',
+    qualityScore: 'How did it feel?',
+    biometrics: 'Biometrics',
+    workouts: 'Workouts',
+    nutrition: 'Nutrition',
+    emptyTitle: 'Begin Your Health Journal',
+    emptyBody: 'A calm place to observe how your body feels over time. Start with whatever feels natural.',
+    selectEntry: 'Select an entry to see details',
+    selectedEntry: 'Selected Entry',
+    thisWeek: 'This Week',
+    todaysMeals: "Today\u2019s Meals",
+    weightTrend: 'Weight Trend',
+    sessions: 'sessions',
+    totalDuration: 'Total Duration',
+    duplicateError: 'An entry already exists for this date.',
+    noData: 'No data yet',
+    optimizer: 'Optimizer',
+    overview: 'Overview',
+    foodLibrary: 'Food Library',
+    addFood: 'Add Food',
+    editFood: 'Edit Food',
+    saveFood: 'Save Food',
+    foodName: 'Food name',
+    costPer100g: 'Cost / 100g',
+    caloriesPer100g: 'Calories / 100g',
+    proteinPer100g: 'Protein / 100g',
+    carbsPer100g: 'Carbs / 100g',
+    fatPer100g: 'Fat / 100g',
+    fiberPer100g: 'Fiber / 100g',
+    duplicateFoodError: 'A food with this name already exists.',
+    noFoodsYet: 'No foods in your library yet. Add one to get started.',
+    selectFoods: 'Select foods to include in the plan',
+    selectAll: 'Select all',
+    deselectAll: 'Deselect all',
+    objective: 'Objective',
+    minimizeCost: 'Minimize cost',
+    maximizeCost: 'Maximize cost',
+    minimizeCalories: 'Minimize calories',
+    maximizeCalories: 'Maximize calories',
+    targetCost: 'Budget target (cost)',
+    targetCalories: 'Calorie target',
+    targetValue: 'Target value',
+    constraints: 'Constraints',
+    addConstraint: 'Add constraint',
+    foodBounds: 'Food bounds',
+    minBound: 'Min (g)',
+    maxBound: 'Max (g)',
+    solve: 'Solve',
+    solving: 'Solving\u2026',
+    optimalSolution: 'Optimal solution found',
+    optimalCombination: 'Optimal combination',
+    noSolution: 'No feasible solution. Try relaxing your constraints.',
+    unboundedSolution: 'Unbounded — add an upper bound or target constraint.',
+    selectFoodsFirst: 'Select at least one food to begin.',
+    chooseObjective: 'Choose an objective to optimize.',
+    adjustConstraints: 'Adjust your constraints and try again.',
+    food: 'Food',
+    quantity: 'Quantity (g)',
+    cost: 'Cost',
+    total: 'Total',
+    satisfied: 'Satisfied',
+    slack: 'Slack',
+    tight: 'Tight',
+    protein: 'Protein',
+    carbs: 'Carbs',
+    fat: 'Fat',
+    fiber: 'Fiber',
+    budget: 'Budget',
+    planNutrition: 'Plan Your Nutrition',
+    planNutritionSub: 'Build cost-optimal meal plans using linear programming.',
+    deleteConfirmFood: 'Delete this food from your library?',
+    calculator: 'Calculator',
+    planTargets: 'Plan Your Targets',
+    planTargetsSub: 'Estimate your daily calorie and macro targets.',
+    bodyMeasurements: 'Body Measurements',
+    weightKg: 'Weight (kg)',
+    heightCm: 'Height (cm)',
+    age: 'Age',
+    genderLabel: 'Gender',
+    male: 'Male',
+    female: 'Female',
+    bodyFatPct: 'Body fat % (optional)',
+    activityLevel: 'Activity Level',
+    sedentary: 'Sedentary',
+    lightlyActive: 'Lightly Active',
+    moderatelyActive: 'Moderately Active',
+    veryActive: 'Very Active',
+    extraActive: 'Extra Active',
+    goal: 'Goal',
+    lose: 'Losing Weight',
+    maintain: 'Maintain Weight',
+    gain: 'Gaining Weight',
+    goalWeightKg: 'Goal Weight (kg)',
+    timelineMonths: 'Timeline (months)',
+    calculate: 'Calculate',
+    calculating: 'Calculating\u2026',
+    yourDailyTargets: 'Your Daily Targets',
+    kcalPerDay: 'kcal/day',
+    bmrBreakdown: 'BMR Breakdown',
+    method: 'Method',
+    katchMcardle: 'Katch-McArdle',
+    mifflinStJeor: 'Mifflin-St Jeor',
+    leanBodyMass: 'Lean Body Mass',
+    bmr: 'BMR',
+    activity: 'Activity',
+    tdee: 'TDEE',
+    dailyAdjustment: 'Daily adjustment',
+    macroTargets: 'Macro Targets',
+    daily: 'Daily',
+    monthlyX30: 'Monthly (\u00d730)',
+    deltaBreakdown: 'Delta Breakdown',
+    pastReports: 'Past Reports',
+    latestReport: 'Latest Report',
+    noReportsYet: 'No reports yet. Use the calculator above to generate your first report.',
+    autoFilled: 'Auto-filled',
+    lowIntakeWarning: 'This timeline may result in a very low daily intake. Consider extending the timeline or adjusting your goal weight.',
+    highSurplusWarning: 'This is a significant surplus. A more gradual approach may be easier to sustain.',
+    fromCalculator: 'From Calculator',
+    timeHorizon: 'Time Horizon',
+    optimizingFor: 'Optimizing for',
+    months: 'month(s)',
+    calcPrompt: 'Set up your calorie targets in the Calculator tab to get personalized suggestions here.',
+    editReport: 'Edit',
+    updateReport: 'Update Report',
+    updating: 'Updating...',
+    deleteReport: 'Delete',
+    confirmDeleteReport: 'Delete this report?',
+    editingReport: 'Editing Report',
+    calorieCalculator: 'Calorie Calculator',
+    macroCostOptimizer: 'Macro & Cost Optimizer',
+    reportEmptyTitle: 'Your report will appear here',
+    reportEmptySubtitle: 'Fill in your measurements and goal on the left, then hit Calculate.',
+    stepMeasurements: 'Enter your measurements',
+    stepGoal: 'Choose activity & goal',
+    stepResults: 'See BMR, TDEE & macros',
+    yes: 'Yes',
+    no: 'No',
+    deltaBodyWeight: 'Δ body weight',
+    kcalPerKgAssumption: 'kcal / kg assumption',
+    totalKcalDelta: 'Total kcal delta',
+    dailyKcalAdjustment: 'Daily kcal adjustment',
+    yourWeekSoFar: 'Your Week So Far',
+    itemsLabel: 'Items',
+    mealsUnit: 'meals',
+    qualityLabel: 'Quality',
+    tooltipFormulaSelection: 'Formula selection',
+    tooltipKatchMcArdle: 'If provided, uses Katch-McArdle',
+    tooltipMifflinStJeor: 'Without it, uses Mifflin-St Jeor',
+    tooltipCalorieAssumptions: 'Calorie assumptions',
+    tooltipLoseKcalFact: '~7,700 kcal ≈ 1 kg body fat',
+    tooltipGainKcalFact: '~4,500 kcal ≈ 1 kg lean mass',
+    tooltipDailyAdjustmentDesc: 'Daily adjustment = total kcal delta ÷ (30 × months)',
+    tooltipTimelineDesc: 'The longer your timeline, the smaller the daily calorie adjustment. A shorter timeline means a larger daily deficit or surplus.',
+    sedentaryDesc: 'Little or no exercise, desk job',
+    lightlyActiveDesc: '1–3 days/week light exercise',
+    moderatelyActiveDesc: '3–5 days/week moderate exercise',
+    veryActiveDesc: '6–7 days/week hard exercise',
+    extraActiveDesc: 'Hard exercise twice/day or physical job',
+    training: 'Training',
+    minUnit: 'min',
+    qtyGrams: 'QTY (gram)',
+    colKcal: 'kcal',
+    noSolutionFound: 'No solution found',
+    unboundedTitle: 'Unbounded',
+    noFoodsInLibrary: 'Add foods to your library first.',
+    optional: 'optional',
+    awaitingObjective: 'Awaiting objective',
+    chooseAnObjective: 'Choose an objective',
+    chooseAnObjectiveSub: 'Pick a goal above — minimise cost, hit a calorie target, and so on. The optimal solution will appear here instantly.',
+    noFoodsSelected: 'No foods selected',
+    selectYourFoods: 'Select your foods',
+    selectYourFoodsSub: 'Tick one or more foods in the list on the left. The result updates the moment you make a selection.',
+    catCalories: 'Calories',
+    catProtein: 'Protein (g)',
+    catCarbs: 'Carbs (g)',
+    catFat: 'Fat (g)',
+    catFiber: 'Fiber (g)',
+    catBudget: 'Budget ($)',
+    cCalories: 'Calories',
+    cStrict: 'Strict',
+    cTolerance: '±2% tolerance',
+    cOnTarget: 'on target',
+    cWithin2: 'within 2%',
+    cOff: 'off',
+    cAboveTarget: 'above target',
+    cBelowTarget: 'below target',
+    cMinJustMet: 'minimum just met',
+    cAboveMin: 'above minimum',
+    cShortWithin2: 'short (within 2%)',
+    cBelowMin: 'below minimum',
+    cAtLimit: 'at the limit',
+    cUnderLimit: 'under the limit',
+    cOverWithin2: 'over (within 2%)',
+    cOverLimit: 'over the limit',
   },
   habits: {
     eyebrow: 'Discipline',
@@ -947,6 +1399,228 @@ const ko: AppTranslations = {
     subtitle: '\uc0dd\uccb4\uc9c0\ud45c, \uc6b4\ub3d9, \uc601\uc591. \ub0b4 \ubab8\uc758 \ud750\ub984\uc744 \uae30\ub85d\ud569\ub2c8\ub2e4.',
     comingSoonTitle: '\uac74\uac15 \ub3c4\uba54\uc778 \uace7 \ucd9c\uc2dc',
     comingSoonBody: '\ud504\ub860\ud2b8\uc5d4\ub4dc \ud1b5\ud569\uc774 \uc644\ub8cc\ub418\uba74 \uc0dd\uccb4\uc9c0\ud45c, \uc6b4\ub3d9 \uae30\ub85d, \uc601\uc591 \ucd94\uc801\uc774 \uc5ec\uae30\uc5d0 \ud45c\uc2dc\ub429\ub2c8\ub2e4.',
+    logBiometric: '\uc0dd\uccb4\uc9c0\ud45c \uae30\ub85d',
+    logWorkout: '\uc6b4\ub3d9 \uae30\ub85d',
+    logMeal: '\uc2dd\uc0ac \uae30\ub85d',
+    log: '\uae30\ub85d',
+    saving: '\uc800\uc7a5 \uc911\u2026',
+    save: '\ud56d\ubaa9 \uc800\uc7a5',
+    cancel: '\ucde8\uc18c',
+    date: '\ub0a0\uc9dc',
+    weight: '\uccb4\uc911 (kg)',
+    bodyFat: '\uccb4\uc9c0\ubc29 (%)',
+    restingHr: '\uc548\uc815\uc2dc \uc2ec\ubc15\uc218',
+    energy: '\uc5d0\ub108\uc9c0',
+    stress: '\uc2a4\ud2b8\ub808\uc2a4',
+    notes: '\uba54\ubaa8',
+    workoutType: '\uc885\ub958',
+    duration: '\uc2dc\uac04 (\ubd84)',
+    intensity: '\uac15\ub3c4',
+    low: '\ub099\uc74c',
+    medium: '\uc911\uac04',
+    high: '\ub192\uc74c',
+    estimatedCalories: '\uc608\uc0c1 \uce7c\ub85c\ub9ac',
+    mealType: '\uc2dd\uc0ac',
+    breakfast: '\uc544\uce68',
+    lunch: '\uc810\uc2ec',
+    dinner: '\uc800\ub141',
+    snack: '\uc2a4\ub099',
+    other: '\uae30\ud0c0',
+    items: '\ubb34\uc5c7\uc744 \uba39\uc5c8\ub098\uc694?',
+    itemsPlaceholder: '\uc608: \uad6c\uc6b4 \ub2ed\uace0\uae30, \ud604\ubbf8, \ube0c\ub85c\ucf5c\ub9ac',
+    qualityScore: '\uc5b4\ub54c \ub290\uaf08\uc774\uc5c8\ub098\uc694?',
+    biometrics: '\uc0dd\uccb4\uc9c0\ud45c',
+    workouts: '\uc6b4\ub3d9',
+    nutrition: '\uc601\uc591',
+    emptyTitle: '\uac74\uac15 \uc77c\uc9c0\ub97c \uc2dc\uc791\ud558\uc138\uc694',
+    emptyBody: '\uc2dc\uac04\uc774 \uc9c0\ub098\uba74\uc11c \uc2e0\uccb4\uac00 \uc5b4\ub5bb\uac8c \ub290\uaf08\uc9c0 \ud3b8\uc548\ud558\uac8c \uad00\uc2ec\ud558\ub294 \uacf3\uc785\ub2c8\ub2e4.',
+    selectEntry: '\ud56d\ubaa9\uc744 \uc120\ud0dd\ud558\uba74 \uc138\ubd80 \uc815\ubcf4\ub97c \ubcfc \uc218 \uc788\uc5b4\uc694',
+    selectedEntry: '\uc120\ud0dd\ub41c \ud56d\ubaa9',
+    thisWeek: '\uc774\ubc88 \uc8fc',
+    todaysMeals: '\uc624\ub298\uc758 \uc2dd\uc0ac',
+    weightTrend: '\uccb4\uc911 \ucd94\uc138',
+    sessions: '\ud68c',
+    totalDuration: '총 시간',
+    duplicateError: '\uc774 \ub0a0\uc9dc\uc5d0 \uc774\ubbf8 \ud56d\ubaa9\uc774 \uc788\uc2b5\ub2c8\ub2e4.',
+    noData: '\ub370\uc774\ud130 \uc5c6\uc74c',
+    optimizer: '\ucd5c\uc801\ud654',
+    overview: '\uc694\uc57d',
+    foodLibrary: '\uc2dd\ud488 \ub77c\uc774\ube0c\ub7ec\ub9ac',
+    addFood: '\uc2dd\ud488 \ucd94\uac00',
+    editFood: '\uc2dd\ud488 \ud3b8\uc9d1',
+    saveFood: '\uc2dd\ud488 \uc800\uc7a5',
+    foodName: '\uc2dd\ud488\uba85',
+    costPer100g: '\ube44\uc6a9 / 100g',
+    caloriesPer100g: '\uce7c\ub85c\ub9ac / 100g',
+    proteinPer100g: '\ub2e8\ubc31\uc9c8 / 100g',
+    carbsPer100g: '\ud0c4\uc218\ud654\ubb3c / 100g',
+    fatPer100g: '\uc9c0\ubc29 / 100g',
+    fiberPer100g: '\uc2dd\uc774\uc139\uc720 / 100g',
+    duplicateFoodError: '\ub3d9\uc77c\ud55c \uc774\ub984\uc758 \uc2dd\ud488\uc774 \uc774\ubbf8 \uc788\uc2b5\ub2c8\ub2e4.',
+    noFoodsYet: '\ub77c\uc774\ube0c\ub7ec\ub9ac\uc5d0 \uc2dd\ud488\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uc2dc\uc791\ud558\ub824\uba74 \ucd94\uac00\ud558\uc138\uc694.',
+    selectFoods: '\ud50c\ub7e8\uc5d0 \ud3ec\ud568\ud560 \uc2dd\ud488\uc744 \uc120\ud0dd\ud558\uc138\uc694',
+    selectAll: '\uc804\uccb4 \uc120\ud0dd',
+    deselectAll: '\uc804\uccb4 \ud574\uc81c',
+    objective: '\ubaa9\ud45c',
+    minimizeCost: '\ube44\uc6a9 \ucd5c\uc18c\ud654',
+    maximizeCost: '\ube44\uc6a9 \ucd5c\ub300\ud654',
+    minimizeCalories: '\uce7c\ub85c\ub9ac \ucd5c\uc18c\ud654',
+    maximizeCalories: '\uce7c\ub85c\ub9ac \ucd5c\ub300\ud654',
+    targetCost: '\uc608\uc0b0 \ubaa9\ud45c (\ube44\uc6a9)',
+    targetCalories: '\uce7c\ub85c\ub9ac \ubaa9\ud45c',
+    targetValue: '\ubaa9\ud45c \uac12',
+    constraints: '\uc81c\uc57d \uc870\uac74',
+    addConstraint: '\uc81c\uc57d \ucd94\uac00',
+    foodBounds: '\uc2dd\ud488 \ubc94\uc704',
+    minBound: '\ucd5c\uc18c (g)',
+    maxBound: '\ucd5c\ub300 (g)',
+    solve: '\ud480\uae30',
+    solving: '\ud480\ub294 \uc911\u2026',
+    optimalSolution: '\ucd5c\uc801 \ud574 \ubc1c\uacac',
+    optimalCombination: '\ucd5c\uc801 \uc870\ud569',
+    noSolution: '\uc2e4\ud589 \uac00\ub2a5\ud55c \ud574\uac00 \uc5c6\uc2b5\ub2c8\ub2e4. \uc81c\uc57d \uc870\uac74\uc744 \uc644\ud654\ud574 \ubcf4\uc138\uc694.',
+    unboundedSolution: '\ubb34\uc81c\ud55c\uc801 \u2014 \uc0c1\ud55c\uc774\ub098 \ubaa9\ud45c \uc81c\uc57d\uc744 \ucd94\uac00\ud558\uc138\uc694.',
+    selectFoodsFirst: '\uc2dc\uc791\ud558\ub824\uba74 \uc2dd\ud488\uc744 \ud558\ub098 \uc774\uc0c1 \uc120\ud0dd\ud558\uc138\uc694.',
+    chooseObjective: '\ucd5c\uc801\ud654\ud560 \ubaa9\ud45c\ub97c \uc120\ud0dd\ud558\uc138\uc694.',
+    adjustConstraints: '\uc81c\uc57d \uc870\uac74\uc744 \uc870\uc815\ud558\uace0 \ub2e4\uc2dc \uc2dc\ub3c4\ud558\uc138\uc694.',
+    food: '\uc2dd\ud488',
+    quantity: '\uc591 (g)',
+    cost: '\ube44\uc6a9',
+    total: '\ud569\uacc4',
+    satisfied: '\ucda9\uc871',
+    slack: '\uc5ec\uc720',
+    tight: '여유없음',
+    protein: '\ub2e8\ubc31\uc9c8',
+    carbs: '\ud0c4\uc218\ud654\ubb3c',
+    fat: '\uc9c0\ubc29',
+    fiber: '\uc2dd\uc774\uc139\uc720',
+    budget: '\uc608\uc0b0',
+    planNutrition: '\uc601\uc591 \uacc4\ud68d \uc138\uc6b0\uae30',
+    planNutritionSub: '\uc120\ud615 \ud504\ub85c\uadf8\ub798\ubc0d\uc744 \uc0ac\uc6a9\ud558\uc5ec \ube44\uc6a9 \ucd5c\uc801 \uc2dd\ub2e8 \ud50c\ub7e8\uc744 \ub9cc\ub4dc\uc138\uc694.',
+    deleteConfirmFood: '\ub77c\uc774\ube0c\ub7ec\ub9ac\uc5d0\uc11c \uc774 \uc2dd\ud488\uc744 \uc0ad\uc81c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?',
+    calculator: '계산기',
+    planTargets: '\ubaa9\ud45c \uc138\uc6b0\uae30',
+    planTargetsSub: '\uc77c\uc77c \uce7c\ub85c\ub9ac \uc810 \ub9e4\ud06c\ub85c \ubaa9\ud45c\ub97c \ucd94\uc815\ud558\uc138\uc694.',
+    bodyMeasurements: '\uc2e0\uccb4 \uce21\uc815',
+    weightKg: '\uccb4\uc911 (kg)',
+    heightCm: '\ud0a4 (cm)',
+    age: '\ub098\uc774',
+    genderLabel: '\uc131\ubcc4',
+    male: '\ub0a8\uc131',
+    female: '\uc5ec\uc131',
+    bodyFatPct: '\uccb4\uc9c0\ubc29\ub960 % (\uc120\ud0dd\uc0ac\ud56d)',
+    activityLevel: '\ud65c\ub3d9 \uc218\uc900',
+    sedentary: '\ube44\ud65c\ub3d9',
+    lightlyActive: '\uac00\ubcbc\uc6b4 \ud65c\ub3d9',
+    moderatelyActive: '\uc801\ub2f9\ud55c \ud65c\ub3d9',
+    veryActive: '\ud65c\ub3d9\uc801',
+    extraActive: '\ub9e4\uc6b0 \ud65c\ub3d9\uc801',
+    goal: '\ubaa9\ud45c',
+    lose: '\uac10\ub7c9',
+    maintain: '\uc720\uc9c0',
+    gain: '\uc99d\ub7c9',
+    goalWeightKg: '\ubaa9\ud45c \uccb4\uc911 (kg)',
+    timelineMonths: '\uae30\uac04 (\uac1c\uc6d4)',
+    calculate: '\uacc4\uc0b0',
+    calculating: '\uacc4\uc0b0 \uc911\u2026',
+    yourDailyTargets: '\uc77c\uc77c \ubaa9\ud45c',
+    kcalPerDay: 'kcal/\uc77c',
+    bmrBreakdown: 'BMR \uc138\ubd80 \uc815\ubcf4',
+    method: '\ubc29\ubc95',
+    katchMcardle: 'Katch-McArdle',
+    mifflinStJeor: 'Mifflin-St Jeor',
+    leanBodyMass: '\uc81c\uc9c0\ubc29 \uccb4\uc911',
+    bmr: 'BMR',
+    activity: '\ud65c\ub3d9',
+    tdee: 'TDEE',
+    dailyAdjustment: '\uc77c\uc77c \uc870\uc815\uce58',
+    macroTargets: '\ub9e4\ud06c\ub85c \ubaa9\ud45c',
+    daily: '\uc77c\uc77c',
+    monthlyX30: '\uc6d4\uac04 (\u00d730)',
+    deltaBreakdown: '\ubcc0\ud654\ub7c9 \uc138\ubd80 \uc815\ubcf4',
+    pastReports: '\uacfc\uac70 \ubcf4\uace0\uc11c',
+    latestReport: '\ucd5c\uc2e0 \ubcf4\uace0\uc11c',
+    noReportsYet: '\uc544\uc9c1 \ubcf4\uace0\uc11c\uac00 \uc5c6\uc2b5\ub2c8\ub2e4. \uc704 \ucee8\uc500\ub97c \uc0ac\uc6a9\ud558\uc5ec \uccab \ubcf4\uace0\uc11c\ub97c \ub9cc\ub4dc\uc138\uc694.',
+    autoFilled: '\uc790\ub3d9 \uc785\ub825',
+    lowIntakeWarning: '\uc774 \uc77c\uc815\uc740 \ub9e4\uc6b0 \ub099\uc740 \uc77c\uc77c \uc12c\ucde8\ub7c9\uc744 \ucd08\ub798\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.',
+    highSurplusWarning: '\uc0c1\ub2f9\ud55c \uc78c\uc5ec\uc785\ub2c8\ub2e4. \uc810\uc9c4\uc801\uc778 \uc811\uadfc\uc774 \ub354 \uc9c0\uc18d\ud558\uae30 \uc26c\uc6b8 \uc218 \uc788\uc2b5\ub2c8\ub2e4.',
+    fromCalculator: '\ucee8\uc500\uc5d0\uc11c',
+    timeHorizon: '\uc2dc\uac04 \ubc94\uc704',
+    optimizingFor: '\ucd5c\uc801\ud654 \uae30\uac04',
+    months: '\uac1c\uc6d4',
+    calcPrompt: '계산기 탭에서 칼로리 목표를 설정하여 개인화된 제안을 받으세요.',
+    editReport: '\ud3b8\uc9d1',
+    updateReport: '\ubcf4\uace0\uc11c \uc5c5\ub370\uc774\ud2b8',
+    updating: '\uc5c5\ub370\uc774\ud2b8 \uc911...',
+    deleteReport: '\uc0ad\uc81c',
+    confirmDeleteReport: '\uc774 \ubcf4\uace0\uc11c\ub97c \uc0ad\uc81c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?',
+    editingReport: '\ubcf4\uace0\uc11c \ud3b8\uc9d1 \uc911',
+    calorieCalculator: '칼로리 계산기',
+    macroCostOptimizer: '영양 및 비용 최적화',
+    reportEmptyTitle: '보고서가 여기에 표시됩니다',
+    reportEmptySubtitle: '왼쪽에서 신체 정보와 목표를 입력한 후 계산을 누르세요.',
+    stepMeasurements: '신체 측정치 입력',
+    stepGoal: '활동 수준 및 목표 선택',
+    stepResults: 'BMR, TDEE 및 영양 목표 확인',
+    yes: '예',
+    no: '아니요',
+    deltaBodyWeight: '체중 변화량',
+    kcalPerKgAssumption: 'kcal/kg 기준값',
+    totalKcalDelta: '총 칼로리 변화량',
+    dailyKcalAdjustment: '일일 칼로리 조정량',
+    yourWeekSoFar: '이번 주 현황',
+    itemsLabel: '항목',
+    mealsUnit: '끼',
+    qualityLabel: '품질',
+    tooltipFormulaSelection: '공식 선택',
+    tooltipKatchMcArdle: '체지방 있을 시 Katch-McArdle 적용',
+    tooltipMifflinStJeor: '체지방 없을 시 Mifflin-St Jeor 적용',
+    tooltipCalorieAssumptions: '칼로리 기준값',
+    tooltipLoseKcalFact: '~7,700 kcal ≈ 체지방 1 kg',
+    tooltipGainKcalFact: '~4,500 kcal ≈ 근육량 1 kg',
+    tooltipDailyAdjustmentDesc: '일일 조정량 = 총 칼로리 변화 ÷ (30 × 개월)',
+    tooltipTimelineDesc: '목표 기간이 길수록 일일 칼로리 조정이 작아집니다. 기간이 짧을수록 일일 적자 또는 흑자가 커집니다.',
+    sedentaryDesc: '운동 거의 없음, 사무직',
+    lightlyActiveDesc: '주 1–3일 가벼운 운동',
+    moderatelyActiveDesc: '주 3–5일 중간 강도 운동',
+    veryActiveDesc: '주 6–7일 고강도 운동',
+    extraActiveDesc: '하루 2회 고강도 운동 또는 육체 노동',
+    training: '운동',
+    minUnit: '분',
+    qtyGrams: '수량 (gram)',
+    colKcal: '칼로리',
+    noSolutionFound: '해를 찾을 수 없음',
+    unboundedTitle: '무제한',
+    noFoodsInLibrary: '먼저 식품 라이브러리에 추가하세요.',
+    optional: '선택 사항',
+    awaitingObjective: '목표 대기 중',
+    chooseAnObjective: '목표 선택',
+    chooseAnObjectiveSub: '위에서 목표를 선택하세요 — 비용 최소화, 칼로리 목표 달성 등. 최적 해가 즉시 표시됩니다.',
+    noFoodsSelected: '선택된 식품 없음',
+    selectYourFoods: '식품 선택',
+    selectYourFoodsSub: '왼쪽 목록에서 하나 이상의 식품을 선택하세요. 선택하면 즉시 결과가 업데이트됩니다.',
+    catCalories: '칼로리',
+    catProtein: '단백질 (g)',
+    catCarbs: '탄수화물 (g)',
+    catFat: '지방 (g)',
+    catFiber: '식이섬유 (g)',
+    catBudget: '예산 ($)',
+    cCalories: '칼로리',
+    cStrict: '엄격',
+    cTolerance: '±2% 허용',
+    cOnTarget: '목표 달성',
+    cWithin2: '2% 이내',
+    cOff: '차이',
+    cAboveTarget: '목표 초과',
+    cBelowTarget: '목표 미달',
+    cMinJustMet: '최소값 충족',
+    cAboveMin: '최소값 초과',
+    cShortWithin2: '부족 (2% 이내)',
+    cBelowMin: '최소값 미달',
+    cAtLimit: '한도 도달',
+    cUnderLimit: '한도 이하',
+    cOverWithin2: '초과 (2% 이내)',
+    cOverLimit: '한도 초과',
   },
   habits: {
     eyebrow: '\ub514\uc2dc\ud50c\ub9b0',
@@ -1334,6 +2008,228 @@ const zh: AppTranslations = {
     subtitle: '\u751f\u7406\u6307\u6807\u3001\u8fd0\u52a8\u4e0e\u8425\u517b\u3002\u6e29\u67d4\u8bb0\u5f55\u60a8\u7684\u8eab\u5fc3\u72b6\u6001\u3002',
     comingSoonTitle: '\u5065\u5eb7\u6a21\u5757\u5373\u5c06\u4e0a\u7ebf',
     comingSoonBody: '\u524d\u7aef\u96c6\u6210\u5b8c\u6210\u540e\uff0c\u751f\u7406\u6307\u6807\u3001\u8fd0\u52a8\u8bb0\u5f55\u548c\u8425\u517b\u8ffd\u8e2a\u5c06\u5728\u6b64\u663e\u793a\u3002',
+    logBiometric: '\u8bb0\u5f55\u751f\u7406\u6307\u6807',
+    logWorkout: '\u8bb0\u5f55\u8fd0\u52a8',
+    logMeal: '\u8bb0\u5f55\u996e\u98df',
+    log: '\u8bb0\u5f55',
+    saving: '\u4fdd\u5b58\u4e2d\u2026',
+    save: '\u4fdd\u5b58\u6761\u76ee',
+    cancel: '\u53d6\u6d88',
+    date: '\u65e5\u671f',
+    weight: '\u4f53\u91cd (kg)',
+    bodyFat: '\u4f53\u8102\u80aa (%)',
+    restingHr: '\u9759\u606f\u5fc3\u7387',
+    energy: '\u7cbe\u529b',
+    stress: '\u538b\u529b',
+    notes: '\u5907\u6ce8',
+    workoutType: '\u7c7b\u578b',
+    duration: '\u65f6\u957f (\u5206\u949f)',
+    intensity: '\u5f3a\u5ea6',
+    low: '\u4f4e',
+    medium: '\u4e2d',
+    high: '\u9ad8',
+    estimatedCalories: '\u9884\u4f30\u5361\u8def\u91cc',
+    mealType: '\u9910\u578b',
+    breakfast: '\u65e9\u9910',
+    lunch: '\u5348\u9910',
+    dinner: '\u665a\u9910',
+    snack: '\u96f6\u98df',
+    other: '\u5176\u4ed6',
+    items: '\u60a8\u5403\u4e86\u4ec0\u4e48\uff1f',
+    itemsPlaceholder: '\u4f8b\uff1a\u70e4\u9e21\u8089\u3001\u7cae\u98df\u7c73\u3001\u897f\u5170\u82b1',
+    qualityScore: '\u611f\u89c9\u600e\u4e48\u6837\uff1f',
+    biometrics: '\u751f\u7406\u6307\u6807',
+    workouts: '\u8fd0\u52a8',
+    nutrition: '\u8425\u517b',
+    emptyTitle: '\u5f00\u59cb\u60a8\u7684\u5065\u5eb7\u65e5\u5fd7',
+    emptyBody: '\u4e00\u4e2a\u5b89\u9759\u7684\u5730\u65b9\uff0c\u968f\u65f6\u95f4\u89c2\u5bdf\u8eab\u4f53\u7684\u611f\u53d7\u3002',
+    selectEntry: '\u9009\u62e9\u4e00\u4e2a\u6761\u76ee\u67e5\u770b\u8be6\u60c5',
+    selectedEntry: '\u5df2\u9009\u6761\u76ee',
+    thisWeek: '\u672c\u5468',
+    todaysMeals: '\u4eca\u65e5\u9910\u98df',
+    weightTrend: '\u4f53\u91cd\u8d8b\u52bf',
+    sessions: '\u6b21',
+    totalDuration: '\u603b\u65f6\u957f',
+    duplicateError: '\u8be5\u65e5\u671f\u5df2\u6709\u6761\u76ee\u3002',
+    noData: '\u6682\u65e0\u6570\u636e',
+    optimizer: '\u4f18\u5316\u5668',
+    overview: '\u6982\u89c8',
+    foodLibrary: '\u98df\u7269\u5e93',
+    addFood: '\u6dfb\u52a0\u98df\u7269',
+    editFood: '\u7f16\u8f91\u98df\u7269',
+    saveFood: '\u4fdd\u5b58\u98df\u7269',
+    foodName: '\u98df\u7269\u540d\u79f0',
+    costPer100g: '\u6bcf100g\u6210\u672c',
+    caloriesPer100g: '\u6bcf100g\u5361\u8def\u91cc',
+    proteinPer100g: '\u6bcf100g\u86cb\u767d\u8d28',
+    carbsPer100g: '\u6bcf100g\u78b3\u6c34\u5316\u5408\u7269',
+    fatPer100g: '\u6bcf100g\u8102\u80aa',
+    fiberPer100g: '\u6bcf100g\u819c\u98df\u7ea4\u7ef4',
+    duplicateFoodError: '\u540c\u540d\u98df\u7269\u5df2\u5b58\u5728\u3002',
+    noFoodsYet: '\u98df\u7269\u5e93\u4e3a\u7a7a\uff0c\u8bf7\u6dfb\u52a0\u98df\u7269\u5f00\u59cb\u3002',
+    selectFoods: '\u9009\u62e9\u8ba1\u5212\u4e2d\u5305\u542b\u7684\u98df\u7269',
+    selectAll: '\u5168\u9009',
+    deselectAll: '\u53d6\u6d88\u5168\u9009',
+    objective: '\u76ee\u6807',
+    minimizeCost: '\u6700\u5c0f\u5316\u6210\u672c',
+    maximizeCost: '\u6700\u5927\u5316\u6210\u672c',
+    minimizeCalories: '\u6700\u5c0f\u5316\u5361\u8def\u91cc',
+    maximizeCalories: '\u6700\u5927\u5316\u5361\u8def\u91cc',
+    targetCost: '\u9884\u7b97\u76ee\u6807\uff08\u6210\u672c\uff09',
+    targetCalories: '\u5361\u8def\u91cc\u76ee\u6807',
+    targetValue: '\u76ee\u6807\u503c',
+    constraints: '\u7ea6\u675f\u6761\u4ef6',
+    addConstraint: '\u6dfb\u52a0\u7ea6\u675f',
+    foodBounds: '\u98df\u7269\u7528\u91cf\u8303\u56f4',
+    minBound: '\u6700\u5c0f\uff08g\uff09',
+    maxBound: '\u6700\u5927\uff08g\uff09',
+    solve: '\u6c42\u89e3',
+    solving: '\u6c42\u89e3\u4e2d\u2026',
+    optimalSolution: '\u627e\u5230\u6700\u4f18\u89e3',
+    optimalCombination: '\u6700\u4f18\u7ec4\u5408',
+    noSolution: '\u65e0\u53ef\u884c\u89e3\uff0c\u8bf7\u653e\u5bbd\u7ea6\u675f\u6761\u4ef6\u3002',
+    unboundedSolution: '\u65e0\u754c\u2014\u8bf7\u6dfb\u52a0\u4e0a\u754c\u6216\u76ee\u6807\u7ea6\u675f\u3002',
+    selectFoodsFirst: '\u8bf7\u81f3\u5c11\u9009\u62e9\u4e00\u79cd\u98df\u7269\u3002',
+    chooseObjective: '\u8bf7\u9009\u62e9\u4f18\u5316\u76ee\u6807\u3002',
+    adjustConstraints: '\u8bf7\u8c03\u6574\u7ea6\u675f\u6761\u4ef6\u540e\u91cd\u8bd5\u3002',
+    food: '\u98df\u7269',
+    quantity: '\u7528\u91cf\uff08g\uff09',
+    cost: '\u6210\u672c',
+    total: '\u5408\u8ba1',
+    satisfied: '\u5df2\u6ee1\u8db3',
+    slack: '\u677e\u5f1b\u91cf',
+    tight: '紧约束',
+    protein: '\u86cb\u767d\u8d28',
+    carbs: '\u78b3\u6c34\u5316\u5408\u7269',
+    fat: '\u8102\u80aa',
+    fiber: '\u819c\u98df\u7ea4\u7ef4',
+    budget: '\u9884\u7b97',
+    planNutrition: '\u5236\u5b9a\u8425\u517b\u8ba1\u5212',
+    planNutritionSub: '\u5229\u7528\u7ebf\u6027\u89c4\u5212\u6784\u5efa\u6210\u672c\u6700\u4f18\u996e\u98df\u65b9\u6848\u3002',
+    deleteConfirmFood: '\u786e\u5b9a\u8981\u4ece\u5e93\u4e2d\u5220\u9664\u6b64\u98df\u7269\u5417\uff1f',
+    calculator: '\u5361\u8def\u91cc\u8ba1\u7b97\u5668',
+    planTargets: '\u5236\u5b9a\u76ee\u6807',
+    planTargetsSub: '\u4f30\u7b97\u6bcf\u65e5\u5361\u8def\u91cc\u548c\u5b8f\u8425\u7d20\u76ee\u6807\u3002',
+    bodyMeasurements: '\u8eab\u4f53\u6570\u636e',
+    weightKg: '\u4f53\u91cd (kg)',
+    heightCm: '\u8eab\u9ad8 (cm)',
+    age: '\u5e74\u9f84',
+    genderLabel: '\u6027\u522b',
+    male: '\u7537',
+    female: '\u5973',
+    bodyFatPct: '\u4f53\u8102\u7387 % \uff08\u53ef\u9009\uff09',
+    activityLevel: '\u6d3b\u52a8\u6c34\u5e73',
+    sedentary: '\u4e45\u5750\u4e0d\u52a8',
+    lightlyActive: '\u8f7b\u5ea6\u6d3b\u52a8',
+    moderatelyActive: '\u4e2d\u5ea6\u6d3b\u52a8',
+    veryActive: '\u9ad8\u5ea6\u6d3b\u52a8',
+    extraActive: '\u6781\u5ea6\u6d3b\u52a8',
+    goal: '\u76ee\u6807',
+    lose: '\u51cf\u91cd',
+    maintain: '\u4fdd\u6301',
+    gain: '\u589e\u91cd',
+    goalWeightKg: '\u76ee\u6807\u4f53\u91cd (kg)',
+    timelineMonths: '\u65f6\u95f4\u8f74 (\u6708)',
+    calculate: '\u8ba1\u7b97',
+    calculating: '\u8ba1\u7b97\u4e2d\u2026',
+    yourDailyTargets: '\u6bcf\u65e5\u76ee\u6807',
+    kcalPerDay: 'kcal/\u5929',
+    bmrBreakdown: 'BMR \u8be6\u60c5',
+    method: '\u65b9\u6cd5',
+    katchMcardle: 'Katch-McArdle',
+    mifflinStJeor: 'Mifflin-St Jeor',
+    leanBodyMass: '\u9664\u8102\u4f53\u91cd',
+    bmr: 'BMR',
+    activity: '\u6d3b\u52a8',
+    tdee: 'TDEE',
+    dailyAdjustment: '\u6bcf\u65e5\u8c03\u6574\u91cf',
+    macroTargets: '\u5b8f\u8425\u7d20\u76ee\u6807',
+    daily: '\u6bcf\u65e5',
+    monthlyX30: '\u6bcf\u6708 (\u00d730)',
+    deltaBreakdown: '\u53d8\u5316\u91cf\u8be6\u60c5',
+    pastReports: '\u5386\u53f2\u62a5\u544a',
+    latestReport: '\u6700\u65b0\u62a5\u544a',
+    noReportsYet: '\u6682\u65e0\u62a5\u544a\u3002\u8bf7\u4f7f\u7528\u4e0a\u65b9\u7684\u8ba1\u7b97\u5668\u751f\u6210\u60a8\u7684\u7b2c\u4e00\u4efd\u62a5\u544a\u3002',
+    autoFilled: '\u81ea\u52a8\u586b\u5145',
+    lowIntakeWarning: '\u6b64\u65f6\u95f4\u8f74\u53ef\u80fd\u5bfc\u81f4\u6bcf\u65e5\u6444\u5165\u91cf\u8fc7\u4f4e\u3002',
+    highSurplusWarning: '\u8fd9\u662f\u4e00\u4e2a\u76f8\u5f53\u5927\u7684\u76c8\u4f59\u3002\u8f83\u6e10\u8fdb\u7684\u65b9\u5f0f\u53ef\u80fd\u66f4\u6613\u575a\u6301\u3002',
+    fromCalculator: '\u6765\u81ea\u8ba1\u7b97\u5668',
+    timeHorizon: '\u65f6\u95f4\u8303\u56f4',
+    optimizingFor: '\u4f18\u5316\u65f6\u957f',
+    months: '\u4e2a\u6708',
+    calcPrompt: '\u5728\u8ba1\u7b97\u5668\u9009\u9879\u5361\u4e2d\u8bbe\u7f6e\u5361\u8def\u91cc\u76ee\u6807\uff0c\u4ee5\u83b7\u53d6\u4e2a\u6027\u5316\u5efa\u8bae\u3002',
+    editReport: '\u7f16\u8f91',
+    updateReport: '\u66f4\u65b0\u62a5\u544a',
+    updating: '\u66f4\u65b0\u4e2d...',
+    deleteReport: '\u5220\u9664',
+    confirmDeleteReport: '\u786e\u5b9a\u5220\u9664\u8fd9\u4efd\u62a5\u544a\uff1f',
+    editingReport: '\u7f16\u8f91\u62a5\u544a\u4e2d',
+    calorieCalculator: '卡路里计算器',
+    macroCostOptimizer: '营养与成本优化器',
+    reportEmptyTitle: '报告将显示在此处',
+    reportEmptySubtitle: '在左侧填写您的体征数据和目标，然后点击计算。',
+    stepMeasurements: '输入体征数据',
+    stepGoal: '选择活动水平与目标',
+    stepResults: '查看 BMR、TDEE 及宏量营养素目标',
+    yes: '是',
+    no: '否',
+    deltaBodyWeight: 'Δ 体重变化',
+    kcalPerKgAssumption: 'kcal/kg 假设值',
+    totalKcalDelta: '总卡路里变化量',
+    dailyKcalAdjustment: '每日卡路里调整量',
+    yourWeekSoFar: '本周概况',
+    itemsLabel: '项目',
+    mealsUnit: '餐',
+    qualityLabel: '品质',
+    tooltipFormulaSelection: '公式选择',
+    tooltipKatchMcArdle: '提供体脂时使用 Katch-McArdle',
+    tooltipMifflinStJeor: '未提供体脂时使用 Mifflin-St Jeor',
+    tooltipCalorieAssumptions: '卡路里假设值',
+    tooltipLoseKcalFact: '~7,700 kcal ≈ 体脂 1 kg',
+    tooltipGainKcalFact: '~4,500 kcal ≈ 瘦体重 1 kg',
+    tooltipDailyAdjustmentDesc: '每日调整量 = 总卡路里变化 ÷ (30 × 月数)',
+    tooltipTimelineDesc: '目标周期越长，每日卡路里调整越小。周期越短，每日赤字或盈余越大。',
+    sedentaryDesc: '几乎不运动，久坐工作',
+    lightlyActiveDesc: '每周1–3天轻度运动',
+    moderatelyActiveDesc: '每周3–5天中度运动',
+    veryActiveDesc: '每周6–7天高强度运动',
+    extraActiveDesc: '每天高强度运动两次或体力劳动',
+    training: '训练',
+    minUnit: '分钟',
+    qtyGrams: '数量（克）',
+    colKcal: '千卡',
+    noSolutionFound: '未找到解',
+    unboundedTitle: '无界',
+    noFoodsInLibrary: '请先将食品添加到您的库中。',
+    optional: '可选',
+    awaitingObjective: '等待目标',
+    chooseAnObjective: '选择目标',
+    chooseAnObjectiveSub: '在上方选择一个目标——最小化成本、达到卡路里目标等。最优解将即时显示。',
+    noFoodsSelected: '未选择食品',
+    selectYourFoods: '选择食品',
+    selectYourFoodsSub: '勾选左侧列表中的一种或多种食品，选择后结果即时更新。',
+    catCalories: '卡路里',
+    catProtein: '蛋白质（g）',
+    catCarbs: '碳水（g）',
+    catFat: '脂肪（g）',
+    catFiber: '膳食纤维（g）',
+    catBudget: '预算（$）',
+    cCalories: '卡路里',
+    cStrict: '严格',
+    cTolerance: '±2% 容差',
+    cOnTarget: '达到目标',
+    cWithin2: '在2%以内',
+    cOff: '偏差',
+    cAboveTarget: '超出目标',
+    cBelowTarget: '低于目标',
+    cMinJustMet: '刚达到最低值',
+    cAboveMin: '超过最低值',
+    cShortWithin2: '不足（2%以内）',
+    cBelowMin: '低于最低值',
+    cAtLimit: '达到上限',
+    cUnderLimit: '低于上限',
+    cOverWithin2: '超出（2%以内）',
+    cOverLimit: '超出上限',
   },
   habits: {
     eyebrow: '\u81ea\u5f8b',
