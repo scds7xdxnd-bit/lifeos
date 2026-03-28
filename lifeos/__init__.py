@@ -422,6 +422,8 @@ def _register_auth_handlers(app: Flask) -> None:
             return None
         if not app.config.get("ALPHA_HIDE_DOMAIN_CRUD", False):
             return None
+        if request.method == "OPTIONS":
+            return None
         if (
             request.path.startswith("/admin/")
             or request.path.startswith("/auth")
@@ -435,8 +437,6 @@ def _register_auth_handlers(app: Flask) -> None:
             "/api/finance",
             "/journal",
             "/api/journal",
-            "/health/",
-            "/api/health",
             "/relationships",
             "/api/relationships",
         )
