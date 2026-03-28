@@ -82,14 +82,14 @@ const MICRO: React.CSSProperties = {
   textTransform: 'uppercase' as const,
 }
 
-function objLabel(mode: ObjectiveMode | null) {
+function objLabel(mode: ObjectiveMode | null, t: HealthPageTranslations) {
   if (!mode) return ''
-  if (mode === 'min_cost') return `Minimum Cost`
-  if (mode === 'max_cost') return `Maximum Cost`
-  if (mode === 'min_calories') return `Minimum Calories`
-  if (mode === 'max_calories') return `Maximum Calories`
-  if (mode === 'target_cost') return `Target Cost`
-  return `Target Calories`
+  if (mode === 'min_cost') return t.minimizeCost
+  if (mode === 'max_cost') return t.maximizeCost
+  if (mode === 'min_calories') return t.minimizeCalories
+  if (mode === 'max_calories') return t.maximizeCalories
+  if (mode === 'target_cost') return t.targetCost
+  return t.targetCalories
 }
 
 function formatObjValue(mode: ObjectiveMode | null, val: number) {
@@ -202,7 +202,7 @@ export function OptimizerResult({ t, result, error, objectiveMode, onAdjustConst
           marginBottom: 24,
         }}
       >
-        {objLabel(objectiveMode)} = {formatObjValue(objectiveMode, r.objectiveValue)}
+        {objLabel(objectiveMode, t)} = {formatObjValue(objectiveMode, r.objectiveValue)}
       </p>
 
       {/* Results table (CSS grid) */}
