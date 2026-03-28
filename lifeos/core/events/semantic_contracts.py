@@ -367,6 +367,30 @@ EVENT_SEMANTIC_CONTRACTS: dict[str, EventSemanticContract] = {
         asserted_by="system",
         certainty="needs_review",
     ),
+    "health.food_library.created": EventSemanticContract(
+        event_type="health.food_library.created",
+        meaning="A food item was added to the user's personal food library.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    "health.food_library.updated": EventSemanticContract(
+        event_type="health.food_library.updated",
+        meaning="A food item was modified in the user's personal food library.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    "health.food_library.deleted": EventSemanticContract(
+        event_type="health.food_library.deleted",
+        meaning="A food item was removed from the user's personal food library.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
+    "health.calorie_report.created": EventSemanticContract(
+        event_type="health.calorie_report.created",
+        meaning="A calorie calculator report was generated and persisted for the user.",
+        asserted_by="user",
+        certainty="confirmed",
+    ),
     # Skills
     "skills.skill.created": EventSemanticContract(
         event_type="skills.skill.created",
