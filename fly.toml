@@ -74,7 +74,7 @@ primary_region = 'sin'
   STATIC_CACHE_MAX_AGE = '3600'
   SESSION_COOKIE_SECURE = 'true'
   JWT_COOKIE_SECURE = 'true'
-  CORS_ORIGINS = 'https://lifeos-black-pond-2352.fly.dev,http://localhost:3000,http://localhost:3001'
+  CORS_ORIGINS = 'https://lifeos-black-pond-2352.fly.dev,http://localhost:3000,http://localhost:3001,https://lifeos-wine.vercel.app'
   WORKER_LOGLEVEL = 'INFO'
 
 [processes]
