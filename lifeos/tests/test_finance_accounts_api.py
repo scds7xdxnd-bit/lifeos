@@ -310,6 +310,28 @@ class TestCreateAccountInlineEndpoint:
         assert account_id_1 == account_id_2
 
 
+class TestFinanceSeedEndpoint:
+    """Test POST /api/finance/accounts/seed endpoint."""
+
+    def test_seed_accounts_allows_alpha_user_when_finance_visible(self, app, client, auth_user):
+        app.config["ENABLE_PRIVATE_ALPHA"] = True
+        app.config["ALPHA_VISIBLE_DOMAINS"] = ("calendar", "habits", "projects", "skills", "finance")
+
+        with app.app_context():
+            token = create_access_token(identity=str(auth_user.id), additional_claims={"roles": ["alpha_user"]})
+
+        response = client.post(
+            "/api/finance/accounts/seed",
+            headers={"Authorization": f"Bearer {token}"},
+            json={},
+        )
+
+        assert response.status_code == 200
+        payload = response.get_json()
+        assert payload["ok"] is True
+        assert "seeded" in payload
+
+
 class TestAccountSubtypesEndpoint:
     """Test GET /api/finance/accounts/subtypes/<type> endpoint."""
 

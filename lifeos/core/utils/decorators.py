@@ -16,6 +16,31 @@ from lifeos.extensions import db
 F = TypeVar("F", bound=Callable)
 
 
+def _alpha_visible_domains() -> set[str]:
+    raw = current_app.config.get("ALPHA_VISIBLE_DOMAINS") or ()
+    if isinstance(raw, str):
+        return {item.strip().lower() for item in raw.split(",") if item.strip()}
+    return {str(item).strip().lower() for item in raw if str(item).strip()}
+
+
+def _is_alpha_domain_write_compatible(missing_roles: set[str], roles: set[str]) -> bool:
+    if not missing_roles:
+        return True
+    if not current_app.config.get("ENABLE_PRIVATE_ALPHA", False):
+        return False
+    if "alpha_user" not in roles:
+        return False
+
+    visible_domains = _alpha_visible_domains()
+    for role in missing_roles:
+        domain, sep, permission = role.partition(":")
+        if sep != ":" or permission != "write":
+            return False
+        if domain.strip().lower() not in visible_domains:
+            return False
+    return True
+
+
 def require_roles(required_roles: Iterable[str]):
     """Enforce that the current JWT includes the given roles."""
 
@@ -30,7 +55,9 @@ def require_roles(required_roles: Iterable[str]):
             roles = set(claims.get("roles") or [])
             if "admin" in roles:
                 return fn(*args, **kwargs)
-            if not set(required_roles).issubset(roles):
+
+            missing_roles = set(required_roles) - roles
+            if missing_roles and not _is_alpha_domain_write_compatible(missing_roles, roles):
                 return jsonify({"ok": False, "error": "forbidden"}), 403
             return fn(*args, **kwargs)
 

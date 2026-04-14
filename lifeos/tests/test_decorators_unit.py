@@ -44,6 +44,39 @@ def test_require_roles_allows_non_admin_when_required_roles_present(app, monkeyp
     assert response == {"ok": True}
 
 
+def test_require_roles_allows_alpha_user_for_visible_domain_write(app, monkeypatch):
+    @decorators.require_roles({"finance:write"})
+    def _handler():
+        return {"ok": True}
+
+    app.config["ENABLE_PRIVATE_ALPHA"] = True
+    app.config["ALPHA_VISIBLE_DOMAINS"] = ("calendar", "habits", "projects", "skills", "finance")
+    monkeypatch.setattr(decorators, "verify_jwt_in_request", lambda: None)
+    monkeypatch.setattr(decorators, "get_jwt", lambda: {"roles": ["alpha_user"]})
+
+    with app.test_request_context():
+        response = _handler()
+
+    assert response == {"ok": True}
+
+
+def test_require_roles_blocks_alpha_user_for_hidden_domain_write(app, monkeypatch):
+    @decorators.require_roles({"finance:write"})
+    def _handler():
+        return {"ok": True}
+
+    app.config["ENABLE_PRIVATE_ALPHA"] = True
+    app.config["ALPHA_VISIBLE_DOMAINS"] = ("calendar", "habits", "projects", "skills")
+    monkeypatch.setattr(decorators, "verify_jwt_in_request", lambda: None)
+    monkeypatch.setattr(decorators, "get_jwt", lambda: {"roles": ["alpha_user"]})
+
+    with app.test_request_context():
+        response, status = _handler()
+
+    assert status == 403
+    assert response.get_json() == {"ok": False, "error": "forbidden"}
+
+
 def test_csrf_protected_passes_through_when_csrf_disabled(app):
     @decorators.csrf_protected
     def _handler():
