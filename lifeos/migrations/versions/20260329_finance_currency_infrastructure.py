@@ -44,23 +44,28 @@ def upgrade():
     # ------------------------------------------------------------------
     # 2. Seed common currencies (idempotent: ignored if already present)
     # ------------------------------------------------------------------
-    op.execute(
-        sa.text(
-            """
-            INSERT OR IGNORE INTO finance_currency (code, symbol, name, decimal_places, is_base)
-            VALUES
-              ('USD', '$',  'US Dollar',          2, 0),
-              ('KRW', '₩',  'Korean Won',          0, 0),
-              ('EUR', '€',  'Euro',                2, 0),
-              ('GBP', '£',  'British Pound',       2, 0),
-              ('JPY', '¥',  'Japanese Yen',        0, 0),
-              ('CNY', '¥',  'Chinese Yuan',        2, 0),
-              ('SGD', 'S$', 'Singapore Dollar',    2, 0),
-              ('AUD', 'A$', 'Australian Dollar',   2, 0),
-              ('CAD', 'C$', 'Canadian Dollar',     2, 0),
-              ('CHF', 'Fr', 'Swiss Franc',         2, 0)
-            """
-        )
+    currency_table = sa.table(
+        "finance_currency",
+        sa.column("code", sa.String(3)),
+        sa.column("symbol", sa.String(8)),
+        sa.column("name", sa.String(64)),
+        sa.column("decimal_places", sa.Integer()),
+        sa.column("is_base", sa.Boolean()),
+    )
+    op.bulk_insert(
+        currency_table,
+        [
+            {"code": "USD", "symbol": "$", "name": "US Dollar", "decimal_places": 2, "is_base": False},
+            {"code": "KRW", "symbol": "KRW", "name": "Korean Won", "decimal_places": 0, "is_base": False},
+            {"code": "EUR", "symbol": "EUR", "name": "Euro", "decimal_places": 2, "is_base": False},
+            {"code": "GBP", "symbol": "GBP", "name": "British Pound", "decimal_places": 2, "is_base": False},
+            {"code": "JPY", "symbol": "JPY", "name": "Japanese Yen", "decimal_places": 0, "is_base": False},
+            {"code": "CNY", "symbol": "CNY", "name": "Chinese Yuan", "decimal_places": 2, "is_base": False},
+            {"code": "SGD", "symbol": "SGD", "name": "Singapore Dollar", "decimal_places": 2, "is_base": False},
+            {"code": "AUD", "symbol": "AUD", "name": "Australian Dollar", "decimal_places": 2, "is_base": False},
+            {"code": "CAD", "symbol": "CAD", "name": "Canadian Dollar", "decimal_places": 2, "is_base": False},
+            {"code": "CHF", "symbol": "CHF", "name": "Swiss Franc", "decimal_places": 2, "is_base": False},
+        ],
     )
 
     # ------------------------------------------------------------------

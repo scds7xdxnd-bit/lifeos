@@ -5,11 +5,12 @@ import type { TdeeResult } from '@/lib/tdee-calculator'
 interface ConversionCtaProps {
   hasResult: boolean
   result: TdeeResult | null
+  goalType?: 'lose' | 'gain' | 'maintain'
 }
 
-export default function ConversionCta({ hasResult, result }: ConversionCtaProps) {
+export default function ConversionCta({ hasResult, result, goalType = 'maintain' }: ConversionCtaProps) {
   const ctaUrl = result
-    ? `https://taeyangcv.vercel.app/?ref=tdee&tdee=${Math.round(result.tdee)}&daily=${Math.round(result.daily_calories)}&goal=${result.goal_type ?? 'maintain'}`
+    ? `https://taeyangcv.vercel.app/?ref=tdee&tdee=${Math.round(result.tdee)}&daily=${Math.round(result.daily_calories)}&goal=${goalType}`
     : 'https://taeyangcv.vercel.app/?ref=tdee'
 
   return (

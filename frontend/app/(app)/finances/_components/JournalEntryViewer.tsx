@@ -9,7 +9,7 @@ import { financesApi, JournalEntryDetail } from '@/lib/api/finances'
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatDecimal(val: number, currencyCode: string | null): string {
+function formatDecimal(val: number, currencyCode: string | null | undefined): string {
   const code = currencyCode ?? 'USD'
   const noDecimals = ['KRW', 'JPY', 'VND', 'IDR', 'HUF', 'CLP']
   return new Intl.NumberFormat('en-US', {

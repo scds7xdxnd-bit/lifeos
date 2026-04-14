@@ -84,7 +84,7 @@ export default function TdeeToolPage() {
           </div>
         )}
 
-        <ConversionCta hasResult={!!result} result={result} />
+        <ConversionCta hasResult={!!result} result={result} goalType={input?.goal_type} />
       </div>
 
       <footer
