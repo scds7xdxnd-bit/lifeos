@@ -49,12 +49,14 @@ export default function FinancesPage() {
   // Transaction detail state
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
 
-  const { data: accountsData } = useQuery({
+  const { data: accountsData, error: accountsError } = useQuery({
     queryKey: ['finance', 'accounts'],
     queryFn: () => financesApi.listAccounts({ per_page: 200 }),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   })
+  const isFinanceHiddenInAlpha =
+    accountsError instanceof Error && accountsError.message === 'not_found'
   const accounts = accountsData?.accounts ?? []
 
   const { data: trialData } = useQuery({
@@ -130,8 +132,35 @@ export default function FinancesPage() {
         </p>
       </div>
 
+      {isFinanceHiddenInAlpha && (
+        <div style={{ ...CARD, textAlign: 'center', padding: '2rem' }}>
+          <p
+            style={{
+              fontFamily: 'var(--font-serif), Georgia, serif',
+              fontSize: '1.125rem',
+              fontWeight: 300,
+              color: '#4b6646',
+              letterSpacing: '-0.03em',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Finance is currently hidden in this private alpha profile.
+          </p>
+          <p
+            style={{
+              fontFamily: 'var(--font-manrope), sans-serif',
+              fontSize: '0.875rem',
+              color: '#767d72',
+              lineHeight: 1.65,
+            }}
+          >
+            Ask an admin to enable finance visibility or disable domain CRUD hiding for your environment.
+          </p>
+        </div>
+      )}
+
       {/* Onboarding: seed if no accounts */}
-      {!hasAccounts && (
+      {!isFinanceHiddenInAlpha && !hasAccounts && (
         <div style={{ ...CARD, textAlign: 'center', padding: '2.5rem' }}>
           <div
             className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center"

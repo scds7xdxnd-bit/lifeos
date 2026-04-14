@@ -438,14 +438,23 @@ def _register_auth_handlers(app: Flask) -> None:
             return None
         if current_user.is_authenticated and "admin" in getattr(current_user, "role_codes", []):
             return None
+
+        raw_visible_domains = app.config.get("ALPHA_VISIBLE_DOMAINS") or ()
+        if isinstance(raw_visible_domains, str):
+            visible_domains = {item.strip().lower() for item in raw_visible_domains.split(",") if item.strip()}
+        else:
+            visible_domains = {str(item).strip().lower() for item in raw_visible_domains if str(item).strip()}
+
         blocked_prefixes = (
-            "/finance",
-            "/api/finance",
             "/journal",
             "/api/journal",
             "/relationships",
             "/api/relationships",
         )
+        # Finance is hidden only when not included in the alpha-visible domain set.
+        if "finance" not in visible_domains:
+            blocked_prefixes = ("/finance", "/api/finance", *blocked_prefixes)
+
         if request.path.startswith(blocked_prefixes):
             return {"ok": False, "error": "not_found"}, 404
         return None

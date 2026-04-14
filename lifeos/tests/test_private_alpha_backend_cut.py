@@ -288,6 +288,27 @@ def test_private_alpha_hidden_domain_page_bypasses_for_admin_session(app, client
     assert allowed.status_code != 404
 
 
+def test_private_alpha_surface_gate_allows_finance_when_visible(app, client):
+    _enable_private_alpha(app)
+    app.config["ALPHA_VISIBLE_DOMAINS"] = (*WAVE1_DOMAINS, "finance")
+
+    with app.app_context():
+        _, tokens = _create_user_with_tokens("alpha-finance-visible@example.com")
+
+    response = client.get(
+        "/api/finance/accounts?per_page=1",
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code != 404
+
+
+def test_private_alpha_surface_gate_does_not_break_unblocked_api_paths(app, client):
+    _enable_private_alpha(app)
+    response = client.get("/api/habits")
+    # Gate should allow this path through; auth then returns 401 for missing token.
+    assert response.status_code == 401
+
+
 def test_private_alpha_healthcheck_endpoint_remains_available(app, client):
     _enable_private_alpha(app)
     response = client.get("/health")
