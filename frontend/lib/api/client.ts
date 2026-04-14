@@ -69,5 +69,8 @@ export const apiPost = <T>(path: string, body: unknown) =>
 export const apiPatch = <T>(path: string, body: unknown) =>
   apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
+export const apiPut = <T>(path: string, body: unknown) =>
+  apiFetch<T>(path, { method: 'PUT', body: JSON.stringify(body) })
+
 export const apiDelete = <T>(path: string) =>
   apiFetch<T>(path, { method: 'DELETE' })

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -19,6 +20,7 @@ class MoneyScheduleRow(db.Model):
     event_date: Mapped[date] = mapped_column(nullable=False)
     amount: Mapped[float] = mapped_column(db.Numeric(18, 2), nullable=False)
     memo: Mapped[str | None] = mapped_column(db.Text)
+    currency_code: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
 
 
 class MoneyScheduleDailyBalance(db.Model):
@@ -29,6 +31,7 @@ class MoneyScheduleDailyBalance(db.Model):
     user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     as_of: Mapped[date] = mapped_column(index=True)
     balance: Mapped[float] = mapped_column(db.Numeric(18, 2), nullable=False)
+    currency_code: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
 
 
 class MoneyScheduleScenario(db.Model):
@@ -55,6 +58,7 @@ class MoneyScheduleScenarioRow(db.Model):
     )
     base_row_id: Mapped[int] = mapped_column(db.ForeignKey("finance_money_schedule_row.id"), nullable=True)
     delta_amount: Mapped[float] = mapped_column(db.Numeric(18, 2), nullable=False, default=0)
+    currency_code: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
 
     scenario: Mapped[MoneyScheduleScenario] = relationship("MoneyScheduleScenario", back_populates="rows")
     base_row: Mapped[MoneyScheduleRow | None] = relationship("MoneyScheduleRow")
