@@ -145,6 +145,31 @@ export interface FinancesPageTranslations {
   eyebrow: string
   title: string
   subtitle: string
+  primaryQuestion: string
+  // Onboarding
+  setupTitle: string
+  setupBody: string
+  setupCta: string
+  settingUp: string
+  // Summary
+  netWorth: string
+  totalAssets: string
+  totalLiabilities: string
+  // Actions
+  addTransaction: string
+  addAccount: string
+  addAccountManually: string
+  accounts: string
+  journal: string
+  save: string
+  cancel: string
+  // Lists
+  recentTransactions: string
+  noTransactions: string
+  noAccounts: string
+  loading: string
+  viewAll: string
+  // Legacy (keep for compatibility)
   comingSoonTitle: string
   comingSoonBody: string
 }
@@ -299,7 +324,6 @@ export interface HealthPageTranslations {
   pastReports: string
   latestReport: string
   noReportsYet: string
-  autoFilled: string
   lowIntakeWarning: string
   highSurplusWarning: string
   fromCalculator: string
@@ -781,6 +805,26 @@ const en: AppTranslations = {
     eyebrow: 'Domain',
     title: 'Finances',
     subtitle: 'Track spending, budgets, and goals. Your financial story, told clearly.',
+    primaryQuestion: 'Where do I stand right now, and what changed recently?',
+    setupTitle: 'Set up your accounts',
+    setupBody: 'Start with a default chart of accounts — assets, liabilities, income, and expenses — ready to customise.',
+    setupCta: 'Set up accounts',
+    settingUp: 'Setting up…',
+    netWorth: 'Net worth',
+    totalAssets: 'Total assets',
+    totalLiabilities: 'Total liabilities',
+    addTransaction: 'Add transaction',
+    addAccount: 'Add Account',
+    addAccountManually: 'Add manually',
+    accounts: 'Accounts',
+    journal: 'Journal',
+    save: 'Save',
+    cancel: 'Cancel',
+    recentTransactions: 'Recent transactions',
+    noTransactions: 'No transactions yet.',
+    noAccounts: 'No accounts found.',
+    loading: 'Loading…',
+    viewAll: 'View all',
     comingSoonTitle: 'Finance domain coming soon',
     comingSoonBody: 'Accounts, journal entries, transactions, and forecasts will appear here once the frontend integration is complete.',
   },
@@ -932,7 +976,6 @@ const en: AppTranslations = {
     pastReports: 'Past Reports',
     latestReport: 'Latest Report',
     noReportsYet: 'No reports yet. Use the calculator above to generate your first report.',
-    autoFilled: 'Auto-filled',
     lowIntakeWarning: 'This timeline may result in a very low daily intake. Consider extending the timeline or adjusting your goal weight.',
     highSurplusWarning: 'This is a significant surplus. A more gradual approach may be easier to sustain.',
     fromCalculator: 'From Calculator',
@@ -983,7 +1026,7 @@ const en: AppTranslations = {
     noSolutionFound: 'No solution found',
     unboundedTitle: 'Unbounded',
     noFoodsInLibrary: 'Add foods to your library first.',
-    optional: 'optional',
+    optional: 'Optional',
     awaitingObjective: 'Awaiting objective',
     chooseAnObjective: 'Choose an objective',
     chooseAnObjectiveSub: 'Pick a goal above — minimise cost, hit a calorie target, and so on. The optimal solution will appear here instantly.',
@@ -1356,7 +1399,7 @@ const ko: AppTranslations = {
     titleLabel: '\uc81c\ubaa9',
     titlePlaceholder: '\uc774\ubca4\ud2b8 \uc81c\ubaa9',
     location: '\uc7a5\uc18c',
-    optional: '\uc120\ud0dd\uc0ac\ud56d',
+    optional: '\uc120\ud0dd',
     start: '\uc2dc\uc791',
     end: '\uc885\ub8cc',
     allDay: '\uc885\uc77c',
@@ -1390,6 +1433,26 @@ const ko: AppTranslations = {
     eyebrow: '\ub3c4\uba54\uc778',
     title: '\uc7ac\uc815',
     subtitle: '\uc9c0\ucd9c, \uc608\uc0b0, \ubaa9\ud45c\ub97c \ucd94\uc801\ud558\uc138\uc694. \ub098\uc758 \uc7ac\uc815 \uc774\uc57c\uae30\ub97c \uba85\ud655\ud558\uac8c.',
+    primaryQuestion: '\uc9c0\uae08 \ub098\uc758 \uc7ac\uc815 \uc0c1\ud0dc\ub294? \ucd5c\uadfc \ubcc0\ud654\ub294?',
+    setupTitle: '\uacc4\uc88c \uc124\uc815',
+    setupBody: '\uae30\ubcf8 \uacc4\uc815 \uc720\ud615\uc73c\ub85c \uc2dc\uc791\ud558\uc138\uc694 \u2014 \uc790\uc0b0, \ubd80\uccb1, \uc218\uc785, \uc9c0\ucd9c.',
+    setupCta: '\uacc4\uc88c \uc124\uc815\ud558\uae30',
+    settingUp: '\uc124\uc815 \uc911\u2026',
+    netWorth: '\uc21c\uc790\uc0b0',
+    totalAssets: '\uc804\uccb4 \uc790\uc0b0',
+    totalLiabilities: '\uc804\uccb4 \ubd80\uccb1',
+    addTransaction: '\uac70\ub798 \ucd94\uac00',
+    addAccount: '\uacc4\uc88c \ucd94\uac00',
+    addAccountManually: '\uc9c1\uc811 \ucd94\uac00',
+    accounts: '\uacc4\uc88c',
+    journal: '\uc800\ub110',
+    save: '\uc800\uc7a5',
+    cancel: '\ucde8\uc18c',
+    recentTransactions: '\ucd5c\uadfc \uac70\ub798',
+    noTransactions: '\uc544\uc9c1 \uac70\ub798\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.',
+    noAccounts: '\uacc4\uc88c\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.',
+    loading: '\ub85c\ub529 \uc911\u2026',
+    viewAll: '\uc804\uccb4 \ubcf4\uae30',
     comingSoonTitle: '\uc7ac\uc815 \ub3c4\uba54\uc778 \uace7 \ucd9c\uc2dc',
     comingSoonBody: '\ud504\ub860\ud2b8\uc5d4\ub4dc \ud1b5\ud569\uc774 \uc644\ub8cc\ub418\uba74 \uacc4\uc88c, \uc800\ub110 \uae30\ub85d, \uac70\ub798, \uc608\uce21\uc774 \uc5ec\uae30\uc5d0 \ud45c\uc2dc\ub429\ub2c8\ub2e4.',
   },
@@ -1541,7 +1604,6 @@ const ko: AppTranslations = {
     pastReports: '\uacfc\uac70 \ubcf4\uace0\uc11c',
     latestReport: '\ucd5c\uc2e0 \ubcf4\uace0\uc11c',
     noReportsYet: '\uc544\uc9c1 \ubcf4\uace0\uc11c\uac00 \uc5c6\uc2b5\ub2c8\ub2e4. \uc704 \ucee8\uc500\ub97c \uc0ac\uc6a9\ud558\uc5ec \uccab \ubcf4\uace0\uc11c\ub97c \ub9cc\ub4dc\uc138\uc694.',
-    autoFilled: '\uc790\ub3d9 \uc785\ub825',
     lowIntakeWarning: '\uc774 \uc77c\uc815\uc740 \ub9e4\uc6b0 \ub099\uc740 \uc77c\uc77c \uc12c\ucde8\ub7c9\uc744 \ucd08\ub798\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.',
     highSurplusWarning: '\uc0c1\ub2f9\ud55c \uc78c\uc5ec\uc785\ub2c8\ub2e4. \uc810\uc9c4\uc801\uc778 \uc811\uadfc\uc774 \ub354 \uc9c0\uc18d\ud558\uae30 \uc26c\uc6b8 \uc218 \uc788\uc2b5\ub2c8\ub2e4.',
     fromCalculator: '\ucee8\uc500\uc5d0\uc11c',
@@ -1592,7 +1654,7 @@ const ko: AppTranslations = {
     noSolutionFound: '해를 찾을 수 없음',
     unboundedTitle: '무제한',
     noFoodsInLibrary: '먼저 식품 라이브러리에 추가하세요.',
-    optional: '선택 사항',
+    optional: '선택',
     awaitingObjective: '목표 대기 중',
     chooseAnObjective: '목표 선택',
     chooseAnObjectiveSub: '위에서 목표를 선택하세요 — 비용 최소화, 칼로리 목표 달성 등. 최적 해가 즉시 표시됩니다.',
@@ -1635,7 +1697,7 @@ const ko: AppTranslations = {
     weekly: '\ub9e4\uc8fc',
     custom: '\ucee4\uc2a4\ud140',
     description: '\uc124\uba85',
-    optional: '\uc120\ud0dd\uc0ac\ud56d',
+    optional: '\uc120\ud0dd',
     creating: '\uc0dd\uc131 \uc911\u2026',
     createHabit: '\uc2b5\uad00 \ub9cc\ub4e4\uae30',
     yourHabits: '\ub0b4 \uc2b5\uad00',
@@ -1681,7 +1743,7 @@ const ko: AppTranslations = {
     category: '\uce74\ud14c\uace0\ub9ac',
     categoryPlaceholder: '\uc608: \uc74c\uc545',
     description: '\uc124\uba85',
-    optional: '\uc120\ud0dd\uc0ac\ud56d',
+    optional: '\uc120\ud0dd',
     creating: '\uc0dd\uc131 \uc911\u2026',
     createSkill: '\uc2a4\ud0ac \ub9cc\ub4e4\uae30',
     logPractice: '\uc5f0\uc2b5 \uae30\ub85d',
@@ -1831,7 +1893,7 @@ const ko: AppTranslations = {
     namePlaceholder: '\uc608: \uc6f9\uc0ac\uc774\ud2b8 \ub7f0\uce6d',
     targetDate: '\ubaa9\ud45c\uc77c',
     description: '\uc124\uba85',
-    optional: '\uc120\ud0dd\uc0ac\ud56d',
+    optional: '\uc120\ud0dd',
     creating: '\uc0dd\uc131 \uc911\u2026',
     projects: '\ud504\ub85c\uc81d\ud2b8',
     loading: '\ub85c\ub529 \uc911\u2026',
@@ -1999,6 +2061,26 @@ const zh: AppTranslations = {
     eyebrow: '\u9886\u57df',
     title: '\u8d22\u52a1',
     subtitle: '\u8ffd\u8e2a\u652f\u51fa\u3001\u9884\u7b97\u4e0e\u76ee\u6807\u3002\u6e05\u6670\u8bb2\u8ff0\u60a8\u7684\u8d22\u52a1\u6545\u4e8b\u3002',
+    primaryQuestion: '\u6211\u73b0\u5728\u7684\u8d22\u52a1\u72b6\u51b5\u5982\u4f55\uff1f\u6700\u8fd1\u6709\u4ec0\u4e48\u53d8\u5316\uff1f',
+    setupTitle: '\u8bbe\u7f6e\u8d26\u6237',
+    setupBody: '\u4ece\u9ed8\u8ba4\u79d1\u76ee\u8868\u5f00\u59cb\u2014\u8d44\u4ea7\u3001\u8d1f\u503a\u3001\u6536\u5165\u3001\u652f\u51fa\uff0c\u53ef\u968f\u65f6\u81ea\u5b9a\u4e49\u3002',
+    setupCta: '\u8bbe\u7f6e\u8d26\u6237',
+    settingUp: '\u8bbe\u7f6e\u4e2d\u2026',
+    netWorth: '\u51c0\u8d44\u4ea7',
+    totalAssets: '\u603b\u8d44\u4ea7',
+    totalLiabilities: '\u603b\u8d1f\u503a',
+    addTransaction: '\u6dfb\u52a0\u4ea4\u6613',
+    addAccount: '\u6dfb\u52a0\u8d26\u6237',
+    addAccountManually: '\u624b\u52a8\u6dfb\u52a0',
+    accounts: '\u8d26\u6237',
+    journal: '\u65e5\u8bb0',
+    save: '\u4fdd\u5b58',
+    cancel: '\u53d6\u6d88',
+    recentTransactions: '\u6700\u8fd1\u4ea4\u6613',
+    noTransactions: '\u6682\u65e0\u4ea4\u6613\u8bb0\u5f55\u3002',
+    noAccounts: '\u672a\u627e\u5230\u8d26\u6237\u3002',
+    loading: '\u52a0\u8f7d\u4e2d\u2026',
+    viewAll: '\u67e5\u770b\u5168\u90e8',
     comingSoonTitle: '\u8d22\u52a1\u6a21\u5757\u5373\u5c06\u4e0a\u7ebf',
     comingSoonBody: '\u524d\u7aef\u96c6\u6210\u5b8c\u6210\u540e\uff0c\u8d26\u6237\u3001\u65e5\u8bb0\u6761\u76ee\u3001\u4ea4\u6613\u8bb0\u5f55\u548c\u9884\u6d4b\u5c06\u5728\u6b64\u663e\u793a',
   },
@@ -2150,7 +2232,6 @@ const zh: AppTranslations = {
     pastReports: '\u5386\u53f2\u62a5\u544a',
     latestReport: '\u6700\u65b0\u62a5\u544a',
     noReportsYet: '\u6682\u65e0\u62a5\u544a\u3002\u8bf7\u4f7f\u7528\u4e0a\u65b9\u7684\u8ba1\u7b97\u5668\u751f\u6210\u60a8\u7684\u7b2c\u4e00\u4efd\u62a5\u544a\u3002',
-    autoFilled: '\u81ea\u52a8\u586b\u5145',
     lowIntakeWarning: '\u6b64\u65f6\u95f4\u8f74\u53ef\u80fd\u5bfc\u81f4\u6bcf\u65e5\u6444\u5165\u91cf\u8fc7\u4f4e\u3002',
     highSurplusWarning: '\u8fd9\u662f\u4e00\u4e2a\u76f8\u5f53\u5927\u7684\u76c8\u4f59\u3002\u8f83\u6e10\u8fdb\u7684\u65b9\u5f0f\u53ef\u80fd\u66f4\u6613\u575a\u6301\u3002',
     fromCalculator: '\u6765\u81ea\u8ba1\u7b97\u5668',

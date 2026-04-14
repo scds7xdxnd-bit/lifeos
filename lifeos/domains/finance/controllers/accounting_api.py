@@ -13,19 +13,26 @@ from lifeos.domains.finance.schemas.finance_schemas import (
     AccountCategoryCreate,
     AccountCreate,
     AccountInlineCreate,
+    AccountListFilter,
     AccountSearchQuery,
+    AccountUpdate,
     AccountUpdateCategory,
     JournalEntryCreate,
     TransactionCreate,
+)
+from lifeos.domains.finance.services.account_seeding_service import (
+    seed_default_chart_of_accounts,
 )
 from lifeos.domains.finance.services.accounting_service import (
     create_account,
     create_account_inline,
     create_custom_account_category,
+    deactivate_account,
     get_account_subtypes,
     get_suggested_accounts,
     list_account_categories,
     post_journal_entry,
+    update_account,
     update_account_category,
 )
 from lifeos.domains.finance.services.journal_service import record_transaction
@@ -311,7 +318,6 @@ def create_account_endpoint():
             account_subtype=data.account_subtype,
             category_id=data.category_id,
             category_name_new=data.category_name_new,
-            code=data.code,
             description=data.description,
         )
     except ValueError as exc:
@@ -344,6 +350,100 @@ def create_account_endpoint():
         ),
         201,
     )
+
+
+@finance_api_bp.patch("/accounts/<int:account_id>")
+@jwt_required()
+@csrf_protected
+@require_roles({"finance:write"})
+@limiter.limit("120/minute")
+def update_account_endpoint(account_id: int):
+    """Patch editable fields on an account.
+
+    All fields are optional (PATCH semantics). Only supplied (non-null) fields are updated.
+
+    Request body (all optional)::
+
+        {
+          "name": "Updated Name",
+          "description": "...",
+          "code": "1001",
+          "account_subtype": "bank",
+          "category_id": 5,
+          "category_name_new": "New Category",
+          "default_currency": "KRW"
+        }
+    """
+    user_id = int(get_jwt_identity())
+    payload = request.get_json(silent=True) or {}
+    try:
+        data = AccountUpdate.model_validate(payload)
+    except ValidationError:
+        return jsonify({"ok": False, "error": "validation_error"}), 400
+
+    try:
+        account = update_account(
+            user_id=user_id,
+            account_id=account_id,
+            name=data.name,
+            description=data.description,
+            account_subtype=data.account_subtype,
+            category_id=data.category_id,
+            category_name_new=data.category_name_new,
+            default_currency=data.default_currency,
+        )
+    except ValueError as exc:
+        err = str(exc)
+        if err == "not_found":
+            return jsonify({"ok": False, "error": "not_found"}), 404
+        if err in {
+            "inactive_account",
+            "invalid_name",
+            "invalid_account_subtype",
+            "invalid_category",
+        }:
+            return jsonify({"ok": False, "error": err}), 400
+        return jsonify({"ok": False, "error": "validation_error"}), 400
+
+    return jsonify(
+        {
+            "ok": True,
+            "account": {
+                "id": account.id,
+                "name": account.name,
+                "account_type": account.account_type,
+                "account_subtype": account.account_subtype,
+                "category_id": account.category_id,
+                "code": account.code,
+                "default_currency": account.default_currency,
+                "is_active": bool(account.is_active),
+            },
+        }
+    )
+
+
+@finance_api_bp.post("/accounts/<int:account_id>/deactivate")
+@jwt_required()
+@csrf_protected
+@require_roles({"finance:write"})
+@limiter.limit("60/minute")
+def deactivate_account_endpoint(account_id: int):
+    """Soft-delete an account by marking it inactive.
+
+    Idempotent: if already inactive returns 409 with ``already_inactive``.
+    """
+    user_id = int(get_jwt_identity())
+    try:
+        account = deactivate_account(user_id=user_id, account_id=account_id)
+    except ValueError as exc:
+        err = str(exc)
+        if err == "not_found":
+            return jsonify({"ok": False, "error": "not_found"}), 404
+        if err == "already_inactive":
+            return jsonify({"ok": False, "error": "already_inactive"}), 409
+        return jsonify({"ok": False, "error": "validation_error"}), 400
+
+    return jsonify({"ok": True, "account": {"id": account.id, "is_active": False}})
 
 
 @finance_api_bp.patch("/accounts/<int:account_id>/category")
@@ -464,3 +564,101 @@ def suggestion_feedback():
         score=score,
     )
     return jsonify({"ok": True})
+
+
+# ==================== Account List (filtered) ====================
+
+
+@finance_api_bp.get("/accounts")
+@jwt_required()
+@limiter.limit("240/minute")
+def list_accounts_endpoint():
+    """
+    List accounts for the authenticated user with optional filtering.
+
+    Query params (all optional):
+      account_type, account_subtype, is_active, category_id,
+      page (default 1), per_page (default 50, max 200)
+
+    Response:
+      {
+        "ok": true,
+        "accounts": [...],
+        "total": N,
+        "page": P,
+        "pages": PP
+      }
+    """
+    user_id = int(get_jwt_identity())
+    raw = request.args.to_dict(flat=True)
+    if "is_active" in raw:
+        raw["is_active"] = raw["is_active"].lower() not in {"false", "0", "no"}
+    try:
+        flt = AccountListFilter.model_validate(raw)
+    except Exception:
+        return jsonify({"ok": False, "error": "validation_error"}), 400
+
+    query = Account.query.filter_by(user_id=user_id)
+    if flt.account_type:
+        query = query.filter(Account.account_type == flt.account_type)
+    if flt.account_subtype:
+        query = query.filter(Account.account_subtype == flt.account_subtype)
+    if flt.is_active is not None:
+        query = query.filter(Account.is_active == flt.is_active)
+    if flt.category_id is not None:
+        query = query.filter(Account.category_id == flt.category_id)
+
+    query = query.order_by(Account.account_type, Account.name)
+    total = query.count()
+    items = query.offset((flt.page - 1) * flt.per_page).limit(flt.per_page).all()
+    pages = max(1, (total + flt.per_page - 1) // flt.per_page)
+
+    return jsonify(
+        {
+            "ok": True,
+            "accounts": [
+                {
+                    "id": a.id,
+                    "name": a.name,
+                    "account_type": a.account_type,
+                    "account_subtype": a.account_subtype,
+                    "category_id": a.category_id,
+                    "code": a.code,
+                    "is_active": bool(a.is_active),
+                    "description": a.description,
+                    "created_at": a.created_at.isoformat() if a.created_at else None,
+                }
+                for a in items
+            ],
+            "total": total,
+            "page": flt.page,
+            "pages": pages,
+            "per_page": flt.per_page,
+        }
+    )
+
+
+# ==================== Account Seeding ====================
+
+
+@finance_api_bp.post("/accounts/seed")
+@jwt_required()
+@csrf_protected
+@require_roles({"finance:write"})
+@limiter.limit("10/minute")
+def seed_accounts_endpoint():
+    """
+    Seed the default Chart of Accounts for the authenticated user.
+
+    Idempotent: if the user already has accounts this returns seeded=false
+    with a 200 (not an error).
+
+    Response (first call):
+      {"ok": true, "seeded": true, "account_count": 16, "category_count": 5}
+
+    Response (subsequent calls):
+      {"ok": true, "seeded": false, "account_count": 0, "category_count": 0}
+    """
+    user_id = int(get_jwt_identity())
+    result = seed_default_chart_of_accounts(user_id)
+    return jsonify({"ok": True, **result}), 200

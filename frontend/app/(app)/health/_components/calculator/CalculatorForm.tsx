@@ -185,7 +185,7 @@ export default function CalculatorForm({ prefillData, isLoading, onCalculate, is
         <div>
           <label style={labelStyle} htmlFor="calc-weight">
             {t.weightKg}
-            {autoFilledFields.has('weight') && <span style={{ color: '#767d72', fontWeight: 400, marginLeft: '6px', fontSize: '0.6875rem' }}>{t.autoFilled}</span>}
+            {autoFilledFields.has('weight') && <span style={{ color: '#767d72', fontWeight: 400, marginLeft: '6px', fontSize: '0.6875rem' }}></span>}
           </label>
           <input
             id="calc-weight"
@@ -203,7 +203,7 @@ export default function CalculatorForm({ prefillData, isLoading, onCalculate, is
         <div>
           <label style={labelStyle} htmlFor="calc-height">
             {t.heightCm}
-            {autoFilledFields.has('height') && <span style={{ color: '#767d72', fontWeight: 400, marginLeft: '6px', fontSize: '0.6875rem' }}>{t.autoFilled}</span>}
+            {autoFilledFields.has('height') && <span style={{ color: '#767d72', fontWeight: 400, marginLeft: '6px', fontSize: '0.6875rem' }}></span>}
           </label>
           <input
             id="calc-height"
@@ -221,7 +221,7 @@ export default function CalculatorForm({ prefillData, isLoading, onCalculate, is
         <div>
           <label style={labelStyle} htmlFor="calc-age">
             {t.age}
-            {autoFilledFields.has('age') && <span style={{ color: '#767d72', fontWeight: 400, marginLeft: '6px', fontSize: '0.6875rem' }}>{t.autoFilled}</span>}
+            {autoFilledFields.has('age') && <span style={{ color: '#767d72', fontWeight: 400, marginLeft: '6px', fontSize: '0.6875rem' }}></span>}
           </label>
           <input
             id="calc-age"

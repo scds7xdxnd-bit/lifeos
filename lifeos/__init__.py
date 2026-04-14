@@ -237,6 +237,7 @@ def _register_blueprints(app: Flask) -> None:
     # Domain controllers (API + pages). Each module exposes *_bp variables.
     from lifeos.domains.finance.controllers.accounting_api import finance_api_bp
     from lifeos.domains.finance.controllers.dashboard_api import dashboard_api_bp
+    from lifeos.domains.finance.controllers.exchange_rate_api import exchange_rate_api_bp
     from lifeos.domains.finance.controllers.forecast_api import forecast_api_bp
     from lifeos.domains.finance.controllers.import_api import import_api_bp
     from lifeos.domains.finance.controllers.journal_api import (
@@ -245,6 +246,7 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.domains.finance.controllers.pages import finance_pages_bp
     from lifeos.domains.finance.controllers.receivable_api import receivable_api_bp
     from lifeos.domains.finance.controllers.schedule_api import schedule_api_bp
+    from lifeos.domains.finance.controllers.transaction_api import transaction_api_bp
     from lifeos.domains.finance.controllers.trial_balance_api import (
         trial_balance_api_bp,
     )
@@ -254,6 +256,7 @@ def _register_blueprints(app: Flask) -> None:
     from lifeos.domains.health.controllers.food_library_api import food_library_api_bp
     from lifeos.domains.health.controllers.health_api import health_api_bp
     from lifeos.domains.health.controllers.health_pages import health_pages_bp
+    from lifeos.domains.health.controllers.public_calculator_api import public_calculator_api_bp
     from lifeos.domains.journal.controllers.journal_api import journal_api_bp
     from lifeos.domains.journal.controllers.journal_pages import journal_pages_bp
     from lifeos.domains.projects.controllers.project_api import project_api_bp
@@ -271,6 +274,8 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(user_pages_bp, url_prefix="/users")
 
     app.register_blueprint(finance_api_bp, url_prefix="/api/finance")
+    app.register_blueprint(transaction_api_bp, url_prefix="/api/finance")
+    app.register_blueprint(exchange_rate_api_bp, url_prefix="/api/finance")
     app.register_blueprint(trial_balance_api_bp, url_prefix="/api/finance")
     app.register_blueprint(schedule_api_bp, url_prefix="/api/finance")
     app.register_blueprint(finance_journal_api_bp, url_prefix="/api/finance")
@@ -286,6 +291,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(health_api_bp, url_prefix="/api/health")
     app.register_blueprint(food_library_api_bp, url_prefix="/api/health/food-library")
     app.register_blueprint(calculator_api_bp, url_prefix="/api/v1/health/calculator")
+    app.register_blueprint(public_calculator_api_bp, url_prefix="/api/v1/public/health/calculator")
     app.register_blueprint(health_pages_bp, url_prefix="/health")
     app.register_blueprint(journal_api_bp, url_prefix="/api/journal")
     app.register_blueprint(journal_pages_bp, url_prefix="/journal")

@@ -2,11 +2,73 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from lifeos.extensions import db
+
+
+class FinanceCurrency(db.Model):
+    """ISO 4217 currency reference data.
+
+    ``is_base`` marks the system default currency. Users set their personal
+    base currency via ``user_preference`` key ``finance.base_currency``
+    (falls back to the system base if unset).
+    """
+
+    __tablename__ = "finance_currency"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(db.String(3), unique=True, nullable=False, index=True)
+    symbol: Mapped[str] = mapped_column(db.String(8), nullable=False)
+    name: Mapped[str] = mapped_column(db.String(64), nullable=False)
+    decimal_places: Mapped[int] = mapped_column(nullable=False, default=2)
+    is_base: Mapped[bool] = mapped_column(nullable=False, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<FinanceCurrency {self.code}>"
+
+
+class FinanceExchangeRate(db.Model):
+    """User-scoped manual FX rates.
+
+    Rates are locked at transaction creation time (``exchange_rate_to_base``
+    on Transaction / JournalLine). This table is the source for that lock.
+
+    ``from_currency`` → ``to_currency`` = ``rate`` as of ``effective_date``.
+    The lookup always picks the most recent rate on or before the transaction date.
+
+    Phase 2: manual entry only. Phase 6 will add API-synced rates (source='api').
+    """
+
+    __tablename__ = "finance_exchange_rate"
+    __table_args__ = (
+        db.Index(
+            "ix_finance_exchange_rate_user_from_to_date",
+            "user_id",
+            "from_currency",
+            "to_currency",
+            "effective_date",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), nullable=False, index=True)
+    from_currency: Mapped[str] = mapped_column(db.String(3), nullable=False)
+    to_currency: Mapped[str] = mapped_column(db.String(3), nullable=False)
+    # High-precision decimal: e.g. 1316.50000000 for KRW/USD
+    rate: Mapped[Decimal] = mapped_column(db.Numeric(19, 10), nullable=False)
+    effective_date: Mapped[date] = mapped_column(nullable=False)
+    # 'manual' now; 'api' in Phase 6
+    source: Mapped[str] = mapped_column(db.String(20), nullable=False, default="manual")
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<FinanceExchangeRate {self.from_currency}/{self.to_currency} {self.rate}>"
 
 
 class AccountCategory(db.Model):
@@ -55,8 +117,9 @@ class Account(db.Model):
     code: Mapped[str] = mapped_column(db.String(32), nullable=True, index=True)
     description: Mapped[str | None] = mapped_column(db.Text)
     is_active: Mapped[bool] = mapped_column(default=True)
+    # Account's default currency. NULL = user's base currency (resolved at read time).
+    default_currency: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
 
-    # New classification fields for journal-first workflow
     account_type: Mapped[str] = mapped_column(db.String(16), nullable=False, default="asset", index=True)
     # Allowed values: 'asset', 'liability', 'equity', 'income', 'expense'
 
@@ -64,10 +127,7 @@ class Account(db.Model):
     # Examples: 'cash', 'bank', 'loan', 'credit_card', 'salary', 'investment', etc.
 
     normalized_name: Mapped[str] = mapped_column(db.String(255), nullable=False, index=True)
-    # Normalized (lowercase, trimmed) for fast search/typeahead
-
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    # Track creation time for sorting and filtering
 
     category: Mapped[AccountCategory] = relationship("AccountCategory")
     journal_lines: Mapped[list["JournalLine"]] = relationship("JournalLine", back_populates="account")
@@ -110,6 +170,10 @@ class JournalLine(db.Model):
     debit: Mapped[float] = mapped_column(db.Numeric(18, 2), default=0)
     credit: Mapped[float] = mapped_column(db.Numeric(18, 2), default=0)
     memo: Mapped[str | None] = mapped_column(db.Text)
+    # Currency of this line's amounts. NULL → inherited from parent transaction → user's base currency.
+    currency_code: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
+    # FX rate from currency_code to user's base currency, locked at posting time. NULL = 1.0 (same currency).
+    exchange_rate_to_base: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(19, 10), nullable=True)
 
     entry: Mapped[JournalEntry] = relationship(JournalEntry, back_populates="lines")
     account: Mapped[Account] = relationship("Account", back_populates="journal_lines")
@@ -120,11 +184,16 @@ class Transaction(db.Model):
     __table_args__ = (
         db.Index("ix_finance_transaction_user_occurred_at", "user_id", "occurred_at"),
         db.Index("ix_finance_transaction_calendar_event", "calendar_event_id"),
+        db.Index("ix_finance_transaction_is_void", "is_void"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     amount: Mapped[float] = mapped_column(db.Numeric(18, 2), nullable=False)
+    # ISO 4217 code. NULL on legacy rows = user's base currency.
+    currency_code: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
+    # FX rate from currency_code to user's base currency, locked at transaction creation. NULL = 1.0.
+    exchange_rate_to_base: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(19, 10), nullable=True)
     description: Mapped[str | None] = mapped_column(db.Text)
     occurred_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     journal_entry_id: Mapped[int | None] = mapped_column(db.ForeignKey("finance_journal_entry.id"))
@@ -140,6 +209,11 @@ class Transaction(db.Model):
     confidence_score: Mapped[float | None] = mapped_column(db.Numeric(3, 2), nullable=True)
     inference_status: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
     # Values: 'pending', 'confirmed', 'rejected', None for manual
+
+    # Void / edit audit fields
+    is_void: Mapped[bool] = mapped_column(nullable=False, default=False)
+    void_of_id: Mapped[int | None] = mapped_column(nullable=True)
+    edited_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
     journal_entry: Mapped[JournalEntry] = relationship(JournalEntry)
 

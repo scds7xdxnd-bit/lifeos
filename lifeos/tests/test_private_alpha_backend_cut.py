@@ -366,7 +366,8 @@ def test_private_alpha_readiness_endpoint_guidance_and_ready_state(app, client):
     assert "add recent records" in payload["next_step"].lower()
 
     with app.app_context():
-        _add_event(user.id, "projects.task.completed", datetime(2026, 3, 12, 9, 0, 0))
+        recent_event_ts = datetime.utcnow() - timedelta(days=1)
+        _add_event(user.id, "projects.task.completed", recent_event_ts)
 
     ready = client.get("/api/v1/inquiries/readiness", headers=auth_headers)
     assert ready.status_code == 200

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,6 +17,7 @@ class ReceivableTracker(db.Model):
     user_id: Mapped[int] = mapped_column(db.ForeignKey("user.id"), index=True, nullable=False)
     counterparty: Mapped[str] = mapped_column(db.String(255), nullable=False)
     principal: Mapped[float] = mapped_column(db.Numeric(18, 2), nullable=False)
+    currency_code: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
     start_date: Mapped[date] = mapped_column(nullable=False)
     due_date: Mapped[date | None] = mapped_column(nullable=True)
     interest_rate: Mapped[float | None] = mapped_column(db.Numeric(5, 2))
@@ -33,6 +35,7 @@ class ReceivableManualEntry(db.Model):
     tracker_id: Mapped[int] = mapped_column(db.ForeignKey("finance_receivable_tracker.id"), index=True, nullable=False)
     entry_date: Mapped[date] = mapped_column(nullable=False)
     amount: Mapped[float] = mapped_column(db.Numeric(18, 2), nullable=False)
+    currency_code: Mapped[Optional[str]] = mapped_column(db.String(3), nullable=True)
     memo: Mapped[str | None] = mapped_column(db.Text)
 
     tracker: Mapped[ReceivableTracker] = relationship("ReceivableTracker", back_populates="manual_entries")

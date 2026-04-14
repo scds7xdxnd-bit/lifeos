@@ -11,6 +11,8 @@ from lifeos.core.read_cache import read_cache
 from lifeos.domains.finance.events import (
     FINANCE_ACCOUNT_CATEGORY_UPDATED,
     FINANCE_ACCOUNT_CREATED,
+    FINANCE_ACCOUNT_DEACTIVATED,
+    FINANCE_ACCOUNT_UPDATED,
     FINANCE_JOURNAL_POSTED,
 )
 from lifeos.domains.finance.models.accounting_models import (
@@ -180,19 +182,214 @@ BASE_TYPE_NORMAL_BALANCE: Dict[str, str] = {
 
 # Subtypes per account type
 ACCOUNT_SUBTYPES_MAP = {
-    "asset": ["cash", "bank", "investment", "property", "other"],
-    "liability": ["loan", "credit_card", "payable", "other"],
+    "asset": [
+        "cash",
+        "bank",
+        "savings",
+        "investment",
+        "receivable",
+        "prepaid",
+        "property",
+        "other",
+    ],
+    "liability": ["credit_card", "loan", "mortgage", "payable", "other"],
     "equity": ["contributed", "retained_earnings", "other"],
-    "income": ["salary", "investment", "business", "rental", "other"],
+    "income": ["salary", "allowance", "bonus", "scholarship", "investment", "business", "rental", "other"],
     "expense": [
-        "groceries",
-        "utilities",
         "rent",
+        "utilities",
+        "groceries",
+        "dining",
         "transportation",
+        "education",
+        "personal_care",
+        "health",
+        "insurance",
         "entertainment",
+        "subscriptions",
+        "gifts",
         "other",
     ],
 }
+
+# ---------------------------------------------------------------------------
+# Account code taxonomy
+# ---------------------------------------------------------------------------
+# Code format:  T BB SS  (5 digits, all numeric)
+#   T  = type digit:  1=asset 2=liability 3=equity 4=income 5=expense
+#   BB = subtype block (00-19 reserved for standard subtypes,
+#                       20-99 for user-defined subtypes)
+#   SS = sequence within block (01-99)
+#
+# Example: 10001 = first asset/cash-bank account
+#          50101 = first expense/groceries account
+#          52001 = first expense/user-defined-block-20 account
+#
+# Currency does NOT affect the code — it is stored on the account row
+# (default_currency) and is a separate dimension.  Two accounts of the
+# same subtype in different currencies receive consecutive sequence numbers
+# within the same block (e.g. 10001 USD checking, 10002 KRW checking).
+
+_TYPE_PREFIX: Dict[str, int] = {
+    "asset": 1,
+    "liability": 2,
+    "equity": 3,
+    "income": 4,
+    "expense": 5,
+}
+
+# Standard subtype → block index (00-19)
+_STANDARD_BLOCK: Dict[str, Dict[str, int]] = {
+    "asset": {
+        "cash": 0,
+        "bank": 0,
+        "savings": 0,  # Cash & Bank
+        "investment": 1,  # Investments
+        "receivable": 2,  # Receivables
+        "prepaid": 3,  # Prepaid & other current
+        "property": 4,  # Fixed / property
+        "other": 9,
+    },
+    "liability": {
+        "credit_card": 0,  # Credit cards
+        "loan": 1,
+        "mortgage": 1,  # Loans & mortgages
+        "payable": 2,  # Accounts payable / subscriptions
+        "other": 9,
+    },
+    "equity": {
+        "contributed": 0,  # Opening balance / paid-in
+        "retained_earnings": 1,
+        "other": 9,
+    },
+    "income": {
+        "salary": 0,
+        "allowance": 0,
+        "bonus": 0,
+        "scholarship": 0,  # Earned income
+        "investment": 1,  # Passive / investment
+        "business": 2,
+        "rental": 2,  # Business / side income
+        "other": 9,
+    },
+    "expense": {
+        "rent": 0,
+        "utilities": 0,  # Housing
+        "groceries": 1,
+        "dining": 1,  # Food & dining
+        "transportation": 2,  # Transport
+        "education": 3,  # Education
+        "personal_care": 4,  # Personal care
+        "health": 5,
+        "insurance": 5,  # Health & medical
+        "entertainment": 6,
+        "subscriptions": 6,  # Entertainment
+        "gifts": 7,  # Gifts & donations
+        "other": 9,
+    },
+}
+
+# User-defined subtype blocks start here (leaves 00-19 for standard types)
+_USER_BLOCK_START = 20
+
+
+def _get_subtype_block(user_id: int, account_type: str, account_subtype: str | None) -> int:
+    """Return the BB block number for the given type + subtype combination.
+
+    Standard subtypes map to fixed blocks.  Unknown (user-defined) subtypes
+    are assigned the next available block in [_USER_BLOCK_START, 99] by
+    scanning existing account codes for this user+type pair.
+    """
+    subtype = (account_subtype or "").strip().lower() or None
+    standard = _STANDARD_BLOCK.get(account_type, {})
+
+    if subtype and subtype in standard:
+        return standard[subtype]
+    if not subtype:
+        return standard.get("other", 9)
+
+    # User-defined: check if we already allocated a block for this subtype
+    T = _TYPE_PREFIX[account_type]
+    existing = (
+        Account.query.filter_by(user_id=user_id, account_type=account_type, account_subtype=subtype)
+        .filter(Account.code.isnot(None))
+        .with_entities(Account.code)
+        .first()
+    )
+    if existing and existing.code:
+        try:
+            c = int(existing.code)
+            if c // 10000 == T:
+                block = (c % 10000) // 100
+                if block >= _USER_BLOCK_START:
+                    return block
+        except (ValueError, TypeError):
+            pass
+
+    # Allocate a new block: find the highest user-defined block in use for
+    # this user+type, then add 1.  Start at _USER_BLOCK_START.
+    used_blocks: set[int] = set()
+    all_codes = (
+        Account.query.filter_by(user_id=user_id, account_type=account_type)
+        .filter(Account.code.isnot(None))
+        .with_entities(Account.code)
+        .all()
+    )
+    for (code_str,) in all_codes:
+        try:
+            c = int(code_str)
+            if c // 10000 == T:
+                block = (c % 10000) // 100
+                if block >= _USER_BLOCK_START:
+                    used_blocks.add(block)
+        except (ValueError, TypeError):
+            pass
+
+    for b in range(_USER_BLOCK_START, 100):
+        if b not in used_blocks:
+            return b
+    return standard.get("other", 9)  # fallback: collapse into "other"
+
+
+def assign_account_code(user_id: int, account_type: str, account_subtype: str | None) -> str:
+    """Return the next available 5-digit account code for the given taxonomy.
+
+    Code anatomy:  T BB SS
+      T  – type digit (1-5)
+      BB – subtype block (00-99)
+      SS – sequence within block (01-99)
+
+    The function finds the lowest unused SS in the target block for this user.
+    Currency is not encoded; same-subtype accounts in different currencies
+    simply receive consecutive sequence numbers.
+    """
+    T = _TYPE_PREFIX.get(account_type, 5)
+    block = _get_subtype_block(user_id, account_type, account_subtype)
+    block_base = T * 10000 + block * 100  # e.g. 10000 for asset/bank
+
+    # Collect codes already in this block for this user
+    all_codes = (
+        Account.query.filter_by(user_id=user_id, account_type=account_type)
+        .filter(Account.code.isnot(None))
+        .with_entities(Account.code)
+        .all()
+    )
+    used_seq: set[int] = set()
+    for (code_str,) in all_codes:
+        try:
+            c = int(code_str)
+            seq = c - block_base
+            if 1 <= seq <= 99:
+                used_seq.add(seq)
+        except (ValueError, TypeError):
+            pass
+
+    for seq in range(1, 100):
+        if seq not in used_seq:
+            return f"{block_base + seq:05d}"
+
+    # All 99 slots full — append an overflow suffix
+    return f"{block_base + 99:05d}"
 
 
 _slug_pattern = re.compile(r"[^a-z0-9]+")
@@ -468,7 +665,6 @@ def create_account(
     account_subtype: str | None = None,
     category_id: int | None = None,
     category_name_new: str | None = None,
-    code: str | None = None,
     description: str | None = None,
 ) -> Account:
     name, account_subtype = _validate_account_inputs(name, base_type, account_subtype)
@@ -500,7 +696,7 @@ def create_account(
         account_subtype=account_subtype,
         normalized_name=normalized_name,
         category_id=category.id if category else None,
-        code=code,
+        code=assign_account_code(user_id, base_type, account_subtype),
         description=description,
         is_active=True,
     )
@@ -608,3 +804,126 @@ def create_account_inline(
         category_id=category_id,
         category_name_new=category_name_new,
     )
+
+
+def update_account(
+    user_id: int,
+    account_id: int,
+    name: str | None = None,
+    description: str | None = None,
+    account_subtype: str | None = None,
+    category_id: int | None = None,
+    category_name_new: str | None = None,
+    default_currency: str | None = None,
+) -> Account:
+    """Update editable fields on an account (PATCH semantics — only supplied fields change).
+
+    Raises:
+        ValueError("not_found") if the account does not belong to user_id.
+        ValueError("inactive_account") if the account is deactivated.
+        ValueError("invalid_name") if name fails validation.
+        ValueError("invalid_account_subtype") if subtype is invalid for this type.
+        ValueError("invalid_category") if category_id / category_name_new are invalid.
+    """
+    account = Account.query.filter_by(id=account_id, user_id=user_id).first()
+    if not account:
+        raise ValueError("not_found")
+    if not account.is_active:
+        raise ValueError("inactive_account")
+
+    changed_fields: List[str] = []
+
+    if name is not None:
+        clean_name = (name or "").strip()
+        if not clean_name or len(clean_name) > 255:
+            raise ValueError("invalid_name")
+        account.name = clean_name
+        account.normalized_name = _normalize_name(clean_name)
+        changed_fields.append("name")
+
+    if description is not None:
+        account.description = description.strip() or None
+        changed_fields.append("description")
+
+    if account_subtype is not None:
+        subtype_clean = (account_subtype or "").strip() or None
+        if subtype_clean and subtype_clean not in get_account_subtypes(account.account_type):
+            raise ValueError("invalid_account_subtype")
+        account.account_subtype = subtype_clean
+        changed_fields.append("account_subtype")
+
+    if default_currency is not None:
+        account.default_currency = default_currency.strip().upper() or None
+        changed_fields.append("default_currency")
+
+    # Category update (mirrors update_account_category logic inline)
+    if category_name_new or category_id is not None:
+        base_type = account.account_type
+        if category_name_new:
+            category = create_custom_account_category(user_id, base_type, category_name_new, is_default=False)
+        elif category_id:
+            category = _get_category_for_user(user_id, category_id)
+        else:
+            category = None
+
+        if category and category.base_type != base_type:
+            raise ValueError("invalid_category")
+
+        account.category_id = category.id if category else None
+        changed_fields.append("category_id")
+
+    if not changed_fields:
+        return account
+
+    db.session.flush()
+
+    enqueue_outbox(
+        FINANCE_ACCOUNT_UPDATED,
+        {
+            "account_id": account.id,
+            "user_id": user_id,
+            "fields": changed_fields,
+            "updated_at": datetime.utcnow().isoformat(),
+            "payload_version": "v1",
+        },
+        user_id=user_id,
+    )
+
+    db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
+    return account
+
+
+def deactivate_account(user_id: int, account_id: int) -> Account:
+    """Soft-delete an account by marking it inactive.
+
+    The account is hidden from active lists and blocked from new transactions.
+    Historical journal lines remain intact.
+
+    Raises:
+        ValueError("not_found") if the account does not belong to user_id.
+        ValueError("already_inactive") if the account is already deactivated.
+    """
+    account = Account.query.filter_by(id=account_id, user_id=user_id).first()
+    if not account:
+        raise ValueError("not_found")
+    if not account.is_active:
+        raise ValueError("already_inactive")
+
+    account.is_active = False
+    db.session.flush()
+
+    enqueue_outbox(
+        FINANCE_ACCOUNT_DEACTIVATED,
+        {
+            "account_id": account.id,
+            "user_id": user_id,
+            "deactivated_at": datetime.utcnow().isoformat(),
+            "payload_version": "v1",
+        },
+        user_id=user_id,
+    )
+
+    db.session.commit()
+    read_cache.bump(FINANCE_READ_CACHE_SCOPE, user_id)
+    return account
